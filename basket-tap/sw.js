@@ -1,7 +1,7 @@
 /* バスケ タップ記録 — オフラインでも開けるようにする（体育館で電波が弱いときに、開き直しても使えるように）
    いつもはネットから新しいものを取り、取れないときだけ保存しておいたものを使う（更新がすぐ届くように）。
    このフォルダ（basket-tap/）の中だけに効く。 */
-const CACHE = 'btap-v1';
+const CACHE = 'btap-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

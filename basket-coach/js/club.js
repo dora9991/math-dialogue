@@ -605,6 +605,7 @@
         ${row('#club/feed', 'chat', 'ひろば', '子どもの投稿・合格のお知らせ。確認して出す・かくす', c.waiting)}
         ${row('#club/settings', 'sliders', 'せってい', '投稿のルール・写真・合言葉・ログアウト', 0)}
       </div>
+      ${BC.links ? `<h2 class="sec-h cl-links-h">${ic('flag')}試合と 保護者会</h2><p class="small">べつのページが開きます。タップ記録の「バスケ・グロウ」から、このページに戻れます。</p><div class="rows cl-links">${BC.links.rows(row, 'grow-club')}</div>` : ''}
       ${c.kids ? '' : `<section class="card"><h2 class="sec-h">${ic('flag')}はじめに</h2><ol class="steps"><li><span>「メンバー」で 子どもを登録する（ニックネームでOK）</span></li><li><span>ログインカードを 印刷して わたす</span></li><li><span>「級をつくる」で、課題と回数を クラブに合わせる</span></li><li><span>「自主練」で、家でやる練習と 回数を出す</span></li></ol></section>`}`);
   }
 

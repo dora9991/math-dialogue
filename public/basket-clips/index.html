@@ -372,10 +372,22 @@ a.btn { text-decoration: none; }
   .actions .btn { padding: 6px 10px; }
 }
 
+/* ほかのアプリ：場面の切り出しはタップ記録の中でもできる・入口（バスケ・グロウ）へ */
+.hubbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 6px 16px; background: var(--panel); border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.hubbar .hb-text { flex: 1 1 280px; min-width: 0; }
+.hubbar .hb-text b { color: var(--text); }
+.hubbar .hb-link { color: var(--accent); text-decoration: none; font-weight: 700; white-space: nowrap; }
+@media (max-width: 520px) { .hubbar .hb-wide { display: none; } .hubbar { padding: 5px 12px; } }
+
 </style>
 </head>
 <body>
 <div id="app">
+  <nav class="hubbar" id="hubbar" aria-label="ほかのアプリ">
+    <span class="hb-text">✂️ 場面の切り出しは、<b>バスケ タップ記録</b>の中でもできます<span class="hb-wide">（記録から切り出しまで、1つのアプリで）</span>。</span>
+    <a class="hb-link" id="hbTap" href="https://dora9991.github.io/math-dialogue/basket-tap/">タップ記録を開く ›</a>
+    <a class="hb-link" id="hbGrow" href="https://dora9991.github.io/math-dialogue/basket-coach/#home">‹ バスケ・グロウ<span class="hb-wide">（入口）</span></a>
+  </nav>
   <header class="topbar">
     <div class="brand"><span class="logo" aria-hidden="true">🏀</span><div><b>バスケ得点クリップ</b><small>得点の場面を5秒ずつ・タップ記録の場面も</small></div></div>
     <div class="actions">
@@ -4178,7 +4190,8 @@ a.btn { text-decoration: none; }
     m.on('error', () => BS.ui.toast('この動画は、このブラウザでは再生できないようです（MP4・MOV をお試しください）', 'err', 7000));
     m.on('notice', (t) => BS.ui.toast(t, 'warn', 6000));
     document.body.classList.add('has-video');
-    if (attached && !S.quietAttach) BS.ui.toast('読み込んだタップ記録を、この動画に付けました。③ で時刻を合わせます', 'ok', 5000);
+    // （撮影しながら・動画を見ながら記録した試合は、このあと同じ動画だと分かれば、時刻が自動で合う）
+    if (attached && !S.quietAttach) BS.ui.toast(S.st.log && S.st.log.videos && S.st.log.videos.length ? '読み込んだタップ記録を、この動画に付けました' : '読み込んだタップ記録を、この動画に付けました。③ で時刻を合わせます', 'ok', 5000);
     else if (saved && saved.log) BS.ui.toast('前に読み込んだタップ記録と、時刻あわせを開きました（同じ動画です）', 'ok', 4000);
     else if (saved && saved.result) BS.ui.toast('前に解析した結果を開きました（同じ動画です）', 'ok', 4000);
     render(); drawTimeline(); updatePlayBtn();
@@ -4218,20 +4231,21 @@ a.btn { text-decoration: none; }
   }
   /* 押し続けると続けて（0.4 秒押したら、前の移動が終わるたびに次のコマへ） */
   function holdRepeat(btn, fn) {
-    let timer = 0, held = false, downAt = 0;
-    const stop = () => { held = false; clearTimeout(timer); };
+    let timer = 0, held = false, ptrAt = 0;
+    const stop = () => { if (held) ptrAt = Date.now(); held = false; clearTimeout(timer); };
     btn.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       e.preventDefault();
       held = true;
-      downAt = Date.now();
+      ptrAt = Date.now();
       fn();
       const rep = () => { if (!held) return; Promise.resolve(fn()).then(() => { if (held) timer = setTimeout(rep, 40); }); };
       timer = setTimeout(rep, 400);
     });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => btn.addEventListener(ev, stop));
-    // キーボード（Enter・スペース）で押したとき（指で押したあとの click は、もう動かしたので使わない。指の click も detail が 0 のことがある）
-    btn.addEventListener('click', () => { if (Date.now() - downAt > 1000) fn(); });
+    // キーボード（Enter・スペース）で押したとき。指・マウスで押したあとの click は、もう動かしたので使わない
+    // （指の click も detail が 0 のことがあるので、押した・離した時刻で見分ける。長押しして離したあとの click も）
+    btn.addEventListener('click', () => { if (Date.now() - ptrAt > 700) fn(); });
   }
   /* 📷 写真：いまのコマを、そのままの大きさの JPEG に。iPhone・iPad は共有（「画像を保存」で写真アプリへ）、ほかはダウンロード。
      （Safari は、操作の直後でないと共有を開かないので、絵を作るところから共有まで、待たずに続けて行う） */

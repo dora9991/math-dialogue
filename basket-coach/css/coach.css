@@ -750,3 +750,9 @@ body.onboarding main { padding-bottom: 48px; }
   .toast, .celebrate.pop > *, .confetti i { animation: none; }
 }
 
+
+/* クラブで使う アプリ（js/links.js：タップ記録・保護者会。べつのページ） */
+.go-out { font-size: 0.8em; color: var(--ink-2); margin-left: 4px; font-weight: 600; }
+.cta-link { background: linear-gradient(160deg, var(--sheet-2), var(--sheet) 70%); }
+.cta-link > .ic { color: var(--ink-2); }
+.more-sub { margin-top: 8px; }

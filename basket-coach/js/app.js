@@ -382,6 +382,9 @@
 
       ${BC.club && BC.club.homeHTML ? BC.club.homeHTML() : ''}
 
+      ${BC.links && BC.links.forAdult() ? `<section class="sec links-sec"><h2 class="sec-h">${ic('whistle')}クラブで使う（コーチ・保護者の方）</h2>
+        <div class="duo">${BC.links.ITEMS.map((it) => `<a class="card cta cta-link" href="${BC.links.href(it, 'grow-home')}" data-link="${it.key}">${ic(it.icon)}<b>${esc(it.title)}<span class="go-out" aria-label="（べつのページ）">↗</span></b><small>${esc(it.sub)}</small></a>`).join('')}</div></section>` : ''}
+
       <section class="card ask">
         <h2 class="sec-h">${ic('chat')}なやみを書いてね</h2>
         <form class="ask-form" data-form="ask" autocomplete="off"><input name="q" type="search" placeholder="例：シュートが入らない" aria-label="なやみ" enterkeyhint="search"><button type="submit" class="btn primary">${ic('search')}<span class="sr">さがす</span></button></form>
@@ -666,7 +669,8 @@
         ${row('#aid', 'aid', 'ケガ・テーピング', '手当てのしかた・テーピングの巻きかた（図つき）')}
         ${row('#settings', 'sliders', 'せってい', 'ニックネーム・学年・目標・練習する場所・画面の色・データ')}
         ${row('#about', 'whistle', 'おとなの方へ', 'このアプリの使い方・データの保存について')}
-      </div>`, 'more', 'page-more');
+      </div>
+      ${BC.links ? `<h2 class="sec-h more-sub">クラブで使う アプリ</h2><p class="small">べつのページが開きます。スマホの「戻る」で、ここに戻れます。</p><div class="rows">${BC.links.rows(row, 'grow-more')}</div>` : ''}`, 'more', 'page-more');
   }
   function renderAbout() {
     const L = BC.lists;
@@ -679,6 +683,7 @@
           <li><b>チェック</b>：スマホでとった動画から、AI（MediaPipe）が体の点を読み、ひざ・ひじの角度や腰の高さ・タイミングを ◎○△ で示します。チームの動き（広がり・ペイントの人数など）も調べられます。<b>動画は端末の中だけで処理し、どこにも送りません。</b>AI の部品（約10MB）だけ、はじめにインターネットから読みこみます。</li>
           <li><b>きろく</b>：経験値・レベル・つづけた日数・バッジで、がんばりが目に見えるようにしています。点数や順位で他の人とくらべる機能はありません。</li>
           <li><b>ケガ・テーピング</b>：手当ての基本と、テーピングの巻きかたを図で示します。診断や治療の代わりにはなりません。</li>
+          <li><b>クラブで使う アプリ</b>：試合の記録と場面の切り出し（バスケ タップ記録）、保護者会（部活保護者会アプリ：予定・出欠・配車・会計など）へは、このアプリから行けます（ホームの「クラブで使う」はコーチと おとなの方だけ・「もっと」・コーチのページ）。どれも べつのページで、記録は それぞれのアプリに保存されます。タップ記録からは「バスケ・グロウ」で ここに戻れます。</li>
         </ul>
         <p>記録や設定は、このブラウザの中（localStorage）だけに保存されます。アカウントはなく、外へ送る通信はありません（AI の部品とフォントの読みこみを除く）。</p>
       </div>`, 'more', 'page-more');

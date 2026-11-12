@@ -363,3 +363,10 @@ a.btn { text-decoration: none; }
   .actions .wide { display: none; }
   .actions .btn { padding: 6px 10px; }
 }
+
+/* ほかのアプリ：場面の切り出しはタップ記録の中でもできる・入口（バスケ・グロウ）へ */
+.hubbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 6px 16px; background: var(--panel); border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.hubbar .hb-text { flex: 1 1 280px; min-width: 0; }
+.hubbar .hb-text b { color: var(--text); }
+.hubbar .hb-link { color: var(--accent); text-decoration: none; font-weight: 700; white-space: nowrap; }
+@media (max-width: 520px) { .hubbar .hb-wide { display: none; } .hubbar { padding: 5px 12px; } }

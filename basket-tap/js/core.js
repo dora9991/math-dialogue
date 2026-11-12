@@ -20,6 +20,9 @@
        type: 下の TYPES の id。'period' はピリオドの始まり（period: 番号。team・no はなし）
        team: 0 = 自分・1 = 相手・null = チームなし（画面の下の「パスミス」「★ あとで見る」。だれのかは決めない）
        no  : 背番号（文字列。'0' と '00' は別）| null（だれか分からない・チームなし）
+       x, y: シュートの場所（2P・3P の成功と失敗だけ。なくてよい）。ハーフコートの中の位置（0〜1・0.001 まで）。
+             x：ゴールを向いて 左のサイドライン 0 … 右のサイドライン 1 / y：ゴールの後ろのベースライン 0 … センターライン 1
+     court: 'std' | 'mini'（シュートの場所を記録したときのコート。ミニバスは 3P の線なし。なくてよい）
    }
    得点のプレー（2P・3P・FT）には、かならずチームが付く。
    ピリオドは、イベントには持たせず「その時刻より前の、いちばん新しい 'period'」で決める（periodAt）。
@@ -503,6 +506,75 @@
   BT.hasMisses = (game) => (game.events || []).some((e) => { const d = BT.TYPE[e.type]; return d && d.shot && !d.made; });
   BT.isEmpty = (s) => STAT_KEYS.every((k) => !s[k]);
 
+  /* ---------- シュートの場所 ----------
+     ハーフコート（FIBA）：幅 15 m・奥行き 14 m。ゴールの中心はベースラインから 1.575 m（まん中）。
+     3P の線：ゴールの中心から 6.75 m の弧と、サイドラインから 0.9 m 内側のまっすぐな線（ベースラインから弧とつながる所まで）。
+     ペイント：幅 4.9 m × 奥行き 5.8 m・フリースローサークル 半径 1.8 m・ノーチャージの半円 半径 1.25 m。
+     場所は x・y（0〜1）で持ち、メートルにするときは x×15・y×14。 */
+  const CT = BT.COURT = { W: 15, D: 14, bx: 7.5, by: 1.575, r3: 6.75, c3: 0.9, pw: 4.9, pd: 5.8, ftR: 1.8, ncR: 1.25 };
+  CT.y3 = CT.by + Math.sqrt(CT.r3 * CT.r3 - (CT.bx - CT.c3) * (CT.bx - CT.c3));      // コーナーのまっすぐな線が、弧とつながる所（約 2.99 m）
+  BT.SHOT_LOC_TYPES = ['fg2', 'fg3', 'fg2x', 'fg3x'];        // 場所を記録するプレー（フリースローは、いつも同じ所なので聞かない）
+  BT.isLocShot = (type) => BT.SHOT_LOC_TYPES.includes(type);
+  BT.hasLoc = (e) => !!(e && BT.isLocShot(e.type) && okLoc(e.x) && okLoc(e.y));
+  function okLoc(v) { return typeof v === 'number' && isFinite(v) && v >= 0 && v <= 1; }
+  BT.locRound = (v) => Math.round(BT.clamp(v, 0, 1) * 1000) / 1000;
+  BT.SECTOR = 22.5;          // 「正面」の角度の幅（ゴールの真上から左右に 22.5°）。3P はさらに 67.5° より外を「コーナー」
+  /* ゾーン（表に並べる順）。court：'std'（3P の線あり）| 'mini'（ミニバス：3P がないので、6.75 m より遠くは「ロング」） */
+  BT.SHOT_ZONES = function (court) {
+    const z = [['rim', 'ゴール下'], ['paint', 'ペイント'], ['midL', 'ミドル左'], ['midC', 'ミドル正面'], ['midR', 'ミドル右']];
+    if (court === 'mini') z.push(['longL', 'ロング左'], ['longC', 'ロング正面'], ['longR', 'ロング右']);
+    else z.push(['c3L', '3P 左コーナー'], ['w3L', '3P 左ウィング'], ['t3', '3P トップ'], ['w3R', '3P 右ウィング'], ['c3R', '3P 右コーナー']);
+    return z.map(([id, label]) => ({ id, label }));
+  };
+  /* 場所 → ゾーン { id, label }。決め方（メートル。dx・dy はゴールの中心から、d はその距離、a はゴールの真上（センターの向き）からの角度。右が＋）：
+       1. d ≦ 1.25（ノーチャージの半円の中）            → ゴール下
+       2. ペイントの中（|dx| ≦ 2.45 かつ y ≦ 5.8。線の上も中） → ペイント
+       3. 3P の外（std）：y ≦ 約 2.99 なら |dx| > 6.6、それより上なら d > 6.75（線の上は 2P）
+            |a| ≦ 22.5° → 3P トップ・|a| ≦ 67.5° → 3P 左／右ウィング・それより外（ゴールより下も） → 3P 左／右コーナー
+          mini：d > 6.75 → ロング（|a| ≦ 22.5° は正面、ほかは左／右）
+       4. そのほか → ミドル（|a| ≦ 22.5° は正面、ほかは左／右） */
+  BT.shotZone = function (x, y, court) {
+    const X = BT.clamp(+x || 0, 0, 1) * CT.W, Y = BT.clamp(+y || 0, 0, 1) * CT.D;
+    const dx = X - CT.bx, dy = Y - CT.by, d = Math.hypot(dx, dy);
+    const a = Math.atan2(dx, dy) * 180 / Math.PI;          // 0：真上・+90：右のベースラインの向き
+    const side = (l, c, r) => (Math.abs(a) <= BT.SECTOR ? c : a < 0 ? l : r);
+    let id;
+    if (d <= CT.ncR) id = 'rim';
+    else if (Math.abs(dx) <= CT.pw / 2 && Y <= CT.pd) id = 'paint';
+    else if (court === 'mini') id = d > CT.r3 ? side('longL', 'longC', 'longR') : side('midL', 'midC', 'midR');
+    else if (Y <= CT.y3 ? Math.abs(dx) > CT.bx - CT.c3 : d > CT.r3) id = Math.abs(a) <= BT.SECTOR ? 't3' : Math.abs(a) <= 90 - BT.SECTOR ? (a < 0 ? 'w3L' : 'w3R') : (a < 0 ? 'c3L' : 'c3R');
+    else id = side('midL', 'midC', 'midR');
+    return BT.SHOT_ZONES(court).find((z) => z.id === id);
+  };
+  /* 試合のコート（場所を記録したときのもの。なければ 'std'） */
+  BT.courtOf = (game, court) => (court === 'mini' || court === 'std' ? court : game && game.court === 'mini' ? 'mini' : 'std');
+  /* シュートの場所の集計。opt：{ team（0・1。なければ両方）, no（背番号。なければ全員）, court }
+     → { court, zones: [{ id, label, made, att }]（表の順）, byZone: { id: 同じもの }, shots: [{ e, x, y, made, zone }]（場所のあるもの）, located, unlocated } */
+  BT.shotStats = function (game, opt) {
+    const o = opt || {};
+    const court = BT.courtOf(game, o.court);
+    const zones = BT.SHOT_ZONES(court).map((z) => ({ id: z.id, label: z.label, made: 0, att: 0 }));
+    const byZone = {};
+    zones.forEach((z) => { byZone[z.id] = z; });
+    const shots = [];
+    let unlocated = 0;
+    (game.events || []).forEach((e) => {
+      if (!BT.isLocShot(e.type)) return;
+      if ((o.team === 0 || o.team === 1) && e.team !== o.team) return;
+      if (o.no != null && e.no !== String(o.no)) return;
+      if (!BT.hasLoc(e)) { unlocated++; return; }
+      const made = !!BT.TYPE[e.type].made;
+      const zone = BT.shotZone(e.x, e.y, court);
+      const z = byZone[zone.id];
+      z.att++;
+      if (made) z.made++;
+      shots.push({ e, x: e.x, y: e.y, made, zone });
+    });
+    return { court, zones, byZone, shots, located: shots.length, unlocated };
+  };
+  /* 場所を記録したシュートがあるか（あれば、集計に「シュートの場所」・CSV に場所の列） */
+  BT.hasShotLoc = (game) => (game.events || []).some(BT.hasLoc);
+
   /* ---------- 名前 ---------- */
   /* チームの呼び名（名前がなければ「自分」「相手」。チームなし（null）は空） */
   BT.teamName = (game, tm) => { if (tm !== 0 && tm !== 1) return ''; const t = game.teams[tm] || {}; return (t.name || '').trim() || (tm ? '相手' : '自分'); };
@@ -547,13 +619,17 @@
   /* 記録の一覧（CSV）。Excel で文字化けしないよう、先頭の BOM は呼び出し側で付ける */
   BT.eventsCSV = function (game) {
     const rows = [['No', '時刻', 'スタートからの秒', 'ピリオド', 'チーム', '背番号', '名前', 'プレー', '得点', `${BT.teamName(game, 0)}の得点`, `${BT.teamName(game, 1)}の得点`]];
+    // シュートの場所を記録した試合だけ、いちばん後ろに場所の列（前からの列の位置は変えない）
+    const loc = BT.hasShotLoc(game), court = BT.courtOf(game);
+    if (loc) rows[0].push('場所X', '場所Y', '場所（ゾーン名）');
+    const locCells = (e) => (!loc ? [] : BT.hasLoc(e) ? [e.x, e.y, BT.shotZone(e.x, e.y, court).label] : ['', '', '']);
     const s = [0, 0];
     let n = 0;
     BT.sorted(game).forEach((e) => {
-      if (e.type === 'period') { rows.push(['', BT.fmtTime(e.t), e.t, BT.periodLabel(e.period), '', '', '', `${BT.periodLabel(e.period)} 開始`, '', s[0], s[1]]); return; }
+      if (e.type === 'period') { rows.push(['', BT.fmtTime(e.t), e.t, BT.periodLabel(e.period), '', '', '', `${BT.periodLabel(e.period)} 開始`, '', s[0], s[1], ...locCells(e)]); return; }
       const d = BT.TYPE[e.type] || { label: e.type, pts: 0 };
       if (e.team != null) s[e.team] += d.pts || 0;
-      rows.push([++n, BT.fmtTime(e.t), e.t, BT.periodLabel(BT.periodAt(game, e.t)), BT.teamName(game, e.team), e.no != null ? e.no : '', e.no != null ? BT.playerName(game, e.team, e.no) : '', d.label, d.pts || '', s[0], s[1]]);
+      rows.push([++n, BT.fmtTime(e.t), e.t, BT.periodLabel(BT.periodAt(game, e.t)), BT.teamName(game, e.team), e.no != null ? e.no : '', e.no != null ? BT.playerName(game, e.team, e.no) : '', d.label, d.pts || '', s[0], s[1], ...locCells(e)]);
     });
     return csv(rows);
   };
@@ -593,6 +669,13 @@
     }
     const notes = BT.cleanNotes(obj.notes);
     if (notes.length) g.notes = notes;
+    if (obj.court === 'std' || obj.court === 'mini') g.court = obj.court;
+    // 場面の切り出し（動画ごとの時刻あわせ・絞り込み。js/trim.js）
+    if (obj.trims && typeof obj.trims === 'object' && !Array.isArray(obj.trims)) {
+      const tr = {};
+      Object.keys(obj.trims).slice(0, 20).forEach((k) => { const v = obj.trims[k]; if (v && typeof v === 'object' && Array.isArray(v.anchors)) tr[String(k).slice(0, 200)] = JSON.parse(JSON.stringify(v)); });
+      if (Object.keys(tr).length) { g.trims = tr; g.trimmed = !!obj.trimmed; if (typeof obj.trimLast === 'string') g.trimLast = obj.trimLast.slice(0, 200); }
+    }
     // 記録の id は、そのまま使えるもの（e＋数・重ならない）は残し、そうでないものに新しい番号を付ける
     const okId = (id) => typeof id === 'string' && /^e\d{1,7}$/.test(id);
     g.seq = obj.events.reduce((m, e) => Math.max(m, e && okId(e.id) ? Number(e.id.slice(1)) : 0), 0);
@@ -603,6 +686,8 @@
       if (e.type === 'period') { if (isFinite(e.period) && e.period >= 1) ev = BT.addEvent(g, { t: e.t, type: 'period', period: Math.min(20, Math.round(e.period)) }); }
       else if (BT.TYPE[e.type]) ev = BT.addEvent(g, { t: e.t, type: e.type, team: e.team, no: e.no != null ? BT.normNo(e.no) : null });
       if (!ev) return;
+      // シュートの場所：2P・3P の成功と失敗で、0〜1 の数のときだけ残す
+      if (BT.isLocShot(ev.type) && okLoc(e.x) && okLoc(e.y)) { ev.x = BT.locRound(e.x); ev.y = BT.locRound(e.y); }
       if (okId(e.id) && !used.has(e.id)) { g.seq--; ev.id = e.id; }      // addEvent が進めた番号を戻す
       while (used.has(ev.id)) ev.id = 'e' + (++g.seq);
       used.add(ev.id);
@@ -621,7 +706,7 @@
 
   /* 試合の一覧に出す短い情報 */
   BT.summary = function (game) {
-    return { id: game.id, title: game.title || '', date: game.date, startedAt: game.startedAt, endedAt: game.endedAt, names: [BT.teamName(game, 0), BT.teamName(game, 1)], colors: [game.teams[0].color, game.teams[1].color], score: BT.score(game), n: (game.events || []).filter((e) => e.type !== 'period').length, videos: (game.videos || []).filter((v) => !v.gone).length, rv: BT.isReview(game), at: Date.now() };
+    return { id: game.id, title: game.title || '', date: game.date, startedAt: game.startedAt, endedAt: game.endedAt, names: [BT.teamName(game, 0), BT.teamName(game, 1)], colors: [game.teams[0].color, game.teams[1].color], score: BT.score(game), n: (game.events || []).filter((e) => e.type !== 'period').length, videos: (game.videos || []).filter((v) => !v.gone).length, rv: BT.isReview(game), trim: !!game.trimmed, demo: !!game.demo || undefined, at: game.updatedAt || Date.now() };
   };
   /* 動画の情報をそろえる（読み込んだファイル用。形の合わないものは捨てる） */
   BT.cleanVideos = function (list) {
