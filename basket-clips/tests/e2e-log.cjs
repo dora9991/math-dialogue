@@ -358,6 +358,22 @@ const anchors = (page) => page.evaluate(() => BS.app.S.st.sync && BS.app.S.st.sy
       ok(Math.abs((await tnow()) - 299.5 / 30) < 0.002, '◂ 2回：2コマ戻る（9.983）', await tnow());
       await page.keyboard.press('Period'); await sleep(250);
       ok(Math.abs((await tnow()) - 300.5 / 30) < 0.002, '「.」キーでも1コマ進む', await tnow());
+      // 長押しして離す：続けて進み、離したあとの click では、もう動かない（指の click は detail が 0 のことがある）
+      const hold = await page.evaluate(async () => {
+        const b = document.querySelector('#btnNextF'), wait = (ms) => new Promise((res) => setTimeout(res, ms));
+        const t0 = BS.app.S.media.time;
+        b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch', button: 0, pointerId: 5 }));
+        await wait(1300);
+        b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch', pointerId: 5 }));
+        await wait(350);
+        const t1 = BS.app.S.media.time;
+        b.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 0 }));
+        await wait(350);
+        return { moved: Math.round((t1 - t0) * 30), extra: Math.round((BS.app.S.media.time - t1) * 30) };
+      });
+      ok(hold.moved >= 4 && hold.extra === 0, `▸ を長押しすると続けて進み（${hold.moved} コマ）、離したあとは余分に動かない`, hold);
+      await page.evaluate(() => BS.app.seek(300.5 / 30));
+      await sleep(250);
       await page.evaluate(() => BS.app.S.media.play());
       await sleep(300);
       await page.click('#btnNextF'); await sleep(300);

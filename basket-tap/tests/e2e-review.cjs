@@ -3,7 +3,7 @@
 //     dev   … basket-tap/index.html（js/ と css/ を読む版）
 //     built … public/basket-tap/index.html（1ファイル版。公開するもの）
 //   SHOTS=フォルダ を付けると、画面の写真をそこに保存する
-// テスト用の動画は ffmpeg で作る（120 秒・30 コマ/秒・VP9 の MP4 と、10 秒の短い動画）。作業フォルダは WORK（既定は一時フォルダの basket-tap-e2e/）。
+// テスト用の動画は ffmpeg で作る（120 秒・30 コマ/秒・VP9 の MP4 と、10 秒の短い動画・60 コマ/秒の動画・縦長の動画）。作業フォルダは WORK（既定は一時フォルダの basket-tap-e2e/）。
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -20,12 +20,16 @@ const ok = (c, name, extra) => { if (c) { pass++; console.log('  ok  ', name); }
 const shot = async (page, name) => { if (SHOTS) { fs.mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, name + '.png'), animations: 'disabled' }); } };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function makeVideo(name, sec) {
+let FFMPEG = true;
+try { execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' }); } catch (e) { FFMPEG = false; }
+/* テスト用の動画（size・rate を変えた動画は、ffmpeg があるときだけ。ないときは null） */
+async function makeVideo(name, sec, size, rate) {
   const file = path.join(WORK, name);
   if (!fs.existsSync(file)) {
     fs.mkdirSync(WORK, { recursive: true });
-    try { execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=size=640x360:rate=30', '-t', String(sec), '-c:v', 'libvpx-vp9', '-b:v', '300k', '-deadline', 'realtime', '-cpu-used', '8', '-pix_fmt', 'yuv420p', file]); }
-    catch (e) { await require('./tools/chrome-video.cjs').chromeVideo(chromium, file, sec); }      // ffmpeg がないとき：Chrome で作る（H.264）
+    if (FFMPEG) execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'lavfi', '-i', `testsrc2=size=${size || '640x360'}:rate=${rate || 30}`, '-t', String(sec), '-c:v', 'libvpx-vp9', '-b:v', '300k', '-deadline', 'realtime', '-cpu-used', '8', '-pix_fmt', 'yuv420p', file]);
+    else if (size || rate) return null;
+    else await require('./tools/chrome-video.cjs').chromeVideo(chromium, file, sec);      // ffmpeg がないとき：Chrome で作る（H.264）
   }
   return file;
 }
@@ -72,6 +76,7 @@ async function layoutCheck(page) {
   const root = MODE === 'built' ? path.join(__dirname, '..', '..', 'public', 'basket-tap') : path.join(__dirname, '..');
   if (MODE === 'built' && !fs.existsSync(path.join(root, 'index.html'))) { console.log('public/basket-tap/index.html がありません。先に node basket-tap/build.mjs'); process.exit(1); }
   const VID = await makeVideo('rv120.mp4', 120), SHORT = await makeVideo('rv10.mp4', 10);
+  const F60 = await makeVideo('rv60fps.mp4', 20, '320x180', 60), TALL = await makeVideo('tall.mp4', 30, '360x640', 30);
   const srv = await start(0, root);
   const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required', '--mute-audio'] });
   try {
@@ -296,6 +301,130 @@ async function layoutCheck(page) {
     ok((await page.textContent('#gameList')).includes('🎬 動画を見ながら記録') && await page.evaluate(() => !BT.app.S.rv), 'ホームの一覧に「🎬 動画を見ながら記録」・動画は外す');
     ok(errors.length === 0, 'ページのエラーがない', errors.slice(0, 3));
     await ctx.close();
+
+    // 使ってみて見つけた不具合が、戻っていないか
+    console.log('\n■ 細かい動き（長押し・小窓を開く・選びかけ・終えたあと・背番号のないチーム・コマ数・縦長の動画）');
+    {
+      const P = await openPage(browser, srv.url, { width: 390, height: 844 });
+      const pg = P.page;
+      await pg.evaluate(() => localStorage.clear());
+      await pg.reload();
+      await pg.waitForFunction(() => window.BT && BT.app && document.querySelector('#btnNewReview'));
+      await pg.tap('#btnNewReview');
+      await pg.tap('#team0 [data-preset="4-18"]');          // 相手は背番号なし
+      await pickFile(pg, '#btnToReview', VID);
+      await ready(pg);
+      await sleep(200);
+      // コマ送りを長押しして離す：離したあとの click で、もう1コマ動かない
+      await pg.evaluate(() => BT.app.rvSeekTo(12));
+      const hold = await pg.evaluate(async () => {
+        const b = document.querySelector('#rvNext'), v = BT.app.S.rv.el;
+        b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch', button: 0, pointerId: 5 }));
+        await new Promise((res) => setTimeout(res, 1300));
+        b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch', pointerId: 5 }));
+        const t1 = v.currentTime;
+        b.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 0 }));
+        return { moved: Math.round((t1 - 12) * 30), extra: Math.round((v.currentTime - t1) * 30) };
+      });
+      ok(hold.moved >= 5 && hold.extra === 0, `コマ送りを長押しすると続けて進み（${hold.moved} コマ）、離したあとは余分に動かない`, hold);
+      // 背番号のないチーム：プレーを押すだけで記録
+      await pg.evaluate(() => BT.app.rvSeekTo(10));
+      ok(await pg.isHidden('#pick1 .pnos'), '背番号のないチームには、番号のボタンを出さない');
+      await pg.tap('#pick1 [data-ptype="fg3"]');
+      let gg = await game(pg);
+      ok(plays(gg).length === 1 && plays(gg)[0].team === 1 && plays(gg)[0].no === null && plays(gg)[0].type === 'fg3' && plays(gg)[0].t === 10 && await pg.isHidden('#pickMsg'), '背番号のないチームは、プレーを押すだけでチームの記録（3P・0:10）', plays(gg));
+      // 再生中に記録を押す：小窓の間は止まる →「この場面を見る」は必ず再生
+      await pg.evaluate(() => BT.app.rvSeekTo(30));
+      await pg.tap('#pick0 [data-ptype="fg2"]');
+      await pg.tap('#pick0 [data-pno="7"]');
+      await pg.tap('#rvPlay');
+      await sleep(400);
+      await pg.tap('#lastEv');
+      ok(await pg.evaluate(() => BT.app.S.rv.el.paused), '再生中に「記録を直す」を開くと、動画は止まる（小窓で映像が隠れるので）');
+      await pg.tap('#btnEvSee');
+      await sleep(700);
+      let sv = await pg.evaluate(() => ({ paused: BT.app.S.rv.el.paused, t: BT.app.S.rv.el.currentTime }));
+      ok(!sv.paused && sv.t > 28 && sv.t < 30, '「🎬 この場面を見る」で、2秒前から再生する', sv);
+      await pg.tap('#btnMenu');
+      await sleep(100);
+      ok(await pg.evaluate(() => BT.app.S.rv.el.paused), 'メニューを開いても止まる');
+      await pg.evaluate(() => BT.ui.closeSheet());
+      // 選びかけを放っておく：動画が大きく動いたら、やめる
+      await pg.evaluate(() => BT.app.rvSeekTo(40));
+      await pg.tap('#pick0 [data-ptype="fg2"]');
+      await pg.evaluate(() => BT.app.rvSeekTo(55));
+      await sleep(450);
+      ok(await pg.isVisible('#pickMsg'), '選びかけは、動画を 15 秒動かしても残る');
+      await pg.evaluate(() => BT.app.rvSeekTo(100));
+      await sleep(450);
+      ok(await pg.isHidden('#pickMsg') && (await pg.textContent('#lastbar')).includes('選びかけ（2P）をやめました'), '選びかけのまま動画が 20 秒より大きく動いたら、やめて知らせる', await pg.textContent('#lastbar'));
+      await pg.tap('#pick0 [data-pno="5"]');
+      await pg.tap('#pick0 [data-ptype="fg3"]');
+      gg = await game(pg);
+      const lastP = plays(gg).pop();
+      ok(plays(gg).length === 3 && lastP.type === 'fg3' && lastP.no === '5' && lastP.t === 100, '前の選びかけ（2P）は、あとの「5」→「3P」とくっつかない（#5 の 3P・1:40 だけ）', plays(gg));
+      // 終えたあとの札：得点は最後まで
+      await pg.tap('#btnMenu');
+      await pg.click('.menu .mitem:has-text("記録を終える")');
+      await pg.click('.sheet-foot .btn.primary');
+      await sleep(300);
+      ok(await pg.evaluate(() => BT.app.S.view) === 'game', '「記録を終える」で試合のページ');
+      await pg.evaluate(() => BT.app.go('live'));          // 記録の画面に戻ると、終えた札
+      await pg.evaluate(() => BT.app.rvSeekTo(5));
+      await sleep(300);
+      ok((await pg.textContent('#endScore')).includes('5 − 3') && (await pg.textContent('#score0')) === '0' && (await pg.textContent('#cover')).includes('記録を終えました'), '終えたあとの札は、最後までの得点（5 − 3。上の帯は、いまの時刻までの 0 − 0）', await pg.textContent('#endScore'));
+      await pg.click('#cover .btn:has-text("続きを記録する")');
+      ok(!(await pg.textContent('#lastbar')).includes('時計は進んだまま'), '「続きを記録する」のお知らせ（時計の話はしない）', await pg.textContent('#lastbar'));
+      ok(P.errors.length === 0, 'ページのエラーがない', P.errors.slice(0, 3));
+      await P.ctx.close();
+
+      if (!F60 || !TALL) console.log('  （ffmpeg がないので、60 コマ/秒の動画・縦長の動画の確認はとばします）');
+      // 1秒のコマ数：×2 では測らない（コマが飛んで、半分に見えるため）。×1 で再生したときに測る
+      if (F60) {
+      const Q = await openPage(browser, srv.url, { width: 390, height: 844 });
+      await Q.page.evaluate(() => localStorage.clear());
+      await Q.page.reload();
+      await Q.page.waitForFunction(() => window.BT && BT.app && document.querySelector('#btnNewReview'));
+      await Q.page.tap('#btnNewReview');
+      await pickFile(Q.page, '#btnToReview', F60);
+      await ready(Q.page);
+      for (let i = 0; i < 3; i++) await Q.page.tap('#rvRate');
+      await Q.page.tap('#rvPlay');
+      await sleep(1500);
+      const f2 = await Q.page.evaluate(() => BT.app.S.rv.fps);
+      await Q.page.tap('#rvRate');
+      await sleep(1800);
+      await Q.page.tap('#rvPlay');
+      const f1 = await Q.page.evaluate(() => BT.app.S.rv.fps);
+      ok(f2 === 0 && f1 === 60, '60 コマ/秒の動画：×2 の再生では測らず、×1 に戻すと 60 コマと分かる', { f2, f1 });
+      const ta = await vt(Q.page);
+      await Q.page.tap('#rvNext');
+      await sleep(200);
+      const tb = await vt(Q.page);
+      await Q.page.tap('#rvNext');
+      await sleep(200);
+      ok(Math.abs((await vt(Q.page)) - tb - 1 / 60) < 0.002 && tb > ta, 'コマ送りは 1/60 秒ずつ', { ta, tb });
+      ok(Q.errors.length === 0, 'ページのエラーがない', Q.errors.slice(0, 3));
+      await Q.ctx.close();
+      }
+
+      // 縦長の動画を、スマホの横向きで：操作のボタンがつぶれない
+      if (TALL) {
+      const T = await openPage(browser, srv.url, { width: 844, height: 390 });
+      await T.page.evaluate(() => localStorage.clear());
+      await T.page.reload();
+      await T.page.waitForFunction(() => window.BT && BT.app && document.querySelector('#btnNewReview'));
+      await T.page.tap('#btnNewReview');
+      await pickFile(T.page, '#btnToReview', TALL);
+      await ready(T.page);
+      await sleep(200);
+      const tw = await T.page.evaluate(() => ({ btn: Array.from(document.querySelectorAll('.rvctl .rvb')).map((x) => Math.round(x.getBoundingClientRect().width)), vid: (() => { const b = document.querySelector('#rvStage').getBoundingClientRect(); return [Math.round(b.width), Math.round(b.height), b.bottom <= innerHeight]; })() }));
+      ok(Math.min(...tw.btn) >= 34 && tw.vid[1] > tw.vid[0] && tw.vid[2], `縦長の動画をスマホの横向きで：映像 ${tw.vid.slice(0, 2)}・操作のボタンの幅 ${Math.min(...tw.btn)}px 以上`, tw);
+      await shot(T.page, 'review-tall-844x390');
+      ok(T.errors.length === 0, 'ページのエラーがない', T.errors.slice(0, 3));
+      await T.ctx.close();
+      }
+    }
 
     // いろいろな画面の大きさ
     console.log('\n■ 画面の大きさ（スマホの横・小さなスマホ・iPad の縦と横）');

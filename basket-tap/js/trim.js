@@ -242,18 +242,19 @@
     return seek((n + d + 0.5) / fps);
   }
   function holdRepeat(btn, fn) {
-    let timer = 0, held = false, downAt = 0;
-    const stop = () => { held = false; clearTimeout(timer); };
+    let timer = 0, held = false, ptrAt = 0;
+    const stop = () => { if (held) ptrAt = Date.now(); held = false; clearTimeout(timer); };
     btn.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       e.preventDefault();
-      held = true; downAt = Date.now();
+      held = true; ptrAt = Date.now();
       fn();
       const rep = () => { if (!held) return; Promise.resolve(fn()).then(() => { if (held) timer = setTimeout(rep, 40); }); };
       timer = setTimeout(rep, 400);
     });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => btn.addEventListener(ev, stop));
-    btn.addEventListener('click', () => { if (Date.now() - downAt > 1000) fn(); });
+    // キーボードで押したとき。指・マウスで押したあとの click は使わない（長押しして離したあとの click で、もう1コマ動かないように）
+    btn.addEventListener('click', () => { if (Date.now() - ptrAt > 700) fn(); });
   }
   function updatePlayBtn() {
     if (!T) return;

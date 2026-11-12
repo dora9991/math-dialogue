@@ -581,6 +581,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
 .pick.two .pteam { flex: 1 1 0; }
 .pteam { flex: none; min-width: 0; display: flex; flex-direction: column; background: var(--panel); border: 2px solid var(--tc); border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.35); transition: box-shadow 0.15s; }
 .pteam.armed { box-shadow: 0 0 0 3px var(--accent); }
+.pteam.teamonly .ptypes { padding-bottom: 5px; }          /* 背番号のないチーム：プレーのボタンだけ（押すとすぐ記録） */
 .ptypes { display: grid; grid-template-columns: repeat(auto-fit, minmax(52px, 1fr)); gap: 4px; padding: 5px 5px 0; }
 .pt { position: relative; height: 44px; min-width: 0; padding: 0 2px; border: 0; border-radius: 9px; color: #fff; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.22); white-space: nowrap; overflow: hidden; }
 .pt b { font-size: 17px; font-weight: 900; letter-spacing: -0.01em; }
