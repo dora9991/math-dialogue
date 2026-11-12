@@ -233,6 +233,17 @@
   function go(hash) { if (location.hash.slice(1) === hash) rerender(); else location.hash = hash; }
 
   /* ---------- ログインしていない ---------- */
+  // クラブのサーバー（club/schema.sql）が まだ入っていないか（404）。クラブのページを ひらいたときだけ 1回しらべる
+  async function serverReady() {
+    if (S.ready == null) { const j = await rpc('bg_apply_info', { p_code: 'ZZZZZZZZ' }); S.ready = !(j && j.error === 'setup'); }
+    return S.ready;
+  }
+  function probeBanner() {
+    serverReady().then((ok) => {
+      const el = document.getElementById('cl-probe');
+      if (el && !ok) el.innerHTML = `<p class="cl-msg">${ic('warn')}<span>クラブの サーバーを じゅんびしています。コーチの じゅんびが おわるまで、クラブは まだ 使えません。ほかの機能（これ1つ・れんしゅう・チェック）は いつもどおり 使えます。</span></p>`;
+    });
+  }
   function welcomePage() {
     const msg = S.msg; S.msg = '';
     paint(`<section class="cl-hero">
@@ -241,6 +252,7 @@
         <p>コーチが つくった <b>級（きゅう）</b>に チャレンジ！ 写真をつけて送ると、コーチが見て「合格」を返してくれます。クラブの なかまと、がんばったことを 見せあって「いいね」できます。</p>
       </section>
       ${msg ? `<p class="cl-msg">${esc(msg)}</p>` : ''}
+      <div id="cl-probe"></div>
       <section class="card">
         <h2 class="sec-h">${ic('person')}子どもの ログイン</h2>
         <p class="small">コーチから もらった ログインカードを 見て 入れてね。</p>
@@ -256,6 +268,7 @@
         <div class="btns"><a class="btn" href="#club/coach">コーチとして ログイン</a><a class="btn" href="#club/create">クラブを つくる</a></div>
         <p class="small">子どものアカウントは、コーチがつくります（メールアドレスは いりません）。記録や写真は、クラブの中だけで見られます。</p>
       </section>`);
+    probeBanner();
   }
   function coachLoginPage() {
     paint(`${backLink('#club')}<h1 class="page-h">コーチの ログイン</h1>
