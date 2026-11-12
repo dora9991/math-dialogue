@@ -275,7 +275,7 @@
         hh('ul', { class: 'lic-list' },
           hh('li', null, '🎬 記録した場面を、選手ごと・プレーごとに見られます'),
           hh('li', null, '🎞 場面をつなげて、1本の動画にできます'),
-          hh('li', null, '📍 これから増える機能（シュートの場所 など）も使えます')),
+          hh('li', null, '📍 シュートの場所を記録して、場所ごとの数を見られます')),
         hh('p', { class: 'lic-used' }, 'お試しの 3 試合を使いました'),
         hh('ol', { class: 'lic-games', id: 'licGames' }, games.map((x) => hh('li', null, x.name || '試合'))),
         hh('p', { class: 'note lic-free' }, '記録・集計・CSV の書き出し・クラウド・撮影は、これからもずっと無料です。人数はかぞえません（クラブで 1 つのコード）。'),
@@ -294,7 +294,7 @@
     if (s.licensed) body.push(hh('p', { class: 'lic-stat', id: 'licStat' }, `使えます：${clubLine(s)}`));
     else body.push(hh('p', { class: 'lic-stat', id: 'licStat' }, s.trialLeft > 0 ? `お試し：あと ${s.trialLeft} 試合（使った試合 ${s.trialUsed} / ${lic.TRIAL_MAX}）` : 'お試しの 3 試合を使いました'));
     if (note) body.push(hh('p', { class: 'lic-msg ' + (s.licensed && !s.expired ? 'warnc' : 'bad'), id: 'licNote' }, note));
-    body.push(hh('p', { class: 'note' }, '記録・集計・CSV・クラウド・撮影は、ずっと無料です。場面を見る・動画にする機能が、場面パックです（クラブで 年 3万円）。'));
+    body.push(hh('p', { class: 'note' }, '記録・集計・CSV・クラウド・撮影は、ずっと無料です。場面を見る・動画にする機能と、シュートの場所が、場面パックです（クラブで 年 3万円）。'));
     const row = [hh('button', { class: 'btn small', id: 'licSetEnter', onclick: () => ui.codeSheet(reopen, reopen) }, '🔑 購入コードを入れる')];
     if (s.club || s.licensed || s.expired || s.revoked) row.push(hh('button', { class: 'btn small', id: 'licSetClear', onclick: () => BT.ui.confirm('コードを外しますか？', 'この端末で場面パックが使えなくなります。コードは、あとでまた入れられます。', '外す', () => { lic.clear(); if (reopen) reopen(); }, true) }, 'コードを外す'));
     body.push(hh('div', { class: 'row' }, row));

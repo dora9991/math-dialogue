@@ -885,3 +885,62 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
 .lic-stat { margin: 0; font-size: 14px; }
 .sheet-card.lic-sheet .sheet-foot .btn { min-height: 46px; font-size: 15px; padding: 8px 16px; }
 /* ===== 場面パック ここまで ===== */
+
+/* ---------- シュートの場所（設定でオンのとき。コートの図は js/shot.js の SVG） ----------
+   場所を聞く小窓（shotsheet）は、スクロールなしで1画面に入るよう、コートの大きさを画面の高さと幅から決める。
+   横長で低い画面（スマホの横向き）は、コートの右に「あとで」 */
+:root {
+  --court-bg: #f1e2c4; --court-paint: #e6cc9c; --court-line: #6b4f2a; --court-ring: #e2572b; --court-ink: #111111; --court-halo: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --court-bg: #3a3123; --court-paint: #4a3d29; --court-line: #e3d3b0; --court-ring: #ff7a45; --court-ink: #ffffff; --court-halo: rgba(255, 255, 255, 0.85); }
+}
+:root[data-theme="dark"] { --court-bg: #3a3123; --court-paint: #4a3d29; --court-line: #e3d3b0; --court-ring: #ff7a45; --court-ink: #ffffff; --court-halo: rgba(255, 255, 255, 0.85); }
+.court { display: block; -webkit-user-select: none; user-select: none; }
+.court.tappable { cursor: crosshair; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.court .cf { fill: var(--court-bg); }
+.court .cpaint { fill: var(--court-paint); }
+.court .cl { fill: none; stroke: var(--court-line); stroke-width: 1.5; stroke-linejoin: round; }
+.court .cl.dash { stroke-dasharray: 4 3; }
+.court .cl.c3 { stroke-width: 2.4; }
+.court .cl.board { stroke-width: 3; }
+.court .ring { fill: none; stroke: var(--court-ring); stroke-width: 2; }
+.court .mk.halo { fill: var(--court-halo); }
+.court .mk.made { stroke: #111111; stroke-width: 1.6; }
+.court .mk.missu { fill: none; stroke: var(--court-ink); stroke-width: 5; stroke-linecap: round; }
+.court .mk.miss { fill: none; stroke-width: 2.6; stroke-linecap: round; }
+.sheet-card.shotsheet { max-height: 96vh; max-height: 96dvh; }
+.sheet-card.shotsheet header { padding: 6px 12px 6px 16px; }
+.sheet-card.shotsheet header .x { min-height: 34px; }
+.sheet-card.shotsheet .sheet-body { padding: 8px 16px calc(10px + env(safe-area-inset-bottom)); overflow: hidden; }
+.shotpick { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.shotcourt svg { height: min(calc(96vh - 190px), calc((100vw - 34px) * 14.5 / 15.5), 540px); height: min(calc(96dvh - 190px), calc((100vw - 34px) * 14.5 / 15.5), 540px); width: auto; aspect-ratio: 15.5 / 14.5; border-radius: 6px; }
+.shotside { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 360px; }
+.shotside .note { margin: 0; text-align: center; }
+.shotside .btn { min-height: 44px; font-size: 16px; }
+.shotwait { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.shotwait i { display: block; height: 100%; background: var(--accent); transform-origin: left center; animation: shotwait linear forwards; }
+@keyframes shotwait { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (orientation: landscape) and (max-height: 500px) {
+  .shotpick { flex-direction: row; align-items: center; justify-content: center; gap: 14px; }
+  .shotcourt svg { height: calc(96vh - 66px); height: calc(96dvh - 66px); }
+  .shotside { width: 170px; }
+}
+/* 記録を直す：場所の欄 */
+.locrow { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.loccourt svg { width: min(240px, 62vw); height: auto; border-radius: 6px; }
+/* 記録の一覧：ゾーンの名前（プレーの下に小さく） */
+.lrow .llabel { min-width: 0; }
+.lrow .lzone { display: block; font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 集計：シュートの場所 */
+.shotstats .row { margin: 6px 0; }
+.shotstats .btn .chip { margin-right: 4px; }
+.shotgrid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 14px; align-items: start; margin-top: 6px; }
+.shotchart svg { width: 100%; height: auto; max-width: 340px; margin: 0 auto; border-radius: 6px; }
+.zones th, .zones td { padding: 5px 8px; }
+.zones tbody th, .zones thead th:first-child { text-align: left; }
+.zones tbody th { font-weight: 700; }
+.zones tr.zero th, .zones tr.zero td { color: var(--muted); font-weight: 400; }
+.zones tr.tot th, .zones tr.tot td { font-weight: 800; border-top: 2px solid var(--line2); }
+@media (max-width: 600px) { .shotgrid { grid-template-columns: minmax(0, 1fr); } }
+/* ---------- シュートの場所 ここまで ---------- */

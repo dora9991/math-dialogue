@@ -192,6 +192,15 @@ async function setLic(page, patch) {
     const n0 = await evN();
     await page.tap('#panel0 .prow[data-no="5"] .pb[data-type="fg3"]');
     ok((await evN()) === n0 + 1, '記録（タップ）は使える');
+    // シュートの場所も場面パック：お試しを使い切ったあとは、設定でオンにしても聞かない（記録はそのままできる）
+    await page.evaluate(() => { BT.app.S.prefs.shotLoc = true; BT.store.savePrefs(BT.app.S.prefs); });
+    await page.tap('#panel0 .prow[data-no="6"] .pb[data-type="fg2"]');
+    await sleep(250);
+    ok((await evN()) === n0 + 2 && !(await page.$('#shotPick')), 'シュートの場所：お試しを使い切ったあとは、オンにしても聞かない（記録はできる）');
+    await page.evaluate(() => BT.app.openSettings());
+    await page.waitForSelector('#setShotLoc');
+    ok(!!(await page.$('#shotLocLock')) && (await txt(page, '#shotLocLock')).includes('場面パックの機能です'), '設定の「シュートの場所」に、わけを書く（🔒 場面パックの機能です）');
+    await page.evaluate(() => BT.ui.closeSheet());
     await page.evaluate(() => BT.app.go('home'));
     ok((await trialN(page)) === 3, 'ここまで、お試しの枠は 3 件のまま');
 
@@ -254,6 +263,21 @@ async function setLic(page, patch) {
     ok(await tryTrim(page, ids[4]) && await tryTrim(page, ids[5]), '5・6 試合目も開く');
     await hub(page, ids[4]);
     ok((await txt(page, '#licLine')).includes('致遠館クラブ') && (await txt(page, '#licLine')).includes(ymd), '試合のページ：クラブと期限の一行', await txt(page, '#licLine'));
+    // シュートの場所：場面パックがあれば聞く（お試しの枠には入れない）
+    await page.evaluate((id) => { BT.app.openHub(id); }, liveId);
+    await page.waitForSelector('.live');
+    await page.tap('#panel0 .prow[data-no="7"] .pb[data-type="fg2"]');
+    await page.waitForSelector('#shotPick svg.court');
+    await sleep(400);
+    const cb = await page.locator('#shotPick svg.court').boundingBox();
+    await page.touchscreen.tap(cb.x + cb.width / 2, cb.y + cb.height * 0.3);
+    await sleep(300);
+    ok(await page.evaluate(() => { const e = BT.app.S.game.events[BT.app.S.game.events.length - 1]; return e.type === 'fg2' && e.no === '7' && typeof e.x === 'number' && typeof e.y === 'number'; }) && (await trialN(page)) === 3, 'シュートの場所：場面パックがあれば聞いて、場所が付く（お試しの枠は増えない）');
+    await page.evaluate(() => BT.app.openSettings());
+    await page.waitForSelector('#setShotLoc');
+    ok(!(await page.$('#shotLocLock')), '設定の「シュートの場所」の 🔒 は消える');
+    await page.evaluate(() => BT.ui.closeSheet());
+    await page.evaluate(() => { BT.app.S.prefs.shotLoc = false; BT.store.savePrefs(BT.app.S.prefs); BT.app.go('home'); });
     await shot(page, 'line-licensed');
 
     console.log('\n■ 設定');
