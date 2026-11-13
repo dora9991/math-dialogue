@@ -13297,7 +13297,7 @@ BC && (BC.currentFile = "js/motion.js");
      位置は m（床が y=0、上がプラス）。ひざ・ひじは自動で曲げる（2関節の IK）。
    ■ キー（ボール）：p [x, 高さ]（その場所）| h 'r'・'l'・'both'（手につける。a で人の番号、o でずらす）。arc：このキーまでを山なりに。
        （なくてもよい）rot 回った角度（度）・sq つぶれ（0〜0.2。床についた瞬間）・f 'r'|'l' と w（0〜1）：手が目標に届かないとき
-       （よくない形で 腰が高い など）、手のずれの w 倍だけ ボールもずらす（手の中＝1、床＝0）
+       （よくない形で 腰が高い など）、手のずれの w 倍だけ ボールもずらす（手の中＝1、床＝0）・bk 1：体のうしろに描く（前後のキーが どちらも bk のとき）
    ■ look: 'flat'：体つきのある人（js/motion-real.js が標準）ではなく、太い線だけの いつもの絵で描く（なくてよい）
    ■ よくない形の作り方（mods。人 0 だけにかかる）
        hipUp: 0.17    腰を高く（体も起きる）。hands: true なら手も一緒に上がる
@@ -13519,6 +13519,7 @@ BC && (BC.currentFile = "js/motion.js");
       }
       if (a.rot != null || k.rot != null) out.rot = lerp(a.rot || 0, k.rot || 0, u);
       if (a.sq || k.sq) out.sq = lerp(a.sq || 0, k.sq || 0, u);
+      if (a.bk && k.bk) out.back = true; // 体のうしろ（脚の間を通って うしろへ など）
       return out;
     });
     let scroll = 0;
@@ -13671,8 +13672,10 @@ BC && (BC.currentFile = "js/motion.js");
     // 影
     out += fr.sk.map((s) => { const air = Math.min(s.r.ank[1], s.l.ank[1]) - L.ANK; return `<ellipse class="mo-shadow" cx="${f3(s.hip[0])}" cy="0.02" rx="${f3(0.34 * Math.max(0.4, 1 - air))}" ry="0.04" opacity="${f3(fr.fade)}"/>`; }).join('');
     if (real) out += fr.balls.map((b) => real.ballShadow(b, fr.fade)).join('');
+    const drawBall = (b) => (real ? real.ball(b, fr.fade) : ballSVG(b, fr.fade));
+    out += fr.balls.filter((b) => b.back).map(drawBall).join('');
     out += figs.map((f, i) => `<g class="${actor}" style="--c:${ROLE[fr.roles[i]] || ROLE['']}" opacity="${f3(fr.fade)}">${f.back}</g>`).join('');
-    out += fr.balls.map((b) => (real ? real.ball(b, fr.fade) : ballSVG(b, fr.fade))).join('');
+    out += fr.balls.filter((b) => !b.back).map(drawBall).join('');
     out += figs.map((f, i) => `<g class="${actor}" style="--c:${ROLE[fr.roles[i]] || ROLE['']}" opacity="${f3(fr.fade)}">${f.front}</g>`).join('');
     if (opt.angles) out += `<g class="mo-angles">${angles(fr.sk[0], clip.box)}</g>`;
     return { svg: out, frame: fr };
@@ -13823,8 +13826,62 @@ BC && (BC.currentFile = "js/motion.js");
     });
     return { keys: k, feet };
   }
+  /* ---------- 式で作る動きの道具 ----------
+     キーを手で置いた動きは、キーごとに いったん止まって見える（キーの間を それぞれ ゆっくり始めて ゆっくり止めるため）。そこで：
+     ・track(keys, loop)：キー（at と 姿勢。書かない項目は前のキーと同じ）を、速さが つながる なめらかな線で通す（単調な3次の補間＝PCHIP）。
+       行き過ぎないので、同じ値が続く所（床についた足）は 動かず、床の下へも行かない。loop：くり返す動き（さいごのキー＝はじめのキー）
+     ・bake(秒, { actors: [秒 → 姿勢], balls: [秒 → ボールのキー], extra: [かならず入れる秒], fps })：細かいキー（lin）にする
+     ・arc(p0, t0, p1, t1, tb, xb)：ボールが p0（t0 秒）から 床（tb 秒・x は xb）で はねて p1（t1 秒）へ。重力どおりの山なり
+     ・fly(p0, v0, t)：投げたあと t 秒の位置（重力だけ）・herm：はしの速さを決めた 3次の線 */
+  const G = 9.8;
+  const herm = (p0, v0, p1, v1, tau, s) => { const s2 = s * s, s3 = s2 * s; return (2 * s3 - 3 * s2 + 1) * p0 + (s3 - 2 * s2 + s) * tau * v0 + (-2 * s3 + 3 * s2) * p1 + (s3 - s2) * tau * v1; };
+  function pchip(ts, ys, loop) {
+    const n = ts.length, h = [], d = [];
+    for (let i = 0; i < n - 1; i++) { h.push(ts[i + 1] - ts[i]); d.push(h[i] > 0 ? (ys[i + 1] - ys[i]) / h[i] : 0); }
+    const tan = (dl, dr, hl, hr) => (dl * dr <= 0 ? 0 : (3 * (hl + hr)) / ((2 * hr + hl) / dl + (hr + 2 * hl) / dr));
+    const m = ys.map(() => 0);
+    for (let i = 1; i < n - 1; i++) m[i] = tan(d[i - 1], d[i], h[i - 1], h[i]);
+    if (loop && n > 2) m[0] = m[n - 1] = tan(d[n - 2], d[0], h[n - 2], h[0]);
+    return (t) => {
+      if (t <= ts[0]) return ys[0];
+      if (t >= ts[n - 1]) return ys[n - 1];
+      let i = 0;
+      while (i < n - 2 && ts[i + 1] < t) i++;
+      return h[i] > 0 ? herm(ys[i], m[i], ys[i + 1], m[i + 1], h[i], (t - ts[i]) / h[i]) : ys[i + 1];
+    };
+  }
+  function track(keys, loop) {
+    const F = fill(keys), ts = F.map((k) => k.at), fns = {};
+    for (const f of POSE.concat(OPT)) {
+      const first = F.find((k) => k[f] != null);
+      if (!first) continue;
+      const vals = F.map((k) => (k[f] != null ? k[f] : first[f]));
+      fns[f] = Array.isArray(first[f]) ? [0, 1].map((j) => pchip(ts, vals.map((v) => v[j]), loop)) : pchip(ts, vals, loop);
+    }
+    return (at) => { const p = {}; for (const f in fns) p[f] = Array.isArray(fns[f]) ? fns[f].map((g) => g(at)) : fns[f](at); return p; };
+  }
+  function bake(dur, o) {
+    const n = Math.max(8, Math.round(dur * (o.fps || 30))), ts = [];
+    for (let i = 0; i <= n; i++) ts.push((dur * i) / n);
+    for (const e of o.extra || []) if (e > 0 && e < dur && !ts.some((x) => Math.abs(x - e) < 0.002)) ts.push(e);
+    ts.sort((a, b) => a - b);
+    const r4 = (v) => (Array.isArray(v) ? v.map(r4) : typeof v === 'number' ? Math.round(v * 1e4) / 1e4 : v);
+    const pack = (fn, t, lin) => { const p = fn(t), out = { at: r4(t / dur) }; if (lin) out.lin = true; for (const k in p) out[k] = r4(p[k]); return out; };
+    return { actors: (o.actors || []).map((fn) => ts.map((t) => pack(fn, t, true))), balls: (o.balls || []).map((fn) => ts.map((t) => pack(fn, t, false))) };
+  }
+  function arc(p0, t0, p1, t1, tb, xb) {
+    const R = L.BALL, d1 = tb - t0, d2 = t1 - tb, X = xb == null ? p0[0] + ((p1[0] - p0[0]) * d1) / (d1 + d2) : xb;
+    const vd = (R - p0[1]) / d1 + (G * d1) / 2, vu = (p1[1] - R) / d2 + (G * d2) / 2;
+    return (t) => {
+      if (t <= tb) { const q = Math.max(0, t - t0); return [p0[0] + ((X - p0[0]) * q) / d1, p0[1] + vd * q - (G * q * q) / 2]; }
+      const q = Math.min(d2, t - tb);
+      return [X + ((p1[0] - X) * q) / d2, R + vu * q - (G * q * q) / 2];
+    };
+  }
+  const fly = (p0, v0, t) => [p0[0] + v0[0] * t, p0[1] + v0[1] * t - (G * t * t) / 2];
+
   BC.mo = {
-    runKeys, steps,
+    runKeys, steps, track, bake, arc, fly, herm, G,
     LOW: { hip: [0, 0.72], lean: 28, nod: -22, rf: [0.12, 0], lf: [-0.16, 0], rh: [0.42, 0.64], lh: [0.36, 0.98] }, // 腰を落とした構え（横・右向き）
     FLOW: { hip: [0, 0.7], lean: 0, nod: 0, rf: [0.33, 0], lf: [-0.33, 0], rh: [0.42, 0.62], lh: [-0.36, 0.8] },  // 腰を落とした構え（前から）
     STAND: { hip: [0, 0.9], lean: 4, nod: 0, rf: [0.08, 0], lf: [-0.08, 0], rh: [0.08, 0.86], lh: [0.02, 0.88] }, // 立つ（横）
@@ -14405,20 +14462,23 @@ BC && (BC.currentFile = "data/motions-base.js");
 
   // 前から：腰を落とした構え
   const FLOW = BC.mo.FLOW;
-  /* クロスオーバー（前から）：低いドリブルと同じように、ボールの動きを式から作る。
+  /* クロスオーバー（前から）：低いドリブルと同じように、ボールの動きを式から作る（BC.mo.crossCycle。レッグスルーも使う）。
      半分の流れ（秒）：0 右手の中（ひざの外・いちばん上）→（内へ押す）→ tR はなれる →（落ちる）→ tB 体のまん中の床 →（はね返る）→ tC 左手でうける →（外へ流して吸収）→ Th
      うしろ半分は 左右を入れかえた同じ動き。
      ・ボール：手の中は なめらかに加速、空中は 重力で落ちて はね返る（係数 E。横の速さは 床で少し落ちる）。ひざより下を、速く通る
      ・手：ボールの外がわ・上にのる。押したあとは 内へ少しついていき、もう片方の手は 外がわで待つ
-     ・体：ボールのある側へ 体重と上体が少し寄る。頭は まっすぐのまま。上体は前へたおしている（tk：胴が短く見える） */
-  const cross = (function () {
-    const G = 9.8, R = 0.12, E = 0.8, HIP = 0.66, TK = 0.84;
-    const X0 = 0.36, yTop = 0.47, xRel = 0.27, yRel = 0.385, xB = -0.02, vy0 = 2.2, tauP = 0.16, tauA = 0.22, hold = 0.06;
+     ・体：ボールのある側へ 体重と上体が少し寄る。頭は まっすぐのまま。上体は前へたおしている（tk：胴が短く見える）
+     o（なくてよい）：HIP 腰の高さ・TK・FEET 足の x・X0 手の中のボールの x・yTop・xRel／yRel はなす所・xB 床の x・vy0 はなす速さ・
+       tauP 押す時間・tauA うける時間・hold・F／Gd 押したあと・待つときの手首・dip 腰のしずみ・sway 腰のゆれ・behind 床のあとは 体のうしろ（脚の間を通す） */
+  BC.mo.crossCycle = function (o = {}) {
+    const G = 9.8, R = 0.12, E = 0.8, HIP = o.HIP || 0.66, TK = o.TK || 0.84, FEET = o.FEET || 0.33;
+    const X0 = o.X0 || 0.36, yTop = o.yTop || 0.47, xRel = o.xRel || 0.27, yRel = o.yRel || 0.385, xB = o.xB != null ? o.xB : -0.02, vy0 = o.vy0 || 2.2;
+    const tauP = o.tauP || 0.16, tauA = o.tauA || 0.22, hold = o.hold != null ? o.hold : 0.06;
     const vImp = Math.sqrt(vy0 * vy0 + 2 * G * (yRel - R)), tDown = (vImp - vy0) / G, vB = E * vImp;
     const vCat = Math.sqrt(vB * vB - 2 * G * (yRel - R)), tUp = (vB - vCat) / G;
     const vx1 = (xB - xRel) / tDown, vx2 = vx1 * 0.72, xCat = xB + vx2 * tUp;
     const tR = tauP, tB = tR + tDown, tC = tB + tUp, Th = tC + tauA + hold, T = 2 * Th;
-    const herm = (p0, v0, p1, v1, tau, s) => { const s2 = s * s, s3 = s2 * s; return (2 * s3 - 3 * s2 + 1) * p0 + (s3 - 2 * s2 + s) * tau * v0 + (-2 * s3 + 3 * s2) * p1 + (s3 - s2) * tau * v1; };
+    const herm = BC.mo.herm;
     const wrap = (t) => ((t % T) + T) % T;
     const ease = (u) => u * u * (3 - 2 * u);
     // 前半（右 → 左）のボール
@@ -14435,7 +14495,7 @@ BC && (BC.currentFile = "data/motions-base.js");
     const tC2 = Th + tC, h = 0.004;
     const wRel = onBall(tR, 1), wCat = onBall(tC2, 1), w0 = onBall(tR - h, 1), w1 = onBall(tC2 + h, 1);
     const vRel = [(wRel[0] - w0[0]) / h, (wRel[1] - w0[1]) / h], vCat2 = [(w1[0] - wCat[0]) / h, (w1[1] - wCat[1]) / h];
-    const F = [0.215, 0.515], Gd = [0.43, 0.64], tF = tR + 0.13, tG = tC2 - 0.2;
+    const F = o.F || [0.215, 0.515], Gd = o.Gd || [0.43, 0.64], tF = tR + 0.13, tG = tC2 - 0.2;
     const right = (t0) => {
       const t = wrap(t0);
       if (t <= tR) return onBall(t, ease(t / tauP));                                   // 押す
@@ -14446,11 +14506,12 @@ BC && (BC.currentFile = "data/motions-base.js");
       return [herm(Gd[0], 0, wCat[0], vCat2[0] * 0.35, tC2 - tG, s), herm(Gd[1], 0, wCat[1], vCat2[1] * 0.35, tC2 - tG, s)];
     };
     const left = (t) => { const w = right(t + Th); return [-w[0], w[1]]; };
+    const dipK = o.dip != null ? o.dip : 0.005, swayK = o.sway != null ? o.sway : 0.04;
     const poseAt = (t) => {
       const sway = Math.cos((2 * Math.PI * (t - 0.04)) / T);                            // 1：ボールが右
       const dip = (1 + Math.cos((4 * Math.PI * (t - tR)) / T)) / 2;                     // 1：押しきったとき
       const lean = 3.5 * sway;
-      return { hip: [0.04 * sway, HIP - 0.005 * dip], lean, nod: -0.85 * lean, tk: TK, rf: [0.33, 0], lf: [-0.33, 0], rh: right(t), lh: left(t) };
+      return { hip: [swayK * sway, HIP - dipK * dip], lean, nod: -0.85 * lean, tk: TK, rf: [FEET, 0], lf: [-FEET, 0], rh: right(t), lh: left(t) };
     };
     const N = 72, times = [];
     for (let i = 0; i < N; i++) times.push((T * i) / N);
@@ -14464,10 +14525,13 @@ BC && (BC.currentFile = "data/motions-base.js");
       const air = q > tR && q < tC, bounce = Math.abs(q - tB) < 1e-9;
       // 手のずれに ついていく手：押した手（床まで）→ うける手（床から）
       const pusher = firstHalf ? 'r' : 'l', catcher = firstHalf ? 'l' : 'r';
-      return { at: r4(t / T), p, rot: r4(150 * p[0]), sq: bounce ? 0.1 : 0, f: q < tB ? pusher : catcher, w: air ? Math.max(0, Math.min(1, (p[1] - R) / (yRel - R))) : 1 };
+      const k = { at: r4(t / T), p, rot: r4(150 * p[0]), sq: bounce ? 0.1 : 0, f: q < tB ? pusher : catcher, w: air ? Math.max(0, Math.min(1, (p[1] - R) / (yRel - R))) : 1 };
+      if (o.behind && q >= tB && q < tC + tauA * 0.55) k.bk = 1; // 床で はねたあと、うける手に入るまでは 体のうしろ
+      return k;
     });
     return { T, Th, tR, tB, tC, tC2, keys, ball };
-  })();
+  };
+  const cross = BC.mo.crossCycle();
 
   BC.motion({ id: 'crossover',
     name: 'クロスオーバー', view: 'front', box: [-0.95, 0.95, -0.05, 1.8], dur: Math.round(cross.T * 100) / 100, guides: ['head'],
@@ -14480,21 +14544,43 @@ BC && (BC.currentFile = "data/motions-base.js");
     points: ['ひざより下の低さで、体の前を速く通す', '顔は上げたまま（ボールを見ない）', '受けた手の反対の腕で、ボールを守る'],
   });
 
+  /* 2ボール・ドリブル（前から）：低いドリブルと同じ物理で、左右のボールを同時につく。
+     手はボールの上（指を広げて）。押したあとも 手は少し下へのび、うける前に 上がりはじめる。腰は 押すときに わずかに沈み、頭の高さは変えない */
+  const twob = (function () {
+    const G = BC.mo.G, R = 0.12, E = 0.8, HIP = 0.645, TK = 0.82, XB = 0.44;
+    const yTop = 0.5, yRel = 0.39, yCat = 0.43, vRel = 2.45, tauP = 0.14, tauA = 0.18;
+    const vImp = Math.sqrt(vRel * vRel + 2 * G * (yRel - R)), tDown = (vImp - vRel) / G, vB = E * vImp;
+    const vCat = Math.sqrt(vB * vB - 2 * G * (yCat - R)), tUp = (vB - vCat) / G;
+    const tR = tauP, tB = tR + tDown, tC = tB + tUp, T = tC + tauA;
+    const herm = BC.mo.herm, wrap = (t) => ((t % T) + T) % T;
+    const ballY = (t0) => {
+      const t = wrap(t0);
+      if (t < tR) return herm(yTop, 0, yRel, -vRel, tauP, t / tauP);
+      if (t < tB) { const q = t - tR; return yRel - vRel * q - 0.5 * G * q * q; }
+      if (t < tC) { const q = t - tB; return R + vB * q - 0.5 * G * q * q; }
+      return herm(yCat, vCat, yTop, 0, tauA, (t - tC) / tauA);
+    };
+    const on = (t) => ballY(t) + 0.15, h = 0.004; // 手首：ボールの上
+    const yR = on(tR), yC = on(tC), vR = ((on(tR) - on(tR - h)) / h) * 0.55, vC = ((on(tC + h) - on(tC)) / h) * 0.4;
+    const wristY = (t0) => { const t = wrap(t0); return t <= tR || t >= tC ? on(t) : herm(yR, vR, yC, vC, tC - tR, (t - tR) / (tC - tR)); };
+    const pose = (t) => {
+      const dip = (1 + Math.cos((2 * Math.PI * (t - tR - 0.03)) / T)) / 2, y = wristY(t);
+      return { hip: [0, HIP - 0.006 * dip], lean: 0, nod: 0, tk: TK, rf: [0.34, 0], lf: [-0.34, 0], rh: [XB + 0.03, y], lh: [-XB - 0.03, y] };
+    };
+    const ball = (o) => (t) => {
+      const tt = wrap(t), y = ballY(t), air = tt > tR && tt < tC;
+      return { p: [o * XB, y], sq: Math.abs(tt - tB) < 0.001 ? 0.1 : 0, f: o > 0 ? 'r' : 'l', w: air ? Math.max(0, Math.min(1, (y - R) / (yRel - R))) : 1 };
+    };
+    const b = BC.mo.bake(T, { actors: [pose], balls: [ball(1), ball(-1)], extra: [tR, tB - 0.012, tB, tB + 0.012, tC], fps: 80 });
+    return { T, tR, tB, tC, b };
+  })();
   BC.motion({ id: 'twoball',
-    name: '2ボール・ドリブル', view: 'front', box: [-1.0, 1.0, -0.05, 1.85], dur: 0.6, guides: ['head'],
-    phases: [{ at: 0, label: '同時に押す' }, { at: 0.22, label: '床へ' }, { at: 0.55, label: '手にもどる' }],
+    name: '2ボール・ドリブル', view: 'front', box: [-0.95, 0.95, -0.05, 1.8], dur: Math.round(twob.T * 100) / 100, guides: ['head'],
+    phases: [{ at: 0, label: '同時に押す' }, { at: Math.round((twob.tR / twob.T) * 100) / 100, label: '床へ' }, { at: Math.round(((twob.tB + 0.015) / twob.T) * 100) / 100, label: '手にもどる' }],
     mistakes: [{ id: 'tall', label: '腰が高い', mods: { hipUp: 0.17 } }],
-    still: 0.2,
-    actors: [{ keys: [
-      Object.assign({ at: 0 }, FLOW, { rh: [0.42, 0.64], lh: [-0.42, 0.64] }),
-      { at: 0.22, hip: [0, 0.68], rh: [0.45, 0.5], lh: [-0.45, 0.5] },
-      { at: 0.55, hip: [0, 0.7], rh: [0.43, 0.6], lh: [-0.43, 0.6] },
-      { at: 1, rh: [0.42, 0.64], lh: [-0.42, 0.64] },
-    ] }],
-    balls: [
-      { keys: [{ at: 0, h: 'r', o: [0, -0.13] }, { at: 0.22, h: 'r', o: [0, -0.13] }, { at: 0.55, p: [0.47, 0.12] }, { at: 1, h: 'r', o: [0, -0.13] }] },
-      { keys: [{ at: 0, h: 'l', o: [0, -0.13] }, { at: 0.22, h: 'l', o: [0, -0.13] }, { at: 0.55, p: [-0.47, 0.12] }, { at: 1, h: 'l', o: [0, -0.13] }] },
-    ],
+    still: 0.1,
+    actors: [{ keys: twob.b.actors[0] }],
+    balls: twob.b.balls.map((keys) => ({ keys })),
     points: ['左右を同じ高さ・同じ強さで', '弱い手のリズムに合わせる', '顔を上げて、前を見る'],
   });
 
@@ -14512,29 +14598,28 @@ BC && (BC.currentFile = "data/motions-base.js");
   });
 
   // ディフェンスのスライド（前から・守り）。右へ3回・左へ3回
+  /* ディフェンスのスライド（前から）：出す足 → 寄せる足。1歩 0.5秒・右へ3歩 → 左へ3歩（3秒でもとの場所）。
+     うしろの足で床を押して、出す足を 低く・すべるように 大きく出す。腰は 止まらずに 横へ流れ（BC.mo.track）、頭の高さは 変えない。
+     出す方の手を上（パスのコース）、反対の手を下（ドリブルのコース）。上体は少し前へたおす（tk） */
   function slideKeys() {
-    const k = [];
-    const H = 0.66, W = 0.3, step = 0.26;
+    const T = 3.0, H = 0.66, W = 0.3, STEP = 0.26, K = [];
     let x = -0.39;
-    const pose = (x, at, wide, dir) => ({
-      at, hip: [x + (wide ? dir * 0.1 : 0), H], lean: 0, nod: 0,
-      rf: [x + W + (wide && dir > 0 ? 0.22 : 0), wide && dir > 0 ? 0.04 : 0],
-      lf: [x - W - (wide && dir < 0 ? 0.22 : 0), wide && dir < 0 ? 0.04 : 0],
-      rh: [x + 0.55 + (wide ? dir * 0.1 : 0), dir > 0 ? 1.05 : 0.7], lh: [x - 0.55 + (wide ? dir * 0.1 : 0), dir > 0 ? 0.7 : 1.05],
+    const arms = (hx, dir) => ({ rh: [hx + 0.56, dir > 0 ? 1.05 : 0.72], lh: [hx - 0.56, dir > 0 ? 0.72 : 1.05] });
+    [1, 1, 1, -1, -1, -1].forEach((dir, i) => {
+      const t0 = i * 0.5, nx = x + dir * STEP, lead = dir > 0 ? 'rf' : 'lf', trail = dir > 0 ? 'lf' : 'rf';
+      const key = (t, hx, lean, o) => Object.assign({ at: t / T, hip: [hx, H], lean, nod: -0.8 * lean, tk: 0.92 }, arms(hx, dir), o);
+      K.push(key(t0, x, 0, { [lead]: [x + dir * W, 0], [trail]: [x - dir * W, 0] }));
+      K.push(key(t0 + 0.07, x + dir * 0.03, dir * 1.5, { [lead]: [x + dir * (W + 0.1), 0.035] }));   // 出す足を 低く出す
+      K.push(key(t0 + 0.17, x + dir * 0.11, dir * 2.5, { [lead]: [x + dir * (W + STEP), 0] }));      // 出す足が つく（足が広い）
+      K.push(key(t0 + 0.31, x + dir * 0.2, dir * 1.5, { [trail]: [x - dir * W + dir * 0.14, 0.025] })); // うしろの足を 寄せる
+      K.push(key(t0 + 0.43, x + dir * 0.245, 0.3 * dir, { [trail]: [nx - dir * W, 0] }));
+      x = nx;
     });
-    let t = 0;
-    const dt = 1 / 12;
-    for (const dir of [1, -1]) {
-      for (let i = 0; i < 3; i++) {
-        k.push(pose(x, t, false, dir));
-        k.push(pose(x, t + dt * 0.55, true, dir));
-        x += dir * step;
-        t += dt * 2;
-      }
-    }
-    k.push(pose(x, 1, false, 1));
-    return k;
+    K.push(Object.assign({}, K[0], { at: 1 }));
+    const tr = BC.mo.track(K, true);
+    return BC.mo.bake(T, { actors: [(t) => tr(t / T)], fps: 40 }).actors[0];
   }
+
   BC.motion({ id: 'defslide',
     name: 'ディフェンスのスライド', view: 'front', box: [-1.4, 1.4, -0.05, 1.85], dur: 3.0, guides: ['head'],
     phases: [{ at: 0, label: '右へスライド' }, { at: 0.5, label: '左へスライド' }],
@@ -14717,20 +14802,42 @@ BC && (BC.currentFile = "data/motions-base.js");
   });
 
   // 着地（前から）：ひざがつま先と同じ向きか（ニーイン）を見せる
+  /* 着地（前から：ひざの向き）：立つ → 腕を下へふって しずむ → 腕をふり上げ、つま先で床を押して とぶ → 空中は 重力どおり（ひざを少したたむ）→
+     つま先から着地して、ひざと股関節で吸収する（上体は 前へ少したおす・腕は 前でバランス）→ 止まる → 立つ */
+  const landF = (function () {
+    const T = 2.0, G = BC.mo.G, tA = 0.27, tB = 0.5, H0 = 0.97;
+    const K = [
+      { at: 0, hip: [0, 0.9], lean: 0, nod: 0, tk: 1, rf: [0.15, 0], lf: [-0.15, 0], rh: [0.3, 0.86], lh: [-0.3, 0.86] },
+      { at: 0.09 },
+      { at: 0.17, hip: [0, 0.71], tk: 0.9, rh: [0.37, 0.68], lh: [-0.37, 0.68] },
+      { at: 0.235, hip: [0, 0.88], tk: 0.97, rh: [0.31, 1.45], lh: [-0.31, 1.45] },
+      { at: tA, hip: [0, H0], tk: 1, rf: [0.14, 0.04], lf: [-0.14, 0.04], rh: [0.28, 2.0], lh: [-0.28, 2.0] },
+      { at: 0.37, rh: [0.27, 2.08], lh: [-0.27, 2.08] },
+      { at: 0.46, rh: [0.33, 1.45], lh: [-0.33, 1.45] },
+      { at: tB, hip: [0, H0], rf: [0.16, 0], lf: [-0.16, 0], rh: [0.34, 1.2], lh: [-0.34, 1.2] },
+      { at: 0.585, hip: [0, 0.66], tk: 0.88, rh: [0.27, 0.96], lh: [-0.27, 0.96] },
+      { at: 0.65, hip: [0, 0.68] },
+      { at: 0.82, hip: [0, 0.68] },
+      { at: 1, hip: [0, 0.9], tk: 1, rf: [0.15, 0], lf: [-0.15, 0], rh: [0.3, 0.86], lh: [-0.3, 0.86] },
+    ];
+    const tr = BC.mo.track(K, true), D = (tB - tA) * T, v = (G * D) / 2;
+    const pose = (t) => {
+      const at = t / T, p = tr(at);
+      if (at > tA && at < tB) { // 空中：腰は 重力どおり。足は 腰についていき、少したたむ
+        const s = (at - tA) / (tB - tA), q = at * T - tA * T, y = H0 + v * q - (G * q * q) / 2;
+        const fy = y - H0 + 0.04 * (1 - s) + 0.08 * Math.sin(Math.PI * s);
+        p.hip = [p.hip[0], y]; p.rf = [p.rf[0], fy]; p.lf = [p.lf[0], fy];
+      }
+      return p;
+    };
+    return BC.mo.bake(T, { actors: [pose], extra: [tA * T, tB * T], fps: 40 }).actors[0];
+  })();
   BC.motion({ id: 'landing-front',
     name: '着地（前から：ひざの向き）', view: 'front', box: [-1.0, 1.0, -0.05, 2.6], dur: 2.0,
-    phases: [{ at: 0, label: '立つ' }, { at: 0.1, label: 'しずむ' }, { at: 0.26, label: 'とぶ' }, { at: 0.48, label: 'ひざで吸収' }],
+    phases: [{ at: 0, label: '立つ' }, { at: 0.1, label: 'しずむ' }, { at: 0.25, label: 'とぶ' }, { at: 0.5, label: 'ひざで吸収' }],
     mistakes: [{ id: 'kneein', label: 'ひざが内に入る', mods: { kneeIn: 0.48 } }, { id: 'stiff', label: 'ひざで吸収しない', mods: { stiffAfter: 0.5 } }],
-    still: 0.6,
-    actors: [{ keys: [
-      { at: 0, hip: [0, 0.9], lean: 0, nod: 0, rf: [0.15, 0], lf: [-0.15, 0], rh: [0.3, 0.86], lh: [-0.3, 0.86] },
-      { at: 0.16, hip: [0, 0.7], rh: [0.34, 0.66], lh: [-0.34, 0.66] },
-      { at: 0.3, hip: [0, 1.22], rf: [0.13, 0.32], lf: [-0.13, 0.32], rh: [0.28, 2.12], lh: [-0.28, 2.12] },
-      { at: 0.42, hip: [0, 1.28], rf: [0.13, 0.36], lf: [-0.13, 0.36] },
-      { at: 0.56, hip: [0, 0.66], rf: [0.16, 0], lf: [-0.16, 0], rh: [0.4, 0.98], lh: [-0.4, 0.98] },
-      { at: 0.82 },
-      { at: 1, hip: [0, 0.9], rh: [0.3, 0.86], lh: [-0.3, 0.86] },
-    ] }],
+    still: 0.62,
+    actors: [{ keys: landF }],
     balls: [],
     points: ['ひざは つま先と同じ向き（内側に入れない）', '両足に 同じように体重をのせる', 'つま先から着地して、ひざと股関節で吸収する'],
   });
@@ -14954,29 +15061,18 @@ BC && (BC.currentFile = "data/motions-ball.js");
   /* ---------- レッグスルー（前から。足の間を通す） ---------- */
   (function () {
     const S = { hip: [0.03, 0.6], lean: 3, nod: 0, rf: [0.45, 0], lf: [-0.45, 0], rh: [0.42, 0.62], lh: [-0.5, 0.8] };
+    /* クロスオーバーと同じ作り方（BC.mo.crossCycle）で、もっと低く・足を広く。床で はねたボールは 体のうしろを通って（脚の間を ぬけて）、
+       反対の手が ひざの外がわで うける */
+    const lt = BC.mo.crossCycle({ HIP: 0.575, TK: 0.82, FEET: 0.46, X0: 0.5, yTop: 0.43, xRel: 0.34, yRel: 0.33, xB: 0, vy0: 1.9,
+      tauP: 0.17, tauA: 0.24, hold: 0.05, F: [0.3, 0.47], Gd: [0.55, 0.6], sway: 0.03, behind: true });
+    const r2 = (n) => Math.round(n * 100) / 100;
     BC.motion({ id: 'legthrough',
-      name: 'レッグスルー', view: 'front', box: [-1.05, 1.05, -0.05, 1.8], dur: 1.4, guides: ['head'],
-      phases: [{ at: 0, label: '右手で足の間へ' }, { at: 0.34, label: '左手でうける' }, { at: 0.5, label: '左手で足の間へ' }, { at: 0.84, label: '右手でうける' }],
+      name: 'レッグスルー', view: 'front', box: [-1.0, 1.0, -0.05, 1.75], dur: r2(lt.T), guides: ['head'],
+      phases: [{ at: 0, label: '右手で足の間へ' }, { at: r2(lt.tC / lt.T), label: '左手でうける' }, { at: 0.5, label: '左手で足の間へ' }, { at: r2(lt.tC2 / lt.T), label: '右手でうける' }],
       mistakes: [{ id: 'tall', label: '腰が高い', mods: { hipUp: 0.16 } }],
-      still: 0.2,
-      actors: [{ keys: [
-        at(0, S),
-        { at: 0.1, hip: [0.02, 0.59], rh: [0.28, 0.52] },
-        { at: 0.25, hip: [0, 0.58], lean: 0, rh: [0.36, 0.72], lh: [-0.3, 0.58] },
-        { at: 0.36, hip: [-0.02, 0.59], lean: -2, rh: [0.5, 0.8], lh: [-0.28, 0.52] },
-        { at: 0.47, hip: [-0.03, 0.6], lean: -3, lh: [-0.42, 0.62] },
-        { at: 0.5 },
-        { at: 0.6, hip: [-0.02, 0.59], lh: [-0.28, 0.52] },
-        { at: 0.75, hip: [0, 0.58], lean: 0, lh: [-0.36, 0.72], rh: [0.3, 0.58] },
-        { at: 0.86, hip: [0.02, 0.59], lean: 2, lh: [-0.5, 0.8], rh: [0.28, 0.52] },
-        { at: 0.97, hip: [0.03, 0.6], lean: 3, rh: [0.42, 0.62] },
-        { at: 1 },
-      ] }],
-      balls: [{ keys: [
-        { at: 0, h: 'r', o: [0, -0.13] }, { at: 0.1, h: 'r', o: [0, -0.13] }, { at: 0.24, p: [0, 0.12] },
-        { at: 0.36, h: 'l', o: [0, -0.13] }, { at: 0.6, h: 'l', o: [0, -0.13] }, { at: 0.74, p: [0, 0.12] },
-        { at: 0.86, h: 'r', o: [0, -0.13] }, { at: 1, h: 'r', o: [0, -0.13] },
-      ] }],
+      still: 0.08,
+      actors: [{ keys: lt.keys }],
+      balls: [{ keys: lt.ball }],
       points: ['足を大きく開き、腰を落として、足の間を低く通す', '顔は上げたまま（ボールを見ない）', '足がかべになる（守りが近くて手を出してくるときに）'],
     });
   })();
@@ -15019,11 +15115,10 @@ BC && (BC.currentFile = "data/motions-ball.js");
 
   /* ---------- ユーロステップ（前から。左右にずらす） ---------- */
   (function () {
-    BC.motion({ id: 'eurostep',
-      name: 'ユーロステップ', view: 'front', box: [-1.45, 1.45, -0.05, 2.75], dur: 2.6, fade: true,
-      phases: [{ at: 0, label: 'ドリブル' }, { at: 0.16, label: 'つかむ' }, { at: 0.21, label: '1歩目（右へ）' }, { at: 0.32, label: '2歩目（左へ大きく）' }, { at: 0.46, label: '左足でとぶ' }, { at: 0.56, label: '放す' }],
-      still: 0.42,
-      actors: [{ keys: [
+    /* ドリブル（床で1回はねる）→ 両手でつかむ → 1歩目（右へ。肩と目線も右）→ 2歩目（左へ大きく）→ 左足でとぶ →
+       空中は 重力どおり（右ひざを上げる）→ 右手で放す（ボールは上へ）→ 両足で着地して吸収。キーは なめらかに通す（BC.mo.track） */
+    const T = 2.6, G = BC.mo.G;
+    const K = [
         { at: 0, hip: [0.05, 0.8], lean: 2, nod: 0, rf: [0.2, 0], lf: [-0.12, 0], rh: [0.42, 0.78], lh: [-0.42, 0.82] },
         { at: 0.06, rh: [0.44, 0.66] },
         { at: 0.14, rh: [0.4, 0.8], lh: [0.0, 0.95] },
@@ -15038,13 +15133,43 @@ BC && (BC.currentFile = "data/motions-ball.js");
         { at: 0.7, hip: [-0.25, 0.72], rf: [-0.04, 0], lf: [-0.46, 0], rh: [-0.02, 0.9], lh: [-0.48, 0.9] },
         { at: 0.84, hip: [-0.22, 0.86], rh: [0.0, 0.86], lh: [-0.44, 0.86] },
         { at: 1 },
-      ] }],
-      balls: [{ keys: [
-        { at: 0, h: 'r', o: [0, -0.13] }, { at: 0.06, h: 'r', o: [0, -0.13] }, { at: 0.1, p: [0.46, 0.12] }, { at: 0.14, h: 'r', o: [0, -0.13] },
-        { at: 0.19, h: 'both', o: [0, 0] }, { at: 0.44, h: 'both', o: [0, 0] },
-        { at: 0.5, h: 'r', o: [0, 0.13] }, { at: 0.56, h: 'r', o: [0, 0.13] },
-        { at: 0.68, p: [0.05, 3.1] }, { at: 1, p: [0.05, 3.1] },
-      ] }],
+      ];
+    const tr = BC.mo.track(K, false), tA = 0.47, tB = 0.665;
+    const A = tr(tA), B = tr(tB), D = (tB - tA) * T, v = (B.hip[1] - A.hip[1]) / D + (G * D) / 2;
+    const pose = (t) => {
+      const at = t / T, p = tr(at);
+      if (at > tA && at < tB) { // 空中：腰は重力どおり。手足は 腰についていく
+        const q = (at - tA) * T, y = A.hip[1] + v * q - (G * q * q) / 2, dy = y - p.hip[1];
+        p.hip = [p.hip[0], y];
+        for (const f of ['rf', 'lf', 'rh', 'lh']) p[f] = [p[f][0], p[f][1] + dy];
+      }
+      return p;
+    };
+    const hands = (t) => { const k = BC.skeleton(pose(t), 'front', 1); return { r: k.r.hand, l: k.l.hand }; };
+    const below = (h) => [h[0], h[1] - 0.13], above = (h) => [h[0], h[1] + 0.13], mid = (H) => [(H.r[0] + H.l[0]) / 2, (H.r[1] + H.l[1]) / 2];
+    const mixP = (a, b, u) => { const e = u * u * (3 - 2 * u); return [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e]; };
+    const t1 = 0.06 * T, t2 = 0.14 * T, tb = 0.1 * T, tRel = 0.56 * T;
+    const drib = BC.mo.arc(below(hands(t1).r), t1, below(hands(t2).r), t2, tb, 0.46);
+    const pRel = above(hands(tRel).r), vRel = [0.05, 4.2], tTop = vRel[1] / G; // てっぺんの後は 画面の上（ゴールの方）に のこす
+    const ball = (t) => {
+      const at = t / T, H = hands(t);
+      let p;
+      if (at < 0.06) p = below(H.r);
+      else if (at < 0.14) p = drib(t);                                   // ドリブル：床で1回はねる
+      else if (at < 0.19) p = mixP(below(H.r), mid(H), (at - 0.14) / 0.05); // 両手でつかむ
+      else if (at < 0.44) p = mid(H);
+      else if (at < 0.5) p = mixP(mid(H), above(H.r), (at - 0.44) / 0.06);  // 右手へ（あごの高さ → 上へ）
+      else if (t < tRel) p = above(H.r);
+      else p = BC.mo.fly(pRel, vRel, Math.min(t - tRel, tTop));           // 放す：上へ（ゴールへ。画面の外へぬける）
+      return { p, rot: t > tRel ? -420 * (t - tRel) : 0, sq: Math.abs(t - tb) < 0.001 ? 0.1 : 0 };
+    };
+    const ER = BC.mo.bake(T, { actors: [pose], balls: [ball], extra: [t1, tb, t2, tA * T, tB * T, tRel], fps: 30 });
+    BC.motion({ id: 'eurostep',
+      name: 'ユーロステップ', view: 'front', box: [-1.45, 1.45, -0.05, 2.75], dur: T, fade: true,
+      phases: [{ at: 0, label: 'ドリブル' }, { at: 0.16, label: 'つかむ' }, { at: 0.21, label: '1歩目（右へ）' }, { at: 0.32, label: '2歩目（左へ大きく）' }, { at: 0.46, label: '左足でとぶ' }, { at: 0.56, label: '放す' }],
+      still: 0.42,
+      actors: [{ keys: ER.actors[0] }],
+      balls: [{ keys: ER.balls[0] }],
       points: ['1歩目で肩と目線も右へ（守りを右に寄せる）', '2歩目は左へ大きく。ボールはあごの高さで、守りから遠い側へ', 'つかんでから2歩でとぶ（体はゴールに向けたまま）'],
     });
   })();
@@ -15630,13 +15755,9 @@ BC && (BC.currentFile = "data/motions-body.js");
       return [Object.assign(M((x0 + x1) / 2, m, o), lead), M(x1, tb, o)];
     };
     const d0 = 0.22, m0 = -1.1;
-    BC.motion({ id: 'def-deny',
-      name: 'ディナイ（パスのコースに手）', view: 'front', box: [-1.7, 1.7, -0.05, 2.0], dur: 3.4, fade: true,
-      phases: [{ at: 0, label: 'コースに手と足' }, { at: 0.1, label: 'マークと一緒に動く' }, { at: 0.46, label: 'パスをはじく' }, { at: 0.7, label: 'すぐ構え直す' }],
-      mistakes: [{ id: 'tall', label: '腰が高い', mods: { hipUp: 0.17, hands: true } }],
-      still: 0.545,
-      actors: [
-        { role: 'x', keys: [
+    /* 2人の動きは なめらかに通す（BC.mo.track）。パスは 右（画面の外）から とび、守りの手で はじかれて、床で はねて 右へ転がり出る（重力どおり） */
+    const T = 3.4;
+    const KX = [
           D(d0, 0), D(d0, 0.1),
           ...slide(d0, d0 + 0.22, 0.1, 0.2),
           D(d0 + 0.22, 0.24),
@@ -15648,8 +15769,8 @@ BC && (BC.currentFile = "data/motions-body.js");
           D(d0 + 0.2, 0.72),
           ...slide(d0 + 0.2, d0, 0.74, 0.86),
           D(d0, 1),
-        ] },
-        { role: 'o', keys: [
+        ];
+    const KO = [
           M(m0, 0), M(m0, 0.1),
           ...step(m0, m0 + 0.24, 0.1, 0.2),
           M(m0 + 0.24, 0.24),
@@ -15659,12 +15780,20 @@ BC && (BC.currentFile = "data/motions-body.js");
           M(m0 + 0.22, 0.72),
           ...step(m0 + 0.22, m0, 0.74, 0.86),
           M(m0, 1),
-        ] },
-      ],
-      balls: [{ keys: [
-        { at: 0, p: [2.4, 1.22] }, { at: 0.47, p: [2.4, 1.22] }, { at: 0.555, p: [d0 + 1.04, 1.24] },
-        { at: 0.63, p: [1.2, 0.12] }, { at: 0.75, p: [2.2, 0.5], arc: 0.35 }, { at: 1, p: [2.4, 1.22] },
-      ] }],
+        ];
+    const tx = BC.mo.track(KX, true), to = BC.mo.track(KO, true);
+    const tP = 0.47 * T, tH = 0.555 * T, tF = 0.63 * T, tOut = 0.75 * T;
+    const P0 = [2.4, 1.22], PH = [d0 + 1.04, 1.24], pv = [(PH[0] - P0[0]) / (tH - tP), (PH[1] - P0[1]) / (tH - tP) + (BC.mo.G * (tH - tP)) / 2];
+    const away = BC.mo.arc(PH, tH, [2.2, 0.5], tOut, tF, 1.2);
+    const ball = (t) => ({ p: t < tP || t >= tOut ? P0 : t < tH ? BC.mo.fly(P0, pv, t - tP) : away(t), sq: Math.abs(t - tF) < 0.001 ? 0.1 : 0 });
+    const DN = BC.mo.bake(T, { actors: [(t) => tx(t / T), (t) => to(t / T)], balls: [ball], extra: [tP, tH, tF, tOut], fps: 30 });
+    BC.motion({ id: 'def-deny',
+      name: 'ディナイ（パスのコースに手）', view: 'front', box: [-1.7, 1.7, -0.05, 2.0], dur: T, fade: true,
+      phases: [{ at: 0, label: 'コースに手と足' }, { at: 0.1, label: 'マークと一緒に動く' }, { at: 0.46, label: 'パスをはじく' }, { at: 0.7, label: 'すぐ構え直す' }],
+      mistakes: [{ id: 'tall', label: '腰が高い', mods: { hipUp: 0.17, hands: true } }],
+      still: 0.545,
+      actors: [{ role: 'x', keys: DN.actors[0] }, { role: 'o', keys: DN.actors[1] }],
+      balls: [{ keys: DN.balls[0] }],
       points: ['ボールに近い手と足を、パスのコースに入れる', 'ボールとマークの両方が見える向き（ボールに背を向けない）', '押す・つかむはファウル。ひじを軽く曲げて腕を出す'],
     });
   })();
@@ -15717,9 +15846,9 @@ BC && (BC.currentFile = "data/motions-body.js");
   (function () {
     const H = 0.84, OUT = 0.3, IN = 0.09;
     const up = 1.22, dn = 0.8;
-    const mid = { rh: [0.22, 1.0], lh: [-0.22, 1.0] };
-    // 腕：足と反対の手が前（前から見ると、胸の前に上がる）
-    const swing = (s) => (s === 'r' ? { lh: [-0.1, up], rh: [0.32, dn] } : { rh: [0.1, up], lh: [-0.32, dn] });
+    const mid = { rh: [0.25, 1.0], lh: [-0.25, 1.0] };
+    // 腕：足と反対の手が前（前から見ると、自分の側で 胸の高さへ上がる。うしろの手は 下・少し外）
+    const swing = (s) => (s === 'r' ? { lh: [-0.17, up], rh: [0.31, dn] } : { rh: [0.17, up], lh: [-0.31, dn] });
     const k = [{ at: 0, hip: [0, H], lean: 0, nod: 0, rf: [OUT, 0], lf: [-OUT, 0], ...mid }];
     const pos = { r: OUT, l: -OUT };
     [['r', IN], ['l', -IN], ['r', OUT], ['l', -OUT]].forEach(([s, x], i) => {
@@ -15728,12 +15857,14 @@ BC && (BC.currentFile = "data/motions-body.js");
       k.push(Object.assign({ at: a + 0.25, hip: [0, H], lean: 0, [s + 'f']: [x, 0] }, mid));
       pos[s] = x;
     });
+    // キーを なめらかに通す（足は 床にふれた所で止まり、腕は 止まらずに ふれる）
+    const tr = BC.mo.track(k, true);
     BC.motion({ id: 'ladder',
       name: 'ラダー（イン・イン・アウト・アウト）', view: 'front', box: [-0.95, 0.95, -0.05, 1.85], dur: 0.9, guides: ['head'],
       phases: [{ at: 0, label: '右をイン' }, { at: 0.25, label: '左をイン' }, { at: 0.5, label: '右をアウト' }, { at: 0.75, label: '左をアウト' }],
       mistakes: [{ id: 'bounce', label: '上にはねる', mods: { bob: 0.06, freq: 4 } }],
       still: 0.13,
-      actors: [{ keys: k }],
+      actors: [{ keys: BC.mo.bake(0.9, { actors: [(t) => tr(t / 0.9)], fps: 60 }).actors[0] }],
       points: ['親指のつけ根で軽く、すばやく床にふれる', '腕も前後にふって、リズムよく', '目線は2〜3マス先（真下を見すぎない）'],
     });
   })();
@@ -15918,52 +16049,83 @@ BC && (BC.currentFile = "data/motions-body.js");
   })();
 
   /* ---------- 呼吸（前から：ゆっくり吸って、長くはく） ---------- */
+  /* 呼吸（前から）：腰の高さは そのまま。吸うと 胸が上がって 胴がのび（tk）、おなかに当てた手が 前・外へ少し出る。はくと もどる。
+     はじめに 肩の力をぬく（胴が少し ちぢむ）。キーは なめらかに通す（BC.mo.track） */
+  const breath = (function () {
+    const T = 11, rest = { rh: [0.085, 1.1], lh: [-0.085, 1.08] };
+    const K = [
+      Object.assign({ at: 0, hip: [0, 0.91], lean: 0, nod: 0, tk: 1, rf: [0.12, 0], lf: [-0.12, 0] }, rest),
+      { at: 0.04, tk: 0.99 },
+      { at: 0.4, tk: 1.035, nod: -2, rh: [0.11, 1.125], lh: [-0.11, 1.105] },
+      Object.assign({ at: 0.96, tk: 0.99, nod: 0 }, rest),
+      Object.assign({ at: 1, tk: 1 }, rest),
+    ];
+    const tr = BC.mo.track(K, true);
+    return BC.mo.bake(T, { actors: [(t) => tr(t / T)], fps: 12 }).actors[0];
+  })();
   BC.motion({ id: 'breathing',
     name: '呼吸（長くはく）', view: 'front', box: [-0.85, 0.85, -0.05, 1.95], dur: 11,
     phases: [{ at: 0, label: '肩の力をぬく' }, { at: 0.04, label: '鼻から吸う（4秒）' }, { at: 0.4, label: '口から長くはく（6〜8秒）' }],
     still: 0.4,
-    actors: [{ keys: [
-      { at: 0, hip: [0, 0.91], lean: 0, nod: 0, rf: [0.12, 0], lf: [-0.12, 0], rh: [0.07, 1.03], lh: [-0.07, 1.01] },
-      { at: 0.04 },
-      { at: 0.4, hip: [0, 0.938], rh: [0.16, 1.1], lh: [-0.16, 1.08] },
-      { at: 0.96, hip: [0, 0.91], rh: [0.07, 1.03], lh: [-0.07, 1.01] },
-      { at: 1 },
-    ] }],
+    actors: [{ keys: breath }],
     points: ['はく息を、吸う息より長く', 'おなかに手を当てて、ふくらむのを感じる（肩に力を入れない）', '試合前・フリースローの前など、使う場面を決めておく'],
   });
 
-  /* ---------- 横へ片足ジャンプ（前から：片足で着地して止まる） ---------- */
+  /* ---------- 横へ片足ジャンプ（前から：片足で着地して止まる） ----------
+     片足で床を押して 横へとぶ → 空中は 重力どおり → 反対の片足で着地して、ひざと股関節で しずんで吸収 → 2秒止まる（腕を横に広げ、
+     体が 小さくゆれて もどる）→ 腰を落として 反対へとぶ。キーは なめらかに通す（BC.mo.track） */
   (function () {
-    const air = { hip: [0, 1.0], lean: 0, nod: 0, rf: [0.12, 0.3], lf: [-0.12, 0.3], rh: [0.42, 1.25], lh: [-0.42, 1.25] };
-    // 片足で着地して止まる。dir -1：左足で（画面の左）、1：右足で。how：'touch' 着く・'absorb' しずむ・'hold' 止まる・'load' とぶ前
+    const T = 6.0, G = BC.mo.G;
+    const air = { hip: [0, 0.9], lean: 0, nod: 0, rf: [0.13, 0.22], lf: [-0.13, 0.22], rh: [0.5, 1.3], lh: [-0.5, 1.3] };
+    // 片足で着地して止まる。dir -1：左足で（画面の左）、1：右足で。how：'touch' 着く・'absorb' しずむ・'hold' 止まる・'load' しずめる・'push' 床を押す
     const land = (dir, how) => {
       const xs = dir * 0.5, x = xs - dir * 0.08; // 着く足の x・腰の x（腰は着く足の上）
-      const h = { touch: 0.8, absorb: 0.72, hold: 0.82, load: 0.7 }[how];
-      const free = how === 'touch' ? 0.1 : 0.2;
-      const k = { hip: [x, h], lean: 0, rh: [x + 0.74, h + 0.42], lh: [x - 0.74, h + 0.42] }; // 腕を横に広げてバランス
-      if (how === 'load') Object.assign(k, { lean: dir * 6, rh: [x - dir * 0.2 + 0.25, 0.88], lh: [x - dir * 0.2 - 0.25, 0.88] });
+      const h = { touch: 0.8, absorb: 0.71, hold: 0.82, load: 0.7, push: 0.8 }[how];
+      const free = how === 'touch' ? 0.12 : 0.2;
+      const k = { hip: [x, h], lean: 0, nod: 0, rh: [x + 0.74, h + 0.42], lh: [x - 0.74, h + 0.42] }; // 腕を横に広げてバランス
+      if (how === 'load') Object.assign(k, { lean: dir * 5, nod: -dir * 4, rh: [x - dir * 0.2 + 0.25, 0.88], lh: [x - dir * 0.2 - 0.25, 0.88] });
+      if (how === 'push') Object.assign(k, { hip: [x - dir * 0.06, h], lean: -dir * 3, nod: dir * 2, rh: [x + 0.45, 1.25], lh: [x - 0.45, 1.25] });
       if (dir < 0) { k.lf = [xs, 0]; k.rf = [x + 0.24, free]; } else { k.rf = [xs, 0]; k.lf = [x - 0.24, free]; }
       return k;
     };
+    const K = [
+      Object.assign({ at: 0 }, air),
+      Object.assign({ at: 0.03 }, land(-1, 'touch')), Object.assign({ at: 0.09 }, land(-1, 'absorb')), Object.assign({ at: 0.16 }, land(-1, 'hold')),
+      Object.assign({ at: 0.38 }, land(-1, 'hold')), Object.assign({ at: 0.44 }, land(-1, 'load')), Object.assign({ at: 0.47 }, land(-1, 'push')),
+      Object.assign({ at: 0.5 }, air),
+      Object.assign({ at: 0.53 }, land(1, 'touch')), Object.assign({ at: 0.59 }, land(1, 'absorb')), Object.assign({ at: 0.66 }, land(1, 'hold')),
+      Object.assign({ at: 0.88 }, land(1, 'hold')), Object.assign({ at: 0.94 }, land(1, 'load')), Object.assign({ at: 0.97 }, land(1, 'push')),
+      Object.assign({ at: 1 }, air),
+    ];
+    const tr = BC.mo.track(K, true);
+    // 空中（床を押した時刻 → 着く時刻）：腰は 重力どおりの山なり・横は 同じ速さ。手足は 腰についていく
+    const flights = [[0.47, 0.53], [0.97, 1.03]];
+    const pose = (t) => {
+      const at = t / T, p = tr(at % 1);
+      for (const [a, b] of flights) {
+        const u = at < a - 0.5 ? at + 1 : at;
+        if (u <= a || u >= b) continue;
+        const A = tr(a % 1), B = tr(b % 1), D = (b - a) * T, q = (u - a) * T, v = (B.hip[1] - A.hip[1]) / D + (G * D) / 2;
+        const x = A.hip[0] + ((B.hip[0] - A.hip[0]) * (u - a)) / (b - a), y = A.hip[1] + v * q - (G * q * q) / 2;
+        const dx = x - p.hip[0], dy = y - p.hip[1];
+        p.hip = [x, y];
+        for (const f of ['rf', 'lf', 'rh', 'lh']) p[f] = [p[f][0] + dx, Math.max(0, p[f][1] + dy)];
+      }
+      // 片足で止まっている間：体が 小さくゆれて、腕で もどす
+      for (const [a, b] of [[0.16, 0.38], [0.66, 0.88]]) {
+        if (at <= a || at >= b) continue;
+        const w = Math.sin((Math.PI * (at - a)) / (b - a)), ph = 2 * Math.PI * 1.3 * (at - a) * T;
+        p.lean += 1.6 * w * Math.sin(ph); p.nod -= 1.2 * w * Math.sin(ph);
+        p.rh = [p.rh[0], p.rh[1] - 0.03 * w * Math.sin(ph)]; p.lh = [p.lh[0], p.lh[1] + 0.03 * w * Math.sin(ph)];
+      }
+      return p;
+    };
+    const SH = BC.mo.bake(T, { actors: [pose], fps: 24 }).actors[0];
     BC.motion({ id: 'side-hop',
-      name: '横へ片足ジャンプ（片足で止まる）', view: 'front', box: [-1.3, 1.3, -0.05, 2.05], dur: 6.0,
-      phases: [{ at: 0, label: '横へとぶ' }, { at: 0.06, label: '片足で着地' }, { at: 0.12, label: '2秒止まる' }, { at: 0.42, label: '反対へとぶ' }],
+      name: '横へ片足ジャンプ（片足で止まる）', view: 'front', box: [-1.3, 1.3, -0.05, 2.05], dur: T,
+      phases: [{ at: 0, label: '横へとぶ' }, { at: 0.03, label: '片足で着地' }, { at: 0.09, label: '2秒止まる' }, { at: 0.42, label: '反対へとぶ' }],
       still: 0.25,
-      actors: [{ keys: [
-        Object.assign({ at: 0 }, air),
-        Object.assign({ at: 0.06 }, land(-1, 'touch')),
-        Object.assign({ at: 0.12 }, land(-1, 'absorb')),
-        Object.assign({ at: 0.2 }, land(-1, 'hold')),
-        { at: 0.38 },
-        Object.assign({ at: 0.44 }, land(-1, 'load')),
-        Object.assign({ at: 0.5 }, air),
-        Object.assign({ at: 0.56 }, land(1, 'touch')),
-        Object.assign({ at: 0.62 }, land(1, 'absorb')),
-        Object.assign({ at: 0.7 }, land(1, 'hold')),
-        { at: 0.88 },
-        Object.assign({ at: 0.94 }, land(1, 'load')),
-        Object.assign({ at: 1 }, air),
-      ] }],
+      actors: [{ keys: SH }],
       points: ['ひざはつま先と同じ向き（内に入れない）', 'ひざと股関節を曲げて、やわらかく着地', '着地したら2秒止まって、ぐらつかない'],
     });
   })();
