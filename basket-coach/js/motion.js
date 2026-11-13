@@ -27,11 +27,11 @@
    ■ キー（ボール）：p [x, 高さ]（その場所）| h 'r'・'l'・'both'（手につける。a で人の番号、o でずらす）。arc：このキーまでを山なりに。
        （なくてもよい）rot 回った角度（度）・sq つぶれ（0〜0.2。床についた瞬間）・f 'r'|'l' と w（0〜1）：手が目標に届かないとき
        （よくない形で 腰が高い など）、手のずれの w 倍だけ ボールもずらす（手の中＝1、床＝0）
-   ■ look: 'real'：体つきのある人で描く（js/motion-real.js。横からの動きだけ。なければ いつもの絵）
+   ■ look: 'flat'：体つきのある人（js/motion-real.js が標準）ではなく、太い線だけの いつもの絵で描く（なくてよい）
    ■ よくない形の作り方（mods。人 0 だけにかかる）
        hipUp: 0.17    腰を高く（体も起きる）。hands: true なら手も一緒に上がる
        nod: 35        頭を下げる（下を見る）
-       stiff: true    ひざを使わない（腰の高さを 0.92 より下げない・とばない）
+       stiff: true    ひざを使わない（腰の高さを 0.93 より下げない・とばない。ひざは 160° ほど＝ほぼまっすぐ）
        bob: 0.1, freq: 6   頭・腰が上下にはねる（freq 回）
        stiffAfter: 0.5     この時刻のあと、ひざを曲げない（着地で吸収しない）
        elbowOut: 0.18      前から見たとき、右ひじが外へ開く（右手が外へずれる）
@@ -133,8 +133,8 @@
     return {
       view: side ? 'side' : 'front', face, axis: [ax, ay], headAxis: [hx, hy],
       hip, sh, neck, head, shR, shL, hpR, hpL,
-      r: { knee: legR.knee, ank: legR.ank, foot: foot(legR.ank, p.rf, 'r'), elb: armR.elb, hand: armR.hand, palm: palm(armR, p.rw), curl: p.rc, err: miss(armR, p.rh) },
-      l: { knee: legL.knee, ank: legL.ank, foot: foot(legL.ank, p.lf, 'l'), elb: armL.elb, hand: armL.hand, palm: palm(armL, p.lw), curl: p.lc, err: miss(armL, p.lh) },
+      r: { knee: legR.knee, ank: legR.ank, foot: foot(legR.ank, p.rf, 'r'), elb: armR.elb, hand: armR.hand, palm: palm(armR, p.rw), pset: p.rw != null, curl: p.rc, err: miss(armR, p.rh) },
+      l: { knee: legL.knee, ank: legL.ank, foot: foot(legL.ank, p.lf, 'l'), elb: armL.elb, hand: armL.hand, palm: palm(armL, p.lw), pset: p.lw != null, curl: p.lc, err: miss(armL, p.lh) },
     };
   }
   BC.skeleton = skeleton;
@@ -188,7 +188,7 @@
       if (m.hands) { q.rh[1] += m.hipUp * 0.8; q.lh[1] += m.hipUp * 0.8; }
     }
     if (m.nod) q.nod += m.nod;
-    if (m.stiff) { q.hip[1] = Math.max(q.hip[1], 0.92); q.rf[1] = 0; q.lf[1] = 0; q.lean = Math.min(q.lean, 6); }
+    if (m.stiff) { q.hip[1] = Math.max(q.hip[1], 0.93); q.rf[1] = 0; q.lf[1] = 0; q.lean = Math.min(q.lean, 6); }
     if (m.bob) q.hip[1] += m.bob * Math.abs(Math.sin(t * Math.PI * (m.freq || 6)));
     if (m.stiffAfter != null && t > m.stiffAfter - 0.06) {
       // 足がつく少し前から、ひざをのばす（低い方の足の高さ ＋ 0.86 より腰を下げない。片足で着地しても、着いた足が浮かない）
@@ -379,9 +379,12 @@
         out += `<g opacity="${f3(0.1 + (3 - k) * 0.07)}">${ghost(g.sk[0])}${g.balls.map((b) => ballSVG(b, 0.6)).join('')}</g>`;
       }
     }
-    // look: 'real'（体つきのある人。js/motion-real.js）は、横からの人だけ。部品がなければ いつもの絵
-    const real = clip.look === 'real' && BC.real ? BC.real : null;
-    const figs = fr.sk.map((s) => (real && s.view === 'side' ? real.figure(s) : figure(s)));
+    // 体つきのある人（js/motion-real.js）が標準。look: 'flat' と書くと、いつもの（太い線だけの）絵。部品が読みこまれていなければ いつもの絵
+    const real = clip.look !== 'flat' && BC.real ? BC.real : null;
+    // 画面の外で待っている人（向きを変える動きの、使わない方）は 描かない
+    const [bx0, bx1, , by1] = clip.box;
+    const seen = (s) => s.hip[0] > bx0 - 1.2 && s.hip[0] < bx1 + 1.2 && s.hip[1] < by1 + 1.5;
+    const figs = fr.sk.map((s) => (!seen(s) ? { back: '', front: '' } : real ? real.figure(s, fr.balls) : figure(s)));
     const actor = real ? 'mo-actor mo-real' : 'mo-actor';
     // 影
     out += fr.sk.map((s) => { const air = Math.min(s.r.ank[1], s.l.ank[1]) - L.ANK; return `<ellipse class="mo-shadow" cx="${f3(s.hip[0])}" cy="0.02" rx="${f3(0.34 * Math.max(0.4, 1 - air))}" ry="0.04" opacity="${f3(fr.fade)}"/>`; }).join('');
@@ -412,8 +415,9 @@
     const phases = clip.phases || [];
     const mistakes = clip.mistakes || [];
     const still = reduce || opt.autoplay === false;
+    const gap = (clip.actors || []).length >= 3 ? 30 : 0;
     // 止めて見せるときは、いちばん形が分かる時刻（still）から。動かすときは 0 から
-    const S = { t: opt.at != null ? opt.at : still && clip.still != null ? clip.still : 0, playing: !still, speed: 1, mode: '', angles: false, trail: false, visible: true, last: 0, raf: 0 };
+    const S = { t: opt.at != null ? opt.at : still && clip.still != null ? clip.still : 0, playing: !still, speed: 1, mode: '', angles: false, trail: false, visible: true, last: 0, drawn: 0, raf: 0 };
     el.classList.add('mo');
     el.innerHTML = `
       <div class="mo-stage"><svg viewBox="${x0} ${-y1} ${x1 - x0} ${y1 - y0}" role="img" aria-label="${clip.name}の動き">
@@ -442,7 +446,7 @@
     const mods = () => { const m = mistakes.find((x) => x.id === S.mode); return m ? m.mods : null; };
     if (guide) {
       const f0 = BC.motionFrame(clip, 0);
-      const y = -(f0.sk[0].head[1] + L.R + 0.03 + (clip.look === 'real' && BC.real ? BC.real.HEAD_UP : 0));
+      const y = -(f0.sk[0].head[1] + L.R + 0.03 + (clip.look !== 'flat' && BC.real ? BC.real.HEAD_UP : 0));
       guide.setAttribute('x1', x0); guide.setAttribute('x2', x1); guide.setAttribute('y1', y); guide.setAttribute('y2', y);
     }
     function draw() {
@@ -459,7 +463,8 @@
       if (S.playing && S.visible) {
         if (S.last) S.t = (S.t + ((now - S.last) / 1000 / clip.dur) * S.speed) % 1;
         S.last = now;
-        draw();
+        // 人が3人以上の動きは 描く間隔を 30ms 以上あける（時間はふつうに進める。古い端末で かくつかないように）
+        if (!gap || now - S.drawn >= gap) { S.drawn = now; draw(); }
       } else S.last = 0;
       if (S.playing) S.raf = requestAnimationFrame(loop);
     }

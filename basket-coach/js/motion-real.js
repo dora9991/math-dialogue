@@ -26,15 +26,19 @@
   const HS = 1.08;      // 頭の大きさ（小・中学生の体つきに）
 
   /* ---------- 形を作る道具 ---------- */
-  // 点をなめらかにつないだ、閉じた形（c のついた点は 角）
+  // 点をなめらかにつないだ、閉じた形（c のついた点は 角）。数が多いので、配列を作らず 文字列だけで組み立てる
+  // 0.001 刻みの数字の文字は 最初に表にしておく（小数を文字にするのが、いちばん時間がかかったため）
+  const NUM = [], OFF = 8000;
+  for (let i = -OFF; i <= OFF; i++) NUM.push(i === 0 ? '0' : String(i / 1000));
+  const n3 = (v) => { const i = Math.round(v * 1000); return i >= -OFF && i <= OFF ? NUM[i + OFF] : String(i / 1000); };
   function smooth(pts) {
     const n = pts.length;
-    let d = 'M' + P(pts[0]);
+    let d = 'M' + n3(pts[0][0]) + ' ' + n3(-pts[0][1]);
     for (let i = 0; i < n; i++) {
       const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
-      const c1 = p1.c ? p1 : [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
-      const c2 = p2.c ? p2 : [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-      d += `C${P(c1)} ${P(c2)} ${P(p2)}`;
+      const ax = p1.c ? p1[0] : p1[0] + (p2[0] - p0[0]) / 6, ay = p1.c ? p1[1] : p1[1] + (p2[1] - p0[1]) / 6;
+      const bx = p2.c ? p2[0] : p2[0] - (p3[0] - p1[0]) / 6, by = p2.c ? p2[1] : p2[1] - (p3[1] - p1[1]) / 6;
+      d += 'C' + n3(ax) + ' ' + n3(-ay) + ' ' + n3(bx) + ' ' + n3(-by) + ' ' + n3(p2[0]) + ' ' + n3(-p2[1]);
     }
     return d + 'Z';
   }
@@ -45,11 +49,8 @@
     return a < 0 ? pts.slice().reverse() : pts;
   }
   const pathOf = (shapes) => shapes.map((s) => smooth(orient(s))).join('');
-  function circle(c, r) {
-    const out = [];
-    for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; out.push([c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)]); }
-    return out;
-  }
+  const CIR = Array.from({ length: 8 }, (_, i) => [Math.cos((i / 8) * Math.PI * 2), Math.sin((i / 8) * Math.PI * 2)]);
+  function circle(c, r) { return CIR.map(([x, y]) => [c[0] + r * x, c[1] + r * y]); }
   // 骨 A→B に太さをつけた形。nf：前の向き・st：[[場所 0〜1, 前の太さ, 後ろの太さ], …]
   function tube(A, B, nf, st) {
     const fr = [], bk = [];
@@ -139,13 +140,30 @@
   }
 
   /* ---------- 手・腕 ---------- */
-  function hand(g, face, far) {
-    const W = g.hand, hd = g.palm, curl = rad(g.curl == null ? 26 : g.curl), f = far ? ' far' : '';
-    const f1 = rot(hd, -face * curl * 0.4), f2 = rot(hd, -face * curl);
+  // 手のひらの向きと指の巻き方。手のひらの向き rw を書いた動き（pound）は そのまま。書いていなければ、
+  // ボールが近いとき（0.34m 以内。0.22m 以内で 100%）は、手首からボールの中心へ向け、指をボールの側へ巻く。遠いときは、前腕と同じ向きで 力をぬいた手
+  function gripOf(g, balls, face) {
+    const base = { hd: g.palm, sgn: -face, c: rad(g.curl == null ? 26 : g.curl), w: 0 };
+    if (g.pset || !balls || !balls.length) return base;
+    let best = null, bd = 1e9;
+    for (const b of balls) { const d = Math.hypot(b[0] - g.hand[0], b[1] - g.hand[1]); if (d < bd) { bd = d; best = b; } }
+    const w = Math.max(0, Math.min(1, (0.34 - bd) / 0.12));
+    if (w <= 0) return base;
+    const a0 = Math.atan2(g.palm[1], g.palm[0]), a1 = Math.atan2(best[1] - g.hand[1], best[0] - g.hand[0]);
+    let da = a1 - a0;
+    while (da > Math.PI) da -= 2 * Math.PI;
+    while (da < -Math.PI) da += 2 * Math.PI;
+    const a = a0 + da * w, hd = [Math.cos(a), Math.sin(a)];
+    const K = add(g.hand, mul(hd, 0.085)), sgn = hd[0] * (best[1] - K[1]) - hd[1] * (best[0] - K[0]) >= 0 ? 1 : -1; // 指は ボールの中心の側へ
+    return { hd, sgn: base.sgn * (1 - w) + sgn * w, c: base.c + (rad(46) - base.c) * w, w };
+  }
+  function hand(g, face, far, gr) {
+    const W = g.hand, hd = gr.hd, k = gr.sgn * gr.c, f = far ? ' far' : '';
+    const f1 = rot(hd, k * 0.4), f2 = rot(hd, k);
     const K = add(W, mul(hd, 0.085)), M = add(K, mul(f1, 0.045)), Tp = add(M, mul(f2, 0.04));
     const nb = (d) => mul(perp(d), face); // 手のこう（外）の向き
     // 奥の指（少しのびている）を 先に
-    const g1 = rot(hd, -face * curl * 0.15), g2 = rot(hd, -face * curl * 0.6);
+    const g1 = rot(hd, k * 0.15), g2 = rot(hd, k * 0.6);
     const M2 = add(K, mul(g1, 0.046)), T2 = add(M2, mul(g2, 0.038));
     const back = [tube(K, M2, nb(g1), [[0, 0.014, 0.014], [1, 0.012, 0.012]]), circle(M2, 0.012), tube(M2, T2, nb(g2), [[0, 0.012, 0.012], [1, 0.009, 0.009]]), circle(T2, 0.009)];
     const main = [
@@ -155,11 +173,11 @@
     ];
     return flat('hand2' + f, back) + flat('hand' + f, main);
   }
-  function arm(s, side, far, Ld) {
+  function arm(s, side, far, Ld, balls) {
     const g = s[side], sp = side === 'r' ? s.shR : s.shL, face = s.face, f = far ? ' far' : '';
     const nU = mul(perp(unit(sub(g.elb, sp))), face), nF = mul(perp(unit(sub(g.hand, g.elb))), face);
     const skin = [ball2(sp, 0.058, Ld), shade(sp, g.elb, nU, UA, Ld), ball2(g.elb, 0.041, Ld), shade(g.elb, g.hand, nF, FA, Ld), ball2(g.hand, 0.027, Ld)];
-    return paint('skin' + f, skin) + hand(g, face, far);
+    return paint('skin' + f, skin) + hand(g, face, far, gripOf(g, balls, face));
   }
 
   /* ---------- 胴・首・頭 ---------- */
@@ -212,13 +230,14 @@
   }
 
   /* ---------- 1人ぶん：うしろの層（体）と 前の層（手前の腕） ---------- */
-  function figure(s) {
+  function figureSide(s, balls) {
     const Ld = unit([0.42 * s.face, 1]);
     return {
-      back: arm(s, 'l', true, Ld) + leg(s, 'l', true, Ld) + shorts(s, 'l', true, Ld) + neck(s, Ld) + torso(s, Ld) + head(s) + leg(s, 'r', false, Ld) + shorts(s, 'r', false, Ld),
-      front: arm(s, 'r', false, Ld),
+      back: arm(s, 'l', true, Ld, balls) + leg(s, 'l', true, Ld) + shorts(s, 'l', true, Ld) + neck(s, Ld) + torso(s, Ld) + head(s) + leg(s, 'r', false, Ld) + shorts(s, 'r', false, Ld),
+      front: arm(s, 'r', false, Ld, balls),
     };
   }
+  function figure(s, balls) { return s.view === 'side' ? figureSide(s, balls) : BC.realFront(s, balls); }
 
   /* ---------- ボール ---------- */
   const R = 0.12;
@@ -235,5 +254,6 @@
     return `<ellipse class="mo-shadow" cx="${f3(b[0])}" cy="0.02" rx="${f3(0.125 * (1 - h * 0.45))}" ry="${f3(0.03 * (1 - h * 0.4))}" opacity="${f3(op * (1 - h * 0.7))}"/>`;
   }
 
-  BC.real = { figure, ball, ballShadow, HEAD_UP };
+  // 前から見た人（js/motion-real-front.js）が使う道具
+  BC.real = { figure, ball, ballShadow, HEAD_UP, HS, kit: { add, sub, mul, mix, unit, perp, dot, rot, P, f3, corner, smooth, orient, pathOf, circle, tube, cut, shade, ball2, paint, flat, line, gripOf } };
 })();

@@ -48,7 +48,7 @@ const load = (rel) => {
 };
 load('js/core.js');
 // 動き（BC.motion）・ケガ（BC.aid）の登録のしくみを先に（data/motions-*.js・data/aid.js が使う）
-for (const f of ['js/motion.js', 'js/motion-real.js', 'js/aid.js', 'js/grow.js']) if (fs.existsSync(path.join(root, f))) load(f);
+for (const f of ['js/motion.js', 'js/motion-real.js', 'js/motion-real-front.js', 'js/aid.js', 'js/grow.js']) if (fs.existsSync(path.join(root, f))) load(f);
 for (const f of files) load(f);
 
 const BC = ctx.BC;

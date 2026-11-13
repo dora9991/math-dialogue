@@ -83,7 +83,7 @@
   })();
 
   BC.motion({ id: 'pound',
-    name: '低いドリブル（ポンド）', view: 'side', look: 'real', box: [-0.75, 1.05, -0.05, 1.85], dur: Math.round(pound.T * 100) / 100, guides: ['head'],
+    name: '低いドリブル（ポンド）', view: 'side', box: [-0.75, 1.05, -0.05, 1.85], dur: Math.round(pound.T * 100) / 100, guides: ['head'],
     phases: [{ at: 0, label: '押す' }, { at: Math.round((pound.tR / pound.T) * 100) / 100, label: '床へ' }, { at: Math.round(((pound.tB + 0.015) / pound.T) * 100) / 100, label: '手にもどる' }],
     mistakes: [{ id: 'tall', label: '腰が高い', mods: { hipUp: 0.2 } }, { id: 'look', label: 'ボールを見る', mods: { nod: 38 } }],
     still: 0.1,
