@@ -13289,11 +13289,11 @@ BC && (BC.currentFile = "js/motion.js");
    ■ キー（ボール）：p [x, 高さ]（その場所）| h 'r'・'l'・'both'（手につける。a で人の番号、o でずらす）。arc：このキーまでを山なりに。
        （なくてもよい）rot 回った角度（度）・sq つぶれ（0〜0.2。床についた瞬間）・f 'r'|'l' と w（0〜1）：手が目標に届かないとき
        （よくない形で 腰が高い など）、手のずれの w 倍だけ ボールもずらす（手の中＝1、床＝0）
-   ■ look: 'real'：体つきのある人で描く（js/motion-real.js。横からの動きだけ。なければ いつもの絵）
+   ■ look: 'flat'：体つきのある人（js/motion-real.js が標準）ではなく、太い線だけの いつもの絵で描く（なくてよい）
    ■ よくない形の作り方（mods。人 0 だけにかかる）
        hipUp: 0.17    腰を高く（体も起きる）。hands: true なら手も一緒に上がる
        nod: 35        頭を下げる（下を見る）
-       stiff: true    ひざを使わない（腰の高さを 0.92 より下げない・とばない）
+       stiff: true    ひざを使わない（腰の高さを 0.93 より下げない・とばない。ひざは 160° ほど＝ほぼまっすぐ）
        bob: 0.1, freq: 6   頭・腰が上下にはねる（freq 回）
        stiffAfter: 0.5     この時刻のあと、ひざを曲げない（着地で吸収しない）
        elbowOut: 0.18      前から見たとき、右ひじが外へ開く（右手が外へずれる）
@@ -13395,8 +13395,8 @@ BC && (BC.currentFile = "js/motion.js");
     return {
       view: side ? 'side' : 'front', face, axis: [ax, ay], headAxis: [hx, hy],
       hip, sh, neck, head, shR, shL, hpR, hpL,
-      r: { knee: legR.knee, ank: legR.ank, foot: foot(legR.ank, p.rf, 'r'), elb: armR.elb, hand: armR.hand, palm: palm(armR, p.rw), curl: p.rc, err: miss(armR, p.rh) },
-      l: { knee: legL.knee, ank: legL.ank, foot: foot(legL.ank, p.lf, 'l'), elb: armL.elb, hand: armL.hand, palm: palm(armL, p.lw), curl: p.lc, err: miss(armL, p.lh) },
+      r: { knee: legR.knee, ank: legR.ank, foot: foot(legR.ank, p.rf, 'r'), elb: armR.elb, hand: armR.hand, palm: palm(armR, p.rw), pset: p.rw != null, curl: p.rc, err: miss(armR, p.rh) },
+      l: { knee: legL.knee, ank: legL.ank, foot: foot(legL.ank, p.lf, 'l'), elb: armL.elb, hand: armL.hand, palm: palm(armL, p.lw), pset: p.lw != null, curl: p.lc, err: miss(armL, p.lh) },
     };
   }
   BC.skeleton = skeleton;
@@ -13450,7 +13450,7 @@ BC && (BC.currentFile = "js/motion.js");
       if (m.hands) { q.rh[1] += m.hipUp * 0.8; q.lh[1] += m.hipUp * 0.8; }
     }
     if (m.nod) q.nod += m.nod;
-    if (m.stiff) { q.hip[1] = Math.max(q.hip[1], 0.92); q.rf[1] = 0; q.lf[1] = 0; q.lean = Math.min(q.lean, 6); }
+    if (m.stiff) { q.hip[1] = Math.max(q.hip[1], 0.93); q.rf[1] = 0; q.lf[1] = 0; q.lean = Math.min(q.lean, 6); }
     if (m.bob) q.hip[1] += m.bob * Math.abs(Math.sin(t * Math.PI * (m.freq || 6)));
     if (m.stiffAfter != null && t > m.stiffAfter - 0.06) {
       // 足がつく少し前から、ひざをのばす（低い方の足の高さ ＋ 0.86 より腰を下げない。片足で着地しても、着いた足が浮かない）
@@ -13641,9 +13641,12 @@ BC && (BC.currentFile = "js/motion.js");
         out += `<g opacity="${f3(0.1 + (3 - k) * 0.07)}">${ghost(g.sk[0])}${g.balls.map((b) => ballSVG(b, 0.6)).join('')}</g>`;
       }
     }
-    // look: 'real'（体つきのある人。js/motion-real.js）は、横からの人だけ。部品がなければ いつもの絵
-    const real = clip.look === 'real' && BC.real ? BC.real : null;
-    const figs = fr.sk.map((s) => (real && s.view === 'side' ? real.figure(s) : figure(s)));
+    // 体つきのある人（js/motion-real.js）が標準。look: 'flat' と書くと、いつもの（太い線だけの）絵。部品が読みこまれていなければ いつもの絵
+    const real = clip.look !== 'flat' && BC.real ? BC.real : null;
+    // 画面の外で待っている人（向きを変える動きの、使わない方）は 描かない
+    const [bx0, bx1, , by1] = clip.box;
+    const seen = (s) => s.hip[0] > bx0 - 1.2 && s.hip[0] < bx1 + 1.2 && s.hip[1] < by1 + 1.5;
+    const figs = fr.sk.map((s) => (!seen(s) ? { back: '', front: '' } : real ? real.figure(s, fr.balls) : figure(s)));
     const actor = real ? 'mo-actor mo-real' : 'mo-actor';
     // 影
     out += fr.sk.map((s) => { const air = Math.min(s.r.ank[1], s.l.ank[1]) - L.ANK; return `<ellipse class="mo-shadow" cx="${f3(s.hip[0])}" cy="0.02" rx="${f3(0.34 * Math.max(0.4, 1 - air))}" ry="0.04" opacity="${f3(fr.fade)}"/>`; }).join('');
@@ -13674,8 +13677,9 @@ BC && (BC.currentFile = "js/motion.js");
     const phases = clip.phases || [];
     const mistakes = clip.mistakes || [];
     const still = reduce || opt.autoplay === false;
+    const gap = (clip.actors || []).length >= 3 ? 30 : 0;
     // 止めて見せるときは、いちばん形が分かる時刻（still）から。動かすときは 0 から
-    const S = { t: opt.at != null ? opt.at : still && clip.still != null ? clip.still : 0, playing: !still, speed: 1, mode: '', angles: false, trail: false, visible: true, last: 0, raf: 0 };
+    const S = { t: opt.at != null ? opt.at : still && clip.still != null ? clip.still : 0, playing: !still, speed: 1, mode: '', angles: false, trail: false, visible: true, last: 0, drawn: 0, raf: 0 };
     el.classList.add('mo');
     el.innerHTML = `
       <div class="mo-stage"><svg viewBox="${x0} ${-y1} ${x1 - x0} ${y1 - y0}" role="img" aria-label="${clip.name}の動き">
@@ -13704,7 +13708,7 @@ BC && (BC.currentFile = "js/motion.js");
     const mods = () => { const m = mistakes.find((x) => x.id === S.mode); return m ? m.mods : null; };
     if (guide) {
       const f0 = BC.motionFrame(clip, 0);
-      const y = -(f0.sk[0].head[1] + L.R + 0.03 + (clip.look === 'real' && BC.real ? BC.real.HEAD_UP : 0));
+      const y = -(f0.sk[0].head[1] + L.R + 0.03 + (clip.look !== 'flat' && BC.real ? BC.real.HEAD_UP : 0));
       guide.setAttribute('x1', x0); guide.setAttribute('x2', x1); guide.setAttribute('y1', y); guide.setAttribute('y2', y);
     }
     function draw() {
@@ -13721,7 +13725,8 @@ BC && (BC.currentFile = "js/motion.js");
       if (S.playing && S.visible) {
         if (S.last) S.t = (S.t + ((now - S.last) / 1000 / clip.dur) * S.speed) % 1;
         S.last = now;
-        draw();
+        // 人が3人以上の動きは 描く間隔を 30ms 以上あける（時間はふつうに進める。古い端末で かくつかないように）
+        if (!gap || now - S.drawn >= gap) { S.drawn = now; draw(); }
       } else S.last = 0;
       if (S.playing) S.raf = requestAnimationFrame(loop);
     }
@@ -13871,15 +13876,19 @@ BC && (BC.currentFile = "js/motion-real.js");
   const HS = 1.08;      // 頭の大きさ（小・中学生の体つきに）
 
   /* ---------- 形を作る道具 ---------- */
-  // 点をなめらかにつないだ、閉じた形（c のついた点は 角）
+  // 点をなめらかにつないだ、閉じた形（c のついた点は 角）。数が多いので、配列を作らず 文字列だけで組み立てる
+  // 0.001 刻みの数字の文字は 最初に表にしておく（小数を文字にするのが、いちばん時間がかかったため）
+  const NUM = [], OFF = 8000;
+  for (let i = -OFF; i <= OFF; i++) NUM.push(i === 0 ? '0' : String(i / 1000));
+  const n3 = (v) => { const i = Math.round(v * 1000); return i >= -OFF && i <= OFF ? NUM[i + OFF] : String(i / 1000); };
   function smooth(pts) {
     const n = pts.length;
-    let d = 'M' + P(pts[0]);
+    let d = 'M' + n3(pts[0][0]) + ' ' + n3(-pts[0][1]);
     for (let i = 0; i < n; i++) {
       const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
-      const c1 = p1.c ? p1 : [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
-      const c2 = p2.c ? p2 : [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-      d += `C${P(c1)} ${P(c2)} ${P(p2)}`;
+      const ax = p1.c ? p1[0] : p1[0] + (p2[0] - p0[0]) / 6, ay = p1.c ? p1[1] : p1[1] + (p2[1] - p0[1]) / 6;
+      const bx = p2.c ? p2[0] : p2[0] - (p3[0] - p1[0]) / 6, by = p2.c ? p2[1] : p2[1] - (p3[1] - p1[1]) / 6;
+      d += 'C' + n3(ax) + ' ' + n3(-ay) + ' ' + n3(bx) + ' ' + n3(-by) + ' ' + n3(p2[0]) + ' ' + n3(-p2[1]);
     }
     return d + 'Z';
   }
@@ -13890,11 +13899,8 @@ BC && (BC.currentFile = "js/motion-real.js");
     return a < 0 ? pts.slice().reverse() : pts;
   }
   const pathOf = (shapes) => shapes.map((s) => smooth(orient(s))).join('');
-  function circle(c, r) {
-    const out = [];
-    for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; out.push([c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)]); }
-    return out;
-  }
+  const CIR = Array.from({ length: 8 }, (_, i) => [Math.cos((i / 8) * Math.PI * 2), Math.sin((i / 8) * Math.PI * 2)]);
+  function circle(c, r) { return CIR.map(([x, y]) => [c[0] + r * x, c[1] + r * y]); }
   // 骨 A→B に太さをつけた形。nf：前の向き・st：[[場所 0〜1, 前の太さ, 後ろの太さ], …]
   function tube(A, B, nf, st) {
     const fr = [], bk = [];
@@ -13984,13 +13990,30 @@ BC && (BC.currentFile = "js/motion-real.js");
   }
 
   /* ---------- 手・腕 ---------- */
-  function hand(g, face, far) {
-    const W = g.hand, hd = g.palm, curl = rad(g.curl == null ? 26 : g.curl), f = far ? ' far' : '';
-    const f1 = rot(hd, -face * curl * 0.4), f2 = rot(hd, -face * curl);
+  // 手のひらの向きと指の巻き方。手のひらの向き rw を書いた動き（pound）は そのまま。書いていなければ、
+  // ボールが近いとき（0.34m 以内。0.22m 以内で 100%）は、手首からボールの中心へ向け、指をボールの側へ巻く。遠いときは、前腕と同じ向きで 力をぬいた手
+  function gripOf(g, balls, face) {
+    const base = { hd: g.palm, sgn: -face, c: rad(g.curl == null ? 26 : g.curl), w: 0 };
+    if (g.pset || !balls || !balls.length) return base;
+    let best = null, bd = 1e9;
+    for (const b of balls) { const d = Math.hypot(b[0] - g.hand[0], b[1] - g.hand[1]); if (d < bd) { bd = d; best = b; } }
+    const w = Math.max(0, Math.min(1, (0.34 - bd) / 0.12));
+    if (w <= 0) return base;
+    const a0 = Math.atan2(g.palm[1], g.palm[0]), a1 = Math.atan2(best[1] - g.hand[1], best[0] - g.hand[0]);
+    let da = a1 - a0;
+    while (da > Math.PI) da -= 2 * Math.PI;
+    while (da < -Math.PI) da += 2 * Math.PI;
+    const a = a0 + da * w, hd = [Math.cos(a), Math.sin(a)];
+    const K = add(g.hand, mul(hd, 0.085)), sgn = hd[0] * (best[1] - K[1]) - hd[1] * (best[0] - K[0]) >= 0 ? 1 : -1; // 指は ボールの中心の側へ
+    return { hd, sgn: base.sgn * (1 - w) + sgn * w, c: base.c + (rad(46) - base.c) * w, w };
+  }
+  function hand(g, face, far, gr) {
+    const W = g.hand, hd = gr.hd, k = gr.sgn * gr.c, f = far ? ' far' : '';
+    const f1 = rot(hd, k * 0.4), f2 = rot(hd, k);
     const K = add(W, mul(hd, 0.085)), M = add(K, mul(f1, 0.045)), Tp = add(M, mul(f2, 0.04));
     const nb = (d) => mul(perp(d), face); // 手のこう（外）の向き
     // 奥の指（少しのびている）を 先に
-    const g1 = rot(hd, -face * curl * 0.15), g2 = rot(hd, -face * curl * 0.6);
+    const g1 = rot(hd, k * 0.15), g2 = rot(hd, k * 0.6);
     const M2 = add(K, mul(g1, 0.046)), T2 = add(M2, mul(g2, 0.038));
     const back = [tube(K, M2, nb(g1), [[0, 0.014, 0.014], [1, 0.012, 0.012]]), circle(M2, 0.012), tube(M2, T2, nb(g2), [[0, 0.012, 0.012], [1, 0.009, 0.009]]), circle(T2, 0.009)];
     const main = [
@@ -14000,11 +14023,11 @@ BC && (BC.currentFile = "js/motion-real.js");
     ];
     return flat('hand2' + f, back) + flat('hand' + f, main);
   }
-  function arm(s, side, far, Ld) {
+  function arm(s, side, far, Ld, balls) {
     const g = s[side], sp = side === 'r' ? s.shR : s.shL, face = s.face, f = far ? ' far' : '';
     const nU = mul(perp(unit(sub(g.elb, sp))), face), nF = mul(perp(unit(sub(g.hand, g.elb))), face);
     const skin = [ball2(sp, 0.058, Ld), shade(sp, g.elb, nU, UA, Ld), ball2(g.elb, 0.041, Ld), shade(g.elb, g.hand, nF, FA, Ld), ball2(g.hand, 0.027, Ld)];
-    return paint('skin' + f, skin) + hand(g, face, far);
+    return paint('skin' + f, skin) + hand(g, face, far, gripOf(g, balls, face));
   }
 
   /* ---------- 胴・首・頭 ---------- */
@@ -14057,13 +14080,14 @@ BC && (BC.currentFile = "js/motion-real.js");
   }
 
   /* ---------- 1人ぶん：うしろの層（体）と 前の層（手前の腕） ---------- */
-  function figure(s) {
+  function figureSide(s, balls) {
     const Ld = unit([0.42 * s.face, 1]);
     return {
-      back: arm(s, 'l', true, Ld) + leg(s, 'l', true, Ld) + shorts(s, 'l', true, Ld) + neck(s, Ld) + torso(s, Ld) + head(s) + leg(s, 'r', false, Ld) + shorts(s, 'r', false, Ld),
-      front: arm(s, 'r', false, Ld),
+      back: arm(s, 'l', true, Ld, balls) + leg(s, 'l', true, Ld) + shorts(s, 'l', true, Ld) + neck(s, Ld) + torso(s, Ld) + head(s) + leg(s, 'r', false, Ld) + shorts(s, 'r', false, Ld),
+      front: arm(s, 'r', false, Ld, balls),
     };
   }
+  function figure(s, balls) { return s.view === 'side' ? figureSide(s, balls) : BC.realFront(s, balls); }
 
   /* ---------- ボール ---------- */
   const R = 0.12;
@@ -14080,7 +14104,164 @@ BC && (BC.currentFile = "js/motion-real.js");
     return `<ellipse class="mo-shadow" cx="${f3(b[0])}" cy="0.02" rx="${f3(0.125 * (1 - h * 0.45))}" ry="${f3(0.03 * (1 - h * 0.4))}" opacity="${f3(op * (1 - h * 0.7))}"/>`;
   }
 
-  BC.real = { figure, ball, ballShadow, HEAD_UP };
+  // 前から見た人（js/motion-real-front.js）が使う道具
+  BC.real = { figure, ball, ballShadow, HEAD_UP, HS, kit: { add, sub, mul, mix, unit, perp, dot, rot, P, f3, corner, smooth, orient, pathOf, circle, tube, cut, shade, ball2, paint, flat, line, gripOf } };
+})();
+
+/* ---- js/motion-real-front.js ---- */
+BC && (BC.currentFile = "js/motion-real-front.js");
+/* リアルな人（前から）：js/motion-real.js の横向きの人と同じ作り方で、正面を向いた人を描く（BC.realFront）。
+   画面の右が r、左が l（js/motion.js の前向きの骨格）。光は 左上から。
+     ・顔：まるい頭・耳・髪・まゆ・目・鼻・口・ほほ。首・肩・そでなしのユニフォーム（えりぐり・そでぐり）・パンツ（わきの線）
+     ・手足は 先細り。ひざ・ひじは 丸い関節。くつ下・シューズ（前から：つま先・ひも・白いソール）
+     ・手：手のひら＋4本の指＋親指。ボールが近いときは 指を広げてボールへ向ける（横向きと同じ gripOf） */
+(function () {
+  const BC = window.BC;
+  const R = BC.real, K = R.kit, HS = R.HS;
+  const { add, sub, mul, mix, unit, perp, dot, rot, P, f3, corner, pathOf, circle, tube, cut, shade, ball2, paint, flat, line, gripOf } = K;
+  const rad = (d) => (d * Math.PI) / 180;
+  const LD = unit([-0.38, 1]); // 光の向き（画面の左上から）
+
+  // 太さ（m）：前から見ると 左右対称
+  const TH = [[0, 0.082, 0.082], [0.3, 0.084, 0.084], [0.65, 0.072, 0.072], [1, 0.056, 0.056]];
+  const SH = [[0, 0.05, 0.05], [0.22, 0.057, 0.057], [0.55, 0.045, 0.045], [1, 0.034, 0.034]];
+  const UA = [[0, 0.054, 0.054], [0.3, 0.05, 0.05], [0.7, 0.043, 0.043], [1, 0.039, 0.039]];
+  const FA = [[0, 0.039, 0.039], [0.25, 0.043, 0.043], [0.7, 0.033, 0.033], [1, 0.027, 0.027]];
+
+  /* ---------- 足 ---------- */
+  function shoe(g, o, far) {
+    const x0 = g.ank[0] + o * 0.016, y0 = g.ank[1] - 0.07; // 床（足首から 0.07m 下）
+    const Q = (x, y) => [x0 + x, y0 + y];
+    const upper = [corner(Q(-0.05, 0.012)), corner(Q(0.05, 0.012)), Q(0.057, 0.04), Q(0.05, 0.07), Q(0.04, 0.108), corner(Q(0.034, 0.122)), corner(Q(-0.034, 0.122)), Q(-0.04, 0.108), Q(-0.05, 0.07), Q(-0.057, 0.04)];
+    const sole = [corner(Q(-0.06, 0)), corner(Q(0.06, 0)), Q(0.064, 0.012), corner(Q(0.06, 0.024)), corner(Q(-0.06, 0.024)), Q(-0.064, 0.012)];
+    const cap = [Q(-0.038, 0.03), Q(0, 0.044), Q(0.038, 0.03), Q(0.034, 0.05), Q(0, 0.06), Q(-0.034, 0.05)];
+    const f = far ? ' far' : '';
+    return `<path class="fr-s fr-shoe${f}" d="${pathOf([upper])}"/>` +
+      `<path class="fr-wing${f}" d="${pathOf([cap])}"/>` +
+      line('lace' + f, [Q(-0.03, 0.078), Q(0, 0.09), Q(0.03, 0.078)], 0.01) + line('lace' + f, [Q(-0.028, 0.098), Q(0, 0.11), Q(0.028, 0.098)], 0.01) +
+      `<path class="fr-s fr-sole${f}" d="${pathOf([sole])}"/>`;
+  }
+  function leg(s, side, o) {
+    const g = s[side], hp = side === 'r' ? s.hpR : s.hpL;
+    const nT = perp(unit(sub(g.knee, hp))), nS = perp(unit(sub(g.ank, g.knee)));
+    const skin = [shade(hp, g.knee, nT, TH, LD), ball2(g.knee, 0.056, LD), shade(g.knee, g.ank, nS, SH, LD), ball2(g.ank, 0.034, LD)];
+    const sock = [shade(g.knee, g.ank, nS, cut(SH, 0.56, 1.06, 0.007), LD, 0.4)];
+    for (const sh of [sock[0].sil, sock[0].lit]) sh[0].c = sh[sh.length - 1].c = true;
+    const band = mix(g.knee, g.ank, 0.6);
+    return paint('skin', skin) + paint('sock', sock) + line('rib', [add(band, mul(nS, 0.05)), sub(band, mul(nS, 0.05))], 0.006) + shoe(g, o, false);
+  }
+  // パンツ：腰まわり ＋ 左右の脚（ももの 7割まで）
+  function shorts(s) {
+    const [ax, ay] = s.axis, rt = [ay, -ax];
+    const T = (x, u) => [s.hip[0] + rt[0] * x + ax * u, s.hip[1] + rt[1] * x + ay * u];
+    const pelv = (k) => [corner(T(-0.13, 0.05)), corner(T(0.13, 0.05)), T(0.135 * k, -0.04), T(0.105 * k, -0.135), T(0, -0.165), T(-0.105 * k, -0.135), T(-0.135 * k, -0.04)];
+    const parts = [{ sil: pelv(1), lit: pelv(0.86) }];
+    let out = '', hems = '';
+    for (const side of ['l', 'r']) {
+      const g = s[side], hp = side === 'r' ? s.hpR : s.hpL, o = side === 'r' ? 1 : -1;
+      const nT = perp(unit(sub(g.knee, hp))), st = cut(TH, 0, 0.72, 0.024, 5);
+      const part = shade(hp, g.knee, nT, st, LD, 0.4), n = st.length;
+      for (const sh of [part.sil, part.lit]) sh[n - 1].c = sh[n].c = true; // すそ
+      parts.push(part);
+      const hemF = part.sil[n - 1], hemB = part.sil[n];
+      hems += line('hem', [mix(hemF, hemB, 0.07), mix(hemF, hemB, 0.93)], 0.013);
+      // わきの線：ウエストの外がわから すその外がわへ
+      const d = unit(sub(g.knee, hp)), outer = mul(perp(d), o * (dot(perp(d), [o, 0]) >= 0 ? 1 : -1));
+      const e0 = T(o * 0.125, 0.03), e1 = add(mix(hp, g.knee, 0.7), mul(outer, 0.082));
+      out += line('stripe', [e0, mix(e0, e1, 0.45), e1], 0.02);
+    }
+    return paint('shorts', parts) + line('trim', [T(-0.128, 0.042), T(0.128, 0.042)], 0.02) + out + hems;
+  }
+
+  /* ---------- 胴・首・頭 ---------- */
+  function torso(s) {
+    const [ax, ay] = s.axis, rt = [ay, -ax];
+    const T = (x, u) => [s.hip[0] + rt[0] * x + ax * u, s.hip[1] + rt[1] * x + ay * u];
+    // 左右対称の ユニフォーム（そでなし）。右がわ（lit が 左上から）：右の外がわを 少しけずる
+    const half = (m, a) => [[0.134 * m, -0.075], [0.13 * m, 0.04], [0.14 * m, 0.2], [0.152 * m, 0.34], [0.158 * m, 0.43], [0.148 * m * a, 0.497], [0.118 * a, 0.541], [0.088 * a, 0.548]];
+    const shape = (kr, a) => {
+      const R = half(kr, a).map(([x, u]) => T(x, u));
+      const L = half(1, a).map(([x, u]) => T(-x, u)).reverse();
+      const neck = [T(0.058, 0.53), T(0.04, 0.46), T(0, 0.425), T(-0.04, 0.46), T(-0.058, 0.53)];
+      const pts = R.concat(neck, L);
+      pts[0].c = true; pts[R.length - 1].c = false; pts[pts.length - 1].c = true;
+      return pts;
+    };
+    const sil = shape(1, 1), lit = shape(0.9, 1);
+    const hole = (side) => { const o = side === 'r' ? 1 : -1, c = T(o * 0.19, 0.4), out = []; for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; out.push([c[0] + rt[0] * o * 0.045 * Math.cos(a) + ax * 0.115 * Math.sin(a), c[1] + rt[1] * o * 0.045 * Math.cos(a) + ay * 0.115 * Math.sin(a)]); } return out; };
+    // 首の下の むね（はだ）
+    return paint('jersey', [{ sil, lit }]) +
+      line('trim', [T(0.058, 0.53), T(0.042, 0.463), T(0, 0.43), T(-0.042, 0.463), T(-0.058, 0.53)], 0.017) +
+      line('stripe', [T(0.128, 0.36), T(0.12, 0.2), T(0.114, 0.03)], 0.02) + line('stripe', [T(-0.128, 0.36), T(-0.12, 0.2), T(-0.114, 0.03)], 0.02);
+  }
+  const headC = (s) => add(s.sh, mul(s.headAxis, 0.213));
+  function neck(s) {
+    const up = s.headAxis, hc = headC(s);
+    const base = sub(s.sh, mul(s.axis, 0.1)), top = add(hc, mul(up, -0.075));
+    const nf = perp(unit(sub(top, base)));
+    // 首のつけ根は 太く（えりぐりから むねが のぞく）
+    return paint('skin', [{ sil: tube(base, top, nf, [[0, 0.075, 0.075], [0.45, 0.07, 0.07], [0.66, 0.043, 0.043], [1.1, 0.044, 0.044]]), lit: tube(base, top, nf, [[0, 0.06, 0.075], [0.45, 0.055, 0.07], [0.66, 0.027, 0.043], [1.1, 0.027, 0.044]]) }]);
+  }
+  function head(s) {
+    const up = s.headAxis, rt = [up[1], -up[0]], c = headC(s);
+    const H = (x, y) => [c[0] + (rt[0] * x + up[0] * y) * HS, c[1] + (rt[1] * x + up[1] * y) * HS];
+    const m = (a) => a.map(([x, y, k]) => (k ? corner(H(x, y)) : H(x, y)));
+    const sym = (a) => a.concat(a.slice(1, -1).reverse().map(([x, y, k]) => [-x, y, k]));
+    const skull = m(sym([[0, 0.118], [0.056, 0.108], [0.092, 0.072], [0.1, 0.02], [0.094, -0.03], [0.074, -0.082], [0.042, -0.114], [0, -0.124]]));
+    const hair = m([[-0.112, -0.012], [-0.116, 0.05], [-0.094, 0.104], [-0.05, 0.137], [0, 0.147], [0.05, 0.137], [0.094, 0.104], [0.116, 0.05], [0.112, -0.012],
+      [0.098, 0.026], [0.08, 0.06], [0.046, 0.082], [0.006, 0.089, 1], [-0.032, 0.082], [-0.075, 0.062], [-0.098, 0.026]]);
+    const shine = m([[-0.07, 0.118], [-0.02, 0.134], [0.034, 0.13], [0.07, 0.115], [0.02, 0.122], [-0.03, 0.118]]);
+    const ear = (o) => { const e = []; for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; e.push(H(o * 0.104 + 0.014 * Math.cos(a) * o, 0.0 + 0.03 * Math.sin(a))); } return e; };
+    const tilt = f3((Math.atan2(up[0], up[1]) * 180) / Math.PI);
+    const el = (cls, p, rx, ry) => `<ellipse class="${cls}" cx="${f3(p[0])}" cy="${f3(-p[1])}" rx="${f3(rx * HS)}" ry="${f3(ry * HS)}" transform="rotate(${tilt} ${f3(p[0])} ${f3(-p[1])})"/>`;
+    const chin = [H(-0.05, -0.128), H(0.05, -0.128), H(0.04, -0.15), H(0, -0.158), H(-0.04, -0.15)];
+    let out = `<path class="fr-jaw" d="${pathOf([chin])}"/>` +
+      `<path class="fr-s fr-skin fr-ear" d="${pathOf([ear(-1)])}"/><path class="fr-s fr-skin fr-ear" d="${pathOf([ear(1)])}"/>` +
+      `<path class="fr-s fr-skin fr-face" d="${pathOf([skull])}"/>` +
+      el('fr-cheek', H(-0.062, -0.04), 0.021, 0.014) + el('fr-cheek', H(0.062, -0.04), 0.021, 0.014) +
+      `<path class="fr-s fr-hair" d="${pathOf([hair])}"/><path class="fr-shine" d="${pathOf([shine])}"/>`;
+    for (const o of [-1, 1]) {
+      out += `<path class="fr-ln fr-brow" d="M${P(H(o * 0.022, 0.042))} Q${P(H(o * 0.045, 0.054))} ${P(H(o * 0.068, 0.043))}" stroke-width="0.0075"/>` +
+        el('fr-eye', H(o * 0.044, 0.013), 0.0094, 0.0128) + `<circle class="fr-eyehi" cx="${f3(H(o * 0.047, 0.019)[0])}" cy="${f3(-H(o * 0.047, 0.019)[1])}" r="0.0032"/>`;
+    }
+    out += `<path class="fr-ln fr-nose" d="M${P(H(0, -0.004))} Q${P(H(0.011, -0.03))} ${P(H(0.0, -0.04))}" stroke-width="0.006"/>` +
+      `<path class="fr-ln fr-mouth" d="M${P(H(-0.027, -0.075))} Q${P(H(0, -0.094))} ${P(H(0.027, -0.075))}" stroke-width="0.0058"/>`;
+    return out;
+  }
+
+  /* ---------- 手・腕 ---------- */
+  // 手のひら（だ円）＋4本の指（ひろがり）＋親指。gr：横向きと同じ gripOf（ボールが近いとき ボールへ向けて 指を広げる）
+  function hand(g, o, gr, centerX) {
+    const W = g.hand, hd = gr.hd, spread = 1 + gr.w * 0.9, c = gr.c * gr.sgn * 0.35;
+    const K0 = add(W, mul(hd, 0.075));
+    const pal = [];
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2, rx = 0.03, ry = 0.047; const v = add(mul(perp(hd), rx * Math.cos(a)), mul(hd, ry * Math.sin(a))); pal.push(add(add(W, mul(hd, 0.04)), v)); }
+    const fing = [];
+    [[-17, 0.05], [-6, 0.062], [6, 0.06], [17, 0.047]].forEach(([deg, len]) => {
+      const d1 = rot(hd, rad(deg * spread)), d2 = rot(d1, c * 0.6);
+      const A = add(K0, mul(rot(hd, rad(deg * 0.35)), 0.004)), M = add(A, mul(d1, len * 0.55)), T2 = add(M, mul(d2, len * 0.5));
+      fing.push(tube(A, M, perp(d1), [[0, 0.0105, 0.0105], [1, 0.0095, 0.0095]]), circle(M, 0.0097), tube(M, T2, perp(d2), [[0, 0.0095, 0.0095], [1, 0.0082, 0.0082]]), circle(T2, 0.0082));
+    });
+    // 親指：からだの中心がわへ
+    const c1 = rot(hd, rad(58)), c2 = rot(hd, rad(-58));
+    const td = dot(c1, [centerX - W[0], 0]) >= dot(c2, [centerX - W[0], 0]) ? c1 : c2;
+    const t0 = add(W, add(mul(hd, 0.032), mul(td, 0.024))), t1 = add(t0, mul(td, 0.034)), t2 = add(t1, mul(rot(td, c * 0.5), 0.028));
+    fing.push(tube(t0, t1, perp(td), [[0, 0.0125, 0.0125], [1, 0.0105, 0.0105]]), circle(t1, 0.0108), tube(t1, t2, perp(td), [[0, 0.0105, 0.0105], [1, 0.0088, 0.0088]]), circle(t2, 0.0088));
+    return flat('hand', [pal].concat(fing));
+  }
+  function arm(s, side, balls) {
+    const g = s[side], sp = side === 'r' ? s.shR : s.shL, o = side === 'r' ? 1 : -1;
+    const nU = perp(unit(sub(g.elb, sp))), nF = perp(unit(sub(g.hand, g.elb)));
+    const skin = [ball2(sp, 0.05, LD), shade(sp, g.elb, nU, UA, LD), ball2(g.elb, 0.041, LD), shade(g.elb, g.hand, nF, FA, LD), ball2(g.hand, 0.027, LD)];
+    return paint('skin', skin) + hand(g, o, gripOf(g, balls, 1), s.hip[0]);
+  }
+
+  BC.realFront = function (s, balls) {
+    return {
+      back: leg(s, 'l', -1) + leg(s, 'r', 1) + shorts(s) + neck(s) + torso(s) + head(s),
+      front: arm(s, 'l', balls) + arm(s, 'r', balls),
+    };
+  };
 })();
 
 /* ---- data/motions-base.js ---- */
@@ -14170,7 +14351,7 @@ BC && (BC.currentFile = "data/motions-base.js");
   })();
 
   BC.motion({ id: 'pound',
-    name: '低いドリブル（ポンド）', view: 'side', look: 'real', box: [-0.75, 1.05, -0.05, 1.85], dur: Math.round(pound.T * 100) / 100, guides: ['head'],
+    name: '低いドリブル（ポンド）', view: 'side', box: [-0.75, 1.05, -0.05, 1.85], dur: Math.round(pound.T * 100) / 100, guides: ['head'],
     phases: [{ at: 0, label: '押す' }, { at: Math.round((pound.tR / pound.T) * 100) / 100, label: '床へ' }, { at: Math.round(((pound.tB + 0.015) / pound.T) * 100) / 100, label: '手にもどる' }],
     mistakes: [{ id: 'tall', label: '腰が高い', mods: { hipUp: 0.2 } }, { id: 'look', label: 'ボールを見る', mods: { nod: 38 } }],
     still: 0.1,
