@@ -27,7 +27,7 @@
      位置は m（床が y=0、上がプラス）。ひざ・ひじは自動で曲げる（2関節の IK）。
    ■ キー（ボール）：p [x, 高さ]（その場所）| h 'r'・'l'・'both'（手につける。a で人の番号、o でずらす）。arc：このキーまでを山なりに。
        （なくてもよい）rot 回った角度（度）・sq つぶれ（0〜0.2。床についた瞬間）・f 'r'|'l' と w（0〜1）：手が目標に届かないとき
-       （よくない形で 腰が高い など）、手のずれの w 倍だけ ボールもずらす（手の中＝1、床＝0）
+       （よくない形で 腰が高い など）、手のずれの w 倍だけ ボールもずらす（手の中＝1、床＝0）・bk 1：体のうしろに描く（前後のキーが どちらも bk のとき）
    ■ look: 'flat'：体つきのある人（js/motion-real.js が標準）ではなく、太い線だけの いつもの絵で描く（なくてよい）
    ■ よくない形の作り方（mods。人 0 だけにかかる）
        hipUp: 0.17    腰を高く（体も起きる）。hands: true なら手も一緒に上がる
@@ -249,6 +249,7 @@
       }
       if (a.rot != null || k.rot != null) out.rot = lerp(a.rot || 0, k.rot || 0, u);
       if (a.sq || k.sq) out.sq = lerp(a.sq || 0, k.sq || 0, u);
+      if (a.bk && k.bk) out.back = true; // 体のうしろ（脚の間を通って うしろへ など）
       return out;
     });
     let scroll = 0;
@@ -401,8 +402,10 @@
     // 影
     out += fr.sk.map((s) => { const air = Math.min(s.r.ank[1], s.l.ank[1]) - L.ANK; return `<ellipse class="mo-shadow" cx="${f3(s.hip[0])}" cy="0.02" rx="${f3(0.34 * Math.max(0.4, 1 - air))}" ry="0.04" opacity="${f3(fr.fade)}"/>`; }).join('');
     if (real) out += fr.balls.map((b) => real.ballShadow(b, fr.fade)).join('');
+    const drawBall = (b) => (real ? real.ball(b, fr.fade) : ballSVG(b, fr.fade));
+    out += fr.balls.filter((b) => b.back).map(drawBall).join('');
     out += figs.map((f, i) => `<g class="${actor}" style="--c:${ROLE[fr.roles[i]] || ROLE['']}" opacity="${f3(fr.fade)}">${f.back}</g>`).join('');
-    out += fr.balls.map((b) => (real ? real.ball(b, fr.fade) : ballSVG(b, fr.fade))).join('');
+    out += fr.balls.filter((b) => !b.back).map(drawBall).join('');
     out += figs.map((f, i) => `<g class="${actor}" style="--c:${ROLE[fr.roles[i]] || ROLE['']}" opacity="${f3(fr.fade)}">${f.front}</g>`).join('');
     if (opt.angles) out += `<g class="mo-angles">${angles(fr.sk[0], clip.box)}</g>`;
     return { svg: out, frame: fr };
@@ -553,8 +556,62 @@
     });
     return { keys: k, feet };
   }
+  /* ---------- 式で作る動きの道具 ----------
+     キーを手で置いた動きは、キーごとに いったん止まって見える（キーの間を それぞれ ゆっくり始めて ゆっくり止めるため）。そこで：
+     ・track(keys, loop)：キー（at と 姿勢。書かない項目は前のキーと同じ）を、速さが つながる なめらかな線で通す（単調な3次の補間＝PCHIP）。
+       行き過ぎないので、同じ値が続く所（床についた足）は 動かず、床の下へも行かない。loop：くり返す動き（さいごのキー＝はじめのキー）
+     ・bake(秒, { actors: [秒 → 姿勢], balls: [秒 → ボールのキー], extra: [かならず入れる秒], fps })：細かいキー（lin）にする
+     ・arc(p0, t0, p1, t1, tb, xb)：ボールが p0（t0 秒）から 床（tb 秒・x は xb）で はねて p1（t1 秒）へ。重力どおりの山なり
+     ・fly(p0, v0, t)：投げたあと t 秒の位置（重力だけ）・herm：はしの速さを決めた 3次の線 */
+  const G = 9.8;
+  const herm = (p0, v0, p1, v1, tau, s) => { const s2 = s * s, s3 = s2 * s; return (2 * s3 - 3 * s2 + 1) * p0 + (s3 - 2 * s2 + s) * tau * v0 + (-2 * s3 + 3 * s2) * p1 + (s3 - s2) * tau * v1; };
+  function pchip(ts, ys, loop) {
+    const n = ts.length, h = [], d = [];
+    for (let i = 0; i < n - 1; i++) { h.push(ts[i + 1] - ts[i]); d.push(h[i] > 0 ? (ys[i + 1] - ys[i]) / h[i] : 0); }
+    const tan = (dl, dr, hl, hr) => (dl * dr <= 0 ? 0 : (3 * (hl + hr)) / ((2 * hr + hl) / dl + (hr + 2 * hl) / dr));
+    const m = ys.map(() => 0);
+    for (let i = 1; i < n - 1; i++) m[i] = tan(d[i - 1], d[i], h[i - 1], h[i]);
+    if (loop && n > 2) m[0] = m[n - 1] = tan(d[n - 2], d[0], h[n - 2], h[0]);
+    return (t) => {
+      if (t <= ts[0]) return ys[0];
+      if (t >= ts[n - 1]) return ys[n - 1];
+      let i = 0;
+      while (i < n - 2 && ts[i + 1] < t) i++;
+      return h[i] > 0 ? herm(ys[i], m[i], ys[i + 1], m[i + 1], h[i], (t - ts[i]) / h[i]) : ys[i + 1];
+    };
+  }
+  function track(keys, loop) {
+    const F = fill(keys), ts = F.map((k) => k.at), fns = {};
+    for (const f of POSE.concat(OPT)) {
+      const first = F.find((k) => k[f] != null);
+      if (!first) continue;
+      const vals = F.map((k) => (k[f] != null ? k[f] : first[f]));
+      fns[f] = Array.isArray(first[f]) ? [0, 1].map((j) => pchip(ts, vals.map((v) => v[j]), loop)) : pchip(ts, vals, loop);
+    }
+    return (at) => { const p = {}; for (const f in fns) p[f] = Array.isArray(fns[f]) ? fns[f].map((g) => g(at)) : fns[f](at); return p; };
+  }
+  function bake(dur, o) {
+    const n = Math.max(8, Math.round(dur * (o.fps || 30))), ts = [];
+    for (let i = 0; i <= n; i++) ts.push((dur * i) / n);
+    for (const e of o.extra || []) if (e > 0 && e < dur && !ts.some((x) => Math.abs(x - e) < 0.002)) ts.push(e);
+    ts.sort((a, b) => a - b);
+    const r4 = (v) => (Array.isArray(v) ? v.map(r4) : typeof v === 'number' ? Math.round(v * 1e4) / 1e4 : v);
+    const pack = (fn, t, lin) => { const p = fn(t), out = { at: r4(t / dur) }; if (lin) out.lin = true; for (const k in p) out[k] = r4(p[k]); return out; };
+    return { actors: (o.actors || []).map((fn) => ts.map((t) => pack(fn, t, true))), balls: (o.balls || []).map((fn) => ts.map((t) => pack(fn, t, false))) };
+  }
+  function arc(p0, t0, p1, t1, tb, xb) {
+    const R = L.BALL, d1 = tb - t0, d2 = t1 - tb, X = xb == null ? p0[0] + ((p1[0] - p0[0]) * d1) / (d1 + d2) : xb;
+    const vd = (R - p0[1]) / d1 + (G * d1) / 2, vu = (p1[1] - R) / d2 + (G * d2) / 2;
+    return (t) => {
+      if (t <= tb) { const q = Math.max(0, t - t0); return [p0[0] + ((X - p0[0]) * q) / d1, p0[1] + vd * q - (G * q * q) / 2]; }
+      const q = Math.min(d2, t - tb);
+      return [X + ((p1[0] - X) * q) / d2, R + vu * q - (G * q * q) / 2];
+    };
+  }
+  const fly = (p0, v0, t) => [p0[0] + v0[0] * t, p0[1] + v0[1] * t - (G * t * t) / 2];
+
   BC.mo = {
-    runKeys, steps,
+    runKeys, steps, track, bake, arc, fly, herm, G,
     LOW: { hip: [0, 0.72], lean: 28, nod: -22, rf: [0.12, 0], lf: [-0.16, 0], rh: [0.42, 0.64], lh: [0.36, 0.98] }, // 腰を落とした構え（横・右向き）
     FLOW: { hip: [0, 0.7], lean: 0, nod: 0, rf: [0.33, 0], lf: [-0.33, 0], rh: [0.42, 0.62], lh: [-0.36, 0.8] },  // 腰を落とした構え（前から）
     STAND: { hip: [0, 0.9], lean: 4, nod: 0, rf: [0.08, 0], lf: [-0.08, 0], rh: [0.08, 0.86], lh: [0.02, 0.88] }, // 立つ（横）
