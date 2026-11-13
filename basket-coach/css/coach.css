@@ -736,6 +736,14 @@ body.onboarding main { padding-bottom: 48px; }
 .fr-eye { fill: #2a1810; }
 .fr-eyehi { fill: #fff; opacity: 0.9; }
 .fr-mouth { stroke: #8a3b28; }
+.fr-nose { stroke: var(--skin-ol); opacity: 0.6; }
+.fr-lip { stroke: var(--skin-sh); }
+.fr-lid { stroke: var(--hair); opacity: 0.85; }
+.fr-cast { fill: var(--skin-sh); opacity: 0.75; }
+.fr-knee { stroke: var(--skin-ol); opacity: 0.4; }
+.fr-num { stroke: #fdfbf6; opacity: 0.95; stroke-linejoin: miter; stroke-linecap: square; }
+.fr-crease { stroke: #1a0d08; opacity: 0.28; }
+.fr-string { stroke: #fdfbf6; opacity: 0.9; }
 .fr-ball-s { fill: #b24410; }
 .fr-ball-l { fill: var(--ball); }
 .fr-ball-ln { fill: none; stroke: #3b1a0b; stroke-width: 0.011; stroke-linecap: round; opacity: 0.8; }

@@ -94,27 +94,78 @@
 
   // 前から：腰を落とした構え
   const FLOW = BC.mo.FLOW;
+  /* クロスオーバー（前から）：低いドリブルと同じように、ボールの動きを式から作る。
+     半分の流れ（秒）：0 右手の中（ひざの外・いちばん上）→（内へ押す）→ tR はなれる →（落ちる）→ tB 体のまん中の床 →（はね返る）→ tC 左手でうける →（外へ流して吸収）→ Th
+     うしろ半分は 左右を入れかえた同じ動き。
+     ・ボール：手の中は なめらかに加速、空中は 重力で落ちて はね返る（係数 E。横の速さは 床で少し落ちる）。ひざより下を、速く通る
+     ・手：ボールの外がわ・上にのる。押したあとは 内へ少しついていき、もう片方の手は 外がわで待つ
+     ・体：ボールのある側へ 体重と上体が少し寄る。頭は まっすぐのまま。上体は前へたおしている（tk：胴が短く見える） */
+  const cross = (function () {
+    const G = 9.8, R = 0.12, E = 0.8, HIP = 0.66, TK = 0.84;
+    const X0 = 0.36, yTop = 0.47, xRel = 0.27, yRel = 0.385, xB = -0.02, vy0 = 2.2, tauP = 0.16, tauA = 0.22, hold = 0.06;
+    const vImp = Math.sqrt(vy0 * vy0 + 2 * G * (yRel - R)), tDown = (vImp - vy0) / G, vB = E * vImp;
+    const vCat = Math.sqrt(vB * vB - 2 * G * (yRel - R)), tUp = (vB - vCat) / G;
+    const vx1 = (xB - xRel) / tDown, vx2 = vx1 * 0.72, xCat = xB + vx2 * tUp;
+    const tR = tauP, tB = tR + tDown, tC = tB + tUp, Th = tC + tauA + hold, T = 2 * Th;
+    const herm = (p0, v0, p1, v1, tau, s) => { const s2 = s * s, s3 = s2 * s; return (2 * s3 - 3 * s2 + 1) * p0 + (s3 - 2 * s2 + s) * tau * v0 + (-2 * s3 + 3 * s2) * p1 + (s3 - s2) * tau * v1; };
+    const wrap = (t) => ((t % T) + T) % T;
+    const ease = (u) => u * u * (3 - 2 * u);
+    // 前半（右 → 左）のボール
+    const half = (t) => {
+      if (t < tR) { const s = t / tauP; return [herm(X0, 0, xRel, vx1, tauP, s), herm(yTop, 0, yRel, -vy0, tauP, s)]; }
+      if (t < tB) { const q = t - tR; return [xRel + vx1 * q, yRel - vy0 * q - 0.5 * G * q * q]; }
+      if (t < tC) { const q = t - tB; return [xB + vx2 * q, R + vB * q - 0.5 * G * q * q]; }
+      if (t < tC + tauA) { const s = (t - tC) / tauA; return [herm(xCat, vx2, -X0, 0, tauA, s), herm(yRel, vCat, yTop, 0, tauA, s)]; }
+      return [-X0, yTop];
+    };
+    const ballAt = (t0) => { const t = wrap(t0); if (t < Th) return half(t); const b = half(t - Th); return [-b[0], b[1]]; };
+    // 右手（画面の右）の手首。ボールにのっているとき：ボールの外がわ・上（押す・うけるときほど 外がわへ回る）
+    const onBall = (t, u) => { const b = ballAt(t); return [b[0] + 0.04 + 0.04 * u, b[1] + 0.14 - 0.012 * u]; };
+    const tC2 = Th + tC, h = 0.004;
+    const wRel = onBall(tR, 1), wCat = onBall(tC2, 1), w0 = onBall(tR - h, 1), w1 = onBall(tC2 + h, 1);
+    const vRel = [(wRel[0] - w0[0]) / h, (wRel[1] - w0[1]) / h], vCat2 = [(w1[0] - wCat[0]) / h, (w1[1] - wCat[1]) / h];
+    const F = [0.215, 0.515], Gd = [0.43, 0.64], tF = tR + 0.13, tG = tC2 - 0.2;
+    const right = (t0) => {
+      const t = wrap(t0);
+      if (t <= tR) return onBall(t, ease(t / tauP));                                   // 押す
+      if (t >= tC2) return onBall(t, 1 - ease(Math.min(1, (t - tC2) / tauA)));          // うける → 上へ
+      if (t < tF) { const s = (t - tR) / (tF - tR); return [herm(wRel[0], vRel[0] * 0.5, F[0], 0, tF - tR, s), herm(wRel[1], vRel[1] * 0.5, F[1], 0, tF - tR, s)]; } // 内へ ついていく
+      if (t < tG) { const s = ease((t - tF) / (tG - tF)); return [F[0] + (Gd[0] - F[0]) * s, F[1] + (Gd[1] - F[1]) * s]; }                                             // 外がわで 守る・待つ
+      const s = (t - tG) / (tC2 - tG);
+      return [herm(Gd[0], 0, wCat[0], vCat2[0] * 0.35, tC2 - tG, s), herm(Gd[1], 0, wCat[1], vCat2[1] * 0.35, tC2 - tG, s)];
+    };
+    const left = (t) => { const w = right(t + Th); return [-w[0], w[1]]; };
+    const poseAt = (t) => {
+      const sway = Math.cos((2 * Math.PI * (t - 0.04)) / T);                            // 1：ボールが右
+      const dip = (1 + Math.cos((4 * Math.PI * (t - tR)) / T)) / 2;                     // 1：押しきったとき
+      const lean = 3.5 * sway;
+      return { hip: [0.04 * sway, HIP - 0.005 * dip], lean, nod: -0.85 * lean, tk: TK, rf: [0.33, 0], lf: [-0.33, 0], rh: right(t), lh: left(t) };
+    };
+    const N = 72, times = [];
+    for (let i = 0; i < N; i++) times.push((T * i) / N);
+    for (const e of [tR, tB - 0.012, tB, tB + 0.012, tC, Th, Th + tR, Th + tB - 0.012, Th + tB, Th + tB + 0.012, tC2]) if (!times.some((x) => Math.abs(x - e) < 0.002)) times.push(e);
+    times.sort((a, b) => a - b);
+    times.push(T);
+    const r4 = (n) => Math.round(n * 1e4) / 1e4;
+    const keys = times.map((t) => Object.assign({ at: r4(t / T), lin: true }, poseAt(t === T ? 0 : t)));
+    const ball = times.map((t) => {
+      const tt = t === T ? 0 : t, p = ballAt(tt), q = tt < Th ? tt : tt - Th, firstHalf = tt < Th;
+      const air = q > tR && q < tC, bounce = Math.abs(q - tB) < 1e-9;
+      // 手のずれに ついていく手：押した手（床まで）→ うける手（床から）
+      const pusher = firstHalf ? 'r' : 'l', catcher = firstHalf ? 'l' : 'r';
+      return { at: r4(t / T), p, rot: r4(150 * p[0]), sq: bounce ? 0.1 : 0, f: q < tB ? pusher : catcher, w: air ? Math.max(0, Math.min(1, (p[1] - R) / (yRel - R))) : 1 };
+    });
+    return { T, Th, tR, tB, tC, tC2, keys, ball };
+  })();
+
   BC.motion({ id: 'crossover',
-    name: 'クロスオーバー', view: 'front', box: [-1.0, 1.0, -0.05, 1.85], dur: 1.4, guides: ['head'],
-    phases: [{ at: 0, label: '右手でつく' }, { at: 0.12, label: '低く前を通す' }, { at: 0.4, label: '左手でうける' }, { at: 0.62, label: '低く前を通す' }, { at: 0.9, label: '右手でうける' }],
+    name: 'クロスオーバー', view: 'front', box: [-0.95, 0.95, -0.05, 1.8], dur: Math.round(cross.T * 100) / 100, guides: ['head'],
+    phases: [{ at: 0, label: '右手で押す' }, { at: Math.round((cross.tR / cross.T) * 100) / 100, label: '低く前を通す' }, { at: Math.round((cross.tC / cross.T) * 100) / 100, label: '左手でうける' },
+      { at: Math.round(((cross.Th + cross.tR) / cross.T) * 100) / 100, label: '低く前を通す' }, { at: Math.round((cross.tC2 / cross.T) * 100) / 100, label: '右手でうける' }],
     mistakes: [{ id: 'tall', label: '腰が高い', mods: { hipUp: 0.17 } }],
-    still: 0.3,
-    actors: [{ keys: [
-      Object.assign({ at: 0 }, FLOW, { hip: [0.04, 0.7], lean: 4 }),
-      { at: 0.15, rh: [0.18, 0.46] },
-      { at: 0.3, rh: [0.36, 0.72], lh: [-0.3, 0.6] },
-      { at: 0.45, hip: [-0.05, 0.7], lean: -4, lh: [-0.42, 0.62], rh: [0.36, 0.82] },
-      { at: 0.5 },
-      { at: 0.65, lh: [-0.18, 0.46] },
-      { at: 0.8, lh: [-0.36, 0.72], rh: [0.3, 0.6] },
-      { at: 0.95, hip: [0.04, 0.7], lean: 4, rh: [0.42, 0.62], lh: [-0.36, 0.82] },
-      { at: 1 },
-    ] }],
-    balls: [{ keys: [
-      { at: 0, h: 'r', o: [0, -0.13] }, { at: 0.15, h: 'r', o: [0, -0.13] }, { at: 0.3, p: [0, 0.12] },
-      { at: 0.45, h: 'l', o: [0, -0.13] }, { at: 0.5, h: 'l', o: [0, -0.13] }, { at: 0.65, h: 'l', o: [0, -0.13] }, { at: 0.8, p: [0, 0.12] },
-      { at: 0.95, h: 'r', o: [0, -0.13] }, { at: 1, h: 'r', o: [0, -0.13] },
-    ] }],
+    still: 0.05,
+    actors: [{ keys: cross.keys }],
+    balls: [{ keys: cross.ball }],
     points: ['ひざより下の低さで、体の前を速く通す', '顔は上げたまま（ボールを見ない）', '受けた手の反対の腕で、ボールを守る'],
   });
 

@@ -237,7 +237,7 @@
       front: arm(s, 'r', false, Ld, balls),
     };
   }
-  function figure(s, balls) { return s.view === 'side' ? figureSide(s, balls) : BC.realFront(s, balls); }
+  function figure(s, balls, role) { return s.view === 'side' ? figureSide(s, balls) : BC.realFront(s, balls, role); }
 
   /* ---------- ボール ---------- */
   const R = 0.12;

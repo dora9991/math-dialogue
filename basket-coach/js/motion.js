@@ -22,7 +22,8 @@
        hip [x, 高さ]・lean 体の傾き（度。side は前へ、front は右へ）・nod 頭の傾き（＋で下を向く）
        rf・lf 足首の下（足の位置）[x, 高さ]・rh・lh 手 [x, 高さ]
        （なくてもよい）rw・lw 手のひらの向き（度。0＝前へ水平、＋で指先が上。書かなければ 前腕と同じ向き）・rc・lc 指の曲げ（度）・
-       rs 手前の肩のずれ [x, 高さ]（横からだけ。腕をのばすとき、肩が少し下がる・前へ出る）
+       rs 手前の肩のずれ [x, 高さ]（横からだけ。腕をのばすとき、肩が少し下がる・前へ出る）・
+       tk 胴の長さの倍率（前からだけ。0.84 なら 上体を前へたおした分、胴が短く見える＝肩と頭が下がり、手が低い所へ届く）
      位置は m（床が y=0、上がプラス）。ひざ・ひじは自動で曲げる（2関節の IK）。
    ■ キー（ボール）：p [x, 高さ]（その場所）| h 'r'・'l'・'both'（手につける。a で人の番号、o でずらす）。arc：このキーまでを山なりに。
        （なくてもよい）rot 回った角度（度）・sq つぶれ（0〜0.2。床についた瞬間）・f 'r'|'l' と w（0〜1）：手が目標に届かないとき
@@ -47,7 +48,7 @@
   const rad = (d) => (d * Math.PI) / 180;
   const f3 = (n) => (Math.round(n * 1000) / 1000).toString();
   const POSE = ['hip', 'lean', 'nod', 'rf', 'lf', 'rh', 'lh'];
-  const OPT = ['rw', 'lw', 'rc', 'lc', 'rs']; // なくてもよい項目（手のひらの向き・指の曲げ・手前の肩のずれ）
+  const OPT = ['rw', 'lw', 'rc', 'lc', 'rs', 'tk']; // なくてもよい項目（手のひらの向き・指の曲げ・手前の肩のずれ・胴の長さの倍率）
   BC.motions = BC.motions || {};
   BC.motion = function (def) {
     if (Array.isArray(def)) return def.forEach(BC.motion);
@@ -87,7 +88,8 @@
     const hip = p.hip;
     const ax = side ? face * Math.sin(lean) : Math.sin(lean);
     const ay = Math.cos(lean);
-    const sh = [hip[0] + ax * L.T, hip[1] + ay * L.T];
+    const TL = L.T * (!side && p.tk ? p.tk : 1); // 前から：上体を前へたおすと、胴が短く見える
+    const sh = [hip[0] + ax * TL, hip[1] + ay * TL];
     const nod = rad(p.nod || 0);
     const hx = side ? face * Math.sin(lean + nod) : Math.sin(lean + nod);
     const hy = Math.cos(lean + nod);
@@ -108,9 +110,18 @@
       // 前から：曲げたひざは手前（カメラの方）へ出るので、横へのずれは小さく見える（ニーインのときは内へ大きめに）
       const k = L.TH / (L.TH + L.SH), lx = hp[0] + (r.end[0] - hp[0]) * k, ly = hp[1] + (r.end[1] - hp[1]) * k;
       const sc = p.kneeIn ? 0.55 : 0.4;
-      return { knee: [lx + (r.mid[0] - lx) * sc, ly + (r.mid[1] - ly) * sc], ank: r.end };
+      let kx = lx + (r.mid[0] - lx) * sc;
+      // ひざが内に入る形でも、体のまん中は こえない（左右のひざが ふれるくらいまで。脚が交差して見えないように）
+      if (p.kneeIn) { const o = hp[0] >= hip[0] ? 1 : -1, lim = hip[0] + o * 0.05; kx = o > 0 ? Math.max(kx, lim) : Math.min(kx, lim); }
+      return { knee: [kx, ly + (r.mid[1] - ly) * sc], ank: r.end };
     };
-    const arm = (s, h, bend) => { const r = ik(s, h, L.UA, L.FA, bend); return { elb: r.mid, hand: r.end }; };
+    const arm = (s, h, bend) => {
+      const r = ik(s, h, L.UA, L.FA, bend);
+      if (side) return { elb: r.mid, hand: r.end };
+      // 前から：曲げたひじは うしろ（奥）へも引かれるので、横への張り出しは 小さく見える（ひざと同じ考え方）
+      const k = L.UA / (L.UA + L.FA), lx = s[0] + (r.end[0] - s[0]) * k, ly = s[1] + (r.end[1] - s[1]) * k;
+      return { elb: [lx + (r.mid[0] - lx) * 0.6, ly + (r.mid[1] - ly) * 0.6], hand: r.end };
+    };
     const legR = leg(hpR, p.rf, kneeR), legL = leg(hpL, p.lf, kneeL);
     const armR = arm(shR, p.rh, elbR), armL = arm(shL, p.lh, elbL);
     // 手のひらの向き（単位ベクトル）：rw・lw があればその角度、なければ前腕の向き。err：手が目標に届かなかった分
@@ -181,10 +192,11 @@
   // よくない形（mods）を姿勢にかける
   function applyMods(p, m, t) {
     if (!m) return p;
-    const q = { hip: p.hip.slice(), lean: p.lean, nod: p.nod, rf: p.rf.slice(), lf: p.lf.slice(), rh: p.rh.slice(), lh: p.lh.slice(), kneeIn: p.kneeIn, rw: p.rw, lw: p.lw, rc: p.rc, lc: p.lc, rs: p.rs };
+    const q = { hip: p.hip.slice(), lean: p.lean, nod: p.nod, rf: p.rf.slice(), lf: p.lf.slice(), rh: p.rh.slice(), lh: p.lh.slice(), kneeIn: p.kneeIn, rw: p.rw, lw: p.lw, rc: p.rc, lc: p.lc, rs: p.rs, tk: p.tk };
     if (m.hipUp) {
       q.hip[1] += m.hipUp;
       q.lean *= 0.45;
+      if (q.tk) q.tk = 1 - (1 - q.tk) * 0.45;
       if (m.hands) { q.rh[1] += m.hipUp * 0.8; q.lh[1] += m.hipUp * 0.8; }
     }
     if (m.nod) q.nod += m.nod;
@@ -384,7 +396,7 @@
     // 画面の外で待っている人（向きを変える動きの、使わない方）は 描かない
     const [bx0, bx1, , by1] = clip.box;
     const seen = (s) => s.hip[0] > bx0 - 1.2 && s.hip[0] < bx1 + 1.2 && s.hip[1] < by1 + 1.5;
-    const figs = fr.sk.map((s) => (!seen(s) ? { back: '', front: '' } : real ? real.figure(s, fr.balls) : figure(s)));
+    const figs = fr.sk.map((s, i) => (!seen(s) ? { back: '', front: '' } : real ? real.figure(s, fr.balls, fr.roles[i]) : figure(s)));
     const actor = real ? 'mo-actor mo-real' : 'mo-actor';
     // 影
     out += fr.sk.map((s) => { const air = Math.min(s.r.ank[1], s.l.ank[1]) - L.ANK; return `<ellipse class="mo-shadow" cx="${f3(s.hip[0])}" cy="0.02" rx="${f3(0.34 * Math.max(0.4, 1 - air))}" ry="0.04" opacity="${f3(fr.fade)}"/>`; }).join('');
