@@ -105,13 +105,16 @@ console.log('■ シュート（横から）');
 console.log('■ ドリブル（横から）');
 {
   const mk = (mods) => { const f = film('pound', { mods, secs: 5 }); return BA.analyzeSelf(f.series, { mode: 'dribble', fps: f.fps }); };
-  const good = mk(null), tall = mk({ hipUp: 0.17 }), look = mk({ nod: 38 });
+  // よくない形は、動きのデータに書いてあるもの（「× 腰が高い」「× ボールを見る」のボタンと同じ）
+  const bad = (id) => BC.motions.pound.mistakes.find((m) => m.id === id).mods;
+  const good = mk(null), tall = mk(bad('tall')), look = mk(bad('look'));
   show('よい形', good); show('腰が高い', tall); show('ボールを見る', look);
   for (const k of ['low', 'eyes', 'head', 'height']) ok(st(good, k) === 'good', `ドリブル：よい形の ${k} が ◎（${(metric(good, k) || {}).value}）`);
   ok(st(tall, 'low') === 'bad', 'ドリブル：腰が高い → 腰の低さ △');
   ok(st(look, 'eyes') === 'bad', 'ドリブル：ボールを見る → 顔 △');
   const tempo = metric(good, 'tempo');
-  ok(tempo && Math.abs(parseFloat(tempo.value) - 1 / 0.6) < 0.3, 'ドリブル：回数/秒 ≈ 1.67（' + (tempo && tempo.value) + '）');
+  const perSec = 1 / BC.motions.pound.dur;
+  ok(tempo && Math.abs(parseFloat(tempo.value) - perSec) < 0.15, 'ドリブル：回数/秒 ≈ ' + perSec.toFixed(2) + '（' + (tempo && tempo.value) + '）');
   ok(good.keys.length >= 5, 'ドリブル：つくたびの場面 ' + good.keys.length);
   // AI が 1コマだけ ボールを頭と見まちがえても（顔の点が床の近くへ飛ぶ）、頭の高さは ◎ のまま
   const f2 = film('pound', { secs: 5 });

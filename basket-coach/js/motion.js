@@ -21,8 +21,13 @@
    ■ キー（人）：at（0〜1）と、変える項目だけ。書かない項目は前のキーと同じ。lin: true で直線的に（イーズなし）
        hip [x, 高さ]・lean 体の傾き（度。side は前へ、front は右へ）・nod 頭の傾き（＋で下を向く）
        rf・lf 足首の下（足の位置）[x, 高さ]・rh・lh 手 [x, 高さ]
+       （なくてもよい）rw・lw 手のひらの向き（度。0＝前へ水平、＋で指先が上。書かなければ 前腕と同じ向き）・rc・lc 指の曲げ（度）・
+       rs 手前の肩のずれ [x, 高さ]（横からだけ。腕をのばすとき、肩が少し下がる・前へ出る）
      位置は m（床が y=0、上がプラス）。ひざ・ひじは自動で曲げる（2関節の IK）。
    ■ キー（ボール）：p [x, 高さ]（その場所）| h 'r'・'l'・'both'（手につける。a で人の番号、o でずらす）。arc：このキーまでを山なりに。
+       （なくてもよい）rot 回った角度（度）・sq つぶれ（0〜0.2。床についた瞬間）・f 'r'|'l' と w（0〜1）：手が目標に届かないとき
+       （よくない形で 腰が高い など）、手のずれの w 倍だけ ボールもずらす（手の中＝1、床＝0）
+   ■ look: 'real'：体つきのある人で描く（js/motion-real.js。横からの動きだけ。なければ いつもの絵）
    ■ よくない形の作り方（mods。人 0 だけにかかる）
        hipUp: 0.17    腰を高く（体も起きる）。hands: true なら手も一緒に上がる
        nod: 35        頭を下げる（下を見る）
@@ -42,6 +47,7 @@
   const rad = (d) => (d * Math.PI) / 180;
   const f3 = (n) => (Math.round(n * 1000) / 1000).toString();
   const POSE = ['hip', 'lean', 'nod', 'rf', 'lf', 'rh', 'lh'];
+  const OPT = ['rw', 'lw', 'rc', 'lc', 'rs']; // なくてもよい項目（手のひらの向き・指の曲げ・手前の肩のずれ）
   BC.motions = BC.motions || {};
   BC.motion = function (def) {
     if (Array.isArray(def)) return def.forEach(BC.motion);
@@ -88,7 +94,7 @@
     const neck = [sh[0] + hx * L.N, sh[1] + hy * L.N];
     const head = [sh[0] + hx * (L.N + L.R), sh[1] + hy * (L.N + L.R)];
     const px = ay, py = -ax;
-    const shR = side ? sh : [sh[0] + px * L.SW, sh[1] + py * L.SW];
+    const shR = side ? (p.rs ? [sh[0] + p.rs[0], sh[1] + p.rs[1]] : sh) : [sh[0] + px * L.SW, sh[1] + py * L.SW];
     const shL = side ? [sh[0] - face * 0.02, sh[1]] : [sh[0] - px * L.SW, sh[1] - py * L.SW];
     const hpR = side ? hip : [hip[0] + px * L.HW, hip[1] + py * L.HW];
     const hpL = side ? [hip[0] - face * 0.02, hip[1]] : [hip[0] - px * L.HW, hip[1] - py * L.HW];
@@ -107,6 +113,13 @@
     const arm = (s, h, bend) => { const r = ik(s, h, L.UA, L.FA, bend); return { elb: r.mid, hand: r.end }; };
     const legR = leg(hpR, p.rf, kneeR), legL = leg(hpL, p.lf, kneeL);
     const armR = arm(shR, p.rh, elbR), armL = arm(shL, p.lh, elbL);
+    // 手のひらの向き（単位ベクトル）：rw・lw があればその角度、なければ前腕の向き。err：手が目標に届かなかった分
+    const palm = (a, w) => {
+      if (side && w != null) return [face * Math.cos(rad(w)), Math.sin(rad(w))];
+      const dx = a.hand[0] - a.elb[0], dy = a.hand[1] - a.elb[1], l = Math.hypot(dx, dy) || 1;
+      return [dx / l, dy / l];
+    };
+    const miss = (a, t) => [a.hand[0] - t[0], a.hand[1] - t[1]];
     const foot = (ank, f, which) => {
       if (side) {
         const lift = Math.max(0, Math.min(0.7, (f[1] - 0.02) * 3));
@@ -120,8 +133,8 @@
     return {
       view: side ? 'side' : 'front', face, axis: [ax, ay], headAxis: [hx, hy],
       hip, sh, neck, head, shR, shL, hpR, hpL,
-      r: { knee: legR.knee, ank: legR.ank, foot: foot(legR.ank, p.rf, 'r'), elb: armR.elb, hand: armR.hand },
-      l: { knee: legL.knee, ank: legL.ank, foot: foot(legL.ank, p.lf, 'l'), elb: armL.elb, hand: armL.hand },
+      r: { knee: legR.knee, ank: legR.ank, foot: foot(legR.ank, p.rf, 'r'), elb: armR.elb, hand: armR.hand, palm: palm(armR, p.rw), curl: p.rc, err: miss(armR, p.rh) },
+      l: { knee: legL.knee, ank: legL.ank, foot: foot(legL.ank, p.lf, 'l'), elb: armL.elb, hand: armL.hand, palm: palm(armL, p.lw), curl: p.lc, err: miss(armL, p.lh) },
     };
   }
   BC.skeleton = skeleton;
@@ -157,12 +170,18 @@
       if (Array.isArray(va)) p[f] = [lerp(va[0], vb[0], e), lerp(va[1], vb[1], e)];
       else p[f] = lerp(va || 0, vb || 0, e);
     }
+    for (const f of OPT) {
+      const va = a[f], vb = b[f];
+      if (va == null && vb == null) continue;
+      const x = va != null ? va : vb, y = vb != null ? vb : va;
+      p[f] = Array.isArray(x) ? [lerp(x[0], y[0], e), lerp(x[1], y[1], e)] : lerp(x, y, e);
+    }
     return p;
   }
   // よくない形（mods）を姿勢にかける
   function applyMods(p, m, t) {
     if (!m) return p;
-    const q = { hip: p.hip.slice(), lean: p.lean, nod: p.nod, rf: p.rf.slice(), lf: p.lf.slice(), rh: p.rh.slice(), lh: p.lh.slice(), kneeIn: p.kneeIn };
+    const q = { hip: p.hip.slice(), lean: p.lean, nod: p.nod, rf: p.rf.slice(), lf: p.lf.slice(), rh: p.rh.slice(), lh: p.lh.slice(), kneeIn: p.kneeIn, rw: p.rw, lw: p.lw, rc: p.rc, lc: p.lc, rs: p.rs };
     if (m.hipUp) {
       q.hip[1] += m.hipUp;
       q.lean *= 0.45;
@@ -210,7 +229,15 @@
       const pa = ballPos(a, skAt(a.at)), pb = ballPos(k, skAt(k.at));
       let y = lerp(pa[1], pb[1], u);
       if (k.arc) y += k.arc * 4 * u * (1 - u);
-      return [lerp(pa[0], pb[0], u), y];
+      const out = [lerp(pa[0], pb[0], u), y];
+      // 手が目標に届いていないとき（よくない形）、手のずれの分だけ ボールもずらす（床に近いほど 少なく）
+      if (a.f && k.f) {
+        const g = sk[k.a || 0][k.f], w = lerp(a.w == null ? 1 : a.w, k.w == null ? 1 : k.w, u);
+        out[0] += g.err[0] * w; out[1] += g.err[1] * w;
+      }
+      if (a.rot != null || k.rot != null) out.rot = lerp(a.rot || 0, k.rot || 0, u);
+      if (a.sq || k.sq) out.sq = lerp(a.sq || 0, k.sq || 0, u);
+      return out;
     });
     let scroll = 0;
     if (clip.scroll) { const { a, b, u } = seg(clip.scroll, t); scroll = lerp(a.v, b.v, u); }
@@ -352,12 +379,16 @@
         out += `<g opacity="${f3(0.1 + (3 - k) * 0.07)}">${ghost(g.sk[0])}${g.balls.map((b) => ballSVG(b, 0.6)).join('')}</g>`;
       }
     }
-    const figs = fr.sk.map(figure);
+    // look: 'real'（体つきのある人。js/motion-real.js）は、横からの人だけ。部品がなければ いつもの絵
+    const real = clip.look === 'real' && BC.real ? BC.real : null;
+    const figs = fr.sk.map((s) => (real && s.view === 'side' ? real.figure(s) : figure(s)));
+    const actor = real ? 'mo-actor mo-real' : 'mo-actor';
     // 影
     out += fr.sk.map((s) => { const air = Math.min(s.r.ank[1], s.l.ank[1]) - L.ANK; return `<ellipse class="mo-shadow" cx="${f3(s.hip[0])}" cy="0.02" rx="${f3(0.34 * Math.max(0.4, 1 - air))}" ry="0.04" opacity="${f3(fr.fade)}"/>`; }).join('');
-    out += figs.map((f, i) => `<g class="mo-actor" style="--c:${ROLE[fr.roles[i]] || ROLE['']}" opacity="${f3(fr.fade)}">${f.back}</g>`).join('');
-    out += fr.balls.map((b) => ballSVG(b, fr.fade)).join('');
-    out += figs.map((f, i) => `<g class="mo-actor" style="--c:${ROLE[fr.roles[i]] || ROLE['']}" opacity="${f3(fr.fade)}">${f.front}</g>`).join('');
+    if (real) out += fr.balls.map((b) => real.ballShadow(b, fr.fade)).join('');
+    out += figs.map((f, i) => `<g class="${actor}" style="--c:${ROLE[fr.roles[i]] || ROLE['']}" opacity="${f3(fr.fade)}">${f.back}</g>`).join('');
+    out += fr.balls.map((b) => (real ? real.ball(b, fr.fade) : ballSVG(b, fr.fade))).join('');
+    out += figs.map((f, i) => `<g class="${actor}" style="--c:${ROLE[fr.roles[i]] || ROLE['']}" opacity="${f3(fr.fade)}">${f.front}</g>`).join('');
     if (opt.angles) out += `<g class="mo-angles">${angles(fr.sk[0], clip.box)}</g>`;
     return { svg: out, frame: fr };
   };
@@ -411,7 +442,7 @@
     const mods = () => { const m = mistakes.find((x) => x.id === S.mode); return m ? m.mods : null; };
     if (guide) {
       const f0 = BC.motionFrame(clip, 0);
-      const y = -(f0.sk[0].head[1] + L.R + 0.03);
+      const y = -(f0.sk[0].head[1] + L.R + 0.03 + (clip.look === 'real' && BC.real ? BC.real.HEAD_UP : 0));
       guide.setAttribute('x1', x0); guide.setAttribute('x2', x1); guide.setAttribute('y1', y); guide.setAttribute('y2', y);
     }
     function draw() {

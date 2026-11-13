@@ -112,7 +112,7 @@
 
   /* ---------- 技能の絵（人のアニメーションの1コマ） ---------- */
   const SKILL_ART = {
-    shoot: ['shoot', 0.42, null], finish: ['layup', 0.62, null], dribble: ['pound', 0.2, null], pass: ['chestpass', 0.45, null],
+    shoot: ['shoot', 0.42, null], finish: ['layup', 0.62, null], dribble: ['pound', 0.1, null], pass: ['chestpass', 0.45, null],
     foot: ['jumpstop', 0.62, null], attack: ['crossover', 0.3, null], offball: ['speed', 0.3, null], rebound: ['boxout', 0.6, null],
     defball: ['stance', 0.3, null], defteam: ['closeout', 0.72, null], transition: ['speed', 0.6, null], teamoff: ['chestpass', 0.3, null],
     body: ['lunge', 0.3, null], iq: null, mind: null, coach: null,

@@ -4,18 +4,91 @@
   // 腰を落とした構え（横から・右向き）
   const LOW = BC.mo.LOW;
 
+  /* 低いドリブル（ポンド）：体つきのある人（look: 'real'）と、物理にそったボール。
+     1回の流れ（秒）：0 手の中のいちばん上 →（押す）→ tR 手をはなれる →（落ちる）→ tB 床 →（はね返る）→ tC 指でうける →（吸収する）→ T
+     ・ボール：手の中は なめらかに加速、空中は 重力で落ちて はね返る（はね返りの係数 E）。床で少しつぶれ、回りながら動く
+     ・手：指の腹が ボールの上にのる。うけるときは 指がのびて、押すときは 手首が返る（スナップ）。はなれたあとも 床へ向かってのびる
+     ・体：押すときに 肩が少し入り、腰は わずかに引く。頭の高さと向きは 変えない（腰の高さで つり合わせる）
+     動画チェックの基準（腰の低さ・顔・頭の高さ・手首が腰より下）に合う形にしてある（tools/analyze-test.cjs） */
+  const pound = (function () {
+    const G = 9.8, R = 0.12, E = 0.8;
+    const HIP = 0.69, LEAN = 34, NOD = -28;
+    const yTop = 0.5, yRel = 0.36, yCat = 0.41, vRel = 2.6, tauP = 0.145, tauA = 0.18;
+    const vImp = Math.sqrt(vRel * vRel + 2 * G * (yRel - R)), tDown = (vImp - vRel) / G;
+    const vB = E * vImp, vCat = Math.sqrt(vB * vB - 2 * G * (yCat - R)), tUp = (vB - vCat) / G;
+    const tR = tauP, tB = tR + tDown, tC = tB + tUp, T = tC + tauA;
+    const rad = (d) => (d * Math.PI) / 180, dir = (d) => [Math.cos(rad(d)), Math.sin(rad(d))];
+    const wrap = (t) => ((t % T) + T) % T;
+    const herm = (p0, v0, p1, v1, tau, s) => { const s2 = s * s, s3 = s2 * s; return (2 * s3 - 3 * s2 + 1) * p0 + (s3 - 2 * s2 + s) * tau * v0 + (-2 * s3 + 3 * s2) * p1 + (s3 - s2) * tau * v1; };
+    // くり返す なめらかな線（[秒, 値] の点を通る）
+    const spline = (keys) => (t0) => {
+      const t = wrap(t0), n = keys.length;
+      let j = -1;
+      for (let k = 0; k < n; k++) if (keys[k][0] <= t) j = k;
+      const K = (i) => { const q = ((i % n) + n) % n; return [keys[q][0] + Math.floor(i / n) * T, keys[q][1]]; };
+      const a = K(j), b = K(j + 1), a0 = K(j - 1), b1 = K(j + 2);
+      return herm(a[1], (b[1] - a0[1]) / (b[0] - a0[0]), b[1], (b1[1] - a[1]) / (b1[0] - a[0]), b[0] - a[0], (t - a[0]) / (b[0] - a[0]));
+    };
+    const ballAt = (t0) => {
+      const t = wrap(t0);
+      let y;
+      if (t < tR) y = herm(yTop, 0, yRel, -vRel, tauP, t / tauP);
+      else if (t < tB) { const q = t - tR; y = yRel - vRel * q - 0.5 * G * q * q; }
+      else if (t < tC) { const q = t - tB; y = R + vB * q - 0.5 * G * q * q; }
+      else y = herm(yCat, vCat, yTop, 0, tauA, (t - tC) / tauA);
+      return [0.43 + 0.018 * Math.cos((2 * Math.PI * (t - tB)) / T), y];
+    };
+    // 手のひらの向き・指の曲げ・指の腹が のる場所（ボールの てっぺんから 前へ何度）
+    const palm = spline([[0, 6], [tR * 0.65, 3], [tR, -14], [tR + 0.05, -38], [tB + 0.04, -16], [tC - 0.035, 8], [tC, 10]]);
+    const curl = spline([[0, 40], [tR * 0.65, 40], [tR, 30], [tR + 0.05, 22], [tB + 0.04, 16], [tC - 0.035, 16], [tC, 18]]);
+    // 腕をのばすとき、手前の肩が 少し下がって前へ出る（1：いちばん のびたとき）
+    const reach = spline([[0, 0.1], [tR, 0.6], [tR + 0.06, 1], [tB + 0.05, 0.8], [tC, 0.45], [tC + 0.08, 0.15]]);
+    const pad = spline([[0, 30], [tR, 14], [tB, 10], [tC, 8]]);
+    const wristOn = (t) => {
+      const B = ballAt(t), a = palm(t), c = curl(t), th = rad(pad(t));
+      const d0 = dir(a), d1 = dir(a - 0.4 * c), d2 = dir(a - c);
+      return [B[0] + (R + 0.011) * Math.sin(th) - 0.04 * d2[0] - 0.045 * d1[0] - 0.085 * d0[0], B[1] + (R + 0.011) * Math.cos(th) - 0.04 * d2[1] - 0.045 * d1[1] - 0.085 * d0[1]];
+    };
+    // 手をはなれてから うけるまで：はなれたときの勢いのまま 下へのびて、うける場所へ もどる
+    const h = 0.004, wR = wristOn(tR), wC = wristOn(tC), wR0 = wristOn(tR - h), wC1 = wristOn(tC + h);
+    const kR = 0.7, kC = 0.4; // はなれたあとは 少しゆるめ、うける前は 少し上がりはじめる
+    const vR = [((wR[0] - wR0[0]) / h) * kR, ((wR[1] - wR0[1]) / h) * kR], vC = [((wC1[0] - wC[0]) / h) * kC, ((wC1[1] - wC[1]) / h) * kC];
+    const wristAt = (t0) => {
+      const t = wrap(t0);
+      if (t <= tR || t >= tC) return wristOn(t);
+      const s = (t - tR) / (tC - tR);
+      return [herm(wR[0], vR[0], wC[0], vC[0], tC - tR, s), herm(wR[1], vR[1], wC[1], vC[1], tC - tR, s)];
+    };
+    const poseAt = (t) => {
+      const sway = Math.cos((2 * Math.PI * (t - (tR + 0.03))) / T); // 1：押しきったとき
+      const lean = LEAN + 1.4 * sway;
+      return {
+        hip: [-0.004 * sway, HIP + 0.5 * (Math.cos(rad(LEAN)) - Math.cos(rad(lean)))], lean, nod: NOD - 1.4 * sway,
+        rf: [0.12, 0], lf: [-0.16, 0], rh: wristAt(t), rw: palm(t), rc: curl(t), rs: [0.014 * reach(t), 0.006 - 0.03 * reach(t)], lh: [0.43 - 0.006 * sway, 0.955 + 0.012 * sway], lw: -6 + 3 * sway, lc: 52,
+      };
+    };
+    // 細かいキー（直線でつなぐ）。床につく瞬間・はなれる瞬間・うける瞬間は かならず入れる
+    const N = 44, times = [];
+    for (let i = 0; i < N; i++) times.push((T * i) / N);
+    for (const e of [tR, tB - 0.012, tB, tB + 0.012, tC]) if (!times.some((x) => Math.abs(x - e) < 0.002)) times.push(e);
+    times.sort((a, b) => a - b);
+    times.push(T);
+    const r4 = (n) => Math.round(n * 1e4) / 1e4;
+    const keys = times.map((t) => { const p = poseAt(t === T ? 0 : t); return Object.assign({ at: r4(t / T), lin: true }, p); });
+    const ball = times.map((t) => {
+      const p = ballAt(t === T ? 0 : t), air = t > tR && t < tC;
+      return { at: r4(t / T), p, rot: r4((180 * t) / T), sq: Math.abs(t - tB) < 1e-9 ? 0.1 : 0, f: 'r', w: air ? Math.max(0, Math.min(1, (p[1] - R) / (yRel - R))) : 1 };
+    });
+    return { T, tR, tB, tC, keys, ball, low: Object.assign({}, poseAt(0)) };
+  })();
+
   BC.motion({ id: 'pound',
-    name: '低いドリブル（ポンド）', view: 'side', box: [-0.9, 1.1, -0.05, 1.85], dur: 0.6, guides: ['head'],
-    phases: [{ at: 0, label: '押す' }, { at: 0.22, label: '床へ' }, { at: 0.55, label: '手にもどる' }],
-    mistakes: [{ id: 'tall', label: '腰が高い', mods: { hipUp: 0.17 } }, { id: 'look', label: 'ボールを見る', mods: { nod: 38 } }],
-    still: 0.2,
-    actors: [{ keys: [
-      Object.assign({ at: 0 }, LOW),
-      { at: 0.22, hip: [0, 0.70], rh: [0.46, 0.50] },
-      { at: 0.55, hip: [0, 0.72], rh: [0.43, 0.6] },
-      { at: 1, rh: [0.42, 0.64] },
-    ] }],
-    balls: [{ keys: [{ at: 0, h: 'r', o: [0.03, -0.13] }, { at: 0.22, h: 'r', o: [0.03, -0.13] }, { at: 0.55, p: [0.5, 0.12] }, { at: 1, h: 'r', o: [0.03, -0.13] }] }],
+    name: '低いドリブル（ポンド）', view: 'side', look: 'real', box: [-0.75, 1.05, -0.05, 1.85], dur: Math.round(pound.T * 100) / 100, guides: ['head'],
+    phases: [{ at: 0, label: '押す' }, { at: Math.round((pound.tR / pound.T) * 100) / 100, label: '床へ' }, { at: Math.round(((pound.tB + 0.015) / pound.T) * 100) / 100, label: '手にもどる' }],
+    mistakes: [{ id: 'tall', label: '腰が高い', mods: { hipUp: 0.2 } }, { id: 'look', label: 'ボールを見る', mods: { nod: 38 } }],
+    still: 0.1,
+    actors: [{ keys: pound.keys }],
+    balls: [{ keys: pound.ball }],
     points: ['腰を落とす（おしりを少しうしろへ）', '頭の高さを変えない・顔を上げる', '指の腹で、床へ強く押しこむ'],
   });
 
