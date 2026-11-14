@@ -18,7 +18,7 @@ const only = args.filter((a) => !a.startsWith('--'));
 const outDir = path.join(root, 'tools', '_out');
 fs.mkdirSync(outDir, { recursive: true });
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const scripts = ['js/core.js', ...[...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map((m) => m[1]).filter((f) => f.startsWith('data/') || f === 'js/motion.js')];
+const scripts = ['js/core.js', ...[...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map((m) => m[1]).filter((f) => f.startsWith('data/') || f.startsWith('js/motion'))];
 const page = `<!doctype html><meta charset=utf-8><link rel=stylesheet href="file://${root}/css/coach.css"><style>body{padding:8px}.row{display:grid;grid-template-columns:110px repeat(8,1fr);gap:4px;margin-bottom:6px;align-items:center;font-size:11px}.cell{border:1px solid var(--line);border-radius:6px;background:var(--sheet-2)}#g.big{display:grid;gap:8px}</style><div id=g></div>
 ${[...new Set(scripts)].filter((f) => fs.existsSync(path.join(root, f))).map((f) => `<script src="file://${root}/${f}"></script>`).join('')}`;
 const tmp = path.join(outDir, '_motion-look.html');

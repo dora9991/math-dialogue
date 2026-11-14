@@ -35,6 +35,9 @@
   --me-ink: #3b1d0c;
   --skin: #e7b48c;
   --skin-far: #c8936c;
+  --skin-sh: #cd9568;
+  --skin-ol: #6a4330;
+  --skin-far-sh: #ab774f;
   --fig-ol: #2a211c;
   --hair: #2a211c;
   --shoe: #2f3a45;
@@ -89,6 +92,9 @@
     --me-ink: #fbe3d3;
     --skin: #e1ad86;
     --skin-far: #b98761;
+    --skin-sh: #c38b62;
+    --skin-ol: #2c1a11;
+    --skin-far-sh: #9c6c49;
     --fig-ol: #0e0b09;
     --hair: #0e0b09;
     --shoe: #6b7a88;
@@ -128,6 +134,9 @@
   --me-ink: #fbe3d3;
   --skin: #e1ad86;
   --skin-far: #b98761;
+  --skin-sh: #c38b62;
+  --skin-ol: #2c1a11;
+  --skin-far-sh: #9c6c49;
   --fig-ol: #0e0b09;
   --hair: #0e0b09;
   --shoe: #6b7a88;
@@ -679,6 +688,67 @@ body.onboarding main { padding-bottom: 48px; }
 .fg-ang { fill: var(--ok); font-size: 0.11px; font-weight: 700; text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: var(--sheet); stroke-width: 0.04px; font-family: var(--font-body); }
 .mo-ball circle { fill: var(--ball); stroke: var(--fig-ol); stroke-width: 0.02; }
 .mo-ball path { stroke: var(--fig-ol); stroke-width: 0.012; fill: none; opacity: 0.6; }
+/* リアルな人（look: 'real'。js/motion-real.js）。fr-s＝かげの色の形（輪郭つき）・fr-l＝明るい面・far＝奥の手足 */
+.mo-real .fr-s { paint-order: stroke; stroke-linejoin: round; stroke-width: 0.017; }
+.mo-real .fr-l { stroke: none; }
+.mo-real .fr-ln { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.fr-skin.fr-s { fill: var(--skin-sh); stroke: var(--skin-ol); }
+.fr-skin.fr-l { fill: var(--skin); }
+.fr-skin.fr-face { fill: var(--skin); }
+.fr-skin.fr-s.far { fill: var(--skin-far-sh); }
+.fr-skin.fr-l.far { fill: var(--skin-far); }
+.fr-hand, .fr-hand2 { fill: var(--skin); stroke: var(--skin-ol); stroke-width: 0.016; }
+.fr-hand2 { fill: var(--skin-sh); }
+.fr-hand.far { fill: var(--skin-far); }
+.fr-hand2.far { fill: var(--skin-far-sh); }
+.fr-jersey.fr-s { fill: var(--c); fill: color-mix(in srgb, var(--c) 78%, #200c04); stroke: var(--fig-ol); stroke: color-mix(in srgb, var(--c) 40%, #200c04); }
+.fr-jersey.fr-l { fill: var(--c); }
+.fr-shorts.fr-s { fill: var(--c); fill: color-mix(in srgb, var(--c) 52%, #101014); stroke: var(--fig-ol); stroke: color-mix(in srgb, var(--c) 26%, #101014); }
+.fr-shorts.fr-l { fill: var(--c); fill: color-mix(in srgb, var(--c) 70%, #101014); }
+.fr-shorts.fr-s.far { fill: var(--c); fill: color-mix(in srgb, var(--c) 40%, #101014); }
+.fr-shorts.fr-l.far { fill: var(--c); fill: color-mix(in srgb, var(--c) 52%, #101014); }
+.fr-stripe, .fr-trim, .fr-hem { stroke: #fdfbf6; opacity: 0.94; }
+.fr-ln.fr-stripe, .fr-ln.fr-hem { stroke-linecap: butt; }
+.fr-hem.far { opacity: 0.5; }
+.fr-armhole { fill: #fdfbf6; opacity: 0.94; }
+.fr-skin.fr-pit { fill: var(--skin-sh); }
+.fr-sock.fr-s { fill: #d8d2c6; stroke: #7d766a; }
+.fr-sock.fr-l { fill: #f8f6f1; }
+.fr-sock.fr-s.far { fill: #bdb6a8; }
+.fr-sock.fr-l.far { fill: #d6d0c4; }
+.fr-rib { stroke: #7d766a; opacity: 0.45; }
+.fr-shoe { fill: #f4f0e9; stroke: #5d544b; }
+.fr-shoe.far { fill: #cdc6ba; }
+.fr-sole { fill: #ffffff; stroke: #6f675d; stroke-width: 0.014; }
+.fr-sole.far { fill: #dedad2; }
+.fr-wing { fill: var(--c); }
+.fr-wing.far { opacity: 0.7; }
+.fr-lace, .fr-seam { stroke: #a39b8e; }
+.fr-seam { opacity: 0.8; }
+.fr-tread { stroke: var(--shoe); stroke-linecap: butt; }
+.fr-jaw { fill: var(--skin-sh); opacity: 0.85; }
+.fr-cheek { fill: #e9806a; opacity: 0.3; }
+.fr-ear.fr-s { stroke-width: 0.012; }
+.fr-earin { stroke: var(--skin-ol); opacity: 0.6; }
+.fr-hair.fr-s { fill: var(--hair); stroke: var(--hair); stroke-width: 0.012; }
+.fr-shine { fill: #8a6347; opacity: 0.5; }
+.fr-brow { stroke: var(--hair); }
+.fr-eye { fill: #2a1810; }
+.fr-eyehi { fill: #fff; opacity: 0.9; }
+.fr-mouth { stroke: #8a3b28; }
+.fr-nose { stroke: var(--skin-ol); opacity: 0.6; }
+.fr-lip { stroke: var(--skin-sh); }
+.fr-lid { stroke: var(--hair); opacity: 0.85; }
+.fr-cast { fill: var(--skin-sh); opacity: 0.75; }
+.fr-knee { stroke: var(--skin-ol); opacity: 0.4; }
+.fr-num { stroke: #fdfbf6; opacity: 0.95; stroke-linejoin: miter; stroke-linecap: square; }
+.fr-crease { stroke: #1a0d08; opacity: 0.28; }
+.fr-string { stroke: #fdfbf6; opacity: 0.9; }
+.fr-ball-s { fill: #b24410; }
+.fr-ball-l { fill: var(--ball); }
+.fr-ball-ln { fill: none; stroke: #3b1a0b; stroke-width: 0.011; stroke-linecap: round; opacity: 0.8; }
+.fr-ball-hi { fill: #ffe0c2; opacity: 0.32; }
+.fr-ball-ol { fill: none; stroke: #5a250c; stroke-width: 0.012; }
 .mo-hoop line { stroke: var(--ink-3); stroke-width: 0.05; stroke-linecap: round; }
 .mo-hoop .mo-board { stroke-width: 0.08; stroke: var(--ink-2); }
 .mo-rim { fill: none; stroke: var(--ball); stroke-width: 0.045; }

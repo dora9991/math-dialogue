@@ -143,29 +143,18 @@
   /* ---------- レッグスルー（前から。足の間を通す） ---------- */
   (function () {
     const S = { hip: [0.03, 0.6], lean: 3, nod: 0, rf: [0.45, 0], lf: [-0.45, 0], rh: [0.42, 0.62], lh: [-0.5, 0.8] };
+    /* クロスオーバーと同じ作り方（BC.mo.crossCycle）で、もっと低く・足を広く。床で はねたボールは 体のうしろを通って（脚の間を ぬけて）、
+       反対の手が ひざの外がわで うける */
+    const lt = BC.mo.crossCycle({ HIP: 0.575, TK: 0.82, FEET: 0.46, X0: 0.5, yTop: 0.43, xRel: 0.34, yRel: 0.33, xB: 0, vy0: 1.9,
+      tauP: 0.17, tauA: 0.24, hold: 0.05, F: [0.3, 0.47], Gd: [0.55, 0.6], sway: 0.03, behind: true });
+    const r2 = (n) => Math.round(n * 100) / 100;
     BC.motion({ id: 'legthrough',
-      name: 'レッグスルー', view: 'front', box: [-1.05, 1.05, -0.05, 1.8], dur: 1.4, guides: ['head'],
-      phases: [{ at: 0, label: '右手で足の間へ' }, { at: 0.34, label: '左手でうける' }, { at: 0.5, label: '左手で足の間へ' }, { at: 0.84, label: '右手でうける' }],
+      name: 'レッグスルー', view: 'front', box: [-1.0, 1.0, -0.05, 1.75], dur: r2(lt.T), guides: ['head'],
+      phases: [{ at: 0, label: '右手で足の間へ' }, { at: r2(lt.tC / lt.T), label: '左手でうける' }, { at: 0.5, label: '左手で足の間へ' }, { at: r2(lt.tC2 / lt.T), label: '右手でうける' }],
       mistakes: [{ id: 'tall', label: '腰が高い', mods: { hipUp: 0.16 } }],
-      still: 0.2,
-      actors: [{ keys: [
-        at(0, S),
-        { at: 0.1, hip: [0.02, 0.59], rh: [0.28, 0.52] },
-        { at: 0.25, hip: [0, 0.58], lean: 0, rh: [0.36, 0.72], lh: [-0.3, 0.58] },
-        { at: 0.36, hip: [-0.02, 0.59], lean: -2, rh: [0.5, 0.8], lh: [-0.28, 0.52] },
-        { at: 0.47, hip: [-0.03, 0.6], lean: -3, lh: [-0.42, 0.62] },
-        { at: 0.5 },
-        { at: 0.6, hip: [-0.02, 0.59], lh: [-0.28, 0.52] },
-        { at: 0.75, hip: [0, 0.58], lean: 0, lh: [-0.36, 0.72], rh: [0.3, 0.58] },
-        { at: 0.86, hip: [0.02, 0.59], lean: 2, lh: [-0.5, 0.8], rh: [0.28, 0.52] },
-        { at: 0.97, hip: [0.03, 0.6], lean: 3, rh: [0.42, 0.62] },
-        { at: 1 },
-      ] }],
-      balls: [{ keys: [
-        { at: 0, h: 'r', o: [0, -0.13] }, { at: 0.1, h: 'r', o: [0, -0.13] }, { at: 0.24, p: [0, 0.12] },
-        { at: 0.36, h: 'l', o: [0, -0.13] }, { at: 0.6, h: 'l', o: [0, -0.13] }, { at: 0.74, p: [0, 0.12] },
-        { at: 0.86, h: 'r', o: [0, -0.13] }, { at: 1, h: 'r', o: [0, -0.13] },
-      ] }],
+      still: 0.08,
+      actors: [{ keys: lt.keys }],
+      balls: [{ keys: lt.ball }],
       points: ['足を大きく開き、腰を落として、足の間を低く通す', '顔は上げたまま（ボールを見ない）', '足がかべになる（守りが近くて手を出してくるときに）'],
     });
   })();
@@ -208,11 +197,10 @@
 
   /* ---------- ユーロステップ（前から。左右にずらす） ---------- */
   (function () {
-    BC.motion({ id: 'eurostep',
-      name: 'ユーロステップ', view: 'front', box: [-1.45, 1.45, -0.05, 2.75], dur: 2.6, fade: true,
-      phases: [{ at: 0, label: 'ドリブル' }, { at: 0.16, label: 'つかむ' }, { at: 0.21, label: '1歩目（右へ）' }, { at: 0.32, label: '2歩目（左へ大きく）' }, { at: 0.46, label: '左足でとぶ' }, { at: 0.56, label: '放す' }],
-      still: 0.42,
-      actors: [{ keys: [
+    /* ドリブル（床で1回はねる）→ 両手でつかむ → 1歩目（右へ。肩と目線も右）→ 2歩目（左へ大きく）→ 左足でとぶ →
+       空中は 重力どおり（右ひざを上げる）→ 右手で放す（ボールは上へ）→ 両足で着地して吸収。キーは なめらかに通す（BC.mo.track） */
+    const T = 2.6, G = BC.mo.G;
+    const K = [
         { at: 0, hip: [0.05, 0.8], lean: 2, nod: 0, rf: [0.2, 0], lf: [-0.12, 0], rh: [0.42, 0.78], lh: [-0.42, 0.82] },
         { at: 0.06, rh: [0.44, 0.66] },
         { at: 0.14, rh: [0.4, 0.8], lh: [0.0, 0.95] },
@@ -227,13 +215,43 @@
         { at: 0.7, hip: [-0.25, 0.72], rf: [-0.04, 0], lf: [-0.46, 0], rh: [-0.02, 0.9], lh: [-0.48, 0.9] },
         { at: 0.84, hip: [-0.22, 0.86], rh: [0.0, 0.86], lh: [-0.44, 0.86] },
         { at: 1 },
-      ] }],
-      balls: [{ keys: [
-        { at: 0, h: 'r', o: [0, -0.13] }, { at: 0.06, h: 'r', o: [0, -0.13] }, { at: 0.1, p: [0.46, 0.12] }, { at: 0.14, h: 'r', o: [0, -0.13] },
-        { at: 0.19, h: 'both', o: [0, 0] }, { at: 0.44, h: 'both', o: [0, 0] },
-        { at: 0.5, h: 'r', o: [0, 0.13] }, { at: 0.56, h: 'r', o: [0, 0.13] },
-        { at: 0.68, p: [0.05, 3.1] }, { at: 1, p: [0.05, 3.1] },
-      ] }],
+      ];
+    const tr = BC.mo.track(K, false), tA = 0.47, tB = 0.665;
+    const A = tr(tA), B = tr(tB), D = (tB - tA) * T, v = (B.hip[1] - A.hip[1]) / D + (G * D) / 2;
+    const pose = (t) => {
+      const at = t / T, p = tr(at);
+      if (at > tA && at < tB) { // 空中：腰は重力どおり。手足は 腰についていく
+        const q = (at - tA) * T, y = A.hip[1] + v * q - (G * q * q) / 2, dy = y - p.hip[1];
+        p.hip = [p.hip[0], y];
+        for (const f of ['rf', 'lf', 'rh', 'lh']) p[f] = [p[f][0], p[f][1] + dy];
+      }
+      return p;
+    };
+    const hands = (t) => { const k = BC.skeleton(pose(t), 'front', 1); return { r: k.r.hand, l: k.l.hand }; };
+    const below = (h) => [h[0], h[1] - 0.13], above = (h) => [h[0], h[1] + 0.13], mid = (H) => [(H.r[0] + H.l[0]) / 2, (H.r[1] + H.l[1]) / 2];
+    const mixP = (a, b, u) => { const e = u * u * (3 - 2 * u); return [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e]; };
+    const t1 = 0.06 * T, t2 = 0.14 * T, tb = 0.1 * T, tRel = 0.56 * T;
+    const drib = BC.mo.arc(below(hands(t1).r), t1, below(hands(t2).r), t2, tb, 0.46);
+    const pRel = above(hands(tRel).r), vRel = [0.05, 4.2], tTop = vRel[1] / G; // てっぺんの後は 画面の上（ゴールの方）に のこす
+    const ball = (t) => {
+      const at = t / T, H = hands(t);
+      let p;
+      if (at < 0.06) p = below(H.r);
+      else if (at < 0.14) p = drib(t);                                   // ドリブル：床で1回はねる
+      else if (at < 0.19) p = mixP(below(H.r), mid(H), (at - 0.14) / 0.05); // 両手でつかむ
+      else if (at < 0.44) p = mid(H);
+      else if (at < 0.5) p = mixP(mid(H), above(H.r), (at - 0.44) / 0.06);  // 右手へ（あごの高さ → 上へ）
+      else if (t < tRel) p = above(H.r);
+      else p = BC.mo.fly(pRel, vRel, Math.min(t - tRel, tTop));           // 放す：上へ（ゴールへ。画面の外へぬける）
+      return { p, rot: t > tRel ? -420 * (t - tRel) : 0, sq: Math.abs(t - tb) < 0.001 ? 0.1 : 0 };
+    };
+    const ER = BC.mo.bake(T, { actors: [pose], balls: [ball], extra: [t1, tb, t2, tA * T, tB * T, tRel], fps: 30 });
+    BC.motion({ id: 'eurostep',
+      name: 'ユーロステップ', view: 'front', box: [-1.45, 1.45, -0.05, 2.75], dur: T, fade: true,
+      phases: [{ at: 0, label: 'ドリブル' }, { at: 0.16, label: 'つかむ' }, { at: 0.21, label: '1歩目（右へ）' }, { at: 0.32, label: '2歩目（左へ大きく）' }, { at: 0.46, label: '左足でとぶ' }, { at: 0.56, label: '放す' }],
+      still: 0.42,
+      actors: [{ keys: ER.actors[0] }],
+      balls: [{ keys: ER.balls[0] }],
       points: ['1歩目で肩と目線も右へ（守りを右に寄せる）', '2歩目は左へ大きく。ボールはあごの高さで、守りから遠い側へ', 'つかんでから2歩でとぶ（体はゴールに向けたまま）'],
     });
   })();
