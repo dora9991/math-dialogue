@@ -1,0 +1,105 @@
+/* バスケ タップ記録 — 📊 これまでの集計（js/totals.js）。色は app.css の値（--panel・--line・--accent など）だけを使う */
+:root { --tt-us: var(--accent); --tt-op: var(--k-bad); }
+
+/* ホームの入口 */
+.totbtn { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; min-height: 56px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line2); background: var(--panel); color: var(--text); }
+.totbtn:active { transform: scale(0.985); }
+.totbtn .mi { font-size: 26px; flex: none; width: 36px; text-align: center; }
+.totbtn .mt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.totbtn .mt b { font-size: 16px; }
+.totbtn .mt small { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+.totbtn .arr { color: var(--muted); font-size: 22px; flex: none; }
+
+/* 画面 */
+.tot { max-width: 1100px; margin: 0 auto; padding: 14px max(16px, env(safe-area-inset-left)) calc(28px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; }
+.tot .card { min-width: 0; }
+.tot .btn.small { min-height: 40px; padding: 6px 12px; }
+.tot .card h2 { font-size: 16px; }
+.tt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.tt-head h2 { margin: 0; }
+
+.tt-filters { display: flex; flex-direction: column; gap: 10px; }
+.tt-team { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tt-team > span { font-size: 13px; font-weight: 700; color: var(--muted); }
+.tt-team b { font-size: 16px; }
+.tt-team select { min-height: 42px; max-width: 100%; min-width: 0; flex: 1 1 200px; background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 6px 10px; font-size: 16px; color: var(--text); }
+.tt-count { margin: 0; font-size: 14px; }
+.tt-count b { font-size: 17px; }
+.tt-cloud { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.tt-empty { border: 2px dashed var(--line2); }
+
+/* まとめ（数のタイル） */
+.tt-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.tt-tile { display: flex; flex-direction: column; gap: 2px; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.tt-tile .tl { font-size: 12px; color: var(--muted); font-weight: 700; line-height: 1.35; }
+.tt-tile .tv { font-size: 22px; line-height: 1.2; font-weight: 800; }
+.tt-tile .ts { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 380px) {
+  .tt-tiles { grid-template-columns: 1fr 1fr; }
+  .tt-tile .tv { font-size: 19px; }
+}
+
+/* 表 */
+.tt-box th { padding: 0; }
+.tt-sort { display: inline-flex; align-items: center; justify-content: center; gap: 2px; min-height: 40px; width: 100%; padding: 4px 8px; background: none; border: 0; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.tt-sort.on { color: var(--text); background: var(--accent-soft); }
+.tt-sort .arr { display: inline-block; width: 0.9em; font-size: 10px; }
+.tt-box th.nm .tt-sort { justify-content: flex-start; }
+.tt-box td.no, .tt-box th.no { position: sticky; left: 0; background: var(--panel); z-index: 1; }
+.tt-box th.no { z-index: 2; }
+.tt-box td.shot { line-height: 1.25; }
+.tt-box .sm { display: block; }
+.tt-box .sp { display: block; font-size: 11.5px; color: var(--muted); }
+.tt-box .sx, .tt-games .sx, .tt-cmp .sx { font-size: 11.5px; color: var(--muted); font-weight: 400; }
+.tt-box .dash { color: var(--muted); }
+.tt-box tr.tot td.no { background: var(--panel); }
+
+.tt-games td, .tt-games th { padding: 4px 8px; }
+.tt-games th.ck, .tt-games td.ck { width: 44px; padding: 0 2px; }
+.tt-check { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; cursor: pointer; }
+.tt-check input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.tt-games tr.off td:not(.ck) { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line2); }
+.tt-games td.res.W { color: var(--good); font-weight: 800; }
+.tt-games td.res.L { color: var(--bad); font-weight: 700; }
+.tt-games td.sc { font-weight: 700; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.tt-per td.up { color: var(--good); font-weight: 800; }
+.tt-per td.down { color: var(--bad); font-weight: 800; }
+.tt-per tr.diff th, .tt-per tr.diff td { border-top: 2px solid var(--line2); }
+.tt-cmp { min-width: 0; width: 100%; max-width: 520px; }
+.tt-cmp tbody th { white-space: normal; }
+.tt-cmp td.better { font-weight: 900; }
+.tt-cmp td { width: 30%; }
+
+/* シュートの場所 */
+.tt-courts, .tot .shotnos { margin-bottom: 8px; }
+.tt-insight { margin: 10px 0 0; font-size: 14px; font-weight: 700; line-height: 1.5; }
+
+/* グラフ */
+.tt-trend { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.tt-chart { width: 100%; min-width: 0; }
+.tt-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tt-svg:focus { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.tt-svg .grid { stroke: var(--line); stroke-width: 1; }
+.tt-svg .grid.base { stroke: var(--line2); }
+.tt-svg .ax { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.tt-svg .endv { fill: var(--text); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tt-svg .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.tt-svg .ln.s0 { stroke: var(--tt-us); }
+.tt-svg .ln.s1 { stroke: var(--tt-op); }
+.tt-svg .pt { stroke: var(--panel); stroke-width: 2; }
+.tt-svg .pt.s0 { fill: var(--tt-us); }
+.tt-svg .pt.s1 { fill: var(--tt-op); }
+.tt-svg .cross { stroke: var(--muted); stroke-width: 1; }
+.tt-legend { display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: 13px; color: var(--text); }
+.tt-legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.tt-legend .key { position: relative; display: inline-block; width: 22px; height: 2px; }
+.tt-legend .key.s0 { background: var(--tt-us); }
+.tt-legend .key.s1 { background: var(--tt-op); }
+.tt-legend .key::after { content: ''; position: absolute; left: 6px; top: -4px; width: 9px; height: 9px; box-sizing: border-box; }
+.tt-legend .key.s0::after { background: var(--tt-us); border-radius: 50%; }
+.tt-legend .key.s1::after { background: var(--tt-op); border-radius: 1.5px; }
+.tt-readout { margin: 0; min-height: 1.5em; font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tt-nochart { margin: 4px 0; }
+.tt-how { line-height: 1.7; margin: 0 4px; }

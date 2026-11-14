@@ -63,6 +63,8 @@
   /* ---------- 画面の切り替え ---------- */
   function go(view) {
     if (S.view === 'trim' && view !== 'trim' && BT.trim.active()) BT.trim.close();
+    // 📊 これまでの集計から出るとき：開いたときに足した履歴（ブラウザの「戻る」でホームへ戻るためのもの）を戻しておく
+    if (S.view === 'totals' && view !== 'totals' && S.guarded && root.history) { S.guarded = false; S.skipPop = true; try { history.back(); } catch (e) { S.skipPop = false; } }
     S.view = view;
     BT.ui.closeSheet(true);
     if (view !== 'live') { delete document.documentElement.dataset.rot; rvPause(); }
@@ -71,6 +73,7 @@
     else if (view === 'setup') renderSetup();
     else if (view === 'live') buildLive();
     else if (view === 'game') renderGame();
+    else if (view === 'totals') { BT.totals.open(); guard(); }      // 📊 これまでの集計（js/totals.js）。ブラウザの「戻る」でホームへ
     root.scrollTo(0, 0);
   }
   /* 試合を選ぶ（記録の画面・試合のページの前に） */
@@ -163,6 +166,7 @@
     const going = cur && cur.startedAt && !cur.endedAt ? cur : null;
     const waits = list.filter((g) => g.endedAt && !g.rv && !g.trim && g.n > 0 && g !== going);
     const cloudOnly = (S.cloudList || []).filter((c) => c && c.id && !list.some((g) => g.id === c.id) && c.summary && !c.summary.demo);
+    const totN = list.filter((g) => g.n > 0).length;          // 📊 これまでの集計に入る試合（デモでない・記録が1つ以上）
     V.append(
       h('header', { class: 'hbar' },
         h('div', { class: 'brand' }, h('span', { class: 'logo', 'aria-hidden': 'true' }, '🏀'), h('div', null, h('b', null, BT.APP), h('small', null, 'タップで記録 → 動画から場面を切り出す。これ1つで'))),
@@ -192,6 +196,10 @@
           h('div', { class: 'games' }, waits.slice(0, 6).map((g) => h('div', { class: 'grow', dataset: { wait: g.id } },
             h('button', { class: 'gopen', onclick: () => openHub(g.id) }, gameLine(g)),
             h('button', { class: 'btn small primary', dataset: { trim: g.id }, onclick: () => openHub(g.id, 'trim') }, '🎬 動画を選ぶ'))))) : null,
+        totN ? h('button', { class: 'totbtn', id: 'btnTotals', onclick: () => go('totals') },
+          h('span', { class: 'mi', 'aria-hidden': 'true' }, '📊'),
+          h('span', { class: 'mt' }, h('b', null, 'これまでの集計'), h('small', null, `${totN}試合のシュート成功率・選手ごと・場所ごとの成功率など`)),
+          h('span', { class: 'arr', 'aria-hidden': 'true' }, '›')) : null,
         list.length || cloudOnly.length ? h('section', { class: 'card' }, h('h2', null, 'これまでの試合'),
           h('div', { class: 'games', id: 'gameList' }, list.map(gameRow), cloudOnly.map(cloudRow))) : null,
         h('div', { class: 'row homefoot' },
