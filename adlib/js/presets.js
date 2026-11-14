@@ -1,6 +1,6 @@
 /* アドリブ・ラボ：サンプルのコード進行（画面を持たない）。
    text はそのまま「コード譜」の入力欄に入る。style は B.STYLES のid、tempo は標準のテンポ。
-   ジャズの練習でよく使う進行を、基本 → ブルース → スタンダード → 裏コード → モード → 雰囲気ちがい → 練習用 の順にならべた。 */
+   ジャズの練習でよく使う進行を、基本 → ブルース → スタンダード → 裏コード → モード → 雰囲気ちがい → ジャズ以外のリズム → 練習用 の順にならべた。 */
 (function () {
   'use strict';
   const root = typeof window !== 'undefined' ? window : globalThis;
@@ -14,6 +14,7 @@
     { id: 'sub', jp: '裏コード・代理・経過' },
     { id: 'modal', jp: 'モード・ヴァンプ' },
     { id: 'feel', jp: 'ボサノバ・バラード・ワルツ・ファンク' },
+    { id: 'pop', jp: 'ジャズ以外のリズム（ロック・ブルース・ダンス・ラテン）' },
     { id: 'practice', jp: '練習用（長めの進行）' },
   ];
 
@@ -113,6 +114,38 @@
     { id: 'funk-g7', cat: 'feel', title: 'ファンク（Cm7 – F7 – G7alt）', style: 'funk', tempo: 104,
       text: '| Cm7 | % | F7 | % |\n| Cm7 | % | G7alt | % |',
       desc: '8ビートのファンク。最後の G7alt でぐっと緊張して、頭の Cm7 に戻る。' },
+
+    /* ---- ジャズ以外のリズム ---- */
+    { id: 'rock-1564', cat: 'pop', title: 'ロック（I – V – vi – IV の王道進行）', style: 'rock8', tempo: 120,
+      text: '| G | D | Em | C |\n| G | D | Em | C |',
+      desc: 'ロックやポップスでいちばんよく聞く4つのコード。7th のない和音なので、ペンタトニックや、音を跳ぶフレーズがよく合う。' },
+    { id: 'pop-canon', cat: 'pop', title: 'ポップ・バラード（カノン進行）', style: 'popballad', tempo: 72,
+      text: '| C | G | Am | Em |\n| F | C | F | G |',
+      desc: 'ベースが順に降りていく、バラードの定番。ゆっくりなので、長い音と間（ま）で歌うように。' },
+    { id: 'shuffle-a', cat: 'pop', title: 'ブルース・シャッフル（A の12小節）', style: 'shuffle', tempo: 112,
+      text: '| A7 | D7 | A7 | % |\n| D7 | % | A7 | % |\n| E7 | D7 | A7 | E7 |',
+      desc: '8分音符が3連符でハネるシャッフル。ベースは同じ音を2つずつ弾く。ブルース・スケールで語るように。' },
+    { id: 'slowblues-g', cat: 'pop', title: 'スロー・ブルース（12/8・G）', style: 'slowblues', tempo: 60,
+      text: '| G7 | C7 | G7 | % |\n| C7 | C#dim7 | G7 | E7 |\n| Am7 | D7 | G7 E7 | Am7 D7 |',
+      desc: '1拍を3つに割る、ゆっくりのブルース。3連符のフレーズと、たっぷりの間が似合う。' },
+    { id: 'soul-50s', cat: 'pop', title: 'ソウル（I – vi – IV – V）', style: 'soul', tempo: 116,
+      text: '| C | Am7 | F | G7 |\n| C | Am7 | F | G7 |',
+      desc: 'スネアの4つ打ちとタンバリンの、モータウン風のビート。メジャー・ペンタトニックで明るく。' },
+    { id: 'hiphop-neo', cat: 'pop', title: 'ヒップホップ（16分がハネる4小節）', style: 'hiphop', tempo: 88,
+      text: '| Fmaj7 | Em7 | Dm7 | Em7 A7b9 |',
+      desc: '16分音符がハネる、重いビート。「ノリ」で16分シャッフルの強さを変えると、ハネ方が変わる。' },
+    { id: 'disco-circle', cat: 'pop', title: 'ディスコ（マイナーの4度進行）', style: 'disco', tempo: 120,
+      text: '| Am7 | Dm7 | G7 | Cmaj7 |\n| Fmaj7 | Bm7b5 | E7 | % |',
+      desc: 'キックの4つ打ちと、オクターブで動くベース。コードは4度ずつ進むので、同じ形のフレーズをずらして弾ける。' },
+    { id: 'reggae-vamp', cat: 'pop', title: 'レゲエ（Am – G）', style: 'reggae', tempo: 140,
+      text: '| Am | % | G | % |\n| Am | % | G | % |',
+      desc: '2・4拍の裏打ちと、3拍目に落ちるドラム。1拍目が空くので、ソロも詰めこまず、すき間を楽しむ。' },
+    { id: 'samba-turn', cat: 'pop', title: 'サンバ（I – VI7 – ii – V）', style: 'samba', tempo: 190,
+      text: '| Cmaj7 | A7 | Dm7 | G7 |\n| Em7 | A7 | Dm7 | G7 |',
+      desc: '速い2拍子のブラジルのリズム。1小節を4拍で書いているので、ソロは8分音符が中心になる。' },
+    { id: 'salsa-vamp', cat: 'pop', title: 'サルサ（Am7 – D7 のヴァンプ）', style: 'salsa', tempo: 180,
+      text: '| Am7 | D7 | Am7 | D7 |',
+      desc: '2-3 のクラーベ、ピアノのモントゥーノ、次の小節を先取りするベース。Am7 はドリアン、D7 はミクソリディアン。' },
 
     /* ---- 練習用（長めの進行） ---- */
     { id: 'twelve-keys', cat: 'practice', title: 'ii–V–I を12のキーで（全音ずつ下がる）', style: 'swing', tempo: 110,

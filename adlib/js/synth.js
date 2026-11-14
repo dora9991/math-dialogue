@@ -2,7 +2,8 @@
    ・Engine … ミキサー（コンピング／ベース／ドラム／ソロ／クリックのバス）、リバーブ、マスターのコンプレッサー
    ・楽器 … ピアノ、エレピ、オルガン、ギター（弦をはじく物理モデル）、ビブラフォン、ストリングス、
             ベース（ウッド／エレキ／シンセ）、サックス（アルト／テナー）、トランペット、フルート、クラリネット、トロンボーン
-   ・ドラム … キック、スネア、サイドスティック、ハイハット、ライド、クラッシュ、タム、ブラシ
+   ・ドラム … キック、スネア、サイドスティック、ハイハット、ライド、クラッシュ、タム、ブラシ、
+              手拍子、タンバリン、シェイカー、クラーベ、カウベル、コンガ
    ブラウザの AudioContext でも、書き出し用の OfflineAudioContext でも同じように鳴る。 */
 (function () {
   'use strict';
@@ -375,6 +376,36 @@
   };
   DRUMS.tomHigh = tom(240, 160, 0.09); DRUMS.tomMid = tom(180, 115, 0.11); DRUMS.tomLow = tom(130, 80, 0.14);
   DRUMS.brush = (E, dest, t, v) => E.noise(dest, t, 0.4, { bp: 4200, q: 0.4, hp: 1500, gain: 0.3 * v, attack: 0.07, decay: 0.12 });
+  /* ---- ジャズ以外のスタイルで使う打楽器 ---- */
+  // 短い「ポン」という音程のある打音（サイン波の音程を少し下げながら、すぐ消す）
+  const blip = (E, dest, t, f0, f1, gain, decay, type) => {
+    const ctx = E.ctx, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f0, t); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + 0.05);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(gain, t + 0.0015); g.gain.setTargetAtTime(0.0001, t + 0.003, decay);
+    o.connect(g); g.connect(dest); o.start(t); o.stop(t + decay * 8 + 0.05);
+  };
+  // 手拍子：短いノイズを3つ重ねて、最後だけ少しのばす
+  DRUMS.clap = (E, dest, t, v) => { [0, 0.011, 0.023].forEach((d, i) => E.noise(dest, t + d, 0.03, { bp: 1300, q: 1.1, hp: 600, gain: 0.4 * v, decay: i === 2 ? 0.07 : 0.008 })); };
+  // タンバリン：高いノイズ（ジングル）を2回ぶつける
+  DRUMS.tambourine = (E, dest, t, v) => {
+    E.noise(dest, t, 0.12, { hp: 7000, bp: 9500, q: 1.5, gain: 0.5 * v, attack: 0.002, decay: 0.045 });
+    E.noise(dest, t + 0.018, 0.08, { hp: 8000, gain: 0.1 * v, decay: 0.03 });
+  };
+  // シェイカー：立ち上がりのやわらかい高いノイズ
+  DRUMS.shaker = (E, dest, t, v) => E.noise(dest, t, 0.08, { hp: 5500, bp: 7500, q: 0.8, gain: 0.34 * v, attack: 0.012, decay: 0.025 });
+  // クラーベ：かたい木の棒。高い音程が、すぐ消える
+  DRUMS.clave = (E, dest, t, v) => { blip(E, dest, t, 2450, 2450, 0.34 * v, 0.016); E.noise(dest, t, 0.01, { bp: 2500, q: 2, gain: 0.12 * v, decay: 0.004 }); };
+  // カウベル：2つの矩形波（540Hz と 800Hz）を帯域フィルターに通す
+  DRUMS.cowbell = (E, dest, t, v) => {
+    const ctx = E.ctx, bp = ctx.createBiquadFilter(), g = ctx.createGain();
+    bp.type = 'bandpass'; bp.frequency.value = 1700; bp.Q.value = 1.4;
+    [562, 845].forEach(f => { const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = f; o.connect(bp); o.start(t); o.stop(t + 0.5); });
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.26 * v, t + 0.0015); g.gain.setTargetAtTime(0.0001, t + 0.004, 0.055);
+    bp.connect(g); g.connect(dest);
+  };
+  // コンガ：高いほう（スラップ：短く、ノイズまじり）と、低いほう（オープン：よく響く）
+  DRUMS.congaHi = (E, dest, t, v) => { blip(E, dest, t, 420, 330, 0.42 * v, 0.045); E.noise(dest, t, 0.02, { bp: 2200, q: 1.5, gain: 0.2 * v, decay: 0.008 }); };
+  DRUMS.congaLo = (E, dest, t, v) => { blip(E, dest, t, 250, 205, 0.5 * v, 0.1); E.noise(dest, t, 0.02, { bp: 1200, q: 1.2, gain: 0.08 * v, decay: 0.008 }); };
 
   Au.Engine = Engine; Au.VOICES = VOICES; Au.DRUMS = DRUMS; Au.adsr = adsr;
   if (typeof module !== 'undefined' && module.exports) module.exports = AL;

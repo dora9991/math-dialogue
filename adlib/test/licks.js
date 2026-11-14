@@ -54,5 +54,11 @@ console.log('合計', L.all.length, '本 / ファイル', files.join(', '));
   if (miss) { bad++; console.log(`✗ コードの根音を基準にしていない綴りが ${miss} 個`); }
   console.log(`綴りの検査：${L.all.length}本 × 12キー、音 ${notes} 個`);
 }
+/* ---- 跳ぶ・ジグザグのリック（licks-zz-contour.js）は、tools/gen-contour.js の出力そのままか（手で直していないか） ---- */
+{
+  const r = require('child_process').spawnSync(process.execPath, [path.join(__dirname, '../tools/gen-contour.js'), 'check'], { encoding: 'utf8' });
+  if (r.status !== 0) { bad++; console.log((r.stdout || '') + (r.stderr || '')); }
+  else console.log(r.stdout.trim());
+}
 if (bad) { console.log(`\n${bad} 件の問題`); process.exit(1); }
 console.log('licks: OK');

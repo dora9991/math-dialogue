@@ -119,7 +119,7 @@
     arp: 'アルペジオ', scale: 'スケール', alt: 'オルタード', rhythm: 'リズム', waltz: 'ワルツ', lydian: 'リディアン', dim: 'ディミニッシュ',
     sixteenth: '16分音符', triplet: '3連符', syncopation: 'シンコペーション', pent: 'ペンタ', bebop: 'ビバップ', blues: 'ブルース',
     upper: 'アッパー・ストラクチャー', chromatic: '半音階', modern: 'モダン', digital: 'デジタル・パターン', enclosure: 'エンクロージャー',
-    guide: 'ガイドトーン', quartal: '4度堆積'
+    guide: 'ガイドトーン', quartal: '4度堆積', leap: '跳ぶ', zigzag: 'ジグザグ・戻る'
   };
   U.tagName = t => U.tagJp[t] || t;
 })();
