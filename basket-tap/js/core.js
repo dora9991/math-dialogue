@@ -69,7 +69,7 @@
     { id: 'stl', btn: 'スティール', btnShort: 'ST', label: 'スティール', pts: 0, kind: 'good' },
     { id: 'blk', label: 'ブロック', pts: 0, kind: 'good' },
     { id: 'pass', btn: 'パスミス', label: 'パスミス', pts: 0, kind: 'bad' },
-    { id: 'tov', btn: 'ターンオーバー', btnShort: 'TO', short: 'TO', label: 'ターンオーバー', pts: 0, kind: 'bad' },
+    { id: 'tov', btn: 'ターンオーバー', btnShort: 'TO', label: 'ターンオーバー', pts: 0, kind: 'bad' },
     { id: 'foul', btn: 'ファウル', btnShort: 'F', label: 'ファウル', pts: 0, kind: 'foul' },
     { id: 'mark', btn: '★ あとで見る', label: '★ あとで見る', pts: 0, kind: 'mark' }
   ];

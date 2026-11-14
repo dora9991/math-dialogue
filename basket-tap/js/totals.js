@@ -482,7 +482,7 @@
     const base = ['バスケ集計', BT.safeName(label) || '自分', today].join('_');
     const go2 = async (kind) => {
       const name = `${base}_${kind === 'p' ? '選手ごと' : '試合ごと'}.csv`;
-      const blob = new Blob(['﻿' + (kind === 'p' ? A.playersCSV(R) : A.gamesCSV(R))], { type: 'text/csv' });
+      const blob = new Blob(['\ufeff' + (kind === 'p' ? A.playersCSV(R) : A.gamesCSV(R))], { type: 'text/csv' });
       const r = await BT.ui.shareOrDownload(name, blob, share);
       if (r === 'downloaded') BT.ui.toast(`保存しました：${name}`, 'ok', 4000);
       else if (r === 'shared') BT.ui.toast('送りました', 'ok');

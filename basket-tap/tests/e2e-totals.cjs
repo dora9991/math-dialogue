@@ -122,9 +122,9 @@ const targets = (page) => page.evaluate(() => {
     const cg = await page.evaluate(() => { const g = BT.newGame({ id: 'gCloud', now: Date.UTC(2026, 8, 1, 6), tz: 540, teams: [{ name: 'ミライ' }, { name: 'ヒガシ' }] }); g.startedAt = g.createdAt; g.endedAt = g.startedAt + 1000; BT.addEvent(g, { t: 1, type: 'fg2', team: 0, no: '4' }); BT.addEvent(g, { t: 2, type: 'fg2', team: 0, no: '4' }); return { data: g, summary: BT.summary(g) }; });
     cloud.games.gCloud = { data: cg.data, summary: cg.summary, at: 1 };
     await page.evaluate(() => BT.app.go('home'));
-    const order = await page.evaluate(() => { const b = document.querySelector('#btnTotals'); const n = b && b.nextElementSibling; return { text: b && b.textContent, next: n && n.querySelector('h2') && n.querySelector('h2').textContent }; });
+    const order = await page.evaluate(() => { const b = document.querySelector('#btnTotals'); const p = b && b.previousElementSibling; return { text: b && b.textContent, prev: p && p.className, top: b && Math.round(b.getBoundingClientRect().bottom), vh: innerHeight }; });
     ok(order.text && order.text.includes('📊') && order.text.includes('これまでの集計') && order.text.includes('7試合'), 'ボタン「📊 これまでの集計」（デモ・記録なしは数えない：7試合）', order.text);
-    ok(order.next === 'これまでの試合', '「これまでの試合」のすぐ上', order);
+    ok(order.prev === 'modes' && order.top <= order.vh, '2つの始め方のすぐ下（切り出し待ちの試合が多くても、開いてすぐ見える所）', order);
     await shot(page, 'totals-home-390');
     await page.click('#btnTotals');
     await page.waitForSelector('#ttFilters');
