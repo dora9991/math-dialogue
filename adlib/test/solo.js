@@ -40,7 +40,8 @@ for (const [name, text] of Object.entries(CHARTS)) {
   const b = build(text);
   for (let seed = 1; seed <= 25; seed++) {
     for (const level of [1, 3]) {
-      const solo = S.generate(b.hs, b.an, { seed, level, density: seed % 3, bpb: 4 });
+      const opts = { seed, level, density: seed % 3, rest: (seed + level) % 3, bpb: 4 };   // 音の多さ・ブレイクの多さを、ひととおり回す
+      const solo = S.generate(b.hs, b.an, opts);
       const ev = solo.events;
       ok(ev.length > 0, `${name} seed${seed}: 音がない`);
       let end = 0, prevM = null;
@@ -63,8 +64,13 @@ for (const [name, text] of Object.entries(CHARTS)) {
       }
       // 同じ乱数の種なら同じソロ
       if (seed === 3 && level === 1) {
-        const again = S.generate(b.hs, b.an, { seed, level, density: seed % 3, bpb: 4 });
-        eq(again.events.map(e => [e.t, e.midi]), ev.map(e => [e.t, e.midi]), `${name}: 同じ種で結果が変わる`);
+        const again = S.generate(b.hs, b.an, opts);
+        eq(again.events.map(e => [e.t, e.dur, e.midi]), ev.map(e => [e.t, e.dur, e.midi]), `${name}: 同じ種で結果が変わる`);
+      }
+      // decisions から作りなおしても、同じ音になる（息継ぎで短く切った最後の音もふくめて）
+      if (seed % 5 === 0) {
+        const re = S.realize(b.hs, b.an, solo);
+        eq(re.events.map(e => [e.t, e.dur, e.midi]), ev.map(e => [e.t, e.dur, e.midi]), `${name} seed${seed}: realize しなおすと音が変わる`);
       }
     }
   }
@@ -127,6 +133,136 @@ ok(bigLeaps / totalNotes < 0.01, '大きなとびが多すぎる');
   const d0 = share(2, 0), d2 = share(2, 2);
   if (verbose) console.log('音の多さと16分（まばら／多い）', d0.s16.toFixed(3), d2.s16.toFixed(3));
   ok(d2.s16 > d0.s16 + 0.03, '音の多さを上げても、16分音符が増えない：' + d0.s16 + ' → ' + d2.s16);
+}
+/* ---------------- 音の動きの形：階段ばかりにならない。跳ぶ・ジグザグが混ざる ---------------- */
+// ソロの音を、1拍以上の休みで区切った「ひと続き」ごとに見て、音程と向きを数える
+function contour(soloOpts) {
+  let iv = 0, step = 0, leap = 0, turns = 0, moves = 0, notes = 0, stairNotes = 0;
+  let sound = 0, total = 0, rests = 0, barRests = 0, bars = 0, longest = 0, runSum = 0, runN = 0;
+  let decs = 0, pattern = 0, dupSig = 0, trimmed = 0;
+  for (const text of Object.values(CHARTS)) {
+    const b = build(text);
+    for (let seed = 1; seed <= 12; seed++) {
+      const solo = S.generate(b.hs, b.an, Object.assign({ seed, bpb: 4 }, soloOpts));
+      const ev = solo.events;
+      total += b.total; bars += b.total / 4; notes += ev.length;
+      const seen = new Set();
+      solo.decisions.forEach(d => { decs++; if (d.kind === 'pattern') pattern++; if (d.trim) trimmed++; const g = S.sigOf(L.byId[d.id]); if (seen.has(g)) dupSig++; seen.add(g); });
+      let run = 1, prevDir = 0, start = ev[0].t, end = ev[0].t;
+      const closeRun = () => { if (run >= 5) stairNotes += run; };
+      const closePhrase = () => { const len = end - start; longest = Math.max(longest, len); runSum += len; runN++; };
+      const gapSeen = g => { if (g >= 1 - 1e-6) { rests++; if (g >= 4 - 1e-6) barRests++; } };
+      gapSeen(ev[0].t);
+      ev.forEach((e, i) => {
+        sound += e.dur;
+        if (i > 0) {
+          const gap = e.t - end;
+          if (gap >= 1 - 1e-6) { gapSeen(gap); closeRun(); closePhrase(); run = 1; prevDir = 0; start = e.t; }
+          else {
+            const d = e.midi - ev[i - 1].midi, a = Math.abs(d), dir = Math.sign(d);
+            iv++; if (a >= 1 && a <= 2) step++; if (a >= 5) leap++;
+            if (dir && prevDir) { moves++; if (dir !== prevDir) turns++; }
+            if (a >= 1 && a <= 2 && dir === prevDir) run++; else { closeRun(); run = a >= 1 && a <= 2 ? 2 : 1; }
+            if (dir) prevDir = dir;
+          }
+        }
+        end = Math.max(end, e.t + e.dur);
+      });
+      closeRun(); closePhrase(); gapSeen(b.total - end);
+    }
+  }
+  return { leap: leap / iv, step: step / iv, turn: turns / moves, stair: stairNotes / notes, sound: sound / total, rests4: rests / bars * 4, barRests4: barRests / bars * 4,
+    longest, avgRun: runSum / runN, pattern: pattern / decs, dupSig: dupSig / decs, trimmed };
+}
+const fmt = x => Object.entries(x).map(([k, v]) => `${k} ${typeof v === 'number' && v % 1 ? v.toFixed(3) : v}`).join('  ');
+{
+  // 形を数える道具そのもの
+  const byName = (ctx, re) => L.byCtx[ctx].find(l => re.test(l.name));
+  eq(S.shapeOf(L.add({ ctx: 'maj7', ref: 'Cmaj7', segs: [4], name: '検査用：階段', notes: 'C4 D4 E4 F4 G4 A4 B4 C5', desc: 'x', tags: [], lvl: 1 })).kind, 'stairs', '音階を順に上がるだけのリックは「階段」');
+  L.all.pop(); L.byCtx.maj7.pop();
+  eq(S.shapeOf(byName('maj7', /^1→5→オクターブ上へ跳んで/)).kind, 'leap');
+  eq(S.shapeOf(byName('maj7', /^3度のジグザグで上がる/)).kind, 'zig');
+  eq(S.sigOf(byName('maj7', /^1→5→オクターブ上へ跳んで/)), S.sigOf(byName('min7', /^1→5→オクターブ上へ跳んで/)), '同じ型は、コードがちがっても同じ目印になる');
+  // 辞典：どのコード・スケールにも、跳ぶリックとジグザグのリックがある
+  for (const ctx of ['dom7', 'dom7alt', 'dom7#11', 'dom7sus', 'blues7', 'maj7', 'maj7#11', 'min7', 'min6', 'minmaj7', 'm7b5', 'dim7']) {
+    const kinds = L.byCtx[ctx].map(l => S.shapeOf(l).kind);
+    const nLeap = kinds.filter(k => k === 'leap').length, nZig = kinds.filter(k => k === 'zig').length;
+    ok(nLeap >= 4, `${ctx}：跳ぶリックが少ない`);
+    ok(nLeap + nZig >= 6, `${ctx}：跳ぶ・ジグザグのリックが少ない`);   // sus のジグザグは4度のとびになるので、合わせて数える
+    ok(L.byCtx[ctx].filter(l => l.tags.indexOf('leap') >= 0).length >= 3 && L.byCtx[ctx].filter(l => l.tags.indexOf('zigzag') >= 0).length >= 3, `${ctx}：leap／zigzag のタグのリックが少ない`);
+  }
+  // ソロ全体：とび（4度より広い音程）が1割以上、向きの変わり目が4割以上。5音以上つづく階段にいる音は少し
+  //   （形を見ないで選んでいたころの実測は、とび 6%・向きの変わり目 35%・階段 14%。いまの実測は 15%・46%・3%）
+  const c1 = contour({ level: 1 }), c2 = contour({ level: 2 }), c3 = contour({ level: 3 });
+  if (verbose) { console.log('形 Lv1', fmt(c1)); console.log('形 Lv2', fmt(c2)); console.log('形 Lv3', fmt(c3)); }
+  ok(c2.leap > 0.11, 'ふつう（2）で、とびが少ない：' + c2.leap);
+  ok(c2.turn > 0.40, 'ふつう（2）で、向きの変わり目が少ない（ジグザグしていない）：' + c2.turn);
+  ok(c2.stair < 0.06, 'ふつう（2）で、階段が多い：' + c2.stair);
+  ok(c2.step < 0.47, 'ふつう（2）で、順次進行ばかり：' + c2.step);
+  ok(c1.leap > 0.09 && c3.leap > 0.10, 'やさしい・むずかしいで、とびが少ない：' + c1.leap + ' / ' + c3.leap);
+  ok(c1.stair < 0.08 && c3.stair < 0.07, 'やさしい・むずかしいで、階段が多い：' + c1.stair + ' / ' + c3.stair);
+  // 同じ型（同じリズム・同じ動き）を、1コーラスのなかでくり返さない（型を見ないで選ぶと、1〜1.5% はくり返しになる）
+  ok(c1.dupSig < 0.005 && c2.dupSig < 0.005 && c3.dupSig < 0.005, '同じ型のくり返しが多い：' + [c1, c2, c3].map(c => c.dupSig).join(' / '));
+  // かたまり（ii–V–I など）のリックも、使われつづけている
+  ok(c1.pattern > 0.18 && c2.pattern > 0.06, 'かたまりのリックが使われていない：' + c1.pattern + ' / ' + c2.pattern);
+
+  /* ---------------- ブレイク（間）：ひとフレーズ弾いたら休む ---------------- */
+  //   （息継ぎを入れるまえの実測は、鳴っている拍 87%・弾きつづける長さ 平均 14拍・最長 64拍）
+  const r0 = contour({ level: 2, rest: 0 }), r1 = contour({ level: 2, rest: 1 }), r2 = contour({ level: 2, rest: 2 });
+  if (verbose) { console.log('間 少なめ', fmt(r0)); console.log('間 ふつう', fmt(r1)); console.log('間 たっぷり', fmt(r2)); }
+  eq(r1.sound, c2.sound, 'rest を書かないときは「ふつう」と同じ');
+  ok(r1.sound > 0.62 && r1.sound < 0.80, 'ふつう：鳴っている拍の割合が、ねらい（7割前後）から外れている：' + r1.sound);
+  ok(r0.sound > r1.sound + 0.07 && r1.sound > r2.sound + 0.06, 'ブレイクの多さの順に、鳴っている拍が減っていない：' + [r0, r1, r2].map(r => r.sound.toFixed(3)).join(' > '));
+  ok(r1.rests4 > 1.15, 'ふつう：1拍以上の休みが、4小節に1回ほどしかない：' + r1.rests4);
+  ok(r1.avgRun < 8.5 && r1.longest <= 20, 'ふつう：弾きつづけが長い（平均 ' + r1.avgRun + ' 拍・最長 ' + r1.longest + ' 拍）');
+  ok(r0.longest <= 28, '少なめ：弾きつづけが長すぎる（最長 ' + r0.longest + ' 拍）');
+  ok(r2.barRests4 > r0.barRests4 + 0.3, 'たっぷり：1小節ぶんの大きなブレイクが増えていない：' + r0.barRests4 + ' → ' + r2.barRests4);
+  ok(r1.trimmed > 10, '最後の長い音を短く切る息継ぎが、使われていない：' + r1.trimmed);
+}
+// 息継ぎで最後の音を短く切ったとき：1拍は残る。切ったぶんは1拍。そのあとは1拍以上あく
+{
+  let trimmed = 0;
+  for (const name of ['251', 'autumn', 'blues', 'tritone', 'minor251']) {
+    const b = build(CHARTS[name]);
+    for (let seed = 1; seed <= 10; seed++) {
+      const solo = S.generate(b.hs, b.an, { seed, level: 1 + seed % 2, bpb: 4 });
+      const full = S.realize(b.hs, b.an, Object.assign({}, solo, { decisions: solo.decisions.map(d => Object.assign({}, d, { trim: 0 })) }));
+      solo.decisions.forEach((d, di) => {
+        if (!d.trim) return;
+        trimmed++;
+        const last = solo.events.filter(e => e.dec === di).pop(), was = full.events.filter(e => e.dec === di).pop();
+        ok(last.dur >= 1 - 1e-6, `${name} seed${seed}: 切ったあとの音が1拍より短い`);
+        ok(Math.abs(was.dur - last.dur - d.trim) < 1e-6, `${name} seed${seed}: 切った長さが trim と合わない`);
+        const next = solo.events.find(e => e.t > last.t + 1e-6);
+        ok(!next || next.t - (last.t + last.dur) >= 1 - 1e-6, `${name} seed${seed}: 短く切ったのに、すぐ次の音が来る`);
+      });
+    }
+  }
+  ok(trimmed >= 15, '短く切る場面が少ない：' + trimmed);
+}
+// 差しかえ：どの候補に入れかえても、音が重ならず、コーラスをはみ出さない（同じコードの次のリックに食いこまない）
+{
+  let tried = 0, shared = 0;
+  for (const name of ['modal', 'long-ii', 'blues', 'autumn', '251', 'sus-alt']) {
+    const b = build(CHARTS[name]);
+    for (let seed = 1; seed <= 6; seed++) {
+      const solo = S.generate(b.hs, b.an, { seed, level: 2, bpb: 4, rest: seed % 3 });
+      solo.decisions.forEach((d, di) => {
+        const next = solo.decisions[di + 1];
+        if (d.kind === 'single' && next && next.t < b.hs[d.i0].t0 + b.hs[d.i0].dur - 1e-6) shared++;
+        S.candidates(b.hs, b.an, solo, di).forEach(l => {
+          const sw = S.swap(b.hs, b.an, solo, di, l.id);
+          let end = 0, bad = 0;
+          for (const e of sw.events) { if (e.t < end - 1e-6) bad++; end = Math.max(end, e.t + e.dur); }
+          tried++;
+          if (bad || end > b.total + 1e-6 || sw.decisions[di].id !== l.id) assert.fail(`${name} seed${seed}: ${d.id} → ${l.id} に差しかえると、音が重なる／はみ出す（重なり ${bad}、終わり ${end}）`);
+        });
+      });
+    }
+  }
+  n += tried;
+  ok(shared >= 10, '同じコードにリックが2本ある場面が出ていない（この検査の意味がなくなる）：' + shared);
+  if (verbose) console.log(`差しかえ：${tried} 通り（同じコードに次のリックがある場面 ${shared}）`);
 }
 if (verbose) {
   const b = build(CHARTS['251']);

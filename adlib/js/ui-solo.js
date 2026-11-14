@@ -13,6 +13,7 @@
   const TRANS_NOTE = { 9: '（E♭管）', 14: '（B♭管）', 2: '（B♭管）', 12: '（1オクターブ上に記譜）' };
   const LEVELS = [[1, 'やさしい'], [2, 'ふつう'], [3, 'むずかしい']];
   const DENS = [[0, 'まばら'], [1, 'ふつう'], [2, 'びっしり']];
+  const RESTS = [[0, '少なめ', 'フレーズを長く続ける。休みは短め'], [1, 'ふつう', 'ひとフレーズ弾いたら、1〜3拍ほど休む'], [2, 'たっぷり', 'フレーズは短め。1小節まるごと休むブレイクも増える']];
 
   /* ---------------- 譜面データ ---------------- */
   // 実音のソロ → 楽器の譜面（移調・音部記号つき）。App.buildScore は MusicXML の書き出しからも使う
@@ -69,6 +70,7 @@
     el.inst = U.select(instOptions(), st().soloInst, v => App.setSoloParams({ soloInst: v }), { id: 'soloInst', 'aria-label': 'ソロの楽器' });
     el.level = U.seg(LEVELS, st().level, v => App.setSoloParams({ level: v }), '難しさ');
     el.density = U.seg(DENS, st().density, v => App.setSoloParams({ density: v }), '音の多さ');
+    el.rest = U.seg(RESTS, st().rest, v => App.setSoloParams({ rest: v }), 'ブレイク（間）');
     el.feel = App.feelControl('solo');
     el.concert = U.seg([[true, '実音', '鳴っている音のまま（コンサートピッチ）'], [false, '移調譜', 'その楽器の人が読む楽譜（アルトは長6度上、トランペット・テナーは長2度・長9度上、ギターは1オクターブ上）']], st().concert, v => { App.set({ concert: v }, 'solo'); refreshInstOptions(); }, '譜面の書き方');
     const newBtn = h('button', { type: 'button', class: 'btn primary', onclick: () => App.newSolo(), title: '同じコード進行で、別のソロを作る' }, '🎲 新しいソロ');
@@ -80,7 +82,8 @@
       h('div', { class: 'fields' },
         U.field('楽器', el.inst),
         U.field('難しさ', el.level, 'やさしい＝8分音符が中心／ふつう＝3連符・16分音符・シンコペーションが混ざる／むずかしい＝16分音符のランやオルタードが多い'),
-        U.field('音の多さ', el.density, 'まばらなほど、間（休符）が多くなります'),
+        U.field('音の多さ', el.density, '1フレーズのなかの音の数。まばら＝のばす音や短いフレーズが中心／びっしり＝16分音符など、つまったフレーズが増える'),
+        U.field('ブレイク（間）', el.rest, 'フレーズのあいだの休みの多さ。ひとフレーズ弾いたら息継ぎをして、聞く人が疲れないようにします'),
         U.field('譜面の書き方', el.concert, '実音＝鳴っている音のまま。移調譜＝その楽器の人が読む楽譜'),
         h('div', { class: 'field wide' }, h('label', { class: 'f-label' }, 'ノリ（シャッフルの種類と強さ）'), el.feel)),
       el.seed));
@@ -344,7 +347,7 @@
   function refreshControls() {
     if (!el.inst) return;
     el.inst.value = st().soloInst;
-    el.level.set(st().level); el.density.set(st().density); el.concert.set(st().concert);
+    el.level.set(st().level); el.density.set(st().density); el.rest.set(st().rest); el.concert.set(st().concert);
     el.feel.refresh();
   }
   function refresh() {

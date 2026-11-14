@@ -33,7 +33,7 @@
       loops: 4, countIn: 1, click: false,
       comp: 'piano', bass: 'upright', drums: 'jazz', soloInst: 'altosax',
       mix: Object.assign({}, MIX_DEF), reverb: Object.assign({}, REV_DEF), muted: {},
-      seed: 1, soloSeed: 3, level: 2, density: 1, soloMode: 'same', concert: true,
+      seed: 1, soloSeed: 3, level: 2, density: 1, rest: 1, soloMode: 'same', concert: true,
       keyOverride: null, keyCycle: 0, perRow: 4, range: null, tab: 'chart', dictKey: 0,
     };
   }
@@ -64,6 +64,7 @@
     o.soloSeed = Math.round(num(o.soloSeed, 1, 99999, 3));
     o.level = inList([1, 2, 3], o.level, 2);
     o.density = inList([0, 1, 2], o.density, 1);
+    o.rest = inList([0, 1, 2], o.rest, 1);
     o.soloMode = inList(['off', 'same', 'fresh'], o.soloMode, 'same');
     o.concert = !!o.concert;
     o.keyOverride = o.keyOverride && typeof o.keyOverride.tonicPc === 'number' && (o.keyOverride.mode === 'major' || o.keyOverride.mode === 'minor') ? { tonicPc: mod(o.keyOverride.tonicPc | 0, 12), mode: o.keyOverride.mode } : null;
@@ -170,7 +171,7 @@
     const rg = S.RANGES[st.soloInst] || S.RANGES.default;
     const sd = B.STYLES[st.style];
     // スタイルに合う語彙（ロックならペンタやブルース…）を選びやすくし、速い書き方のスタイル（サンバ・サルサ）では16分音符を使わない
-    return { seed: st.soloSeed, level: st.level, density: st.density, lo: rg[0], hi: rg[1], bpb: App.bpb, tags: sd.vocab || null, avoidTags: sd.avoid || null, fast: !!sd.fast };
+    return { seed: st.soloSeed, level: st.level, density: st.density, rest: st.rest, lo: rg[0], hi: rg[1], bpb: App.bpb, tags: sd.vocab || null, avoidTags: sd.avoid || null, fast: !!sd.fast };
   };
   App.makeSolo = function () {
     App.solo = S.generate(App.hs, App.an, App.soloOpts());
@@ -276,7 +277,7 @@
 
   App.setSoloParams = function (patch) {
     const instChanged = patch.soloInst != null && patch.soloInst !== st.soloInst;
-    const regen = ['level', 'density', 'soloSeed'].some(k => patch[k] != null && patch[k] !== st[k]);
+    const regen = ['level', 'density', 'rest', 'soloSeed'].some(k => patch[k] != null && patch[k] !== st[k]);
     Object.assign(st, patch);
     st.soloInst = inList(Au.INSTRUMENTS.solo.map(i => i.id), st.soloInst, 'altosax');
     if (regen) App.makeSolo(); else if (instChanged) App.refitSolo();
@@ -449,13 +450,13 @@
   }
 
   /* ---------------- 共有リンク ---------------- */
-  // 共有リンク：コード譜・スタイル・テンポに加えて、ソロの条件（番号・難しさ・音の多さ・楽器）と差しかえたリックも入れる。
+  // 共有リンク：コード譜・スタイル・テンポに加えて、ソロの条件（番号・難しさ・音の多さ・ブレイクの多さ・楽器）と差しかえたリックも入れる。
   // 開いた人にも、同じソロが同じように鳴る
   App.shareHash = function () {
     const base = S.generate(App.hs, App.an, App.soloOpts());
     const swaps = [];
     App.solo.decisions.forEach((d, i) => { if (!base.decisions[i] || base.decisions[i].id !== d.id) swaps.push([i, d.id]); });
-    const data = { t: st.text, s: st.style, p: st.tempo, ti: st.title, k: st.keyOverride, ss: st.soloSeed, lv: st.level, dn: st.density, si: st.soloInst, sd: st.seed, cn: st.concert ? 1 : 0 };
+    const data = { t: st.text, s: st.style, p: st.tempo, ti: st.title, k: st.keyOverride, ss: st.soloSeed, lv: st.level, dn: st.density, rs: st.rest, si: st.soloInst, sd: st.seed, cn: st.concert ? 1 : 0 };
     if (st.swing != null) data.sw = st.swing;
     if (st.feel != null) data.fl = st.feel;
     if (swaps.length) data.sx = swaps;
@@ -475,6 +476,7 @@
       if (d.ss != null) patch.soloSeed = d.ss;
       if (d.lv != null) patch.level = d.lv;
       if (d.dn != null) patch.density = d.dn;
+      if (d.rs != null) patch.rest = d.rs;
       if (d.si != null) patch.soloInst = d.si;
       if (d.sd != null) patch.seed = d.sd;
       if (d.sw != null) patch.swing = d.sw;
