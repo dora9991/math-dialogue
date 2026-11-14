@@ -68,10 +68,10 @@
      uiRot：アプリごと横向きにする（90・270。画面の向きのロックをしたまま、横に倒して使う）/ camRot・camRotF：映像の向きの手直し（ふつう・アプリごと横向きのとき）
      camWipe：記録の画面に映すカメラの映像（ワイプ）の大きさ（'s' 小：上の帯の中 | 'm' 中 | 'l' 大 | 'x' 特大）
      btnMiss・btnFoul：選手の行に、シュートの失敗（2P・3P・FT の「×」）・ファウルのボタンも出す（ふだんは出さない）
-     btnAst・btnStl：アシスト・スティールのボタンも出す / rebSplit：リバを「Oリバ」「Dリバ」の2つに分ける（どれも、ふだんは出さない）
+     btnAst・btnStl・btnTov：アシスト・スティール・ターンオーバーのボタンも出す / rebSplit：リバを「Oリバ」「Dリバ」の2つに分ける（どれも、ふだんは出さない）
      shotLoc：シュートを記録したあと、コートの図で場所も聞く（ふだんは聞かない）/ courtType：その図のコート（'std' 3P の線あり | 'mini' ミニバス） */
   function prefs() {
-    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true, camQuality: '720', camAudio: true, camOrient: 'land', uiRot: 0, camRot: 0, camRotF: null, camWipe: 'm', btnMiss: false, btnFoul: false, btnAst: false, btnStl: false, rebSplit: false, shotLoc: false, courtType: 'std' }, readJSON(K.prefs) || {});
+    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true, camQuality: '720', camAudio: true, camOrient: 'land', uiRot: 0, camRot: 0, camRotF: null, camWipe: 'm', btnMiss: false, btnFoul: false, btnAst: false, btnStl: false, btnTov: false, rebSplit: false, shotLoc: false, courtType: 'std' }, readJSON(K.prefs) || {});
     delete p.actions;        // 前の版の「ボタンの組み合わせ」（いまは、選手ごとのボタンに決まっている）
     return p;
   }

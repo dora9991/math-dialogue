@@ -50,7 +50,7 @@
   /* ---------- プレーの種類 ----------
      label：記録の一覧・書き出しでの呼び名 / short：狭い所での呼び名（なければ label） / btn：記録の画面のボタンの文字
      kind：色分け（made 成功・miss 失敗・reb リバウンド・good よいプレー・bad ミス・foul・mark）
-     記録の画面にボタンがあるのは、選手ごとの行（ふだんは ROW_TYPES。設定で失敗・ファウル・アシスト・スティールを足したり、
+     記録の画面にボタンがあるのは、選手ごとの行（ふだんは ROW_TYPES。設定で失敗・ファウル・アシスト・スティール・ターンオーバーを足したり、
      リバウンドをオフェンス・ディフェンスに分けたりできる：rowTypes）と、画面の下の GLOBAL_TYPES だけ。
      ほかの種類（ブロックなど）は、前の版で記録したファイルを開くため・一覧で直すために残している。
      btnShort：ボタンが狭いときの文字 / reb：リバウンドの向き（'o' オフェンス・'d' ディフェンス。'reb' は分けない記録） */
@@ -68,7 +68,7 @@
     { id: 'stl', btn: 'スティール', btnShort: 'ST', label: 'スティール', pts: 0, kind: 'good' },
     { id: 'blk', label: 'ブロック', pts: 0, kind: 'good' },
     { id: 'pass', btn: 'パスミス', label: 'パスミス', pts: 0, kind: 'bad' },
-    { id: 'tov', label: 'ミス（その他）', pts: 0, kind: 'bad' },
+    { id: 'tov', btn: 'ターンオーバー', btnShort: 'TO', short: 'TO', label: 'ターンオーバー', pts: 0, kind: 'bad' },
     { id: 'foul', btn: 'ファウル', btnShort: 'F', label: 'ファウル', pts: 0, kind: 'foul' },
     { id: 'mark', btn: '★ あとで見る', label: '★ あとで見る', pts: 0, kind: 'mark' }
   ];
@@ -83,6 +83,7 @@
   BT.GLOBAL_TYPES = ['pass', 'mark'];
   /* 選手の行のボタン（設定で足せる）。opt.miss：シュートの失敗（2P・3P・FT の「×」を、それぞれの成功のとなりに。シュート成功率が出せる）・
      opt.rebSplit：リバを「Oリバ」（オフェンス）「Dリバ」（ディフェンス）の2つに・opt.ast：アシスト・opt.stl：スティール・
+     opt.tov：ターンオーバー（ボールを失ったミス。だれのミスかを残す。画面の下の「パスミス」は、チーム・選手を決めない）・
      opt.foul：ファウル（いちばん後ろ）。どれもなければ ROW_TYPES のまま */
   BT.rowTypes = function (opt) {
     const o = opt || {};
@@ -94,6 +95,7 @@
     });
     if (o.ast) out.push('ast');
     if (o.stl) out.push('stl');
+    if (o.tov) out.push('tov');
     if (o.foul) out.push('foul');
     return out;
   };
@@ -635,7 +637,7 @@
   };
   /* 選手ごとの集計（CSV） */
   BT.boxCSV = function (game) {
-    const head = ['チーム', '背番号', '名前', '得点', '2P成功', '2P試投', '3P成功', '3P試投', 'FT成功', 'FT試投', 'リバウンド', 'うちオフェンス', 'うちディフェンス', 'アシスト', 'スティール', 'ブロック', 'パスミス', 'ミス（その他）', 'ファウル', '★'];
+    const head = ['チーム', '背番号', '名前', '得点', '2P成功', '2P試投', '3P成功', '3P試投', 'FT成功', 'FT試投', 'リバウンド', 'うちオフェンス', 'うちディフェンス', 'アシスト', 'スティール', 'ブロック', 'パスミス', 'ターンオーバー', 'ファウル', '★'];
     const keys = ['pts', 'fg2m', 'fg2a', 'fg3m', 'fg3a', 'ftm', 'fta', 'reb', 'oreb', 'dreb', 'ast', 'stl', 'blk', 'pass', 'tov', 'foul', 'mark'];
     const rows = [head];
     BT.stats(game).forEach((st) => {

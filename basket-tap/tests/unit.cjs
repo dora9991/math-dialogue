@@ -139,6 +139,25 @@ eq(BT.rowTypes(), ['fg2', 'fg3', 'ft', 'reb'], 'ふだんは 2P・3P・FT・リ�
 eq(BT.rowTypes({ miss: true }), ['fg2', 'fg2x', 'fg3', 'fg3x', 'ft', 'ftx', 'reb'], '失敗：それぞれの成功のとなりに「×」');
 eq(BT.rowTypes({ foul: true }), ['fg2', 'fg3', 'ft', 'reb', 'foul'], 'ファウル：リバのあと');
 eq(BT.rowTypes({ miss: true, foul: true }).length, 8, '両方で 8 つ');
+eq(BT.rowTypes({ tov: true }), ['fg2', 'fg3', 'ft', 'reb', 'tov'], 'ターンオーバー：リバのあと');
+eq(BT.rowTypes({ ast: true, stl: true, tov: true, foul: true }), ['fg2', 'fg3', 'ft', 'reb', 'ast', 'stl', 'tov', 'foul'], 'ターンオーバーは、スティールのあと・ファウルの前');
+eq([BT.TYPE.tov.label, BT.TYPE.tov.btn, BT.TYPE.tov.btnShort, BT.TYPE.tov.kind, BT.TYPE.tov.pts], ['ターンオーバー', 'ターンオーバー', 'TO', 'bad', 0], 'ターンオーバーの呼び名（狭いボタンは「TO」）・得点なし');
+{
+  const g = BT.newGame({ now: Date.UTC(2026, 10, 14, 1, 0, 0), tz: 540, teams: [{ name: 'A', players: [{ no: '7' }] }, { name: 'B', players: [] }] });
+  g.startedAt = Date.UTC(2026, 10, 14, 1, 0, 0);
+  BT.addEvent(g, { t: 0, type: 'period', period: 1 });
+  BT.addEvent(g, { t: 5, type: 'tov', team: 0, no: '7' });
+  BT.addEvent(g, { t: 9, type: 'tov', team: 0, no: '7' });
+  BT.addEvent(g, { t: 12, type: 'tov', team: 1, no: null });
+  BT.addEvent(g, { t: 15, type: 'pass' });
+  const st = BT.stats(g);
+  eq([st[0].rows[0].s.tov, st[0].total.tov, st[1].unknown.tov, st[1].total.tov, BT.teamlessStats(g).pass], [2, 2, 1, 1, 1], 'ターンオーバーは選手・チームごとに数える（画面の下の「パスミス」は、チームなしのまま別に数える）');
+  eq(BT.score(g), [0, 0], 'ターンオーバーで得点は動かない');
+  ok(BT.boxCSV(g).split('\r\n')[0].split(',').includes('ターンオーバー') && !BT.boxCSV(g).includes('ミス（その他）'), '集計の CSV の見出しは「ターンオーバー」');
+  ok(BT.eventsCSV(g).includes('ターンオーバー'), '一覧の CSV にも「ターンオーバー」');
+  const back = BT.importData(JSON.stringify(BT.exportData(g)));
+  eq(back.events.filter((e) => e.type === 'tov').length, 3, '書き出して読み込んでも、ターンオーバーは残る');
+}
 let rs = BT.rowSpec(BT.rowTypes({ miss: true, foul: true }));
 ok(rs.k === 8 && Math.abs(rs.units - 7.25) < 1e-9 && rs.minW === 0.75 && rs.weights[1] === 0.75 && rs.weights[7] === 1, '行の幅の割合：「×」は 0.75・ほかは 1', rs);
 ok(['fg2x', 'fg3x', 'ftx'].every((t) => BT.TYPE[t].btn === '×') && BT.TYPE.foul.btn === 'ファウル' && BT.TYPE.foul.btnShort === 'F', 'ボタンの文字：「×」・「ファウル」（狭いときは F）');
