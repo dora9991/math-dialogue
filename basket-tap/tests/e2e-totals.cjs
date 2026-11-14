@@ -84,7 +84,7 @@ const fits = (page) => page.evaluate(() => document.documentElement.scrollWidth 
 /* 押せるもの（ボタン・チェック）の高さが 40px 以上か */
 const targets = (page) => page.evaluate(() => {
   const small = [];
-  document.querySelectorAll('.tot .btn, .tt-sort, .tt-check, #ttTeam, #btnTotalsHome').forEach((el) => { const r = el.getBoundingClientRect(); if (r.width && r.height < 39.5) small.push([el.id || el.className, Math.round(r.height)]); });
+  document.querySelectorAll('.ttmain .btn, .tt-sort, .tt-check, #ttTeam, #btnTotalsHome').forEach((el) => { const r = el.getBoundingClientRect(); if (r.width && r.height < 39.5) small.push([el.id || el.className, Math.round(r.height)]); });
   return small;
 });
 
@@ -145,6 +145,7 @@ const targets = (page) => page.evaluate(() => {
     ok(rows[3].cells.fg3 === '1' && rows[3].cells.fg === '—', '#9：外れの記録のない試合だけ → 入れた本数・成功率は「—」', rows[3].cells);
     ok(rows[5].cells.pts === '40' && rows[5].cells.no === '—', '合計の行', rows[5].cells);
     ok(await page.evaluate(() => document.querySelector('#ttPlayerTable th[aria-sort]').textContent.startsWith('得点')) && (await page.textContent('#ttPlayerTable [data-sort="pts"]')).includes('▼'), '並べている列（得点 ▼）が分かる');
+    ok(await page.evaluate(() => Array.from(document.querySelectorAll('#ttPlayerTable tbody tr, #ttGameTable tbody tr')).every((tr) => { const tops = Array.from(tr.children).map((td) => Math.round(td.getBoundingClientRect().top)); return getComputedStyle(tr).display === 'table-row' && new Set(tops).size === 1; })), '表の行は、どれも横1列に並ぶ（合計の行も）');
     ok(await clean(page), 'NaN・undefined・null の文字がない');
     ok(await fits(page), '横にはみ出さない（390）');
     ok((await targets(page)).length === 0, '押すものは、どれも高さ 40px 以上', await targets(page));
@@ -185,17 +186,17 @@ const targets = (page) => page.evaluate(() => {
     await page.click('#ttShots [data-shotno=""]');
 
     console.log('\n■ グラフ');
-    ok(await page.evaluate(() => document.querySelectorAll('#ttChart circle.pt.s0').length === 6 && document.querySelectorAll('#ttChart rect.pt.s1').length === 6), '得点（● 6）と失点（■ 6）');
+    ok(await page.evaluate(() => document.querySelectorAll('#ttChart circle.tt-pt.s0').length === 6 && document.querySelectorAll('#ttChart rect.tt-pt.s1').length === 6), '得点（● 6）と失点（■ 6）');
     ok(await page.evaluate(() => document.querySelector('.tt-legend').textContent) === '得点（ミライ）失点（相手の得点）', '凡例');
     ok((await page.textContent('#ttReadout')) === '10/29 ミナミ 戦：得点 1・失点 0', '読み取り：いちばん新しい試合', await page.textContent('#ttReadout'));
     const box = await page.evaluate(() => { const s = document.querySelector('#ttChart svg'); s.scrollIntoView({ block: 'center' }); const r = s.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; });
     await page.touchscreen.tap(box.x + 38, box.y + box.h / 2);
     ok((await page.textContent('#ttReadout')).startsWith('9/11 サクラ 戦：得点 5'), 'グラフを押すと、その試合（いちばん古い I）', await page.textContent('#ttReadout'));
     await page.click('[data-metric="fg"]');
-    ok(await page.evaluate(() => document.querySelector('#ttChart').dataset.metric === 'fg' && document.querySelectorAll('#ttChart circle.pt.s0').length === 3 && !document.querySelector('.tt-legend')), 'シュート成功率：外れも記録した 3 試合だけ・1本なので凡例なし');
+    ok(await page.evaluate(() => document.querySelector('#ttChart').dataset.metric === 'fg' && document.querySelectorAll('#ttChart circle.tt-pt.s0').length === 3 && !document.querySelector('.tt-legend')), 'シュート成功率：外れも記録した 3 試合だけ・1本なので凡例なし');
     ok(await page.evaluate(() => Array.from(document.querySelectorAll('#ttChart text.ax')).some((t) => t.textContent === '100%')), '縦の目盛りは %');
     await page.click('[data-metric="to"]');
-    ok(await page.evaluate(() => document.querySelectorAll('#ttChart circle.pt.s0').length === 6), 'ターンオーバー（6試合）');
+    ok(await page.evaluate(() => document.querySelectorAll('#ttChart circle.tt-pt.s0').length === 6), 'ターンオーバー（6試合）');
     ok(await clean(page), 'グラフでも NaN などがない');
     await page.click('[data-metric="pts"]');
 

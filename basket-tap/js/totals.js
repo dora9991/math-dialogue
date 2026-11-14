@@ -92,7 +92,7 @@
     const used = A.pick(all, { recent: T.recent, exclude: T.excl });
     const R = A.compute(used);
     const label = T.key == null ? '' : A.label(T.key);
-    const main = h('main', { class: 'tot', id: 'totals' });
+    const main = h('main', { class: 'ttmain', id: 'totals' });
     V.append(
       h('header', { class: 'hbar' },
         h('button', { class: 'btn', id: 'btnTotalsHome', onclick: () => BT.app.go('home') }, '🏠 ホーム'),
@@ -199,10 +199,10 @@
     const anyMiss = R.nMiss > 0;
     const showShot = (k) => R.us[k + 'm'] > 0 || R.usSh[k + 'a'] > 0;
     const div = (p, v) => (per ? (p.games ? v / p.games : null) : v);
-    const num = (p, v) => (per ? avg(div(p, v)) : String(v));
+    const num = (p, v) => (!v ? '' : per ? avg(div(p, v)) : String(v));          // 0 は空に（試合ごとの集計と同じ）
     const shotCell = (p, k) => {
       const m = p.sh[k + 'm'], a = p.sh[k + 'a'], all = p.s[k + 'm'];
-      if (!anyMiss || !a) return all ? h('span', { class: 'sm' }, num(p, all)) : h('span', { class: 'dash' }, '—');
+      if (!anyMiss || !a) return all ? h('span', { class: 'sm' }, num(p, all)) : h('span', { class: 'tt-dash' }, '—');
       if (per) return [h('span', { class: 'sm' }, avg(div(p, all))), h('span', { class: 'sp' }, pct(m / a))];
       const extra = all - m;
       return [h('span', { class: 'sm' }, `${m}/${a}`), h('span', { class: 'sp' }, pct(m / a)), extra > 0 ? h('span', { class: 'sx', title: '外れを記録していない試合で入れた本数' }, `+${extra}`) : null];
@@ -212,7 +212,7 @@
       { k: 'no', lab: '背番号', cls: 'no', val: (p) => p.no, cmp: true, cell: (p) => (p.no != null ? p.no : '') },
       { k: 'name', lab: '名前', cls: 'nm', val: (p) => p.name || '', cell: (p) => p.name || '' },
       { k: 'games', lab: '試合', val: (p) => p.games, cell: (p) => String(p.games) },
-      { k: 'pts', lab: per ? '得点（1試合）' : '得点', val: (p) => div(p, p.s.pts), cell: (p) => num(p, p.s.pts) },
+      { k: 'pts', lab: per ? '得点（1試合）' : '得点', val: (p) => div(p, p.s.pts), cell: (p) => (per ? avg(div(p, p.s.pts)) : String(p.s.pts)) },
       per ? null : { k: 'avg', lab: '1試合平均', val: (p) => (p.games ? p.s.pts / p.games : null), cell: (p) => avg(p.games ? p.s.pts / p.games : null) },
       showShot('fg2') ? { k: 'fg2', lab: '2P', val: anyMiss ? rate('fg2') : (p) => p.s.fg2m, cell: (p) => shotCell(p, 'fg2'), shot: true } : null,
       showShot('fg3') ? { k: 'fg3', lab: '3P', val: anyMiss ? rate('fg3') : (p) => p.s.fg3m, cell: (p) => shotCell(p, 'fg3'), shot: true } : null,
@@ -251,6 +251,7 @@
         h('div', { class: 'row', role: 'group', 'aria-label': '数の出し方' },
           chipBtn('合計', !per, { per: '0' }, rerender(() => { T.per = false; })),
           chipBtn('1試合あたり', per, { per: '1' }, rerender(() => { T.per = true; })))),
+      h('p', { class: 'note tt-scrollhint' }, '表は横にすべらせると、ほかの列（2P・3P・リバウンドなど）も見られます。'),
       h('div', { class: 'boxwrap' }, h('table', { class: 'box tt-box', id: 'ttPlayerTable' },
         h('thead', null, h('tr', null, cols.map(th))),
         h('tbody', null, rows.map((p) => tr(p)), unk ? tr(unk, 'unk') : null, tr(tot, 'tot')))),
@@ -313,7 +314,7 @@
         h('td', { class: 'ck' }, h('label', { class: 'tt-check' }, cb)),
         h('td', null, dateText(g.date, full), g.going ? h('span', { class: 'sx' }, ' 記録中') : null, T.cloud.has(g.id) ? h('span', { class: 'sx', title: 'クラウドから読んだ試合' }, ' ☁️') : null),
         h('td', { class: 'nm' }, g.opp),
-        h('td', { class: 'sc' }, `${g.pf} − ${g.pa}`),
+        h('td', { class: 'tt-sc' }, `${g.pf} − ${g.pa}`),
         h('td', { class: 'res ' + g.res }, RES[g.res]),
         anyMiss ? [h('td', null, rt ? pct(rt.fg) : '—'), h('td', null, rt ? pct(rt.fg3) : '—'), h('td', null, rt ? pct(rt.ft) : '—')] : null,
         showReb ? h('td', null, String(g.s.reb)) : null, showTo ? h('td', null, String(g.s.to)) : null);
@@ -348,7 +349,7 @@
       if (readout) readout.textContent = '';
       return;
     }
-    const W = Math.max(200, Math.round(box.clientWidth || 300)), H = W < 420 ? 190 : 220;
+    const W = Math.max(200, Math.round(box.clientWidth || 300)), H = W < 420 ? 190 : W < 800 ? 220 : 260;
     const L = 36, Rr = 34, Tp = 14, B = 30;
     const iw = W - L - Rr, ih = H - Tp - B;
     let max = 0;
@@ -390,8 +391,8 @@
       pts.forEach((p, i) => {
         const v = p.values[si];
         if (v == null) return;
-        if (si === 0) svg.append(svgEl('circle', { class: 'pt s0', cx: X(i), cy: Y(v), r: 4.5 }));
-        else svg.append(svgEl('rect', { class: 'pt s1', x: X(i) - 4.5, y: Y(v) - 4.5, width: 9, height: 9, rx: 1.5 }));
+        if (si === 0) svg.append(svgEl('circle', { class: 'tt-pt s0', cx: X(i), cy: Y(v), r: 4.5 }));
+        else svg.append(svgEl('rect', { class: 'tt-pt s1', x: X(i) - 4.5, y: Y(v) - 4.5, width: 9, height: 9, rx: 1.5 }));
       });
     });
     // 最後の値（右はし）。2本が近いときは、上と下に分ける
@@ -399,13 +400,13 @@
     const ends = m.series.map((name, si) => { const i = lastIdx(si); return i < 0 ? null : { si, i, v: pts[i].values[si], y: Y(pts[i].values[si]) }; }).filter(Boolean);
     if (ends.length === 2 && Math.abs(ends[0].y - ends[1].y) < 14) { const hi = ends[0].v >= ends[1].v ? 0 : 1; ends[hi].y -= 7; ends[1 - hi].y += 7; }
     ends.forEach((e) => svg.append(svgEl('text', { class: 'endv', x: X(e.i) + 8, y: e.y + 4 }, fmt(e.v))));
-    const sel = svgEl('g', { class: 'sel' });
+    const sel = svgEl('g', { class: 'tt-sel' });
     svg.append(sel);
     box.append(svg);
     // 凡例（2本のとき）
     if (m.series.length > 1) {
       box.append(h('div', { class: 'tt-legend' }, m.series.map((name, si) => h('span', { class: 'lg' },
-        h('i', { class: 'key s' + si, 'aria-hidden': 'true' }), si === 0 ? `${name}（${A.label(T.key)}）` : `${name}（相手の得点）`))));
+        h('i', { class: 'tt-key s' + si, 'aria-hidden': 'true' }), si === 0 ? `${name}（${A.label(T.key)}）` : `${name}（相手の得点）`))));
     }
     // 選んだ試合の読み取り（押す・なぞる・矢印キー）
     let cur = Math.max(0, pts.findIndex((p) => p.id === T.pt));
@@ -468,10 +469,10 @@
         h('thead', null, h('tr', null, h('th', null, ''), h('th', null, label), h('th', null, '相手'))),
         h('tbody', null, rowsDef.map(([k, lab, a, b, better, f]) => {
           const win = a != null && b != null && a !== b ? ((a - b) * better > 0 ? 0 : 1) : -1;
-          return h('tr', { dataset: { k } }, h('th', null, lab, better < 0 ? h('small', { class: 'sx' }, '（少ないほうがよい）') : null),
+          return h('tr', { dataset: { k } }, h('th', null, lab, better < 0 ? h('small', { class: 'sx' }, ' ↓') : null),
             h('td', { class: win === 0 ? 'better' : null }, f(a)), h('td', { class: win === 1 ? 'better' : null }, f(b)));
         })))),
-      h('p', { class: 'note' }, '相手は、どの試合の相手もまとめて数えています。太字は、よいほう。' + (R.nMiss < R.n && R.nMiss ? `成功率は、外れも記録した ${R.nMiss} 試合で計算。` : '')));
+      h('p', { class: 'note' }, '相手は、どの試合の相手もまとめて数えています。太字は、よいほう（↓ は、少ないほうがよいもの）。' + (R.nMiss < R.n && R.nMiss ? `成功率は、外れも記録した ${R.nMiss} 試合で計算。` : '')));
   }
 
   /* ---------- 書き出す ---------- */

@@ -11,10 +11,10 @@
 .totbtn .arr { color: var(--muted); font-size: 22px; flex: none; }
 
 /* 画面 */
-.tot { max-width: 1100px; margin: 0 auto; padding: 14px max(16px, env(safe-area-inset-left)) calc(28px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; }
-.tot .card { min-width: 0; }
-.tot .btn.small { min-height: 40px; padding: 6px 12px; }
-.tot .card h2 { font-size: 16px; }
+.ttmain { max-width: 1100px; margin: 0 auto; padding: 14px max(16px, env(safe-area-inset-left)) calc(28px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; }
+.ttmain .card { min-width: 0; }
+.ttmain .btn.small { min-height: 40px; padding: 6px 12px; }
+.ttmain .card h2 { font-size: 16px; }
 .tt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
 .tt-head h2 { margin: 0; }
 
@@ -29,7 +29,7 @@
 .tt-empty { border: 2px dashed var(--line2); }
 
 /* まとめ（数のタイル） */
-.tt-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.tt-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(156px, 1fr)); gap: 8px; }
 .tt-tile { display: flex; flex-direction: column; gap: 2px; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
 .tt-tile .tl { font-size: 12px; color: var(--muted); font-weight: 700; line-height: 1.35; }
 .tt-tile .tv { font-size: 22px; line-height: 1.2; font-weight: 800; }
@@ -51,7 +51,7 @@
 .tt-box .sm { display: block; }
 .tt-box .sp { display: block; font-size: 11.5px; color: var(--muted); }
 .tt-box .sx, .tt-games .sx, .tt-cmp .sx { font-size: 11.5px; color: var(--muted); font-weight: 400; }
-.tt-box .dash { color: var(--muted); }
+.tt-box .tt-dash { color: var(--muted); }
 .tt-box tr.tot td.no { background: var(--panel); }
 
 .tt-games td, .tt-games th { padding: 4px 8px; }
@@ -61,9 +61,10 @@
 .tt-games tr.off td:not(.ck) { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line2); }
 .tt-games td.res.W { color: var(--good); font-weight: 800; }
 .tt-games td.res.L { color: var(--bad); font-weight: 700; }
-.tt-games td.sc { font-weight: 700; }
+.tt-games td.tt-sc { font-weight: 700; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+.tt-per { min-width: 0; width: 100%; max-width: 640px; }
 .tt-per td.up { color: var(--good); font-weight: 800; }
 .tt-per td.down { color: var(--bad); font-weight: 800; }
 .tt-per tr.diff th, .tt-per tr.diff td { border-top: 2px solid var(--line2); }
@@ -73,7 +74,7 @@
 .tt-cmp td { width: 30%; }
 
 /* シュートの場所 */
-.tt-courts, .tot .shotnos { margin-bottom: 8px; }
+.tt-courts, .ttmain .shotnos { margin-bottom: 8px; }
 .tt-insight { margin: 10px 0 0; font-size: 14px; font-weight: 700; line-height: 1.5; }
 
 /* グラフ */
@@ -88,18 +89,23 @@
 .tt-svg .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .tt-svg .ln.s0 { stroke: var(--tt-us); }
 .tt-svg .ln.s1 { stroke: var(--tt-op); }
-.tt-svg .pt { stroke: var(--panel); stroke-width: 2; }
-.tt-svg .pt.s0 { fill: var(--tt-us); }
-.tt-svg .pt.s1 { fill: var(--tt-op); }
+.tt-svg .tt-pt { stroke: var(--panel); stroke-width: 2; }
+.tt-svg .tt-pt.s0 { fill: var(--tt-us); }
+.tt-svg .tt-pt.s1 { fill: var(--tt-op); }
 .tt-svg .cross { stroke: var(--muted); stroke-width: 1; }
 .tt-legend { display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: 13px; color: var(--text); }
 .tt-legend .lg { display: inline-flex; align-items: center; gap: 6px; }
-.tt-legend .key { position: relative; display: inline-block; width: 22px; height: 2px; }
-.tt-legend .key.s0 { background: var(--tt-us); }
-.tt-legend .key.s1 { background: var(--tt-op); }
-.tt-legend .key::after { content: ''; position: absolute; left: 6px; top: -4px; width: 9px; height: 9px; box-sizing: border-box; }
-.tt-legend .key.s0::after { background: var(--tt-us); border-radius: 50%; }
-.tt-legend .key.s1::after { background: var(--tt-op); border-radius: 1.5px; }
+.tt-legend .tt-key { position: relative; display: inline-block; width: 22px; height: 2px; }
+.tt-legend .tt-key.s0 { background: var(--tt-us); }
+.tt-legend .tt-key.s1 { background: var(--tt-op); }
+.tt-legend .tt-key::after { content: ''; position: absolute; left: 6px; top: -4px; width: 9px; height: 9px; box-sizing: border-box; }
+.tt-legend .tt-key.s0::after { background: var(--tt-us); border-radius: 50%; }
+.tt-legend .tt-key.s1::after { background: var(--tt-op); border-radius: 1.5px; }
 .tt-readout { margin: 0; min-height: 1.5em; font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .tt-nochart { margin: 4px 0; }
 .tt-how { line-height: 1.7; margin: 0 4px; }
+/* 名前の欄（app.css の .nm は準備の画面の並び。表の中では、ふつうの欄に） */
+.ttmain td.nm, .ttmain th.nm { display: table-cell; vertical-align: middle; }
+.tt-box td, .tt-games td { vertical-align: middle; }
+.tt-scrollhint { margin: 0 0 4px; font-size: 12px; }
+@media (min-width: 900px) { .tt-scrollhint { display: none; } }
