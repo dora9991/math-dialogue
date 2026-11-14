@@ -34,14 +34,14 @@
     stl: { label: 'スティール', pts: 0, grp: 'stl' },
     blk: { label: 'ブロック', pts: 0, grp: 'blk' },
     pass: { label: 'パスミス', pts: 0, grp: 'pass' },
-    tov: { label: 'ミス（その他）', pts: 0, grp: 'tov' },
+    tov: { label: 'ターンオーバー', pts: 0, grp: 'tov' },
     foul: { label: 'ファウル', pts: 0, grp: 'foul' },
     mark: { label: '★ あとで見る', pts: 0, grp: 'mark' }
   };
   /* 絞り込みのまとまり（並び順も） */
   const GROUPS = [
     { id: 'score', label: '得点' }, { id: 'miss', label: 'シュート失敗' }, { id: 'reb', label: 'リバウンド' }, { id: 'pass', label: 'パスミス' },
-    { id: 'tov', label: 'ミス（その他）' }, { id: 'stl', label: 'スティール' }, { id: 'ast', label: 'アシスト' }, { id: 'blk', label: 'ブロック' },
+    { id: 'tov', label: 'ターンオーバー' }, { id: 'stl', label: 'スティール' }, { id: 'ast', label: 'アシスト' }, { id: 'blk', label: 'ブロック' },
     { id: 'foul', label: 'ファウル' }, { id: 'mark', label: '★ あとで見る' }
   ];
   const WIN = { lead: 10, lag: 2 };     // タップした瞬間の「前 10 秒・後 2 秒」（人がタップするのは、プレーの 1〜2 秒あと。前は、攻めの組み立てから見られるように長め）

@@ -23,6 +23,7 @@
        x, y: シュートの場所（2P・3P の成功と失敗だけ。なくてよい）。ハーフコートの中の位置（0〜1・0.001 まで）。
              x：ゴールを向いて 左のサイドライン 0 … 右のサイドライン 1 / y：ゴールの後ろのベースライン 0 … センターライン 1
      court: 'std' | 'mini'（シュートの場所を記録したときのコート。ミニバスは 3P の線なし。なくてよい）
+     gc: { len, ot, ev: [ { t, on } | { t, set } ] }（試合時間＝止められる時計。設定でオンにした試合だけ。下の「試合時間」）
    }
    得点のプレー（2P・3P・FT）には、かならずチームが付く。
    ピリオドは、イベントには持たせず「その時刻より前の、いちばん新しい 'period'」で決める（periodAt）。
@@ -50,7 +51,7 @@
   /* ---------- プレーの種類 ----------
      label：記録の一覧・書き出しでの呼び名 / short：狭い所での呼び名（なければ label） / btn：記録の画面のボタンの文字
      kind：色分け（made 成功・miss 失敗・reb リバウンド・good よいプレー・bad ミス・foul・mark）
-     記録の画面にボタンがあるのは、選手ごとの行（ふだんは ROW_TYPES。設定で失敗・ファウル・アシスト・スティールを足したり、
+     記録の画面にボタンがあるのは、選手ごとの行（ふだんは ROW_TYPES。設定で失敗・ファウル・アシスト・スティール・ターンオーバーを足したり、
      リバウンドをオフェンス・ディフェンスに分けたりできる：rowTypes）と、画面の下の GLOBAL_TYPES だけ。
      ほかの種類（ブロックなど）は、前の版で記録したファイルを開くため・一覧で直すために残している。
      btnShort：ボタンが狭いときの文字 / reb：リバウンドの向き（'o' オフェンス・'d' ディフェンス。'reb' は分けない記録） */
@@ -68,7 +69,7 @@
     { id: 'stl', btn: 'スティール', btnShort: 'ST', label: 'スティール', pts: 0, kind: 'good' },
     { id: 'blk', label: 'ブロック', pts: 0, kind: 'good' },
     { id: 'pass', btn: 'パスミス', label: 'パスミス', pts: 0, kind: 'bad' },
-    { id: 'tov', label: 'ミス（その他）', pts: 0, kind: 'bad' },
+    { id: 'tov', btn: 'ターンオーバー', btnShort: 'TO', label: 'ターンオーバー', pts: 0, kind: 'bad' },
     { id: 'foul', btn: 'ファウル', btnShort: 'F', label: 'ファウル', pts: 0, kind: 'foul' },
     { id: 'mark', btn: '★ あとで見る', label: '★ あとで見る', pts: 0, kind: 'mark' }
   ];
@@ -83,6 +84,7 @@
   BT.GLOBAL_TYPES = ['pass', 'mark'];
   /* 選手の行のボタン（設定で足せる）。opt.miss：シュートの失敗（2P・3P・FT の「×」を、それぞれの成功のとなりに。シュート成功率が出せる）・
      opt.rebSplit：リバを「Oリバ」（オフェンス）「Dリバ」（ディフェンス）の2つに・opt.ast：アシスト・opt.stl：スティール・
+     opt.tov：ターンオーバー（ボールを失ったミス。だれのミスかを残す。画面の下の「パスミス」は、チーム・選手を決めない）・
      opt.foul：ファウル（いちばん後ろ）。どれもなければ ROW_TYPES のまま */
   BT.rowTypes = function (opt) {
     const o = opt || {};
@@ -94,6 +96,7 @@
     });
     if (o.ast) out.push('ast');
     if (o.stl) out.push('stl');
+    if (o.tov) out.push('tov');
     if (o.foul) out.push('foul');
     return out;
   };
@@ -396,6 +399,76 @@
     return (still.length ? still : pool).sort((a, b) => b.score - a.score)[0];
   }
 
+  /* ---------- 試合時間（止められる時計） ----------
+     記録の時刻 t（スタートからの時間・動画の時刻）は、止まらずに進む。それとは別に、笛で止まる「試合時間」を持てる（設定でオン）。
+     game.gc = {
+       len: ピリオドの長さ（秒。600＝10分・480＝8分・360＝6分・300＝5分。0 は長さを決めない＝進んだ時間を数える）,
+       ot : 延長の長さ（秒）,
+       ev : [ { t, on: 1|0 }（その時刻 t に、動かした・止めた） | { t, set: 秒 }（その時刻に、進んだ時間をこの値に合わせた） ]（追加した順）
+     }
+     ・ピリオドが始まる（'period' の時刻）と、進んだ時間は 0 に戻り、時計は動き出す（その同じ時刻に { on: 0 } があれば、止まったまま）。
+     ・試合時間は「その時刻より前の ev を、時刻の順にたどる」だけで決まる。動画を戻しても、その時刻の試合時間が出る。
+     ・長さを決めているときは、残り 0:00 で止まる（done）。 */
+  BT.GC_LENS = [600, 480, 360, 300, 0];
+  const r1 = (v) => Math.round(v * 10) / 10;
+  /* 延長の長さ：10分のピリオドなら 5分、それより短いピリオドなら 3分（決めないときは 0） */
+  BT.gcOtOf = (len) => (!len ? 0 : len >= 600 ? 300 : 180);
+  /* 新しい時計。stopped：はじめは止めておく（動画を見ながら記録：動画のはじめは、まだティップオフの前のことが多い） */
+  BT.newClock = function (len, stopped) {
+    const L = BT.GC_LENS.includes(+len) ? +len : 600;
+    return { len: L, ot: BT.gcOtOf(L), ev: stopped ? [{ t: 0, on: 0 }] : [] };
+  };
+  BT.gcLenOf = (gc, period) => (!gc || !gc.len ? 0 : period > 4 ? (isFinite(gc.ot) && gc.ot > 0 ? +gc.ot : BT.gcOtOf(gc.len)) : +gc.len);
+  /* その時刻 t の試合時間 → { period, used（このピリオドで進んだ秒）, left（残りの秒。長さを決めていなければ null）, len, running, done } | null（時計のない試合） */
+  BT.gameClock = function (game, t) {
+    const gc = game && game.gc;
+    if (!gc || !Array.isArray(gc.ev)) return null;
+    let ps = 0, p = 1, best = -Infinity;
+    (game.events || []).forEach((e) => { if (e.type === 'period' && e.t <= t + 1e-9 && e.t >= best) { best = e.t; ps = e.t; p = e.period; } });
+    const len = BT.gcLenOf(gc, p);
+    const cap = (u) => (len ? Math.min(len, u) : u);
+    let used = 0, running = true, cur = ps;
+    gc.ev.map((e, i) => ({ e, i })).filter((x) => x.e && x.e.t >= ps - 1e-9 && x.e.t <= t + 1e-9).sort((a, b) => (a.e.t - b.e.t) || (a.i - b.i)).forEach(({ e }) => {
+      if (running) used = cap(used + Math.max(0, e.t - cur));
+      cur = Math.max(cur, e.t);
+      if (e.set != null) used = cap(Math.max(0, +e.set || 0)); else running = !!e.on;
+    });
+    if (running) used = cap(used + Math.max(0, t - cur));
+    used = r1(used);
+    const done = !!len && used >= len;
+    return { period: p, used, left: len ? r1(len - used) : null, len, running: running && !done, done };
+  };
+  /* 画面・一覧に出す文字：長さを決めていれば残り（秒は切り上げ：0:00 は、終わったときだけ）、決めていなければ進んだ時間 */
+  BT.gcText = (c) => (!c ? '' : c.left != null ? BT.fmtTime(Math.ceil(c.left - 1e-6)) : BT.fmtTime(Math.floor(c.used + 1e-6)));
+  /* 「1Q 残り 7:32」「1Q 2:28」 */
+  BT.gcLabel = (c) => (!c ? '' : `${BT.periodLabel(c.period)} ${c.left != null ? '残り ' : ''}${BT.gcText(c)}`);
+  /* 止める・動かす（時刻 t で）。戻り値：そのあとの試合時間。残り 0:00 のあとは動かせない（null） */
+  BT.gcToggle = function (game, t) {
+    const c = BT.gameClock(game, t);
+    if (!c || c.done) return null;
+    game.gc.ev.push({ t: r1(t), on: c.running ? 0 : 1 });
+    return BT.gameClock(game, t);
+  };
+  /* 進んだ時間を合わせる（時刻 t で、used 秒に）。ずれたときの手直し */
+  BT.gcSet = function (game, t, used) {
+    const c = BT.gameClock(game, t);
+    if (!c) return null;
+    game.gc.ev.push({ t: r1(t), set: r1(BT.clamp(+used || 0, 0, c.len || 5999)) });
+    return BT.gameClock(game, t);
+  };
+  /* 読み込んだ時計の形をそろえる（合わないものは捨てる） */
+  BT.cleanClock = function (gc) {
+    if (!gc || typeof gc !== 'object' || !Array.isArray(gc.ev)) return null;
+    const out = BT.newClock(gc.len, false);
+    if (isFinite(gc.ot) && gc.ot >= 0 && gc.ot <= 1800) out.ot = Math.round(gc.ot);
+    gc.ev.slice(0, 2000).forEach((e) => {
+      if (!e || !isFinite(e.t) || e.t < 0) return;
+      if (e.set != null) { if (isFinite(e.set) && e.set >= 0) out.ev.push({ t: r1(+e.t), set: r1(Math.min(5999, +e.set)) }); }
+      else out.ev.push({ t: r1(+e.t), on: e.on ? 1 : 0 });
+    });
+    return out;
+  };
+
   /* ---------- 集計 ---------- */
   BT.score = function (game, until) {
     const s = [0, 0];
@@ -622,7 +695,11 @@
     // シュートの場所を記録した試合だけ、いちばん後ろに場所の列（前からの列の位置は変えない）
     const loc = BT.hasShotLoc(game), court = BT.courtOf(game);
     if (loc) rows[0].push('場所X', '場所Y', '場所（ゾーン名）');
-    const locCells = (e) => (!loc ? [] : BT.hasLoc(e) ? [e.x, e.y, BT.shotZone(e.x, e.y, court).label] : ['', '', '']);
+    const locCells0 = (e) => (!loc ? [] : BT.hasLoc(e) ? [e.x, e.y, BT.shotZone(e.x, e.y, court).label] : ['', '', '']);
+    // 試合時間（止められる時計）を使った試合だけ、さらに後ろに「試合時間」の列（長さを決めていれば残り、決めていなければ進んだ時間）
+    const gc = !!(game.gc && Array.isArray(game.gc.ev));
+    if (gc) rows[0].push(game.gc.len ? '試合時間（残り）' : '試合時間（進んだ時間）');
+    const locCells = (e) => locCells0(e).concat(gc ? [BT.gcText(BT.gameClock(game, e.t))] : []);
     const s = [0, 0];
     let n = 0;
     BT.sorted(game).forEach((e) => {
@@ -635,7 +712,7 @@
   };
   /* 選手ごとの集計（CSV） */
   BT.boxCSV = function (game) {
-    const head = ['チーム', '背番号', '名前', '得点', '2P成功', '2P試投', '3P成功', '3P試投', 'FT成功', 'FT試投', 'リバウンド', 'うちオフェンス', 'うちディフェンス', 'アシスト', 'スティール', 'ブロック', 'パスミス', 'ミス（その他）', 'ファウル', '★'];
+    const head = ['チーム', '背番号', '名前', '得点', '2P成功', '2P試投', '3P成功', '3P試投', 'FT成功', 'FT試投', 'リバウンド', 'うちオフェンス', 'うちディフェンス', 'アシスト', 'スティール', 'ブロック', 'パスミス', 'ターンオーバー', 'ファウル', '★'];
     const keys = ['pts', 'fg2m', 'fg2a', 'fg3m', 'fg3a', 'ftm', 'fta', 'reb', 'oreb', 'dreb', 'ast', 'stl', 'blk', 'pass', 'tov', 'foul', 'mark'];
     const rows = [head];
     BT.stats(game).forEach((st) => {
@@ -670,6 +747,8 @@
     const notes = BT.cleanNotes(obj.notes);
     if (notes.length) g.notes = notes;
     if (obj.court === 'std' || obj.court === 'mini') g.court = obj.court;
+    const gc = BT.cleanClock(obj.gc);
+    if (gc) g.gc = gc;
     // 場面の切り出し（動画ごとの時刻あわせ・絞り込み。js/trim.js）
     if (obj.trims && typeof obj.trims === 'object' && !Array.isArray(obj.trims)) {
       const tr = {};
