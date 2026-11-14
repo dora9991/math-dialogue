@@ -189,6 +189,18 @@ body[data-view="live"] { overflow: hidden; }
   .tval.long ~ .recdot, .clock:has(.tval.long) .recdot { width: 8px; height: 8px; }
   .clock:has(.tval.long) { padding: 0 7px; gap: 5px; }
 }
+/* とても幅の狭いスマホ（320px など）：上の帯の部品が重ならないよう、もう一段詰める */
+@media (max-width: 340px) {
+  .lbar { gap: 3px; padding-left: 4px; padding-right: 4px; }
+  .clock { min-width: 0; padding: 0 6px; gap: 4px; }
+  .clock .recdot { width: 8px; height: 8px; }
+  .period { min-width: 36px; padding: 0 3px; }
+  .sc { min-width: 1.5em; padding: 0 4px; }
+  .menubtn { min-width: 40px; padding: 0 3px; }
+  .menubtn small { display: none; }
+  .clock:has(.tval.long) { padding: 0 5px; gap: 3px; }
+  .tval.long { font-size: 20px; }
+}
 .dash { font-size: 22px; color: var(--muted); font-weight: 800; }
 .menubtn { height: clamp(46px, 7.4vmin, 64px); min-width: 50px; border: 2px solid var(--line2); border-radius: 12px; background: var(--panel); display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; padding: 0 6px; flex: none; }
 .menubtn span { font-size: 24px; font-weight: 800; }
@@ -305,6 +317,7 @@ html[data-rot] .sheet-card { max-height: calc(var(--rvw, 100vw) * 0.92); }
 .pb.k-dreb { background: var(--k-drb); }
 .pb.k-ast { background: var(--k-ast); }
 .pb.k-stl { background: var(--k-stl); }
+.pb.k-tov { background: var(--k-bad); }
 /* 設定で足すボタン：シュートの失敗「×」（そのシュートの色のふち。成功のとなり）・ファウル */
 .pb.miss { background: var(--k-miss-bg); color: var(--sc); box-shadow: inset 0 0 0 2px var(--sc), 0 2px 0 rgba(0, 0, 0, 0.12); }
 .pb.miss b { font-size: calc(var(--bf, 16px) * 1.2); }
@@ -609,6 +622,7 @@ table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size
 .pt.k-dreb { background: var(--k-drb); }
 .pt.k-ast { background: var(--k-ast); }
 .pt.k-stl { background: var(--k-stl); }
+.pt.k-tov { background: var(--k-bad); }
 .pt.k-foul { background: var(--k-foul); }
 .pt.miss { background: var(--k-miss-bg); color: var(--sc); box-shadow: inset 0 0 0 2px var(--sc), 0 2px 0 rgba(0, 0, 0, 0.12); }
 .pt.k-fg2x { --sc: var(--k-fg2); }
@@ -968,6 +982,148 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
 .growbar small { color: var(--muted); font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .growbar:active { opacity: 0.6; }
 
+/* 試合時間（止められる時計。設定でオン）：上の帯の時計が試合時間になり、押すと止まる・動く。下に小さく、スタートからの時間（動画の時刻）。
+   左の印：動いている＝緑の三角・止まっている＝黄色の2本線（ゆっくり点滅）・終わり（残り 0:00）＝赤い数字 */
+.clock .tcol { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-width: 0; }
+.clock .gcst, .clock .tsub { display: none; }
+.clock.gc .recdot { display: none; }
+.clock.gc .gcst { display: block; flex: none; width: 0; height: 0; border-style: solid; border-width: 7px 0 7px 11px; border-color: transparent transparent transparent var(--k-made); }
+.clock.gc.stopped .gcst, .clock.gc.done .gcst { width: 12px; height: 15px; box-sizing: border-box; border-width: 0 4px; border-color: var(--warn); animation: rec 1.6s ease-in-out infinite; }
+.clock.gc.done .gcst { border-color: var(--bad); animation: none; }
+.clock.gc .tval { font-size: clamp(24px, 5vmin, 40px); }
+.clock.gc .tval.long { font-size: clamp(19px, 4vmin, 32px); }
+.clock.gc .tsub { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 700; line-height: 1; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.clock.gc.stopped { border-color: var(--warn); }
+.clock.gc.stopped .tval { color: var(--warn); }
+.clock.gc.done .tval { color: var(--bad); }
+.clock.gc.ended .gcst { animation: none; border-color: var(--line2); }
+.clock.gc.ended:not(.stopped):not(.done) .gcst { border-color: transparent transparent transparent var(--line2); }
+.short .clock.gc .tval { font-size: 21px; }
+.short .clock.gc .tsub { font-size: 9px; margin-top: 1px; }
+@media (prefers-reduced-motion: reduce) { .clock.gc .gcst { animation: none !important; } }
+/* ピリオドの小窓の中の、試合時間の手直し */
+.gcbox { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel2); }
+.gcbox > b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.gcbox > b small { font-weight: 600; color: var(--muted); margin-left: 4px; }
+.gcbox .gcadj { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.gcbox .gcadj .btn, .gcbox #btnGcToggle { min-height: 42px; }
+/* 記録の一覧：時刻の下に、小さく試合時間 */
+.lrow .lt .lgt { display: block; font-size: 11px; font-weight: 600; color: var(--muted); }
+
+</style>
+<style>
+/* バスケ タップ記録 — 📊 これまでの集計（js/totals.js）。色は app.css の値（--panel・--line・--accent など）だけを使う */
+:root { --tt-us: var(--accent); --tt-op: var(--k-bad); }
+
+/* ホームの入口 */
+.totbtn { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; min-height: 56px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line2); background: var(--panel); color: var(--text); }
+.totbtn:active { transform: scale(0.985); }
+.totbtn .mi { font-size: 26px; flex: none; width: 36px; text-align: center; }
+.totbtn .mt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.totbtn .mt b { font-size: 16px; }
+.totbtn .mt small { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+.totbtn .arr { color: var(--muted); font-size: 22px; flex: none; }
+
+/* 画面 */
+.ttmain { max-width: 1100px; margin: 0 auto; padding: 14px max(16px, env(safe-area-inset-left)) calc(28px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; }
+.ttmain .card { min-width: 0; }
+.ttmain .btn.small { min-height: 40px; padding: 6px 12px; }
+.ttmain .card h2 { font-size: 16px; }
+.tt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.tt-head h2 { margin: 0; }
+
+.tt-filters { display: flex; flex-direction: column; gap: 10px; }
+.tt-team { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tt-team > span { font-size: 13px; font-weight: 700; color: var(--muted); }
+.tt-team b { font-size: 16px; }
+.tt-team select { min-height: 42px; max-width: 100%; min-width: 0; flex: 1 1 200px; background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 6px 10px; font-size: 16px; color: var(--text); }
+.tt-count { margin: 0; font-size: 14px; }
+.tt-count b { font-size: 17px; }
+.tt-cloud { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.tt-empty { border: 2px dashed var(--line2); }
+
+/* まとめ（数のタイル） */
+.tt-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(156px, 1fr)); gap: 8px; }
+.tt-tile { display: flex; flex-direction: column; gap: 2px; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.tt-tile .tl { font-size: 12px; color: var(--muted); font-weight: 700; line-height: 1.35; }
+.tt-tile .tv { font-size: 22px; line-height: 1.2; font-weight: 800; }
+.tt-tile .ts { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 380px) {
+  .tt-tiles { grid-template-columns: 1fr 1fr; }
+  .tt-tile .tv { font-size: 19px; }
+}
+
+/* 表 */
+.tt-box th { padding: 0; }
+.tt-sort { display: inline-flex; align-items: center; justify-content: center; gap: 2px; min-height: 40px; width: 100%; padding: 4px 8px; background: none; border: 0; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.tt-sort.on { color: var(--text); background: var(--accent-soft); }
+.tt-sort .arr { display: inline-block; width: 0.9em; font-size: 10px; }
+.tt-box th.nm .tt-sort { justify-content: flex-start; }
+.tt-box td.no, .tt-box th.no { position: sticky; left: 0; background: var(--panel); z-index: 1; }
+.tt-box th.no { z-index: 2; }
+.tt-box td.shot { line-height: 1.25; }
+.tt-box .sm { display: block; }
+.tt-box .sp { display: block; font-size: 11.5px; color: var(--muted); }
+.tt-box .sx, .tt-games .sx, .tt-cmp .sx { font-size: 11.5px; color: var(--muted); font-weight: 400; }
+.tt-box .tt-dash { color: var(--muted); }
+.tt-box tr.tot td.no { background: var(--panel); }
+
+.tt-games td, .tt-games th { padding: 4px 8px; }
+.tt-games th.ck, .tt-games td.ck { width: 44px; padding: 0 2px; }
+.tt-check { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; cursor: pointer; }
+.tt-check input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.tt-games tr.off td:not(.ck) { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line2); }
+.tt-games td.res.W { color: var(--good); font-weight: 800; }
+.tt-games td.res.L { color: var(--bad); font-weight: 700; }
+.tt-games td.tt-sc { font-weight: 700; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.tt-per { min-width: 0; width: 100%; max-width: 640px; }
+.tt-per td.up { color: var(--good); font-weight: 800; }
+.tt-per td.down { color: var(--bad); font-weight: 800; }
+.tt-per tr.diff th, .tt-per tr.diff td { border-top: 2px solid var(--line2); }
+.tt-cmp { min-width: 0; width: 100%; max-width: 520px; }
+.tt-cmp tbody th { white-space: normal; }
+.tt-cmp td.better { font-weight: 900; }
+.tt-cmp td { width: 30%; }
+
+/* シュートの場所 */
+.tt-courts, .ttmain .shotnos { margin-bottom: 8px; }
+.tt-insight { margin: 10px 0 0; font-size: 14px; font-weight: 700; line-height: 1.5; }
+
+/* グラフ */
+.tt-trend { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.tt-chart { width: 100%; min-width: 0; }
+.tt-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tt-svg:focus { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.tt-svg .grid { stroke: var(--line); stroke-width: 1; }
+.tt-svg .grid.base { stroke: var(--line2); }
+.tt-svg .ax { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.tt-svg .endv { fill: var(--text); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tt-svg .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.tt-svg .ln.s0 { stroke: var(--tt-us); }
+.tt-svg .ln.s1 { stroke: var(--tt-op); }
+.tt-svg .tt-pt { stroke: var(--panel); stroke-width: 2; }
+.tt-svg .tt-pt.s0 { fill: var(--tt-us); }
+.tt-svg .tt-pt.s1 { fill: var(--tt-op); }
+.tt-svg .cross { stroke: var(--muted); stroke-width: 1; }
+.tt-legend { display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: 13px; color: var(--text); }
+.tt-legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.tt-legend .tt-key { position: relative; display: inline-block; width: 22px; height: 2px; }
+.tt-legend .tt-key.s0 { background: var(--tt-us); }
+.tt-legend .tt-key.s1 { background: var(--tt-op); }
+.tt-legend .tt-key::after { content: ''; position: absolute; left: 6px; top: -4px; width: 9px; height: 9px; box-sizing: border-box; }
+.tt-legend .tt-key.s0::after { background: var(--tt-us); border-radius: 50%; }
+.tt-legend .tt-key.s1::after { background: var(--tt-op); border-radius: 1.5px; }
+.tt-readout { margin: 0; min-height: 1.5em; font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tt-nochart { margin: 4px 0; }
+.tt-how { line-height: 1.7; margin: 0 4px; }
+/* 名前の欄（app.css の .nm は準備の画面の並び。表の中では、ふつうの欄に） */
+.ttmain td.nm, .ttmain th.nm { display: table-cell; vertical-align: middle; }
+.tt-box td, .tt-games td { vertical-align: middle; }
+.tt-scrollhint { margin: 0 0 4px; font-size: 12px; }
+@media (min-width: 900px) { .tt-scrollhint { display: none; } }
+
 </style>
 </head>
 <body>
@@ -1002,6 +1158,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
        x, y: シュートの場所（2P・3P の成功と失敗だけ。なくてよい）。ハーフコートの中の位置（0〜1・0.001 まで）。
              x：ゴールを向いて 左のサイドライン 0 … 右のサイドライン 1 / y：ゴールの後ろのベースライン 0 … センターライン 1
      court: 'std' | 'mini'（シュートの場所を記録したときのコート。ミニバスは 3P の線なし。なくてよい）
+     gc: { len, ot, ev: [ { t, on } | { t, set } ] }（試合時間＝止められる時計。設定でオンにした試合だけ。下の「試合時間」）
    }
    得点のプレー（2P・3P・FT）には、かならずチームが付く。
    ピリオドは、イベントには持たせず「その時刻より前の、いちばん新しい 'period'」で決める（periodAt）。
@@ -1029,7 +1186,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
   /* ---------- プレーの種類 ----------
      label：記録の一覧・書き出しでの呼び名 / short：狭い所での呼び名（なければ label） / btn：記録の画面のボタンの文字
      kind：色分け（made 成功・miss 失敗・reb リバウンド・good よいプレー・bad ミス・foul・mark）
-     記録の画面にボタンがあるのは、選手ごとの行（ふだんは ROW_TYPES。設定で失敗・ファウル・アシスト・スティールを足したり、
+     記録の画面にボタンがあるのは、選手ごとの行（ふだんは ROW_TYPES。設定で失敗・ファウル・アシスト・スティール・ターンオーバーを足したり、
      リバウンドをオフェンス・ディフェンスに分けたりできる：rowTypes）と、画面の下の GLOBAL_TYPES だけ。
      ほかの種類（ブロックなど）は、前の版で記録したファイルを開くため・一覧で直すために残している。
      btnShort：ボタンが狭いときの文字 / reb：リバウンドの向き（'o' オフェンス・'d' ディフェンス。'reb' は分けない記録） */
@@ -1047,7 +1204,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     { id: 'stl', btn: 'スティール', btnShort: 'ST', label: 'スティール', pts: 0, kind: 'good' },
     { id: 'blk', label: 'ブロック', pts: 0, kind: 'good' },
     { id: 'pass', btn: 'パスミス', label: 'パスミス', pts: 0, kind: 'bad' },
-    { id: 'tov', label: 'ミス（その他）', pts: 0, kind: 'bad' },
+    { id: 'tov', btn: 'ターンオーバー', btnShort: 'TO', label: 'ターンオーバー', pts: 0, kind: 'bad' },
     { id: 'foul', btn: 'ファウル', btnShort: 'F', label: 'ファウル', pts: 0, kind: 'foul' },
     { id: 'mark', btn: '★ あとで見る', label: '★ あとで見る', pts: 0, kind: 'mark' }
   ];
@@ -1062,6 +1219,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
   BT.GLOBAL_TYPES = ['pass', 'mark'];
   /* 選手の行のボタン（設定で足せる）。opt.miss：シュートの失敗（2P・3P・FT の「×」を、それぞれの成功のとなりに。シュート成功率が出せる）・
      opt.rebSplit：リバを「Oリバ」（オフェンス）「Dリバ」（ディフェンス）の2つに・opt.ast：アシスト・opt.stl：スティール・
+     opt.tov：ターンオーバー（ボールを失ったミス。だれのミスかを残す。画面の下の「パスミス」は、チーム・選手を決めない）・
      opt.foul：ファウル（いちばん後ろ）。どれもなければ ROW_TYPES のまま */
   BT.rowTypes = function (opt) {
     const o = opt || {};
@@ -1073,6 +1231,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     });
     if (o.ast) out.push('ast');
     if (o.stl) out.push('stl');
+    if (o.tov) out.push('tov');
     if (o.foul) out.push('foul');
     return out;
   };
@@ -1375,6 +1534,76 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     return (still.length ? still : pool).sort((a, b) => b.score - a.score)[0];
   }
 
+  /* ---------- 試合時間（止められる時計） ----------
+     記録の時刻 t（スタートからの時間・動画の時刻）は、止まらずに進む。それとは別に、笛で止まる「試合時間」を持てる（設定でオン）。
+     game.gc = {
+       len: ピリオドの長さ（秒。600＝10分・480＝8分・360＝6分・300＝5分。0 は長さを決めない＝進んだ時間を数える）,
+       ot : 延長の長さ（秒）,
+       ev : [ { t, on: 1|0 }（その時刻 t に、動かした・止めた） | { t, set: 秒 }（その時刻に、進んだ時間をこの値に合わせた） ]（追加した順）
+     }
+     ・ピリオドが始まる（'period' の時刻）と、進んだ時間は 0 に戻り、時計は動き出す（その同じ時刻に { on: 0 } があれば、止まったまま）。
+     ・試合時間は「その時刻より前の ev を、時刻の順にたどる」だけで決まる。動画を戻しても、その時刻の試合時間が出る。
+     ・長さを決めているときは、残り 0:00 で止まる（done）。 */
+  BT.GC_LENS = [600, 480, 360, 300, 0];
+  const r1 = (v) => Math.round(v * 10) / 10;
+  /* 延長の長さ：10分のピリオドなら 5分、それより短いピリオドなら 3分（決めないときは 0） */
+  BT.gcOtOf = (len) => (!len ? 0 : len >= 600 ? 300 : 180);
+  /* 新しい時計。stopped：はじめは止めておく（動画を見ながら記録：動画のはじめは、まだティップオフの前のことが多い） */
+  BT.newClock = function (len, stopped) {
+    const L = BT.GC_LENS.includes(+len) ? +len : 600;
+    return { len: L, ot: BT.gcOtOf(L), ev: stopped ? [{ t: 0, on: 0 }] : [] };
+  };
+  BT.gcLenOf = (gc, period) => (!gc || !gc.len ? 0 : period > 4 ? (isFinite(gc.ot) && gc.ot > 0 ? +gc.ot : BT.gcOtOf(gc.len)) : +gc.len);
+  /* その時刻 t の試合時間 → { period, used（このピリオドで進んだ秒）, left（残りの秒。長さを決めていなければ null）, len, running, done } | null（時計のない試合） */
+  BT.gameClock = function (game, t) {
+    const gc = game && game.gc;
+    if (!gc || !Array.isArray(gc.ev)) return null;
+    let ps = 0, p = 1, best = -Infinity;
+    (game.events || []).forEach((e) => { if (e.type === 'period' && e.t <= t + 1e-9 && e.t >= best) { best = e.t; ps = e.t; p = e.period; } });
+    const len = BT.gcLenOf(gc, p);
+    const cap = (u) => (len ? Math.min(len, u) : u);
+    let used = 0, running = true, cur = ps;
+    gc.ev.map((e, i) => ({ e, i })).filter((x) => x.e && x.e.t >= ps - 1e-9 && x.e.t <= t + 1e-9).sort((a, b) => (a.e.t - b.e.t) || (a.i - b.i)).forEach(({ e }) => {
+      if (running) used = cap(used + Math.max(0, e.t - cur));
+      cur = Math.max(cur, e.t);
+      if (e.set != null) used = cap(Math.max(0, +e.set || 0)); else running = !!e.on;
+    });
+    if (running) used = cap(used + Math.max(0, t - cur));
+    used = r1(used);
+    const done = !!len && used >= len;
+    return { period: p, used, left: len ? r1(len - used) : null, len, running: running && !done, done };
+  };
+  /* 画面・一覧に出す文字：長さを決めていれば残り（秒は切り上げ：0:00 は、終わったときだけ）、決めていなければ進んだ時間 */
+  BT.gcText = (c) => (!c ? '' : c.left != null ? BT.fmtTime(Math.ceil(c.left - 1e-6)) : BT.fmtTime(Math.floor(c.used + 1e-6)));
+  /* 「1Q 残り 7:32」「1Q 2:28」 */
+  BT.gcLabel = (c) => (!c ? '' : `${BT.periodLabel(c.period)} ${c.left != null ? '残り ' : ''}${BT.gcText(c)}`);
+  /* 止める・動かす（時刻 t で）。戻り値：そのあとの試合時間。残り 0:00 のあとは動かせない（null） */
+  BT.gcToggle = function (game, t) {
+    const c = BT.gameClock(game, t);
+    if (!c || c.done) return null;
+    game.gc.ev.push({ t: r1(t), on: c.running ? 0 : 1 });
+    return BT.gameClock(game, t);
+  };
+  /* 進んだ時間を合わせる（時刻 t で、used 秒に）。ずれたときの手直し */
+  BT.gcSet = function (game, t, used) {
+    const c = BT.gameClock(game, t);
+    if (!c) return null;
+    game.gc.ev.push({ t: r1(t), set: r1(BT.clamp(+used || 0, 0, c.len || 5999)) });
+    return BT.gameClock(game, t);
+  };
+  /* 読み込んだ時計の形をそろえる（合わないものは捨てる） */
+  BT.cleanClock = function (gc) {
+    if (!gc || typeof gc !== 'object' || !Array.isArray(gc.ev)) return null;
+    const out = BT.newClock(gc.len, false);
+    if (isFinite(gc.ot) && gc.ot >= 0 && gc.ot <= 1800) out.ot = Math.round(gc.ot);
+    gc.ev.slice(0, 2000).forEach((e) => {
+      if (!e || !isFinite(e.t) || e.t < 0) return;
+      if (e.set != null) { if (isFinite(e.set) && e.set >= 0) out.ev.push({ t: r1(+e.t), set: r1(Math.min(5999, +e.set)) }); }
+      else out.ev.push({ t: r1(+e.t), on: e.on ? 1 : 0 });
+    });
+    return out;
+  };
+
   /* ---------- 集計 ---------- */
   BT.score = function (game, until) {
     const s = [0, 0];
@@ -1601,7 +1830,11 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     // シュートの場所を記録した試合だけ、いちばん後ろに場所の列（前からの列の位置は変えない）
     const loc = BT.hasShotLoc(game), court = BT.courtOf(game);
     if (loc) rows[0].push('場所X', '場所Y', '場所（ゾーン名）');
-    const locCells = (e) => (!loc ? [] : BT.hasLoc(e) ? [e.x, e.y, BT.shotZone(e.x, e.y, court).label] : ['', '', '']);
+    const locCells0 = (e) => (!loc ? [] : BT.hasLoc(e) ? [e.x, e.y, BT.shotZone(e.x, e.y, court).label] : ['', '', '']);
+    // 試合時間（止められる時計）を使った試合だけ、さらに後ろに「試合時間」の列（長さを決めていれば残り、決めていなければ進んだ時間）
+    const gc = !!(game.gc && Array.isArray(game.gc.ev));
+    if (gc) rows[0].push(game.gc.len ? '試合時間（残り）' : '試合時間（進んだ時間）');
+    const locCells = (e) => locCells0(e).concat(gc ? [BT.gcText(BT.gameClock(game, e.t))] : []);
     const s = [0, 0];
     let n = 0;
     BT.sorted(game).forEach((e) => {
@@ -1614,7 +1847,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
   };
   /* 選手ごとの集計（CSV） */
   BT.boxCSV = function (game) {
-    const head = ['チーム', '背番号', '名前', '得点', '2P成功', '2P試投', '3P成功', '3P試投', 'FT成功', 'FT試投', 'リバウンド', 'うちオフェンス', 'うちディフェンス', 'アシスト', 'スティール', 'ブロック', 'パスミス', 'ミス（その他）', 'ファウル', '★'];
+    const head = ['チーム', '背番号', '名前', '得点', '2P成功', '2P試投', '3P成功', '3P試投', 'FT成功', 'FT試投', 'リバウンド', 'うちオフェンス', 'うちディフェンス', 'アシスト', 'スティール', 'ブロック', 'パスミス', 'ターンオーバー', 'ファウル', '★'];
     const keys = ['pts', 'fg2m', 'fg2a', 'fg3m', 'fg3a', 'ftm', 'fta', 'reb', 'oreb', 'dreb', 'ast', 'stl', 'blk', 'pass', 'tov', 'foul', 'mark'];
     const rows = [head];
     BT.stats(game).forEach((st) => {
@@ -1649,6 +1882,8 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     const notes = BT.cleanNotes(obj.notes);
     if (notes.length) g.notes = notes;
     if (obj.court === 'std' || obj.court === 'mini') g.court = obj.court;
+    const gc = BT.cleanClock(obj.gc);
+    if (gc) g.gc = gc;
     // 場面の切り出し（動画ごとの時刻あわせ・絞り込み。js/trim.js）
     if (obj.trims && typeof obj.trims === 'object' && !Array.isArray(obj.trims)) {
       const tr = {};
@@ -1973,6 +2208,256 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
 
 </script>
 <script>
+/* js/agg.js */
+/* バスケ タップ記録 — これまでの試合の集計（画面を持たない部分。core.js のあとに読む。node のテストからも読める）
+   画面は js/totals.js。数え方（画面の下の説明と同じ）：
+   ・得点・リバウンド・アシスト・スティール・ファウルは、試合ごとの BT.stats を、選んだチームの側で足す
+   ・ターンオーバー ＝ 選手の行の「ターンオーバー」（tov）＋ チームの付いた「パスミス」（pass）。チームなしのパスミスは、どちらにも数えない
+   ・シュートの成功率は、外れも記録した試合（BT.hasMisses）だけで計算する（ほかの試合は入れた本数しかなく、打った数が分からない）。
+     入れた本数・得点は、全部の試合から
+   ・勝ち負けは、試合の最後の得点（BT.score）。同じなら引き分け
+   ・1試合あたり ＝ 試合の数で割る（選手は、その番号の記録が1つでもある試合の数）
+   ・「直近5試合」は、そのチームの試合のうち、スタートした時刻（なければ作った時刻）の新しい 5 試合
+
+   ■ 使い方
+     const list = BT.agg.eligible(games)                    … 集計に使える試合（デモでない・記録が1つ以上）
+     const tm = BT.agg.teams(list, myName)                  → { list: [{ key, label, n, n0 }], def: key }
+     const all = BT.agg.gamesFor(list, key)                 → [{ game, side }]（新しい順）
+     const used = BT.agg.pick(all, { recent: 5, exclude })  → 集計に入れる試合
+     const r = BT.agg.compute(used)                         → まとめ・選手ごと・試合ごと・ピリオドごと（下の compute の説明）
+     BT.agg.shots(used, { court, no }) / BT.agg.trend(r, metric) / BT.agg.playersCSV(r) / BT.agg.gamesCSV(r) */
+(function (root) {
+  'use strict';
+  const BT = root.BT;
+  const A = {};
+
+  const SH_KEYS = ['fg2m', 'fg2a', 'fg3m', 'fg3a', 'ftm', 'fta'];
+  const SUM_KEYS = BT.STAT_KEYS.concat(['to']);
+  const zeroS = () => { const o = {}; SUM_KEYS.forEach((k) => { o[k] = 0; }); return o; };
+  const zeroSh = () => { const o = {}; SH_KEYS.forEach((k) => { o[k] = 0; }); return o; };
+  function addTo(dst, src, keys) { keys.forEach((k) => { dst[k] += src[k] || 0; }); }
+  /* BT.stats の1人分（またはチームの合計）に、ターンオーバー（tov ＋ チームの付いたパスミス）を足したもの */
+  function withTo(s) { const o = Object.assign(zeroS(), s); o.to = (s.tov || 0) + (s.pass || 0); return o; }
+  A.withTo = withTo;
+
+  /* ---------- 試合を選ぶ ---------- */
+  A.plays = (game) => (game && game.events || []).filter((e) => e.type !== 'period').length;
+  A.when = (game) => (game && (game.startedAt || game.createdAt)) || 0;
+  A.eligible = (games) => (games || []).filter((g) => g && !g.demo && Array.isArray(g.events) && Array.isArray(g.teams) && A.plays(g) > 0);
+  const nameOf = (game, side) => String(((game.teams || [])[side] || {}).name || '').trim();
+  A.BLANK = '';                                 // 自分の側の名前がない試合（まとめて「自分（名前なし）」）
+  A.BLANK_LABEL = '自分（名前なし）';
+  A.label = (key) => (key === A.BLANK ? A.BLANK_LABEL : key);
+  /* その試合で、選んだチームはどちらの側か（0・1。入らなければ null） */
+  A.sideOf = function (game, key) {
+    if (key === A.BLANK) return nameOf(game, 0) ? null : 0;
+    if (nameOf(game, 0) === key) return 0;
+    if (nameOf(game, 1) === key) return 1;
+    return null;
+  };
+  /* 選べるチーム（どちらかの側に出てくる名前。試合の多い順）。
+     def：自分の側（teams[0]）にいちばん多く出てくる名前（同じなら、自分のチームとして覚えている名前 → 新しい試合の名前） */
+  A.teams = function (games, myName) {
+    const map = new Map();
+    const get = (key) => { if (!map.has(key)) map.set(key, { key, label: A.label(key), n: 0, n0: 0, last: 0 }); return map.get(key); };
+    games.forEach((g) => {
+      const n0 = nameOf(g, 0), n1 = nameOf(g, 1), t = A.when(g);
+      const a = get(n0); a.n++; a.n0++; a.last = Math.max(a.last, t);
+      if (n1 && n1 !== n0) { const b = get(n1); b.n++; b.last = Math.max(b.last, t); }
+    });
+    const list = Array.from(map.values()).sort((a, b) => (b.n - a.n) || (b.n0 - a.n0) || (b.last - a.last));
+    const mine = String(myName || '').trim();
+    const def = list.slice().sort((a, b) => (b.n0 - a.n0) || ((mine && b.key === mine ? 1 : 0) - (mine && a.key === mine ? 1 : 0)) || (b.last - a.last))[0];
+    return { list: list.map(({ key, label, n, n0 }) => ({ key, label, n, n0 })), def: def ? def.key : null };
+  };
+  /* そのチームの試合（新しい順）：[{ game, side }] */
+  A.gamesFor = (games, key) => games.map((game) => ({ game, side: A.sideOf(game, key) })).filter((x) => x.side != null).sort((a, b) => A.when(b.game) - A.when(a.game));
+  /* 直近 n 試合（0 ならすべて）にしぼってから、外した試合（exclude：id の配列か Set）を除く */
+  A.recent = (list, n) => (n > 0 ? list.slice(0, n) : list.slice());
+  A.pick = function (list, opt) {
+    const o = opt || {};
+    const ex = o.exclude instanceof Set ? o.exclude : new Set(o.exclude || []);
+    return A.recent(list, o.recent || 0).filter((x) => !ex.has(x.game.id));
+  };
+
+  /* ---------- 割合 ---------- */
+  A.ratio = (m, a) => (a > 0 ? m / a : null);
+  /* 成功率（0〜1 か null）：fg2・fg3・ft・fg（2P＋3P）・efg（3P を 1.5 本に） */
+  A.rates = (sh) => ({
+    fg2: A.ratio(sh.fg2m, sh.fg2a), fg3: A.ratio(sh.fg3m, sh.fg3a), ft: A.ratio(sh.ftm, sh.fta),
+    fg: A.ratio(sh.fg2m + sh.fg3m, sh.fg2a + sh.fg3a), efg: A.ratio(sh.fg2m + 1.5 * sh.fg3m, sh.fg2a + sh.fg3a)
+  });
+  A.fmtPct = (v) => (v == null || !isFinite(v) ? '—' : Math.round(v * 100) + '%');
+  A.fmtAvg = (v) => (v == null || !isFinite(v) ? '—' : (Math.round(v * 10) / 10).toFixed(1));
+  A.fmtDiff = (v) => (v == null || !isFinite(v) ? '—' : (v > 0.04 ? '+' : v < -0.04 ? '−' : '±') + (Math.round(Math.abs(v) * 10) / 10).toFixed(1));
+  const shOf = (s) => { const o = zeroSh(); addTo(o, s, SH_KEYS); return o; };
+
+  /* ---------- 集計 ----------
+     entries：[{ game, side }] → {
+       n（試合）, nMiss（外れも記録した試合）, w, l, d,
+       pf・pa（得点・失点の合計）, us・op（自分・相手の合計。STAT_KEYS ＋ to）, usSh・opSh（成功率用：外れも記録した試合だけの 2P・3P・FT）,
+       players: [{ no, name, games, s, sh }]（背番号の順）, unknown（番号なし。なければ null）, total（チームの合計。games ＝ n）,
+       games: [{ id, date, when, title, opp, side, pf, pa, res: 'W'|'L'|'D', miss, going, s, o, sh, osh }]（新しい順）,
+       periods: { n（ピリオドを記録した試合）, rows: [{ period, label, n, pf, pa }] },
+       color（新しい試合の、選んだ側のユニフォームの色）
+     } */
+  A.compute = function (entries) {
+    const list = (entries || []).slice().sort((a, b) => A.when(b.game) - A.when(a.game));
+    const r = { n: list.length, nMiss: 0, w: 0, l: 0, d: 0, pf: 0, pa: 0, us: zeroS(), op: zeroS(), usSh: zeroSh(), opSh: zeroSh(), players: [], unknown: null, total: null, games: [], periods: { n: 0, rows: [] }, color: null };
+    const byNo = new Map();
+    const unk = { no: null, name: '', games: 0, s: zeroS(), sh: zeroSh() };
+    const perMap = new Map();
+    list.forEach(({ game, side }) => {
+      const other = 1 - side;
+      const st = BT.stats(game);
+      const miss = BT.hasMisses(game);
+      const sc = BT.score(game);
+      const us = withTo(st[side].total), op = withTo(st[other].total);
+      addTo(r.us, us, SUM_KEYS); addTo(r.op, op, SUM_KEYS);
+      if (miss) { r.nMiss++; addTo(r.usSh, us, SH_KEYS); addTo(r.opSh, op, SH_KEYS); }
+      const pf = sc[side], pa = sc[other];
+      r.pf += pf; r.pa += pa;
+      const res = pf > pa ? 'W' : pf < pa ? 'L' : 'D';
+      if (res === 'W') r.w++; else if (res === 'L') r.l++; else r.d++;
+      if (!r.color) r.color = ((game.teams || [])[side] || {}).color || null;
+      r.games.push({ id: game.id, date: game.date || '', when: A.when(game), title: game.title || '', opp: BT.teamName(game, other), side, pf, pa, res, miss, going: !!(game.startedAt && !game.endedAt), s: us, o: op, sh: miss ? shOf(us) : null, osh: miss ? shOf(op) : null });
+      // 選手（背番号ごと）。名前は、新しい試合の名前（空でないもの）
+      st[side].rows.forEach((row) => {
+        if (BT.isEmpty(row.s)) return;
+        if (!byNo.has(row.no)) byNo.set(row.no, { no: row.no, name: '', games: 0, s: zeroS(), sh: zeroSh() });
+        const p = byNo.get(row.no);
+        p.games++;
+        if (!p.name && row.name) p.name = row.name;
+        const s = withTo(row.s);
+        addTo(p.s, s, SUM_KEYS);
+        if (miss) addTo(p.sh, s, SH_KEYS);
+      });
+      if (!BT.isEmpty(st[side].unknown)) {
+        unk.games++;
+        const s = withTo(st[side].unknown);
+        addTo(unk.s, s, SUM_KEYS);
+        if (miss) addTo(unk.sh, s, SH_KEYS);
+      }
+      // ピリオド：ピリオドを進めた試合（2 以上の 'period' がある）だけ（進めていない試合は、全部が 1Q に入ってしまうので）
+      if ((game.events || []).some((e) => e.type === 'period' && e.period >= 2)) {
+        r.periods.n++;
+        BT.periodScores(game).forEach((p) => {
+          if (!perMap.has(p.period)) perMap.set(p.period, { period: p.period, label: BT.periodLabel(p.period), n: 0, pf: 0, pa: 0 });
+          const x = perMap.get(p.period);
+          x.n++; x.pf += p.pts[side]; x.pa += p.pts[other];
+        });
+      }
+    });
+    r.players = Array.from(byNo.values()).sort((a, b) => BT.cmpNo(a.no, b.no));
+    r.unknown = unk.games ? unk : null;
+    r.total = { no: null, name: '合計', games: r.n, s: r.us, sh: r.usSh };
+    r.periods.rows = Array.from(perMap.values()).sort((a, b) => a.period - b.period);
+    return r;
+  };
+
+  /* ---------- シュートの場所 ----------
+     選んだ側のシュート（場所のあるもの）を、全部の試合から。opt：{ court（'std'|'mini'。なければ、多いほう）, no（背番号。なければ全員） }
+     → { court, courts: { std, mini }（場所のある試合の数）, zones: [{ id, label, made, att, madeAll }]（made・att は外れも記録した試合だけ。madeAll は全部）,
+         shots: [{ x, y, made, no }]（図に打つ点。全部の試合）, nos（場所のある番号）, located, nGames（その場所の図に入る試合）, nMissGames（そのうち外れも記録した試合）, best, worst } */
+  A.MIN_ZONE = 5;
+  A.courtCounts = function (entries) {
+    const c = { std: 0, mini: 0 };
+    entries.forEach(({ game, side }) => { if ((game.events || []).some((e) => e.team === side && BT.hasLoc(e))) c[BT.courtOf(game)]++; });
+    return c;
+  };
+  A.shots = function (entries, opt) {
+    const o = opt || {};
+    const courts = A.courtCounts(entries);
+    const court = o.court === 'mini' || o.court === 'std' ? o.court : courts.mini > courts.std ? 'mini' : 'std';
+    const zones = BT.SHOT_ZONES(court).map((z) => ({ id: z.id, label: z.label, made: 0, att: 0, madeAll: 0 }));
+    const by = {};
+    zones.forEach((z) => { by[z.id] = z; });
+    const shots = [], nos = new Set();
+    let nGames = 0, nMissGames = 0;
+    entries.forEach(({ game, side }) => {
+      if (BT.courtOf(game) !== court) return;
+      const evs = (game.events || []).filter((e) => e.team === side && BT.hasLoc(e));
+      if (!evs.length) return;
+      nGames++;
+      const miss = BT.hasMisses(game);
+      if (miss) nMissGames++;
+      evs.forEach((e) => {
+        if (e.no != null) nos.add(e.no);
+        if (o.no != null && e.no !== String(o.no)) return;
+        const made = !!BT.TYPE[e.type].made;
+        const z = by[BT.shotZone(e.x, e.y, court).id];
+        if (made) z.madeAll++;
+        if (miss) { z.att++; if (made) z.made++; }
+        shots.push({ x: e.x, y: e.y, made, no: e.no });
+      });
+    });
+    // いちばん入る・入らないゾーン（外れも記録した試合で、MIN_ZONE 本以上打ったゾーンだけ）
+    const ok = zones.filter((z) => z.att >= A.MIN_ZONE).map((z) => Object.assign({ rate: z.made / z.att }, z));
+    const best = ok.slice().sort((a, b) => (b.rate - a.rate) || (b.att - a.att))[0] || null;
+    const worst = ok.length >= 2 ? ok.slice().sort((a, b) => (a.rate - b.rate) || (b.att - a.att))[0] : null;
+    return { court, courts, zones, shots, nos: BT.sortNos(Array.from(nos)), located: shots.length, nGames, nMissGames, best, worst: worst && best && worst.id !== best.id ? worst : null };
+  };
+
+  /* ---------- 試合ごとの流れ（グラフ） ----------
+     metric：'pts'（得点と失点）| 'fg'（シュート成功率。外れも記録した試合だけ。ほかは null）| 'to'（ターンオーバー）
+     → [{ id, date, values: [..] }]（古い順） */
+  A.METRICS = [
+    { id: 'pts', label: '得点と失点', series: ['得点', '失点'], pct: false },
+    { id: 'fg', label: 'シュート成功率', series: ['シュート成功率'], pct: true },
+    { id: 'to', label: 'ターンオーバー', series: ['ターンオーバー'], pct: false }
+  ];
+  A.trend = function (r, metric) {
+    return r.games.slice().reverse().map((g) => {
+      let values;
+      if (metric === 'fg') values = [g.sh ? A.rates(g.sh).fg : null];
+      else if (metric === 'to') values = [g.s.to];
+      else values = [g.pf, g.pa];
+      return { id: g.id, date: g.date, opp: g.opp, values };
+    });
+  };
+
+  /* ---------- CSV（先頭の BOM は呼び出し側で） ---------- */
+  function cell(v) { const s = v == null ? '' : String(v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  const csv = (rows) => rows.map((x) => x.map(cell).join(',')).join('\r\n') + '\r\n';
+  A.csv = csv;
+  const pctCell = (v) => (v == null ? '' : Math.round(v * 1000) / 10);
+  const avgCell = (v, n) => (n ? Math.round(v / n * 10) / 10 : '');
+  /* 選手ごと（合計の数。成功率は、外れも記録した試合だけで） */
+  A.playersCSV = function (r) {
+    const head = ['背番号', '名前', '試合数', '得点', '1試合平均得点', '2P成功', '3P成功', 'FT成功',
+      '2P成功（外れも記録した試合）', '2P試投（外れも記録した試合）', '2P成功率%', '3P成功（外れも記録した試合）', '3P試投（外れも記録した試合）', '3P成功率%',
+      'FT成功（外れも記録した試合）', 'FT試投（外れも記録した試合）', 'FT成功率%', 'FG成功率%', 'eFG%',
+      'リバウンド', 'うちオフェンス', 'アシスト', 'スティール', 'ターンオーバー', 'ファウル'];
+    const line = (no, name, p) => {
+      const rt = A.rates(p.sh);
+      return [no, name, p.games, p.s.pts, avgCell(p.s.pts, p.games), p.s.fg2m, p.s.fg3m, p.s.ftm,
+        p.sh.fg2m, p.sh.fg2a, pctCell(rt.fg2), p.sh.fg3m, p.sh.fg3a, pctCell(rt.fg3), p.sh.ftm, p.sh.fta, pctCell(rt.ft), pctCell(rt.fg), pctCell(rt.efg),
+        p.s.reb, p.s.oreb, p.s.ast, p.s.stl, p.s.to, p.s.foul];
+    };
+    const rows = [head];
+    r.players.forEach((p) => rows.push(line(p.no, p.name, p)));
+    if (r.unknown) rows.push(line('番号なし', '', r.unknown));
+    rows.push(line('合計', '', r.total));
+    return csv(rows);
+  };
+  /* 試合ごと（新しい順） */
+  A.gamesCSV = function (r) {
+    const head = ['日付', '相手', '得点', '失点', '勝敗', '外れの記録', '2P成功', '2P試投', '3P成功', '3P試投', 'FT成功', 'FT試投', 'FG成功率%', '3P成功率%', 'FT成功率%', 'リバウンド', 'アシスト', 'スティール', 'ターンオーバー', 'ファウル', '相手のリバウンド', '相手のターンオーバー'];
+    const rows = [head];
+    r.games.forEach((g) => {
+      const rt = g.sh ? A.rates(g.sh) : {};
+      rows.push([g.date, g.opp, g.pf, g.pa, g.res === 'W' ? '勝ち' : g.res === 'L' ? '負け' : '引き分け', g.miss ? 'あり' : 'なし',
+        g.s.fg2m, g.miss ? g.s.fg2a : '', g.s.fg3m, g.miss ? g.s.fg3a : '', g.s.ftm, g.miss ? g.s.fta : '',
+        pctCell(rt.fg), pctCell(rt.fg3), pctCell(rt.ft), g.s.reb, g.s.ast, g.s.stl, g.s.to, g.s.foul, g.o.reb, g.o.to]);
+    });
+    return csv(rows);
+  };
+
+  BT.agg = A;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
 /* js/clip/bs-core.js */
 /* basket-clips/js/core.js を写したもの（切り出しを、このアプリの中でするため）。直すときは両方に */
 /* バスケ得点クリップ — 共通の小さな道具（名前空間・数値・時刻の書式・イベント）
@@ -2052,14 +2537,14 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     stl: { label: 'スティール', pts: 0, grp: 'stl' },
     blk: { label: 'ブロック', pts: 0, grp: 'blk' },
     pass: { label: 'パスミス', pts: 0, grp: 'pass' },
-    tov: { label: 'ミス（その他）', pts: 0, grp: 'tov' },
+    tov: { label: 'ターンオーバー', pts: 0, grp: 'tov' },
     foul: { label: 'ファウル', pts: 0, grp: 'foul' },
     mark: { label: '★ あとで見る', pts: 0, grp: 'mark' }
   };
   /* 絞り込みのまとまり（並び順も） */
   const GROUPS = [
     { id: 'score', label: '得点' }, { id: 'miss', label: 'シュート失敗' }, { id: 'reb', label: 'リバウンド' }, { id: 'pass', label: 'パスミス' },
-    { id: 'tov', label: 'ミス（その他）' }, { id: 'stl', label: 'スティール' }, { id: 'ast', label: 'アシスト' }, { id: 'blk', label: 'ブロック' },
+    { id: 'tov', label: 'ターンオーバー' }, { id: 'stl', label: 'スティール' }, { id: 'ast', label: 'アシスト' }, { id: 'blk', label: 'ブロック' },
     { id: 'foul', label: 'ファウル' }, { id: 'mark', label: '★ あとで見る' }
   ];
   const WIN = { lead: 10, lag: 2 };     // タップした瞬間の「前 10 秒・後 2 秒」（人がタップするのは、プレーの 1〜2 秒あと。前は、攻めの組み立てから見られるように長め）
@@ -3004,10 +3489,11 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
      uiRot：アプリごと横向きにする（90・270。画面の向きのロックをしたまま、横に倒して使う）/ camRot・camRotF：映像の向きの手直し（ふつう・アプリごと横向きのとき）
      camWipe：記録の画面に映すカメラの映像（ワイプ）の大きさ（'s' 小：上の帯の中 | 'm' 中 | 'l' 大 | 'x' 特大）
      btnMiss・btnFoul：選手の行に、シュートの失敗（2P・3P・FT の「×」）・ファウルのボタンも出す（ふだんは出さない）
-     btnAst・btnStl：アシスト・スティールのボタンも出す / rebSplit：リバを「Oリバ」「Dリバ」の2つに分ける（どれも、ふだんは出さない）
-     shotLoc：シュートを記録したあと、コートの図で場所も聞く（ふだんは聞かない）/ courtType：その図のコート（'std' 3P の線あり | 'mini' ミニバス） */
+     btnAst・btnStl・btnTov：アシスト・スティール・ターンオーバーのボタンも出す / rebSplit：リバを「Oリバ」「Dリバ」の2つに分ける（どれも、ふだんは出さない）
+     shotLoc：シュートを記録したあと、コートの図で場所も聞く（ふだんは聞かない）/ courtType：その図のコート（'std' 3P の線あり | 'mini' ミニバス）
+     gameClock：試合時間（押すと止まる・動く時計）を出す（ふだんは出さない）/ periodLen：ピリオドの長さ（秒。600・480・360・300。0 は決めない） */
   function prefs() {
-    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true, camQuality: '720', camAudio: true, camOrient: 'land', uiRot: 0, camRot: 0, camRotF: null, camWipe: 'm', btnMiss: false, btnFoul: false, btnAst: false, btnStl: false, rebSplit: false, shotLoc: false, courtType: 'std' }, readJSON(K.prefs) || {});
+    const p = Object.assign({ sound: false, theme: 'auto', names: true, unknown: true, camQuality: '720', camAudio: true, camOrient: 'land', uiRot: 0, camRot: 0, camRotF: null, camWipe: 'm', btnMiss: false, btnFoul: false, btnAst: false, btnStl: false, btnTov: false, rebSplit: false, shotLoc: false, courtType: 'std', gameClock: false, periodLen: 600 }, readJSON(K.prefs) || {});
     delete p.actions;        // 前の版の「ボタンの組み合わせ」（いまは、選手ごとのボタンに決まっている）
     return p;
   }
@@ -5895,6 +6381,527 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
 
 </script>
 <script>
+/* js/totals.js */
+/* バスケ タップ記録 — 📊 これまでの集計（ホームから開く画面。view 'totals'）
+   保存してある試合（デモでない・記録が1つ以上）をまとめて見る。計算は js/agg.js（BT.agg）。
+   上から：チーム・試合のしぼり方 → まとめ → 選手ごと → シュートの場所 → 試合ごと（グラフ） → ピリオドごと → 相手とのくらべ → 書き出す → 数え方。
+   どこを押しても、画面ぜんぶを作り直す（数はいつも同じ試合の組から）。 */
+(function (root) {
+  'use strict';
+  const BT = root.BT;
+  const A = BT.agg;
+  const { h, $ } = BT.ui;
+  const SVGNS = 'http://www.w3.org/2000/svg';
+
+  /* 画面の状態（開き直すと、しぼり方だけ覚えておく） */
+  const T = {
+    key: undefined,            // 選んだチーム（A.teams の key）
+    recent: 0,                 // 0：すべて・5・10
+    excl: new Set(),           // 外した試合の id
+    per: false,                // 選手ごと：1試合あたり
+    sort: { k: 'pts', dir: -1 },
+    no: null,                  // シュートの場所：背番号（null は全員）
+    court: null,               // シュートの場所：'std' | 'mini'（null は多いほう）
+    metric: 'pts',             // グラフ
+    pt: null,                  // グラフで選んでいる試合の id
+    cloud: new Map(),          // クラウドから読んだ試合（この端末には保存しない）
+    cloudList: null, cloudBusy: false, cloudAsked: false
+  };
+
+  /* ---------- 試合を集める ---------- */
+  function localGames() {
+    return BT.store.games().filter((s) => !s.demo).map((s) => BT.store.loadGame(s.id)).filter(Boolean);
+  }
+  function allGames() {
+    const list = localGames();
+    const ids = new Set(list.map((g) => g.id));
+    T.cloud.forEach((g, id) => { if (!ids.has(id)) list.push(g); });
+    return A.eligible(list);
+  }
+  /* クラウドにだけある試合（この端末にない・まだ読んでいない・デモでない） */
+  function cloudOnly() {
+    if (!T.cloudList) return [];
+    const local = new Set(BT.store.games().map((g) => g.id));
+    return T.cloudList.filter((c) => c && c.id && !local.has(c.id) && !T.cloud.has(c.id) && !(c.summary && c.summary.demo) && (!c.summary || (c.summary.n || 0) > 0));
+  }
+  function askCloud() {
+    if (T.cloudAsked || !BT.cloud.enabled()) return;
+    T.cloudAsked = true;
+    BT.cloud.list().then((list) => { T.cloudList = Array.isArray(list) ? list : []; if (cloudOnly().length && inView()) render(); }).catch(() => { T.cloudList = []; });
+  }
+  async function loadCloud() {
+    const want = cloudOnly();
+    if (!want.length || T.cloudBusy) return;
+    T.cloudBusy = true;
+    render();
+    let got = 0, bad = 0;
+    for (const c of want) {
+      let g = null;
+      try { g = await BT.cloud.get(c.id); } catch (e) { g = null; }
+      if (g && Array.isArray(g.events)) { T.cloud.set(c.id, g); got++; } else bad++;
+    }
+    T.cloudBusy = false;
+    if (got) BT.ui.toast(`クラウドから ${got} 試合を入れました（この端末には保存していません）`, 'ok', 4000);
+    if (bad) BT.ui.toast(`${bad} 試合は読み込めませんでした（電波を確かめて、もう一度）`, 'err', 5000);
+    if (inView()) render();
+  }
+  const inView = () => !!(BT.app && BT.app.S && BT.app.S.view === 'totals');
+
+  /* ---------- 小さな道具 ---------- */
+  const pct = A.fmtPct, avg = A.fmtAvg;
+  const dateText = (d, full) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ''); if (!m) return d || ''; const md = `${Number(m[2])}/${Number(m[3])}`; return full ? `${m[1]}/${md}` : md; };
+  const RES = { W: '勝ち', L: '負け', D: '引き分け' };
+  const chipBtn = (label, on, data, onclick, extra) => h('button', Object.assign({ class: 'btn small' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', dataset: data, onclick }, extra || {}), label);
+  function rerender(fn) { return () => { fn(); render(); }; }
+  function svgEl(tag, attrs, text) {
+    const e = document.createElementNS(SVGNS, tag);
+    for (const k in attrs || {}) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  /* ========== 画面 ========== */
+  let keepY = 0;
+  function render() {
+    const first = document.body.dataset.view !== 'totals';
+    keepY = first ? 0 : (root.scrollY || 0);
+    document.body.dataset.view = 'totals';
+    const V = $('#view');
+    V.innerHTML = '';
+    const games = allGames();
+    const tm = A.teams(games, (BT.store.myTeam() || {}).name);
+    if (T.key === undefined || !tm.list.some((t) => t.key === T.key)) { T.key = tm.def; T.no = null; T.court = null; }
+    const all = T.key == null ? [] : A.gamesFor(games, T.key);
+    const win = A.recent(all, T.recent);
+    const used = A.pick(all, { recent: T.recent, exclude: T.excl });
+    const R = A.compute(used);
+    const label = T.key == null ? '' : A.label(T.key);
+    const main = h('main', { class: 'ttmain', id: 'totals' });
+    V.append(
+      h('header', { class: 'hbar' },
+        h('button', { class: 'btn', id: 'btnTotalsHome', onclick: () => BT.app.go('home') }, '🏠 ホーム'),
+        h('b', { class: 'htitle' }, '📊 これまでの集計'),
+        h('span', { class: 'spacer' })),
+      main);
+    if (!games.length) {
+      main.append(h('section', { class: 'card tt-empty', id: 'ttNone' },
+        h('h2', null, 'まだ集計できる試合がありません'),
+        h('p', null, '試合を記録すると、ここで、これまでの試合をまとめて見られます（シュート成功率・選手ごと・場所ごとなど）。'),
+        cloudCard()));
+      afterRender();
+      return;
+    }
+    main.append(filters(tm, all, win, used, label));
+    const cc = cloudCard();
+    if (cc) main.append(cc);
+    if (!used.length) {
+      main.append(h('section', { class: 'card tt-empty', id: 'ttEmpty' },
+        h('h2', null, '集計に入れる試合がありません'),
+        h('p', null, '下の「試合ごと」の表で、入れたい試合にチェックを付けてください。'),
+        h('div', { class: 'row' }, h('button', { class: 'btn primary', id: 'ttAll', onclick: rerender(() => { T.excl.clear(); T.recent = 0; }) }, 'すべての試合を入れる'))));
+      main.append(gamesCard(win, R, label));
+      afterRender();
+      return;
+    }
+    main.append(...[
+      summaryCard(R, label),
+      playersCard(R),
+      shotCard(used, R),
+      gamesCard(win, R, label),
+      periodCard(R),
+      compareCard(R, label),
+      exportCard(R, label),
+      h('p', { class: 'note tt-how', id: 'ttHow' }, howText(R))].filter(Boolean));
+    afterRender();
+  }
+  function afterRender() {
+    drawTrend();
+    root.scrollTo(0, keepY);
+  }
+
+  /* ---------- チーム・試合のしぼり方 ---------- */
+  function filters(tm, all, win, used, label) {
+    const out = h('section', { class: 'card tt-filters', id: 'ttFilters' });
+    if (tm.list.length > 1) {
+      const sel = h('select', { id: 'ttTeam', 'aria-label': '集計するチーム', onchange: (e) => { T.key = tm.list[Number(e.target.value)].key; T.no = null; T.court = null; T.pt = null; render(); } },
+        tm.list.map((t, i) => h('option', { value: String(i), selected: t.key === T.key }, `${t.label}（${t.n}試合）`)));
+      out.append(h('label', { class: 'tt-team' }, h('span', null, 'チーム'), sel));
+    } else {
+      out.append(h('div', { class: 'tt-team' }, h('span', null, 'チーム'), h('b', null, label)));
+    }
+    out.append(h('div', { class: 'row tt-range', role: 'group', 'aria-label': '試合のしぼり方' },
+      [[0, 'すべて'], [5, '直近5試合'], [10, '直近10試合']].map(([n, lab]) => chipBtn(lab, T.recent === n, { recent: String(n) }, rerender(() => { T.recent = n; T.pt = null; })))));
+    const off = win.length - used.length;
+    out.append(h('p', { class: 'tt-count', id: 'ttCount' },
+      h('b', null, `${used.length} 試合`), 'を集計しています',
+      ` （${label}の試合 ${all.length}${T.recent && all.length > win.length ? `・うち直近 ${win.length}` : ''}${off ? `・表でチェックを外した ${off}` : ''}）`));
+    return out;
+  }
+  function cloudCard() {
+    askCloud();
+    const list = cloudOnly();
+    if (!list.length && !T.cloudBusy) return null;
+    return h('div', { class: 'tt-cloud', id: 'ttCloudRow' },
+      h('button', { class: 'btn', id: 'ttCloud', disabled: T.cloudBusy, onclick: loadCloud }, T.cloudBusy ? '☁️ 読み込んでいます…' : `☁️ クラウドにだけある ${list.length} 試合も入れる`),
+      h('small', { class: 'note' }, 'ほかの端末で記録した試合も、集計に入れます（この端末には保存しません）'));
+  }
+
+  /* ---------- まとめ ---------- */
+  function summaryCard(R, label) {
+    const rt = A.rates(R.usSh);
+    const tiles = [];
+    const tile = (id, lab, val, sub) => tiles.push(h('div', { class: 'tt-tile', dataset: { tile: id } }, h('span', { class: 'tl' }, lab), h('b', { class: 'tv' }, val), sub ? h('small', { class: 'ts' }, sub) : null));
+    tile('n', '試合数', `${R.n}`, R.nMiss && R.nMiss < R.n ? `外れも記録 ${R.nMiss}` : null);
+    tile('wl', '勝ち・負け・引き分け', `${R.w}勝 ${R.l}敗${R.d ? ` ${R.d}分` : ''}`, null);
+    tile('pts', '平均得点 − 平均失点', `${avg(R.pf / R.n)} − ${avg(R.pa / R.n)}`, `差 ${A.fmtDiff((R.pf - R.pa) / R.n)}`);
+    const sh = R.usSh;
+    if (sh.fg2a + sh.fg3a) {
+      tile('fg', 'シュート成功率', pct(rt.fg), `${sh.fg2m + sh.fg3m}/${sh.fg2a + sh.fg3a}`);
+      if (sh.fg2a) tile('fg2', '2P 成功率', pct(rt.fg2), `${sh.fg2m}/${sh.fg2a}`);
+      if (sh.fg3a) tile('fg3', '3P 成功率', pct(rt.fg3), `${sh.fg3m}/${sh.fg3a}`);
+    }
+    if (sh.fta) tile('ft', 'FT 成功率', pct(rt.ft), `${sh.ftm}/${sh.fta}`);
+    if (sh.fg2a + sh.fg3a) tile('efg', 'eFG%', pct(rt.efg), '3P を 1.5 本に');
+    [['reb', 'リバウンド'], ['ast', 'アシスト'], ['stl', 'スティール'], ['to', 'ターンオーバー'], ['foul', 'ファウル']].forEach(([k, lab]) => {
+      if (R.us[k]) tile(k, `${lab}（1試合）`, avg(R.us[k] / R.n), `合計 ${R.us[k]}`);
+    });
+    return h('section', { class: 'card', id: 'ttSummary' },
+      h('h2', null, `まとめ（${label}）`),
+      h('div', { class: 'tt-tiles' }, tiles),
+      basisNote(R, 'ttBasis'));
+  }
+  /* 成功率が、どの試合から出ているか */
+  function basisNote(R, id) {
+    if (R.nMiss === R.n) return null;
+    if (!R.nMiss) return h('p', { class: 'note', id }, `外れ（シュートの失敗）を記録した試合がないので、成功率は出せません（入れた本数：2P ${R.us.fg2m}・3P ${R.us.fg3m}・FT ${R.us.ftm}）。設定で「シュートの失敗」のボタンを出して記録すると、成功率も出ます。`);
+    return h('p', { class: 'note', id }, `成功率は、外れも記録した ${R.nMiss} 試合で計算しています（ほかの ${R.n - R.nMiss} 試合は、入れた本数だけの記録です）。`);
+  }
+
+  /* ---------- 選手ごと ---------- */
+  function playersCard(R) {
+    const per = T.per;
+    const anyMiss = R.nMiss > 0;
+    const showShot = (k) => R.us[k + 'm'] > 0 || R.usSh[k + 'a'] > 0;
+    const div = (p, v) => (per ? (p.games ? v / p.games : null) : v);
+    const num = (p, v) => (!v ? '' : per ? avg(div(p, v)) : String(v));          // 0 は空に（試合ごとの集計と同じ）
+    const shotCell = (p, k) => {
+      const m = p.sh[k + 'm'], a = p.sh[k + 'a'], all = p.s[k + 'm'];
+      if (!anyMiss || !a) return all ? h('span', { class: 'sm' }, num(p, all)) : h('span', { class: 'tt-dash' }, '—');
+      if (per) return [h('span', { class: 'sm' }, avg(div(p, all))), h('span', { class: 'sp' }, pct(m / a))];
+      const extra = all - m;
+      return [h('span', { class: 'sm' }, `${m}/${a}`), h('span', { class: 'sp' }, pct(m / a)), extra > 0 ? h('span', { class: 'sx', title: '外れを記録していない試合で入れた本数' }, `+${extra}`) : null];
+    };
+    const rate = (k) => (p) => A.rates(p.sh)[k];
+    const cols = [
+      { k: 'no', lab: '背番号', cls: 'no', val: (p) => p.no, cmp: true, cell: (p) => (p.no != null ? p.no : '') },
+      { k: 'name', lab: '名前', cls: 'nm', val: (p) => p.name || '', cell: (p) => p.name || '' },
+      { k: 'games', lab: '試合', val: (p) => p.games, cell: (p) => String(p.games) },
+      { k: 'pts', lab: per ? '得点（1試合）' : '得点', val: (p) => div(p, p.s.pts), cell: (p) => (per ? avg(div(p, p.s.pts)) : String(p.s.pts)) },
+      per ? null : { k: 'avg', lab: '1試合平均', val: (p) => (p.games ? p.s.pts / p.games : null), cell: (p) => avg(p.games ? p.s.pts / p.games : null) },
+      showShot('fg2') ? { k: 'fg2', lab: '2P', val: anyMiss ? rate('fg2') : (p) => p.s.fg2m, cell: (p) => shotCell(p, 'fg2'), shot: true } : null,
+      showShot('fg3') ? { k: 'fg3', lab: '3P', val: anyMiss ? rate('fg3') : (p) => p.s.fg3m, cell: (p) => shotCell(p, 'fg3'), shot: true } : null,
+      showShot('ft') ? { k: 'ft', lab: 'FT', val: anyMiss ? rate('ft') : (p) => p.s.ftm, cell: (p) => shotCell(p, 'ft'), shot: true } : null,
+      anyMiss && R.usSh.fg2a + R.usSh.fg3a ? { k: 'fg', lab: 'FG%', val: rate('fg'), cell: (p) => pct(rate('fg')(p)) } : null,
+      anyMiss && R.usSh.fg2a + R.usSh.fg3a ? { k: 'efg', lab: 'eFG%', val: rate('efg'), cell: (p) => pct(rate('efg')(p)) } : null,
+      R.us.reb ? { k: 'reb', lab: 'リバウンド', val: (p) => div(p, p.s.reb), cell: (p) => [num(p, p.s.reb), p.s.oreb && !per ? h('span', { class: 'sx' }, `（${p.s.oreb}）`) : null] } : null,
+      R.us.ast ? { k: 'ast', lab: 'アシスト', val: (p) => div(p, p.s.ast), cell: (p) => num(p, p.s.ast) } : null,
+      R.us.stl ? { k: 'stl', lab: 'スティール', val: (p) => div(p, p.s.stl), cell: (p) => num(p, p.s.stl) } : null,
+      R.us.to ? { k: 'to', lab: 'ターンオーバー', val: (p) => div(p, p.s.to), cell: (p) => num(p, p.s.to) } : null,
+      R.us.foul ? { k: 'foul', lab: 'ファウル', val: (p) => div(p, p.s.foul), cell: (p) => num(p, p.s.foul) } : null
+    ].filter(Boolean);
+    if (!cols.some((c) => c.k === T.sort.k)) T.sort = { k: 'pts', dir: -1 };
+    const sc = cols.find((c) => c.k === T.sort.k);
+    const rows = R.players.slice().sort((a, b) => {
+      let d;
+      if (sc.cmp) d = BT.cmpNo(a.no, b.no) * T.sort.dir;
+      else {
+        const x = sc.val(a), y = sc.val(b);
+        if (x == null || y == null) d = x == null && y == null ? 0 : x == null ? 1 : -1;      // 数のないもの（—）は、いつも下
+        else d = (typeof x === 'string' ? x.localeCompare(y, 'ja') : x - y) * T.sort.dir;
+      }
+      return d || BT.cmpNo(a.no, b.no);
+    });
+    const th = (c) => {
+      const on = c.k === T.sort.k;
+      return h('th', { class: c.cls || null, 'aria-sort': on ? (T.sort.dir < 0 ? 'descending' : 'ascending') : null },
+        h('button', { class: 'tt-sort' + (on ? ' on' : ''), dataset: { sort: c.k }, onclick: rerender(() => { T.sort = on ? { k: c.k, dir: -T.sort.dir } : { k: c.k, dir: c.cmp || c.k === 'name' ? 1 : -1 }; }) },
+          c.lab, h('span', { class: 'arr', 'aria-hidden': 'true' }, on ? (T.sort.dir < 0 ? '▼' : '▲') : '')));
+    };
+    const tr = (p, cls) => h('tr', { class: cls || null, dataset: p.no != null ? { no: p.no } : {} }, cols.map((c) => h('td', { class: (c.cls || '') + (c.shot ? ' shot' : '') || null, dataset: { k: c.k } }, c.k === 'no' && p.no == null ? '—' : c.cell(p))));
+    const unk = R.unknown ? Object.assign({}, R.unknown, { name: '番号なし' }) : null;
+    const tot = Object.assign({}, R.total, { name: '合計' });
+    return h('section', { class: 'card', id: 'ttPlayers' },
+      h('div', { class: 'tt-head' }, h('h2', null, '選手ごと'),
+        h('div', { class: 'row', role: 'group', 'aria-label': '数の出し方' },
+          chipBtn('合計', !per, { per: '0' }, rerender(() => { T.per = false; })),
+          chipBtn('1試合あたり', per, { per: '1' }, rerender(() => { T.per = true; })))),
+      h('p', { class: 'note tt-scrollhint' }, '表は横にすべらせると、ほかの列（2P・3P・リバウンドなど）も見られます。'),
+      h('div', { class: 'boxwrap' }, h('table', { class: 'box tt-box', id: 'ttPlayerTable' },
+        h('thead', null, h('tr', null, cols.map(th))),
+        h('tbody', null, rows.map((p) => tr(p)), unk ? tr(unk, 'unk') : null, tr(tot, 'tot')))),
+      h('p', { class: 'note' }, `見出しを押すと、その順に並べかえます（いまは「${sc.lab}」の${T.sort.dir < 0 ? '多い' : '少ない'}順）。` +
+        (anyMiss ? '2P・3P・FT は「成功/打った数」と成功率' + (R.nMiss < R.n ? `（外れも記録した ${R.nMiss} 試合で計算。＋の数は、ほかの試合で入れた本数）` : '') + '。' : '2P・3P・FT は、入れた本数です。') +
+        (R.us.oreb && !per ? 'リバウンドの（ ）は、うちオフェンスリバウンド。' : '') + '「試合」は、その番号の記録がある試合の数（1試合あたりは、この数で割ります）。'));
+  }
+
+  /* ---------- シュートの場所 ---------- */
+  function shotCard(used, R) {
+    const courts = A.courtCounts(used);
+    if (!courts.std && !courts.mini) return null;
+    if (T.court && !courts[T.court]) T.court = null;
+    let S = A.shots(used, { court: T.court, no: T.no });
+    if (T.no != null && !S.nos.includes(T.no)) { T.no = null; S = A.shots(used, { court: T.court }); }
+    const withA = S.nMissGames > 0;
+    const color = R.color || '#2563eb';
+    const svg = BT.shot.court({ court: S.court, label: 'シュートの場所の図（これまでの試合）', shots: S.shots.map((x) => ({ x: x.x, y: x.y, made: x.made, color })) });
+    const tot = S.zones.reduce((a, z) => ({ made: a.made + z.made, att: a.att + z.att, madeAll: a.madeAll + z.madeAll }), { made: 0, att: 0, madeAll: 0 });
+    const zrow = (z, cls) => h('tr', { class: (cls || '') + ((withA ? z.att : z.madeAll) ? '' : ' zero'), dataset: z.id ? { zone: z.id } : {} }, h('th', null, z.label),
+      withA ? [h('td', { class: 'zm' }, `${z.made}/${z.att}`), h('td', { class: 'zp' }, pct(A.ratio(z.made, z.att)))] : h('td', { class: 'zm' }, String(z.madeAll)));
+    let insight = null;
+    if (S.best) {
+      const r = (z) => `${z.label}（${pct(z.made / z.att)}・${z.made}/${z.att}）`;
+      insight = S.worst ? `読み取り：いちばん入っているのは ${r(S.best)}、いちばん入っていないのは ${r(S.worst)}。` : `読み取り：5本以上打ったゾーンは ${r(S.best)} だけです。`;
+    }
+    return h('section', { class: 'card', id: 'ttShots' },
+      h('h2', null, '📍 シュートの場所'),
+      courts.std && courts.mini ? h('div', { class: 'row tt-courts', role: 'group', 'aria-label': 'コート' },
+        chipBtn(`ふつうのコート（${courts.std}試合）`, S.court === 'std', { court: 'std' }, rerender(() => { T.court = 'std'; T.no = null; })),
+        chipBtn(`ミニバス（${courts.mini}試合）`, S.court === 'mini', { court: 'mini' }, rerender(() => { T.court = 'mini'; T.no = null; }))) : null,
+      S.nos.length ? h('div', { class: 'row shotnos', role: 'group', 'aria-label': '選手' },
+        chipBtn('全員', T.no == null, { shotno: '' }, rerender(() => { T.no = null; })),
+        S.nos.map((no) => chipBtn('#' + no, T.no === no, { shotno: no }, rerender(() => { T.no = no; })))) : null,
+      h('div', { class: 'shotgrid' },
+        h('div', { class: 'shotchart' }, svg),
+        h('div', null,
+          h('table', { class: 'per zones', id: 'ttZoneTable' },
+            h('thead', null, h('tr', null, h('th', null, 'ゾーン'), withA ? [h('th', null, '成功/打った数'), h('th', null, '成功率')] : h('th', null, '成功'))),
+            h('tbody', null, S.zones.map((z) => zrow(z)), zrow({ label: '合計', made: tot.made, att: tot.att, madeAll: tot.madeAll }, 'tot'))),
+          insight ? h('p', { class: 'tt-insight', id: 'ttInsight' }, insight) : null)),
+      h('p', { class: 'note', id: 'ttShotNote' }, `場所を記録したシュート ${S.located}本（${S.nGames}試合）。● 入った` + (withA ? '・× 外れ' : '') + '。' +
+        (withA && S.nMissGames < S.nGames ? `表の成功率は、外れも記録した ${S.nMissGames} 試合だけで計算しています（図の点は全部の試合）。` : '') +
+        (!withA ? '外れを記録した試合がないので、表は入れた本数です。' : '') + (insight ? '' : withA ? '「読み取り」は、5本以上打ったゾーンがあると出ます。' : '')));
+  }
+
+  /* ---------- 試合ごと（表とグラフ） ---------- */
+  function gamesCard(win, R, label) {
+    const W = A.compute(win);
+    const anyMiss = W.games.some((g) => g.miss);
+    const full = new Set(W.games.map((g) => g.date.slice(0, 4))).size > 1;
+    const showReb = W.games.some((g) => g.s.reb), showTo = W.games.some((g) => g.s.to);
+    const head = [h('th', { class: 'ck' }, h('span', { class: 'sr' }, '集計に入れる')), h('th', null, '日付'), h('th', { class: 'nm' }, '相手'), h('th', null, 'スコア'), h('th', null, '勝敗'),
+      anyMiss ? [h('th', null, 'FG%'), h('th', null, '3P%'), h('th', null, 'FT%')] : null, showReb ? h('th', null, 'リバウンド') : null, showTo ? h('th', null, 'ターンオーバー') : null];
+    const rows = W.games.map((g) => {
+      const inc = !T.excl.has(g.id);
+      const rt = g.sh ? A.rates(g.sh) : null;
+      const cb = h('input', { type: 'checkbox', checked: inc, 'aria-label': `${g.date} ${g.opp} 戦を集計に入れる`, dataset: { game: g.id }, onchange: (e) => { if (e.target.checked) T.excl.delete(g.id); else T.excl.add(g.id); T.pt = null; render(); } });
+      return h('tr', { class: inc ? null : 'off', dataset: { id: g.id } },
+        h('td', { class: 'ck' }, h('label', { class: 'tt-check' }, cb)),
+        h('td', null, dateText(g.date, full), g.going ? h('span', { class: 'sx' }, ' 記録中') : null, T.cloud.has(g.id) ? h('span', { class: 'sx', title: 'クラウドから読んだ試合' }, ' ☁️') : null),
+        h('td', { class: 'nm' }, g.opp),
+        h('td', { class: 'tt-sc' }, `${g.pf} − ${g.pa}`),
+        h('td', { class: 'res ' + g.res }, RES[g.res]),
+        anyMiss ? [h('td', null, rt ? pct(rt.fg) : '—'), h('td', null, rt ? pct(rt.fg3) : '—'), h('td', null, rt ? pct(rt.ft) : '—')] : null,
+        showReb ? h('td', null, String(g.s.reb)) : null, showTo ? h('td', null, String(g.s.to)) : null);
+    });
+    return h('section', { class: 'card', id: 'ttGames' },
+      h('h2', null, '試合ごと'),
+      R.n ? trendBlock(R, label) : null,
+      h('div', { class: 'boxwrap' }, h('table', { class: 'box tt-games', id: 'ttGameTable' }, h('thead', null, h('tr', null, head)), h('tbody', null, rows))),
+      h('p', { class: 'note' }, '新しい順。チェックを外すと、その試合を集計から外します（ほかの表・グラフも計算し直します）。' + (anyMiss && W.games.some((g) => !g.miss) ? '成功率の「—」は、外れを記録していない試合です。' : '')));
+  }
+  function trendBlock(R, label) {
+    const m = A.METRICS.find((x) => x.id === T.metric) || A.METRICS[0];
+    return h('div', { class: 'tt-trend', id: 'ttTrend' },
+      h('div', { class: 'row', role: 'group', 'aria-label': 'グラフに出すもの' },
+        A.METRICS.map((x) => chipBtn(x.label, x.id === m.id, { metric: x.id }, rerender(() => { T.metric = x.id; })))),
+      h('div', { class: 'tt-chart', id: 'ttChart', dataset: { metric: m.id } }),
+      h('p', { class: 'tt-readout', id: 'ttReadout', 'aria-live': 'polite' }));
+  }
+  /* グラフ（試合の古い順の折れ線）。画面に置いてから、その幅で描く */
+  function drawTrend() {
+    const box = $('#ttChart');
+    if (!box) return;
+    const used = A.pick(A.gamesFor(allGames(), T.key), { recent: T.recent, exclude: T.excl });
+    const R = A.compute(used);
+    const m = A.METRICS.find((x) => x.id === T.metric) || A.METRICS[0];
+    const pts = A.trend(R, m.id);
+    const readout = $('#ttReadout');
+    box.innerHTML = '';
+    const has = pts.filter((p) => p.values.some((v) => v != null));
+    if (has.length < 2) {
+      box.append(h('p', { class: 'note tt-nochart' }, m.id === 'fg' ? '外れも記録した試合が 2 試合以上になると、グラフが出ます。' : '2 試合以上になると、グラフが出ます。'));
+      if (readout) readout.textContent = '';
+      return;
+    }
+    const W = Math.max(200, Math.round(box.clientWidth || 300)), H = W < 420 ? 190 : W < 800 ? 220 : 260;
+    const L = 36, Rr = 34, Tp = 14, B = 30;
+    const iw = W - L - Rr, ih = H - Tp - B;
+    let max = 0;
+    pts.forEach((p) => p.values.forEach((v) => { if (v != null) max = Math.max(max, v); }));
+    let ticks;
+    if (m.pct) ticks = [0, 0.25, 0.5, 0.75, 1];
+    else {
+      const step = [1, 2, 5, 10, 20, 25, 50, 100].find((s) => Math.ceil(max / s) <= 4) || 100;
+      const top = Math.max(step, Math.ceil(max / step) * step);
+      ticks = []; for (let v = 0; v <= top + 1e-9; v += step) ticks.push(v);
+    }
+    const yMax = ticks[ticks.length - 1];
+    const n = pts.length;
+    const X = (i) => L + (n === 1 ? iw / 2 : (i * iw) / (n - 1));
+    const Y = (v) => Tp + ih - (v / yMax) * ih;
+    const fmt = (v) => (m.pct ? Math.round(v * 100) + '%' : String(Math.round(v * 10) / 10));
+    const svg = svgEl('svg', { class: 'tt-svg', viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', tabindex: '0', 'aria-label': `${m.label}のグラフ（試合の古い順。左右の矢印キーで試合を選べます）` });
+    // 目盛り（横線）と、縦の数
+    ticks.forEach((v) => {
+      svg.append(svgEl('line', { class: 'grid' + (v === 0 ? ' base' : ''), x1: L, x2: W - Rr + 6, y1: Y(v), y2: Y(v) }));
+      svg.append(svgEl('text', { class: 'ax', x: L - 6, y: Y(v) + 4, 'text-anchor': 'end' }, m.pct ? Math.round(v * 100) + '%' : String(v)));
+    });
+    // 横の日付（重ならない数だけ。最初と最後は必ず）
+    const every = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(iw / 44))));
+    pts.forEach((p, i) => {
+      if (i % every && i !== n - 1) return;
+      if (i !== n - 1 && n - 1 - i < every && i !== 0) return;
+      svg.append(svgEl('text', { class: 'ax', x: X(i), y: H - 10, 'text-anchor': i === 0 && n > 1 ? 'start' : i === n - 1 && n > 1 ? 'end' : 'middle' }, dateText(p.date)));
+    });
+    const cross = svgEl('line', { class: 'cross', x1: 0, x2: 0, y1: Tp, y2: Tp + ih, visibility: 'hidden' });
+    svg.append(cross);
+    // 線と点（自分：● 丸・相手：■ 四角。色だけに頼らない）
+    m.series.forEach((name, si) => {
+      let d = '', pen = false;
+      pts.forEach((p, i) => { const v = p.values[si]; if (v == null) { pen = false; return; } d += (pen ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); pen = true; });
+      svg.append(svgEl('path', { class: 'ln s' + si, d }));
+    });
+    m.series.forEach((name, si) => {
+      pts.forEach((p, i) => {
+        const v = p.values[si];
+        if (v == null) return;
+        if (si === 0) svg.append(svgEl('circle', { class: 'tt-pt s0', cx: X(i), cy: Y(v), r: 4.5 }));
+        else svg.append(svgEl('rect', { class: 'tt-pt s1', x: X(i) - 4.5, y: Y(v) - 4.5, width: 9, height: 9, rx: 1.5 }));
+      });
+    });
+    // 最後の値（右はし）。2本が近いときは、上と下に分ける
+    const lastIdx = (si) => { for (let i = n - 1; i >= 0; i--) if (pts[i].values[si] != null) return i; return -1; };
+    const ends = m.series.map((name, si) => { const i = lastIdx(si); return i < 0 ? null : { si, i, v: pts[i].values[si], y: Y(pts[i].values[si]) }; }).filter(Boolean);
+    if (ends.length === 2 && Math.abs(ends[0].y - ends[1].y) < 14) { const hi = ends[0].v >= ends[1].v ? 0 : 1; ends[hi].y -= 7; ends[1 - hi].y += 7; }
+    ends.forEach((e) => svg.append(svgEl('text', { class: 'endv', x: X(e.i) + 8, y: e.y + 4 }, fmt(e.v))));
+    const sel = svgEl('g', { class: 'tt-sel' });
+    svg.append(sel);
+    box.append(svg);
+    // 凡例（2本のとき）
+    if (m.series.length > 1) {
+      box.append(h('div', { class: 'tt-legend' }, m.series.map((name, si) => h('span', { class: 'lg' },
+        h('i', { class: 'tt-key s' + si, 'aria-hidden': 'true' }), si === 0 ? `${name}（${A.label(T.key)}）` : `${name}（相手の得点）`))));
+    }
+    // 選んだ試合の読み取り（押す・なぞる・矢印キー）
+    let cur = Math.max(0, pts.findIndex((p) => p.id === T.pt));
+    if (!pts.some((p) => p.id === T.pt)) cur = n - 1;
+    const show = (i, mark) => {
+      cur = BT.clamp(i, 0, n - 1);
+      const p = pts[cur];
+      T.pt = p.id;
+      const vals = m.series.map((name, si) => `${name} ${p.values[si] == null ? '—（外れの記録なし）' : fmt(p.values[si])}`).join('・');
+      if (readout) readout.textContent = `${dateText(p.date)} ${p.opp} 戦：${vals}`;
+      if (mark) { cross.setAttribute('x1', X(cur)); cross.setAttribute('x2', X(cur)); cross.setAttribute('visibility', 'visible'); }
+    };
+    const at = (ev) => {
+      const r = svg.getBoundingClientRect();
+      const x = (ev.clientX - r.left) * (W / r.width);
+      show(Math.round(n === 1 ? 0 : ((x - L) / iw) * (n - 1)), true);
+    };
+    svg.addEventListener('pointerdown', at);
+    svg.addEventListener('click', at);
+    svg.addEventListener('pointermove', (ev) => { if (ev.pointerType === 'mouse' || ev.buttons) at(ev); });
+    svg.addEventListener('keydown', (ev) => {
+      if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') { ev.preventDefault(); show(cur + (ev.key === 'ArrowLeft' ? -1 : 1), true); }
+    });
+    show(cur, T.pt != null && pts.some((p) => p.id === T.pt) && cur !== n - 1);
+  }
+
+  /* ---------- ピリオドごと ---------- */
+  function periodCard(R) {
+    const P = R.periods;
+    if (!P.n) return null;
+    const rows = P.rows;
+    const cell = (v) => h('td', null, avg(v));
+    return h('section', { class: 'card', id: 'ttPeriods' },
+      h('h2', null, 'ピリオドごと（1試合の平均）'),
+      h('div', { class: 'boxwrap' }, h('table', { class: 'per tt-per', id: 'ttPeriodTable' },
+        h('thead', null, h('tr', null, h('th', null, ''), rows.map((p) => h('th', null, p.label)))),
+        h('tbody', null,
+          h('tr', null, h('th', null, '得点'), rows.map((p) => cell(p.pf / p.n))),
+          h('tr', null, h('th', null, '失点'), rows.map((p) => cell(p.pa / p.n))),
+          h('tr', { class: 'diff' }, h('th', null, '差'), rows.map((p) => { const d = (p.pf - p.pa) / p.n; return h('td', { class: d > 0.04 ? 'up' : d < -0.04 ? 'down' : null }, A.fmtDiff(d)); }))))),
+      h('p', { class: 'note' }, (P.n < R.n ? `ピリオドを進めて記録した ${P.n} 試合の平均です（進めていない試合は、全部が 1Q に入ってしまうので入れません）。` : `${P.n} 試合の平均です。`) +
+        (rows.some((p) => p.n < P.n) ? '試合によってないピリオド（延長など）は、そのピリオドのある試合だけで割っています。' : '')));
+  }
+
+  /* ---------- 相手とのくらべ ---------- */
+  function compareCard(R, label) {
+    const u = A.rates(R.usSh), o = A.rates(R.opSh);
+    const rowsDef = [
+      ['pts', '得点', R.us.pts / R.n, R.op.pts / R.n, 1, avg],
+      ['fg', 'FG%', u.fg, o.fg, 1, pct],
+      ['fg3', '3P%', u.fg3, o.fg3, 1, pct],
+      ['ft', 'FT%', u.ft, o.ft, 1, pct],
+      ['reb', 'リバウンド', R.us.reb / R.n, R.op.reb / R.n, 1, avg],
+      ['to', 'ターンオーバー', R.us.to / R.n, R.op.to / R.n, -1, avg],
+      ['foul', 'ファウル', R.us.foul / R.n, R.op.foul / R.n, -1, avg]
+    ].filter(([k, , a, b]) => (a != null || b != null) && (a || b || k === 'pts'));
+    return h('section', { class: 'card', id: 'ttCompare' },
+      h('h2', null, '相手とのくらべ（1試合あたり）'),
+      h('div', { class: 'boxwrap' }, h('table', { class: 'per tt-cmp', id: 'ttCompareTable' },
+        h('thead', null, h('tr', null, h('th', null, ''), h('th', null, label), h('th', null, '相手'))),
+        h('tbody', null, rowsDef.map(([k, lab, a, b, better, f]) => {
+          const win = a != null && b != null && a !== b ? ((a - b) * better > 0 ? 0 : 1) : -1;
+          return h('tr', { dataset: { k } }, h('th', null, lab, better < 0 ? h('small', { class: 'sx' }, ' ↓') : null),
+            h('td', { class: win === 0 ? 'better' : null }, f(a)), h('td', { class: win === 1 ? 'better' : null }, f(b)));
+        })))),
+      h('p', { class: 'note' }, '相手は、どの試合の相手もまとめて数えています。太字は、よいほう（↓ は、少ないほうがよいもの）。' + (R.nMiss < R.n && R.nMiss ? `成功率は、外れも記録した ${R.nMiss} 試合で計算。` : '')));
+  }
+
+  /* ---------- 書き出す ---------- */
+  function exportCard(R, label) {
+    const share = BT.ui.canShareFiles();
+    const today = BT.ymdAt(Date.now(), BT.localTz());
+    const base = ['バスケ集計', BT.safeName(label) || '自分', today].join('_');
+    const go2 = async (kind) => {
+      const name = `${base}_${kind === 'p' ? '選手ごと' : '試合ごと'}.csv`;
+      const blob = new Blob(['\ufeff' + (kind === 'p' ? A.playersCSV(R) : A.gamesCSV(R))], { type: 'text/csv' });
+      const r = await BT.ui.shareOrDownload(name, blob, share);
+      if (r === 'downloaded') BT.ui.toast(`保存しました：${name}`, 'ok', 4000);
+      else if (r === 'shared') BT.ui.toast('送りました', 'ok');
+    };
+    return h('section', { class: 'card', id: 'ttExport' },
+      h('h2', null, '💾 書き出す'),
+      h('div', { class: 'export' },
+        h('button', { class: 'xitem', id: 'ttExpPlayers', onclick: () => go2('p') }, h('b', null, '📊 選手ごとの集計（CSV）'), h('small', null, `いま集計している ${R.n} 試合の、背番号ごとの合計と成功率`)),
+        h('button', { class: 'xitem', id: 'ttExpGames', onclick: () => go2('g') }, h('b', null, '📋 試合ごとの集計（CSV）'), h('small', null, '日付・相手・得点・失点・成功率・リバウンド・ターンオーバーなど')),
+        h('p', { class: 'note' }, (share ? 'スマホでは「共有」が開きます。' : 'ダウンロードのフォルダに保存します。') + 'Excel・Numbers・Google スプレッドシートで開けます。')));
+  }
+
+  /* ---------- 数え方 ---------- */
+  function howText() {
+    return '数え方：得点・リバウンド・アシスト・スティール・ファウルは、試合ごとの集計を足したものです。' +
+      'ターンオーバーは、選手の「ターンオーバー」と、チームを付けた「パスミス」を足した数です（チームを決めていないパスミスは、どちらにも入れません）。' +
+      'シュートの成功率は、外れ（シュートの失敗）も記録した試合だけで計算します（入れた本数だけの試合では、打った数が分からないため）。入れた本数と得点は、全部の試合から数えます。' +
+      'eFG% は、3P を 1.5 本として数えた成功率です。勝ち負けは、試合の最後の得点で決めます（記録の途中の試合は、いまの得点）。' +
+      '1試合あたりは、試合の数で割ります（選手は、その背番号の記録がある試合の数）。選手は、選んだチームの背番号で分けています。' +
+      '「直近5試合」は、スタートした時刻の新しい 5 試合です。デモの試合は入りません。';
+  }
+
+  /* ---------- 開く ---------- */
+  function open() {
+    T.cloudAsked = false; T.cloudList = null;
+    render();
+  }
+  let rq = 0;
+  if (root.addEventListener) root.addEventListener('resize', () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(() => { if (inView()) drawTrend(); }); });
+
+  BT.totals = { render, open, state: T };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
 /* js/app.js */
 /* バスケ タップ記録 — 画面
    ホーム（home）→ 試合の準備（setup：チーム名・色・背番号）→ 記録（live）→ 試合のページ（game：集計・書き出し・切り出し）→ 場面を切り出す（trim。js/trim.js）。
@@ -5925,6 +6932,12 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
   // いまの時刻：ふつうはスタートからの時間。動画を見ながら記録するときは、動画の時刻（rvNow）
   const elapsed = () => (rvMode() ? rvNow() : BT.elapsed(S.game, now()));
   const curPeriod = () => BT.periodAt(S.game, elapsed());
+  /* 試合時間（止められる時計。設定でオン）：スタートからの時間・動画の時刻とは別に、笛で止まる時計を持つ（試合ごとに game.gc。js/core.js の「試合時間」）。
+     時計のある試合を、記録の途中で開いているときだけ出す（終えた試合には、あとから時計を作らない） */
+  const clockOn = () => !!S.prefs.gameClock;
+  const gcShown = () => !!(clockOn() && S.game && S.game.startedAt && (S.game.gc || !S.game.endedAt));
+  function ensureClock(g) { if (!g.gc || !Array.isArray(g.gc.ev)) g.gc = BT.newClock(S.prefs.periodLen, BT.isReview(g)); return g.gc; }
+  const gcNow = () => (gcShown() ? (ensureClock(S.game), BT.gameClock(S.game, elapsed())) : null);
   function save() {
     if (!S.game) return;
     if (rvReady() && S.rv.match) S.game.rvPos = rvNow();          // 動画を見ながら記録：見ていた所も覚えておく（続きを記録するとき。記録の動画と同じ長さの動画のときだけ）
@@ -5961,6 +6974,8 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
   /* ---------- 画面の切り替え ---------- */
   function go(view) {
     if (S.view === 'trim' && view !== 'trim' && BT.trim.active()) BT.trim.close();
+    // 📊 これまでの集計から出るとき：開いたときに足した履歴（ブラウザの「戻る」でホームへ戻るためのもの）を戻しておく
+    if (S.view === 'totals' && view !== 'totals' && S.guarded && root.history) { S.guarded = false; S.skipPop = true; try { history.back(); } catch (e) { S.skipPop = false; } }
     S.view = view;
     BT.ui.closeSheet(true);
     if (view !== 'live') { delete document.documentElement.dataset.rot; rvPause(); }
@@ -5969,6 +6984,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     else if (view === 'setup') renderSetup();
     else if (view === 'live') buildLive();
     else if (view === 'game') renderGame();
+    else if (view === 'totals') { BT.totals.open(); guard(); }      // 📊 これまでの集計（js/totals.js）。ブラウザの「戻る」でホームへ
     root.scrollTo(0, 0);
   }
   /* 試合を選ぶ（記録の画面・試合のページの前に） */
@@ -6061,6 +7077,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     const going = cur && cur.startedAt && !cur.endedAt ? cur : null;
     const waits = list.filter((g) => g.endedAt && !g.rv && !g.trim && g.n > 0 && g !== going);
     const cloudOnly = (S.cloudList || []).filter((c) => c && c.id && !list.some((g) => g.id === c.id) && c.summary && !c.summary.demo);
+    const totN = list.filter((g) => g.n > 0).length;          // 📊 これまでの集計に入る試合（デモでない・記録が1つ以上）
     V.append(
       h('header', { class: 'hbar' },
         h('div', { class: 'brand' }, h('span', { class: 'logo', 'aria-hidden': 'true' }, '🏀'), h('div', null, h('b', null, BT.APP), h('small', null, 'タップで記録 → 動画から場面を切り出す。これ1つで'))),
@@ -6080,6 +7097,11 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
           h('button', { class: 'mode mode-rv', id: 'btnNewReview', onclick: () => newGame('video') },
             h('span', { class: 'mi' }, '🎬'),
             h('span', { class: 'mt' }, h('b', null, '撮った動画を見ながら記録する'), h('small', null, '動画を先に選ぶ → 記録したら、すぐ集計・場面・動画の書き出し')))),
+        // 📊 これまでの集計（js/totals.js）：2つの始め方のすぐ下（切り出し待ちの試合が多くても、すぐ見つかるように）
+        totN ? h('button', { class: 'totbtn', id: 'btnTotals', onclick: () => go('totals') },
+          h('span', { class: 'mi', 'aria-hidden': 'true' }, '📊'),
+          h('span', { class: 'mt' }, h('b', null, 'これまでの集計'), h('small', null, `${totN}試合のシュート成功率・選手ごと・場所ごとの成功率など`)),
+          h('span', { class: 'arr', 'aria-hidden': 'true' }, '›')) : null,
         !list.length && !cloudOnly.length ? h('section', { class: 'card demo-card' },
           h('b', null, 'はじめての方へ'),
           h('p', null, '使い方を、見本の試合と動画で、自動で見せます（約2分・記録は残りません）。'),
@@ -6429,8 +7451,8 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
      画面は、いちど作ったら作り直さず、数字（得点・回数）だけを書き換える
      （押している間にボタンが入れ替わると、Safari ではタップにならないため） */
   /* そのチームの行：背番号の小さい順＋「？」（だれか分からないとき。背番号がないチームは、この1行だけ） */
-  /* 選手の行のボタン（設定：シュートの失敗・リバの分け方・アシスト・スティール・ファウルを足す。ふだんは 2P・3P・FT・リバ） */
-  const rowTypes = () => BT.rowTypes({ miss: !!S.prefs.btnMiss, foul: !!S.prefs.btnFoul, ast: !!S.prefs.btnAst, stl: !!S.prefs.btnStl, rebSplit: !!S.prefs.rebSplit });
+  /* 選手の行のボタン（設定：シュートの失敗・リバの分け方・アシスト・スティール・ターンオーバー・ファウルを足す。ふだんは 2P・3P・FT・リバ） */
+  const rowTypes = () => BT.rowTypes({ miss: !!S.prefs.btnMiss, foul: !!S.prefs.btnFoul, ast: !!S.prefs.btnAst, stl: !!S.prefs.btnStl, tov: !!S.prefs.btnTov, rebSplit: !!S.prefs.rebSplit });
   const rowSpec = () => BT.rowSpec(rowTypes());
   function rowsOf(tm) {
     const rows = S.game.teams[tm].players.map((p) => ({ no: p.no, name: p.name }));
@@ -6443,7 +7465,9 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     const V = $('#view');
     V.innerHTML = '';
     const L = S.L = { panels: [], btns: [], gb: {} };
-    L.clock = h('button', { class: 'clock', id: 'clock', title: 'スタートからの時間', onclick: openMenu }, h('span', { class: 'recdot' }), h('span', { class: 'tval', id: 'tval' }, '0:00'));
+    // 時計：ふだんは、スタートからの時間（押すとメニュー）。設定で「試合時間」をオンにすると、試合時間（押すと、止まる・動く）と、その下に小さくスタートからの時間
+    L.clock = h('button', { class: 'clock', id: 'clock', title: 'スタートからの時間', onclick: clockTap }, h('span', { class: 'recdot' }), h('i', { class: 'gcst', 'aria-hidden': 'true' }),
+      h('span', { class: 'tcol' }, h('span', { class: 'tval', id: 'tval' }, '0:00'), h('small', { class: 'tsub', id: 'tsub', hidden: true })));
     L.start = h('button', { class: 'startbtn', id: 'btnStart', onclick: start }, '▶ スタート');
     L.period = h('button', { class: 'period', id: 'btnPeriod', 'aria-label': 'ピリオド', onclick: openPeriod }, '1Q');
     L.score = [0, 1].map((tm) => h('span', { class: 'sc', id: 'score' + tm, style: { '--tc': g.teams[tm].color, '--tink': BT.inkOn(g.teams[tm].color) } }, '0'));
@@ -6680,8 +7704,42 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
   function tickClock(force) {
     const L = S.L;
     if (!L || !S.game || !S.game.startedAt) return;
-    const s = BT.fmtTime(elapsed(), rvMode());
-    if (force || s !== lastClock) { lastClock = s; const el = $('#tval'); el.textContent = s; el.classList.toggle('long', s.length > 5); }
+    const rv = rvMode();
+    const c = gcNow();
+    const tt = BT.fmtTime(elapsed(), rv);                 // スタートからの時間（動画を見ながら：動画の時刻）
+    const s = c ? BT.gcText(c) : tt;
+    const key = c ? `${s}|${tt}|${c.period}${c.done ? 'd' : c.running ? 'r' : 's'}` : s;
+    if (force || key !== lastClock) {
+      lastClock = key;
+      const el = $('#tval'), sub = $('#tsub');
+      el.textContent = s;
+      el.classList.toggle('long', s.length > 5);
+      L.clock.classList.toggle('gc', !!c);
+      L.clock.classList.toggle('stopped', !!c && !c.running && !c.done);
+      L.clock.classList.toggle('done', !!c && c.done);
+      sub.hidden = !c;
+      if (c) sub.textContent = (rv ? '🎬 ' : '⏱ ') + tt;
+      const tip = c ? `試合時間 ${BT.gcLabel(c)}（${c.done ? '終わり' : c.running ? '動いています。押すと止まります' : '止まっています。押すと動きます'}）・${rv ? '動画の時刻' : 'スタートから'} ${tt}` : rv ? '動画の時刻' : 'スタートからの時間';
+      if (L.clock.title !== tip) { L.clock.title = tip; if (c) L.clock.setAttribute('aria-label', tip); else L.clock.removeAttribute('aria-label'); }
+    }
+    // 残り 0:00 になった瞬間（試合を見ながら記録しているとき）：1回だけ知らせる
+    if (c && !rv && !S.game.endedAt) {
+      const was = L.gcPrev;
+      if (c.done && was && was.running && was.period === c.period) { feel('undo'); say(`${BT.periodLabel(c.period)} の試合時間が終わりました（次のピリオドは、となりのボタンから）`, 'ok', 5000); }
+      L.gcPrev = { period: c.period, running: c.running };
+    }
+  }
+  /* 時計を押した：試合時間が出ているときは、止める・動かす（記録の時刻＝スタートからの時間・動画は、止まらない）。出ていなければメニュー */
+  function clockTap() {
+    const g = S.game;
+    if (!gcShown() || g.endedAt) { openMenu(); return; }
+    ensureClock(g);
+    const c = BT.gcToggle(g, elapsed());
+    if (!c) { say(`${BT.periodLabel(curPeriod())} の試合時間は終わっています（次のピリオドは、となりのボタンから。そこで時間も直せます）`, 'warn', 5000); return; }
+    save();
+    feel(c.running ? 'made' : 'undo');
+    tickClock(true);
+    say(c.running ? `▶ 試合時間を動かしました（${BT.gcLabel(c)}）` : `⏸ 試合時間を止めました（${BT.gcLabel(c)}）`, 'ok', 2500);
   }
   function tick() {
     if (camRec() && S.camSheet) S.camSheet.draw(true);
@@ -6761,6 +7819,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     g.date = BT.ymdAt(t0, g.tz);
     BT.addEvent(g, { t: 0, type: 'period', period: g.startPeriod || 1 });
     delete g.startPeriod;
+    if (clockOn()) g.gc = BT.newClock(S.prefs.periodLen, false);         // 試合時間：スタートと同時に動き出す
     save();
     feel('made');
     BT.store.persist();
@@ -6775,6 +7834,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
   function cancelStart() {
     const g = S.game;
     g.startedAt = null; g.endedAt = null; g.events = []; g.seq = 0;
+    delete g.gc;
     S.redo = [];
     BT.ui.keepAwake(false);
     save();
@@ -6846,9 +7906,22 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
       say(`${BT.periodLabel(p)} を始めました（${BT.fmtTime(ev.t)}）`, 'ok');
     };
     const others = [1, 2, 3, 4, 5, 6].filter((p) => p !== cur + 1);
+    // 試合時間（設定でオンのとき）：いまの時間と、ずれたときの手直し（出ている数字を、押した分だけ動かす）・止める／動かす
+    const c = started && !g.endedAt ? gcNow() : null;
+    const adj = (d, lab) => h('button', { class: 'btn small', dataset: { gcadj: String(d) }, onclick: () => {
+      const cc = gcNow();
+      BT.gcSet(g, elapsed(), cc.left != null ? cc.used - d : cc.used + d);
+      save(); tickClock(true); openPeriod();
+    } }, lab);
+    const gcBox = !c ? null : h('div', { class: 'gcbox', id: 'gcBox' },
+      h('b', { id: 'gcNowText' }, `試合時間：${BT.gcLabel(c)}`, h('small', null, c.done ? '（終わり）' : c.running ? '（動いています）' : '（止まっています）')),
+      h('div', { class: 'gcadj' }, adj(-60, '−1分'), adj(-10, '−10秒'), adj(-1, '−1秒'), adj(60, '+1分'), adj(10, '+10秒'), adj(1, '+1秒')),
+      h('div', { class: 'row' }, h('button', { class: 'btn', id: 'btnGcToggle', disabled: c.done, onclick: () => { clockTap(); openPeriod(); } }, c.running ? '⏸ 試合時間を止める' : '▶ 試合時間を動かす')),
+      h('p', { class: 'note' }, `会場の時計とずれたら、上のボタンで合わせます（${c.left != null ? '残りの時間' : '進んだ時間'}を、押した分だけ動かします）。次のピリオドを始めると、${c.len ? BT.fmtTime(c.len) + ' に' : '0:00 に'}戻って動き出します。ピリオドの長さは「設定」の「試合時間」で変えられます。`));
     const s = BT.ui.sheet({
       title: started ? `ピリオド（いまは ${BT.periodLabel(cur)}）` : '始めるピリオド',
       body: h('div', { class: 'periodbox' },
+        gcBox,
         started ? h('button', { class: 'btn primary huge', id: 'btnNextPeriod', onclick: () => pick(cur + 1) }, `${BT.periodLabel(cur + 1)} を始める`) : null,
         h('div', { class: 'row pgrid' }, (started ? others : [1, 2, 3, 4, 5]).map((p) => h('button', { class: 'btn' + (!started && p === cur ? ' on' : ''), onclick: () => pick(p) }, started ? `${BT.periodLabel(p)} にする` : BT.periodLabel(p)))),
         h('p', { class: 'note' }, rvMode() ? '動画を、次のピリオドが始まる所（ティップオフ・最初のスローイン）まで動かしてから押します。その動画の時刻が、ピリオドの始まりになります。あとで「記録の一覧」で直せます。' : started ? '次のピリオドが始まる瞬間に押します。始まった時刻が記録に残り、動画で場面を探すときの目印にもなります。押し忘れたら、あとで「記録の一覧」でピリオドの時刻を直せます（それより後の記録は、自動でそのピリオドになります）。' : 'スタートを押したときのピリオドです（途中から記録するときに）。'))
@@ -7434,6 +8507,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
       const t0 = now();
       Object.assign(g, { mode: 'video', src: { name: file.name, size: file.size || null, duration: null, w: null, h: null }, startedAt: t0, date: BT.ymdAt(t0, g.tz), notes: [], rvPos: 0 });
       BT.addEvent(g, { t: 0, type: 'period', period: 1 });
+      if (clockOn()) g.gc = BT.newClock(S.prefs.periodLen, true);         // 試合時間：動画のはじめは止めておく（ティップオフの所で、時間を押して動かす）
       g.videos = [{ vid: 'file1', n: 1, startedAt: t0, endedAt: null, duration: null, name: file.name, mime: file.type || '', w: null, h: null, bytes: file.size || null, status: 'done', gone: true, file: true }];
       BT.store.saveGame(g);
       BT.store.persist();
@@ -7621,7 +8695,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     rvSeekEvents(L.rvSeek);
     rvMount();
     rvColors();
-    L.clock.title = '動画の時刻';
+    lastClock = '';          // 時計の説明（動画の時刻）を、次の表示で付け直す
   }
   /* 位置のバーの色（画面の色に合わせる） */
   function rvColors() {
@@ -8128,7 +9202,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     const row = (e) => {
       const d = BT.TYPE[e.type];
       return h('button', { class: 'lrow' + (e.type === 'period' ? ' per' : ''), dataset: { id: e.id }, onclick: () => openEdit(e.id) },
-        h('b', { class: 'lt' }, BT.fmtTime(e.t)),
+        h('b', { class: 'lt' }, BT.fmtTime(e.t), g.gc && e.type !== 'period' ? h('small', { class: 'lgt' }, BT.gcText(BT.gameClock(g, e.t))) : null),
         e.type === 'period' ? h('span', { class: 'lp' }, `── ${BT.periodLabel(e.period)} 開始 ──`) : [
           e.team == null ? h('i', { class: 'chip neutral' }) : h('i', { class: 'chip', style: { background: teamColor(e.team) } }),
           h('span', { class: 'lno' }, e.no != null ? '#' + e.no : '—'),
@@ -8143,7 +9217,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
       body: h('div', null,
         h('div', { class: 'row tabsrow' },
           tabs.map(([v, lab]) => h('button', { class: 'btn small' + (f === v ? ' on' : ''), onclick: () => openLog(v) }, lab))),
-        h('p', { class: 'note' }, 'タップすると、番号・プレー・時刻を直したり、消したりできます。新しい記録が上です。'),
+        h('p', { class: 'note' }, 'タップすると、番号・プレー・時刻を直したり、消したりできます。新しい記録が上です。' + (g.gc ? `時刻の下の小さな数字は、試合時間（${g.gc.len ? 'そのピリオドの残り' : 'そのピリオドで進んだ時間'}）です。` : '')),
         evs.length ? h('div', { class: 'loglist' }, evs.map(row)) : h('p', { class: 'note' }, 'まだ記録はありません。'))
     });
     return s;
@@ -8156,7 +9230,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     const changed = () => { save(); if (S.L) updateLive(); openEdit(id); };
     const nudge = (d) => h('button', { class: 'btn small', onclick: () => { e.t = Math.max(0, Math.round((e.t + d) * 10) / 10); changed(); } }, (d > 0 ? '+' : '−') + Math.abs(d) + '秒');
     const body = h('div', { class: 'edit' });
-    body.append(h('div', { class: 'field' }, h('span', null, `時刻（${rvMode() ? '動画の時刻' : 'スタートから'}）：${BT.fmtTime(e.t, true)}`), h('div', { class: 'row' }, nudge(-5), nudge(-1), nudge(-0.5), nudge(0.5), nudge(1), nudge(5))));
+    body.append(h('div', { class: 'field' }, h('span', { id: 'evTime' }, `時刻（${rvMode() ? '動画の時刻' : 'スタートから'}）：${BT.fmtTime(e.t, true)}` + (g.gc && e.type !== 'period' ? `・試合時間 ${BT.gcLabel(BT.gameClock(g, e.t))}` : '')), h('div', { class: 'row' }, nudge(-5), nudge(-1), nudge(-0.5), nudge(0.5), nudge(1), nudge(5))));
     // 動画を見ながら：その場面を見る・映像を見ながらコマ送りで時刻を合わせる・いまの映像の時刻にする
     if (rvMode() && rvReady()) {
       body.append(h('div', { class: 'row rvedit' },
@@ -8200,7 +9274,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
   /* ---------- 集計 ---------- */
   const COLS = [
     ['pts', '得点'], ['fg2', '2P'], ['fg3', '3P'], ['ft', 'FT'], ['reb', 'リバウンド'], ['oreb', 'OR'], ['dreb', 'DR'], ['ast', 'アシスト'], ['stl', 'スティール'], ['blk', 'ブロック'],
-    ['pass', 'パスミス'], ['tov', 'ミス'], ['foul', 'ファウル'], ['mark', '★']
+    ['pass', 'パスミス'], ['tov', 'ターンオーバー'], ['foul', 'ファウル'], ['mark', '★']
   ];
   /* withA：「成功/打った数」で出す（外れの記録があるときだけ。ないときは入れた本数）。
      split：「Oリバ」「Dリバ」で記録した試合（OR・DR の列を出し、リバウンドの列は合計だけ。分けていない試合は「合計（うちオフェンス）」） */
@@ -8311,12 +9385,23 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
       off('rebSplit', 'リバウンドを「Oリバ」（オフェンス）と「Dリバ」（ディフェンス）に分けて記録する', refresh),
       off('btnAst', 'アシスト（得点につながったパス）も記録する', refresh),
       off('btnStl', 'スティールも記録する', refresh),
+      off('btnTov', 'ターンオーバー（ボールを失ったミス）も記録する → だれのミスかが残ります', refresh),
       off('btnFoul', 'ファウルも記録する（5つ目で赤くなります）', refresh)));
     body.append(h('section', { class: 'field', id: 'setShotLoc' }, h('span', null, 'シュートの場所'),
       off('shotLoc', '2P・3P を記録したあと、コートの図で打った場所も聞く → 集計に、場所ごとの数', refresh),
       h('div', { class: 'row' }, [['std', 'ふつう：3P の線あり'], ['mini', 'ミニバス：3P の線なし']].map(([v, lab]) => h('button', { class: 'btn small' + ((p.courtType === 'mini' ? 'mini' : 'std') === v ? ' on' : ''), dataset: { court: v }, onclick: () => { p.courtType = v; savePrefs(); refresh(); openSettings(); } }, lab))),
       h('p', { class: 'note' }, '試合を見ながら記録しているときは「あとで」で飛ばせます（6 秒押さなければ自動で閉じます。記録は残ります）。撮った動画を見ながら記録するときに、特に向いています。フリースローは聞きません。'),
       BT.license.can('shot', S.game) ? null : h('p', { class: 'note warn', id: 'shotLocLock' }, '🔒 シュートの場所は、場面パックの機能です。お試しの 3 試合を使ったので、いまはオンにしても聞きません（この下の「🔑 場面パック」で、購入コードを入れられます）。')));
+    const curLen = BT.GC_LENS.includes(+p.periodLen) ? +p.periodLen : 600;
+    body.append(h('section', { class: 'field', id: 'setClock' }, h('span', null, '試合時間（止められる時計）'),
+      off('gameClock', '試合時間を出す（時間を押すと、止まる・動く）', () => { if (p.gameClock && S.game && S.game.startedAt && !S.game.endedAt) { ensureClock(S.game); save(); } refresh(); openSettings(); }),
+      p.gameClock ? h('div', { class: 'row' }, [[600, '10分（一般・高校）'], [480, '8分（中学）'], [360, '6分（ミニバス）'], [300, '5分'], [0, '決めない（進んだ時間を数える）']].map(([len, lab]) => h('button', { class: 'btn small' + (curLen === len ? ' on' : ''), dataset: { gclen: String(len) }, onclick: () => {
+        p.periodLen = len; savePrefs();
+        if (S.game && S.game.gc && !S.game.endedAt) { S.game.gc.len = len; S.game.gc.ot = BT.gcOtOf(len); save(); }
+        refresh(); openSettings();
+      } }, lab))) : null,
+      h('p', { class: 'note' }, '笛で止まったら時間を押して止め、再開したら押して動かします。スタートからの時間（動画と合わせるための時計）は、止まらずに進むので、小さく下に出します。ピリオドの長さを選ぶと、残りの時間を数えます（延長は、10分のピリオドなら 5分・ほかは 3分）。ずれたら、となりの「1Q」のボタンから直せます。' +
+        '撮った動画を見ながら記録するときは、動画の時刻とは別に、試合時間が進みます（はじめは止まっています。ティップオフの所で時間を押します。動画を戻すと、その時刻の試合時間に戻ります）。')));
     body.append(h('section', { class: 'field' }, h('span', null, '記録の画面'),
       chk('names', '背番号の下に、選手の名前も出す（行の高さに余裕があるとき）', refresh),
       chk('unknown', '「？」の行を出す（だれか分からないときに、チームだけで記録する）', refresh),
@@ -8393,9 +9478,11 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
           h('li', null, h('b', null, '「？」の行'), '：だれか分からないとき。チームの記録になります（あとで一覧から番号を付けられます）'),
           h('li', null, h('b', null, '画面の下の「パスミス」「★ あとで見る」'), '：だれのかは決めずに、時刻だけを残します。いつでも押せます'),
           h('li', null, 'ボタンの右上の小さな数は、その選手がそのプレーをした回数です'),
-          h('li', null, h('b', null, 'ボタンを足す'), '：「≡ メニュー」→「設定」の「選手のボタン」で、シュートの失敗（×）・Oリバ／Dリバ・アシスト・スティール・ファウルを出せます'),
+          h('li', null, h('b', null, 'ボタンを足す'), '：「≡ メニュー」→「設定」の「選手のボタン」で、シュートの失敗（×）・Oリバ／Dリバ・アシスト・スティール・ターンオーバー・ファウルを出せます'),
           h('li', null, 'まちがえたら「↶ 取り消す」。どの記録も「≡ メニュー」→「記録の一覧」で直せます。名簿にない背番号は「＋番号」で足せます'),
-          h('li', null, 'ピリオドは、時計の右の「1Q」を押して「2Q を始める」。時計は止まらずに進みます（試合の時計ではなく、スタートからの時間。動画と同じように進むので、あとで動画と合わせられます）')),
+          h('li', null, 'ピリオドは、時計の右の「1Q」を押して「2Q を始める」。時計は止まらずに進みます（試合の時計ではなく、スタートからの時間。動画と同じように進むので、あとで動画と合わせられます）'),
+          h('li', null, h('b', null, '試合時間（止められる時計）'), '：「設定」の「試合時間」をオンにすると、時計が試合時間（残り 10:00 から など）になり、押すと止まる・動きます。スタートからの時間は、その下に小さく出て、止まらずに進みます。ずれたら「1Q」のボタンから直せます。動画を見ながら記録するときも、動画の時刻とは別に進みます'),
+          h('li', null, h('b', null, '📊 これまでの集計'), '：ホームの「これまでの集計」で、これまでの試合をまとめて見られます（シュート成功率・選手ごと・シュートの場所ごと・試合ごとの流れ・ピリオドごと・相手とのくらべ・CSV）。成功率は、外れも記録した試合だけで計算します')),
         h('h4', null, '時刻を合わせる（試合を見ながら記録したとき）'),
         h('ul', null,
           h('li', null, '記録の1つ（ふつうは「スタート」）を選び、動画をその瞬間（ジャンプボール）で止めて「⏱ この瞬間が、選んだ記録」'),
