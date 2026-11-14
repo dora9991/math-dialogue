@@ -29,7 +29,7 @@
   App.buildScore = function (solo) {
     const inst = App.writtenInst(), an = App.an, chart = App.chart;
     const sections = chart.order.map(bi => chart.bars[bi].section || null);
-    const feel = (App.FEEL[st().style] || '') + '  ♩=' + st().tempo;
+    const feel = App.feelLabel() + '  ♩=' + st().tempo;
     const score = N.scoreFromEvents({
       events: solo.events.map((e, i) => Object.assign({}, e, { id: i })), slots: App.slots, bpb: App.bpb, bars: chart.chorusBars,
       keySpell: an.key.spell, keyMode: an.key.mode, inst: { transpose: inst.transpose, clef: inst.clef }, sections, marks: App.soloMarks(solo), feel,
@@ -69,6 +69,7 @@
     el.inst = U.select(instOptions(), st().soloInst, v => App.setSoloParams({ soloInst: v }), { id: 'soloInst', 'aria-label': 'ソロの楽器' });
     el.level = U.seg(LEVELS, st().level, v => App.setSoloParams({ level: v }), '難しさ');
     el.density = U.seg(DENS, st().density, v => App.setSoloParams({ density: v }), '音の多さ');
+    el.feel = App.feelControl('solo');
     el.concert = U.seg([[true, '実音', '鳴っている音のまま（コンサートピッチ）'], [false, '移調譜', 'その楽器の人が読む楽譜（アルトは長6度上、トランペット・テナーは長2度・長9度上、ギターは1オクターブ上）']], st().concert, v => { App.set({ concert: v }, 'solo'); refreshInstOptions(); }, '譜面の書き方');
     const newBtn = h('button', { type: 'button', class: 'btn primary', onclick: () => App.newSolo(), title: '同じコード進行で、別のソロを作る' }, '🎲 新しいソロ');
     const listenBtn = h('button', { type: 'button', class: 'btn', onclick: () => { if (st().soloMode === 'off') { st().soloMode = 'same'; App.ui.soloSel.value = 'same'; } App.play(); } }, '▶ 伴奏とソロを聴く');
@@ -80,7 +81,8 @@
         U.field('楽器', el.inst),
         U.field('難しさ', el.level, 'やさしい＝8分音符が中心／ふつう＝3連符・16分音符・シンコペーションが混ざる／むずかしい＝16分音符のランやオルタードが多い'),
         U.field('音の多さ', el.density, 'まばらなほど、間（休符）が多くなります'),
-        U.field('譜面の書き方', el.concert, '実音＝鳴っている音のまま。移調譜＝その楽器の人が読む楽譜')),
+        U.field('譜面の書き方', el.concert, '実音＝鳴っている音のまま。移調譜＝その楽器の人が読む楽譜'),
+        h('div', { class: 'field wide' }, h('label', { class: 'f-label' }, 'ノリ（シャッフルの種類と強さ）'), el.feel)),
       el.seed));
 
     el.scoreWrap = h('div', { class: 'score-wrap', id: 'scoreWrap' });
@@ -343,6 +345,7 @@
     if (!el.inst) return;
     el.inst.value = st().soloInst;
     el.level.set(st().level); el.density.set(st().density); el.concert.set(st().concert);
+    el.feel.refresh();
   }
   function refresh() {
     if (App.tab !== 'solo') { dirty = true; return; }

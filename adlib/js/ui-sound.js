@@ -31,11 +31,11 @@
   App.exportMidi = function () {
     if (!App.hasChords) { U.toast('先にコード譜を入力してください'); return; }
     const loops = exportLoops(), plan = App.makePlan(), col = X.collect(plan, loops, { solo: st().soloMode !== 'off' });
-    const sw = App.swing(), key = App.an.key;
+    const key = App.an.key;
     const markers = [];
     for (let k = 0; k < loops; k++) App.slots.forEach(s => markers.push({ t: s.t0 + k * plan.chorusBeats, text: s.src }));
     const bytes = X.buildMidi({
-      title: st().title || 'アドリブ・ラボ', bpb: App.bpb, tempo: st().tempo, timeMap: b => Au.swingMap(b, sw), keyFifths: key.fifths, keyMinor: key.mode === 'minor', markers,
+      title: st().title || 'アドリブ・ラボ', bpb: App.bpb, tempo: st().tempo, feel: App.feel(), keyFifths: key.fifths, keyMinor: key.mode === 'minor', markers,
       tracks: [
         { name: 'コード', channel: 0, program: X.GM_PROGRAM[st().comp] || 0, events: col.comp },
         { name: 'ベース', channel: 1, program: X.GM_PROGRAM[st().bass] || 32, events: col.bass },
@@ -44,12 +44,12 @@
       drums: { name: 'ドラム', events: col.drums },
     });
     U.download(fname('mid'), new Blob([bytes], { type: 'audio/midi' }));
-    U.toast('MIDI を書き出しました（実音。スウィングは時間のずれとして入っています。16分音符のある拍だけは、再生と同じくずらしていません）');
+    U.toast('MIDI を書き出しました（実音。シャッフルなどのノリは、再生と同じ時間のずれとして入っています）');
   };
   App.exportXml = function () {
     if (!App.hasChords) { U.toast('先にコード譜を入力してください'); return; }
     const sb = App.buildScore(App.solo);
-    const xml = X.buildMusicXml({ title: st().title || 'アドリブ・ソロ', tempo: st().tempo, score: sb.score, mode: sb.mode, inst: sb.inst, feel: App.FEEL[st().style] });
+    const xml = X.buildMusicXml({ title: st().title || 'アドリブ・ソロ', tempo: st().tempo, score: sb.score, mode: sb.mode, inst: sb.inst, feel: App.feelLabel() });
     U.download(fname('musicxml'), new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' }));
     U.toast('MusicXML を書き出しました（MuseScore などで開けます）');
   };
@@ -142,7 +142,7 @@
         h('button', { type: 'button', class: 'btn', onclick: () => App.exportText() }, '📄 コード譜（テキスト）')),
       h('ul', { class: 'muted small notes' },
         h('li', null, 'WAV・MIDI は「ソロ」の設定（あり／なし／毎回あたらしく）を引きつぎます。'),
-        h('li', null, 'MIDI は実音で、スウィングは時間のずれとして入ります（16分音符のある拍だけは、再生と同じく、ずらさずに等間隔）。コード名はマーカーとして入ります。'),
+        h('li', null, 'MIDI は実音で、シャッフルなどのノリは、再生と同じ時間のずれとして入ります。コード名はマーカーとして入ります。'),
         h('li', null, 'MusicXML は、いま画面に出ているソロ（コード記号つき）を、MuseScore・Finale・Sibelius・Dorico などで開けます。'),
         h('li', null, '印刷は、ブラウザの印刷画面で「PDF に保存」を選べば PDF になります。'))));
 

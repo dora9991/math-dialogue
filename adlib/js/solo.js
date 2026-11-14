@@ -25,7 +25,8 @@
   };
 
   const ctxOfMatch = m => m.pattern.ctxAlias || m.id;
-  const DEF = { seed: 1, level: 2, density: 1, lo: 55, hi: 84, bpb: 4, tags: null, avoidTags: null };
+  // tags／avoidTags：選びやすくする／選びにくくする特徴タグ（伴奏のスタイルに合わせる）。fast：1拍が速いスタイルなので、16分音符のリックを使わない
+  const DEF = { seed: 1, level: 2, density: 1, lo: 55, hi: 84, bpb: 4, tags: null, avoidTags: null, fast: false };
 
   /* ---------------- 1本のリックを置く（音にする） ---------------- */
   function realizeOne(hs, d, st, o) {
@@ -87,6 +88,7 @@
       if (rh.n) {
         cost -= [0.2, 1.8, 3.0][li] + (rh.n > 1 ? 0.3 : 0);
         if (rh.s) cost += [0.7, 0, -0.7][dens];          // 音が少なめなら16分は控えめ、多めなら出やすく
+        if (rh.s && o.fast) cost += 12;                  // 速い2拍子（サンバ・サルサ）では、16分は弾けないので選ばない
         if (st.lastRh && rh.kind === st.lastRh) cost += 1.2;   // 同じリズムの型が続かないように
       } else {
         cost += [0, 0.4, 1.0][li] * (st.plainRun >= 1 ? 1.8 : 1);

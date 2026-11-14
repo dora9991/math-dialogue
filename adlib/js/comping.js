@@ -1,9 +1,10 @@
 /* アドリブ・ラボ：伴奏の作曲係（画面を持たない。ここでは「音の並び」を作るだけで、鳴らすのは synth.js）。
    コードの並び（C.slotsOf）から、スタイルごとに次の3パートの音符を作る：
      comp  … ピアノ／ギター／オルガンなどのコード（コンピング）。ボイスリーディングがなめらかな 3rd・7th 中心のボイシング
-     bass  … ベース（ウォーキング、2ビート、ボサノバ …）。次のコードのルートへ半音で入る
-     drums … ドラム（ライド、ハイハット、クラーベ …）
-   時間はすべて「拍」（4分音符=1）で、スウィングのずれは入れない（鳴らすときに player が入れる）。 */
+     bass  … ベース（ウォーキング、2ビート、ボサノバ、8分のルート弾き、シャッフル、トゥンバオ …）
+     drums … ドラム・打楽器（ライド、ハイハット、スネア、クラーベ、カウベル、コンガ …）
+   時間はすべて「拍」（4分音符=1）で、シャッフルのずれは入れない（鳴らすときに player が入れる）。
+   3連符の位置（1/3・2/3 拍）は、鳴らすときも動かない。 */
 (function () {
   'use strict';
   const root = typeof window !== 'undefined' ? window : globalThis;
@@ -13,16 +14,49 @@
   const mod = T.mod;
 
   /* ---------------- スタイル ---------------- */
-  // tempo：[標準, 最小, 最大]　swing：8分音符の前半の長さの割合（0.5 = イーブン、0.667 = 3連のハネ）
+  // tempo：[標準, 最小, 最大]
+  // swing：ハネる音符の前半の長さの割合（0.5 = イーブン、0.667 = 3連のハネ）。sdiv：2 = 8分がハネる（標準）、4 = 16分がハネる
+  // en：楽譜の左上に出す名前。inst：このスタイルに合う楽器（スタイルを変えたとき、前のスタイルのおすすめのままなら入れかえる）
+  // vocab／avoid：ソロのリック選びで、選びやすくする／選びにくくする特徴タグ。fast：1拍が速い書き方なので、ソロに16分音符を使わない
+  const JAZZ_INST = { comp: 'piano', bass: 'upright', drums: 'jazz' };
   const STYLES = {
-    swing: { id: 'swing', jp: 'スウィング（4ビート）', bpb: 4, tempo: [140, 60, 320], swing: 0.64, note: 'ライドとウォーキングベースの定番ジャズ' },
-    swing2: { id: 'swing2', jp: '2ビート・スウィング', bpb: 4, tempo: [120, 60, 240], swing: 0.62, note: 'ベースが2分音符で刻む、ゆったりしたスウィング' },
-    ballad: { id: 'ballad', jp: 'バラード', bpb: 4, tempo: [64, 40, 100], swing: 0.57, note: 'ブラシと、ゆったりした和音' },
-    bossa: { id: 'bossa', jp: 'ボサノバ', bpb: 4, tempo: [128, 80, 180], swing: 0.5, note: 'イーブン8分のブラジルのリズム' },
-    waltz: { id: 'waltz', jp: 'ジャズワルツ（3/4）', bpb: 3, tempo: [150, 90, 230], swing: 0.62, note: '3拍子のジャズ。ブン・チャ・チャ' },
-    funk: { id: 'funk', jp: 'ファンク／8ビート', bpb: 4, tempo: [100, 70, 150], swing: 0.5, note: 'イーブン16分のグルーヴ' },
+    swing: { id: 'swing', group: 'jazz', jp: 'スウィング（4ビート）', en: 'Swing', bpb: 4, tempo: [140, 60, 320], swing: 0.64, note: 'ライドとウォーキングベースの定番ジャズ' },
+    swing2: { id: 'swing2', group: 'jazz', jp: '2ビート・スウィング', en: '2-Beat Swing', bpb: 4, tempo: [120, 60, 240], swing: 0.62, note: 'ベースが2分音符で刻む、ゆったりしたスウィング' },
+    ballad: { id: 'ballad', group: 'jazz', jp: 'バラード', en: 'Ballad', bpb: 4, tempo: [64, 40, 100], swing: 0.57, note: 'ブラシと、ゆったりした和音' },
+    waltz: { id: 'waltz', group: 'jazz', jp: 'ジャズワルツ（3/4）', en: 'Jazz Waltz', bpb: 3, tempo: [150, 90, 230], swing: 0.62, note: '3拍子のジャズ。ブン・チャ・チャ' },
+    rock8: { id: 'rock8', group: 'rock', jp: 'ロック（8ビート）', en: 'Rock', bpb: 4, tempo: [120, 70, 200], swing: 0.5, note: 'イーブンの8分音符。ハイハットの8分、スネアは2・4拍、ベースは8分のルート弾き',
+      inst: { comp: 'piano', bass: 'ebass', drums: 'rock' }, vocab: ['pent', 'blues', 'leap', 'zigzag'], avoid: ['bebop'] },
+    popballad: { id: 'popballad', group: 'rock', jp: 'ポップ・バラード（8ビート）', en: 'Pop Ballad', bpb: 4, tempo: [72, 50, 104], swing: 0.5, note: 'ゆっくりの8ビート。リムの音と、のばした和音',
+      inst: { comp: 'piano', bass: 'ebass', drums: 'jazz' }, vocab: ['pent', 'leap', 'arp', 'syncopation'], avoid: ['bebop'] },
+    shuffle: { id: 'shuffle', group: 'blues', jp: 'ブルース・シャッフル', en: 'Shuffle', bpb: 4, tempo: [112, 70, 180], swing: 2 / 3, note: '8分音符が3連符でハネるシャッフル。ブルース、ロックンロール。ベースは同じ音を2つずつ',
+      inst: { comp: 'piano', bass: 'ebass', drums: 'rock' }, vocab: ['blues', 'pent', 'triplet'] },
+    slowblues: { id: 'slowblues', group: 'blues', jp: 'スロー・ブルース（12/8）', en: 'Slow Blues 12/8', bpb: 4, tempo: [60, 40, 90], swing: 2 / 3, note: '1拍を3つに割る、ゆっくりの 12/8。ハイハットとピアノの3連符',
+      inst: { comp: 'piano', bass: 'ebass', drums: 'jazz' }, vocab: ['blues', 'pent', 'triplet'] },
+    soul: { id: 'soul', group: 'blues', jp: 'ソウル／モータウン', en: 'Soul', bpb: 4, tempo: [116, 80, 150], swing: 0.5, note: 'スネアの4つ打ちとタンバリン。よく動くベース',
+      inst: { comp: 'piano', bass: 'ebass', drums: 'rock' }, vocab: ['pent', 'blues', 'syncopation'], avoid: ['bebop'] },
+    funk: { id: 'funk', group: 'dance', jp: 'ファンク（16ビート）', en: 'Funk', bpb: 4, tempo: [100, 70, 150], swing: 0.5, note: 'イーブン16分のグルーヴ',
+      inst: { comp: 'ep', bass: 'ebass', drums: 'rock' }, vocab: ['pent', 'blues', 'syncopation', 'sixteenth'] },
+    hiphop: { id: 'hiphop', group: 'dance', jp: 'ヒップホップ（16分シャッフル）', en: 'Hip Hop', bpb: 4, tempo: [90, 70, 115], swing: 0.62, sdiv: 4, note: '16分音符がハネる、重いビート（ブーンバップ、ニュージャック・スウィング、ハーフタイム・シャッフル）',
+      inst: { comp: 'ep', bass: 'synbass', drums: 'rock' }, vocab: ['pent', 'blues', 'syncopation', 'sixteenth'], avoid: ['bebop'] },
+    disco: { id: 'disco', group: 'dance', jp: 'ディスコ（4つ打ち）', en: 'Disco', bpb: 4, tempo: [120, 100, 140], swing: 0.5, note: 'キックの4つ打ち、裏拍のオープン・ハイハット、オクターブで動くベース',
+      inst: { comp: 'ep', bass: 'ebass', drums: 'rock' }, vocab: ['pent', 'syncopation', 'leap'], avoid: ['bebop'] },
+    bossa: { id: 'bossa', group: 'latin', jp: 'ボサノバ', en: 'Bossa Nova', bpb: 4, tempo: [128, 80, 180], swing: 0.5, note: 'イーブン8分のブラジルのリズム' },
+    samba: { id: 'samba', group: 'latin', jp: 'サンバ', en: 'Samba', bpb: 4, tempo: [190, 150, 240], swing: 0.5, fast: true, note: '速い2拍子のブラジルのリズム（1小節＝4拍で書くので、テンポの数字は大きい）',
+      inst: { comp: 'piano', bass: 'upright', drums: 'jazz' }, vocab: ['syncopation', 'arp', 'leap'] },
+    salsa: { id: 'salsa', group: 'latin', jp: 'サルサ（ラテン）', en: 'Salsa', bpb: 4, tempo: [180, 140, 220], swing: 0.5, fast: true, note: '2-3 のクラーベ、ピアノのモントゥーノ、次の小節を先取りするベース（トゥンバオ）',
+      inst: { comp: 'piano', bass: 'upright', drums: 'jazz' }, vocab: ['syncopation', 'arp', 'leap'] },
+    reggae: { id: 'reggae', group: 'latin', jp: 'レゲエ（ワンドロップ）', en: 'Reggae', bpb: 4, tempo: [140, 110, 170], swing: 0.56, note: '2・4拍の裏打ち（スカンク）と、3拍目に落ちるドラム。1拍目は空ける',
+      inst: { comp: 'organ', bass: 'ebass', drums: 'jazz' }, vocab: ['pent', 'syncopation', 'rhythm'], avoid: ['bebop'] },
   };
+  Object.keys(STYLES).forEach(k => { if (!STYLES[k].inst) STYLES[k].inst = JAZZ_INST; });
   B.STYLES = STYLES;
+  // 画面の選択肢の見出し
+  B.STYLE_GROUPS = [
+    { id: 'jazz', jp: 'ジャズ' }, { id: 'rock', jp: 'ロック・ポップス' }, { id: 'blues', jp: 'ブルース・ソウル' },
+    { id: 'dance', jp: 'ファンク・ダンス' }, { id: 'latin', jp: 'ラテン・レゲエ' },
+  ];
+  // スタイルの標準のノリ：'even' ストレート／'s8' 8分シャッフル（スウィング）／'s16' 16分シャッフル
+  B.feelKindOf = sd => (sd && sd.swing > 0.505 ? (sd.sdiv === 4 ? 's16' : 's8') : 'even');
 
   function rng(seed) {
     let a = seed >>> 0;
@@ -134,10 +168,74 @@
   // ギター（フレディ・グリーン風）：毎拍の短いストローク
   const GREEN = [{ w: 1, hits: [[0, 1, 1], [1, 1, 0.85], [2, 1, 1], [3, 1, 0.85]] }];
   const GREEN3 = [{ w: 1, hits: [[0, 1, 1], [1, 1, 0.85], [2, 1, 0.85]] }];
+  // 8分音符を全部きざむ（強さだけ変える）
+  const eighths = (a, b, len) => { const h = []; for (let k = 0; k < 8; k++) h.push([k * 0.5, len || 0.5, k % 2 ? b : a]); return h; };
+  // ロック：1拍目と「2拍目の裏」「4拍目の裏」に食いこむ型と、8分のきざみ
+  const ROCK = [
+    { w: 3, hits: [[0, 1.5, 1], [1.5, 2, 0.95], [3.5, 0.5, 0.8]] },
+    { w: 3, hits: [[0, 1, 1], [1.5, 0.5, 0.8], [2, 1.5, 1], [3.5, 0.5, 0.8]] },
+    { w: 2, hits: [[0, 2, 1], [2, 1.5, 0.95], [3.5, 0.5, 0.8]] },
+    { w: 2, hits: eighths(1, 0.72) },
+  ];
+  const ROCK_GTR = [{ w: 3, hits: eighths(1, 0.7) }, { w: 1, hits: [[0, 1.5, 1], [1.5, 0.5, 0.8], [2, 1.5, 1], [3.5, 0.5, 0.8]] }];
+  // ポップ・バラード：4分音符の和音と、のばす和音
+  const POPB = [
+    { w: 3, hits: [[0, 1, 1], [1, 1, 0.8], [2, 1, 0.9], [3, 1, 0.8]] },
+    { w: 2, hits: [[0, 2, 1], [2, 2, 0.85]] },
+    { w: 2, hits: [[0, 1.5, 1], [1.5, 0.5, 0.7], [2, 1.5, 0.9], [3.5, 0.5, 0.7]] },
+  ];
+  // シャッフル：ハネた8分のきざみ（チャンカ・チャンカ）と、裏拍のくい
+  const SHUF = [
+    { w: 3, hits: eighths(1, 0.68) },
+    { w: 2, hits: [[0, 1, 1], [1.5, 0.5, 0.8], [2, 1, 1], [3.5, 0.5, 0.8]] },
+    { w: 2, hits: [[0, 0.5, 1], [0.5, 0.5, 0.75], [1, 1, 1], [2.5, 0.5, 0.8], [3, 1, 1]] },
+  ];
+  // スロー・ブルース（12/8）：3連符の和音
+  const TRIP = (() => { const h = []; for (let b = 0; b < 4; b++) { h.push([b, 1 / 3, b % 2 ? 0.9 : 1], [b + 1 / 3, 1 / 3, 0.58], [b + 2 / 3, 1 / 3, 0.68]); } return h; })();
+  const SLOW12 = [
+    { w: 3, hits: TRIP },
+    { w: 2, hits: [[0, 1, 1], [1, 2 / 3, 0.8], [1 + 2 / 3, 1 / 3, 0.7], [2, 1, 1], [3, 2 / 3, 0.8], [3 + 2 / 3, 1 / 3, 0.7]] },
+    { w: 1, hits: [[0, 2, 1], [2, 1 + 2 / 3, 0.9], [3 + 2 / 3, 1 / 3, 0.7]] },
+  ];
+  // ソウル：4分のきざみ（2・4拍を強く）と、8分のくい
+  const SOUL = [
+    { w: 3, hits: [[0, 0.5, 0.85], [1, 0.5, 1], [2, 0.5, 0.85], [3, 0.5, 1]] },
+    { w: 2, hits: [[0, 1, 1], [1, 0.5, 0.9], [1.5, 0.5, 0.7], [2, 1, 1], [3, 0.5, 0.9], [3.5, 0.5, 0.7]] },
+    { w: 2, hits: [[0, 1.5, 1], [1.5, 0.5, 0.8], [2.5, 0.5, 0.9], [3, 0.5, 1]] },
+  ];
+  const SOUL_GTR = [{ w: 1, hits: [[1, 0.4, 1], [3, 0.4, 1]] }];   // ギターは2・4拍の「チャッ」
+  // ヒップホップ：のばす和音と、16分のくい
+  const HIPHOP = [
+    { w: 3, hits: [[0, 3.5, 1]] },
+    { w: 2, hits: [[0, 1.5, 1], [1.75, 0.25, 0.6], [2.5, 1.5, 0.9]] },
+    { w: 2, hits: [[0, 0.5, 1], [0.75, 0.25, 0.7], [1.5, 1, 0.9], [3.25, 0.25, 0.7]] },
+  ];
+  // ディスコ：16分のカッティングと、裏拍の和音
+  const DISCO = [
+    { w: 3, hits: [[0, 0.5, 1], [0.75, 0.25, 0.7], [1.5, 0.5, 0.9], [2, 0.5, 1], [2.75, 0.25, 0.7], [3.5, 0.5, 0.9]] },
+    { w: 3, hits: [[0.5, 0.4, 0.9], [1.5, 0.4, 0.9], [2.5, 0.4, 0.9], [3.5, 0.4, 0.9]] },
+    { w: 2, hits: [[0, 1.5, 1], [1.5, 2, 0.9], [3.5, 0.5, 0.8]] },
+  ];
+  // レゲエ：2・4拍の短い裏打ち（スカンク）。1拍目は弾かない
+  const REGGAE = [
+    { w: 3, hits: [[1, 0.35, 1], [3, 0.35, 1]] },
+    { w: 2, hits: [[0.5, 0.2, 0.5], [1, 0.35, 1], [1.5, 0.2, 0.5], [2.5, 0.2, 0.5], [3, 0.35, 1], [3.5, 0.2, 0.5]] },   // オルガンの「バブル」
+  ];
+  // サンバ：2小節でひとまとまり
+  const SAMBA = [
+    [{ w: 1, hits: [[0, 0.9, 1], [1, 0.9, 0.85], [2.5, 0.9, 1], [3.5, 0.5, 0.9]] }],
+    [{ w: 1, hits: [[0.5, 0.9, 0.9], [1.5, 0.9, 1], [2.5, 1.4, 0.9]] }],
+  ];
+  // サルサ：ピアノのモントゥーノ（2-3 のクラーベに合わせる。2小節でひとまとまり）
+  const SALSA = [
+    [{ w: 1, hits: [[0, 0.5, 1], [1, 0.5, 0.9], [1.5, 0.5, 1], [2.5, 0.5, 0.9], [3.5, 0.5, 1]] }],
+    [{ w: 1, hits: [[0.5, 0.5, 0.9], [1.5, 0.5, 1], [2.5, 0.5, 0.9], [3.5, 0.5, 1]] }],
+  ];
 
   // 長さの係数（音符の長さ × この係数が実際の鳴る長さ）
   const ARTIC = { piano: 0.78, ep: 0.8, guitar: 0.6, organ: 0.95, vibes: 0.9, pad: 1.0 };
 
+  // 戻り値：{ list | alt（2小節交代）| fixed, roll（和音を少しばらして弾く）, noHead（コードの頭を無理に打たない）, artic（長さの係数をさらにかける） }
   function patternsFor(style, kind, bpb) {
     if (kind === 'pad') return { fixed: [{ w: 1, hits: [[0, bpb, 1]] }] };
     switch (style) {
@@ -149,6 +247,16 @@
       case 'bossa': return { alt: BOSSA };
       case 'waltz': return { list: WALTZ };
       case 'funk': return { list: FUNK };
+      case 'rock8': return { list: kind === 'guitar' ? ROCK_GTR : ROCK };
+      case 'popballad': return { list: POPB, roll: kind !== 'organ' };
+      case 'shuffle': return { list: SHUF };
+      case 'slowblues': return { list: SLOW12 };
+      case 'soul': return { list: kind === 'guitar' ? SOUL_GTR : SOUL, noHead: kind === 'guitar' };
+      case 'hiphop': return { list: HIPHOP };
+      case 'disco': return { list: DISCO };
+      case 'reggae': return { list: REGGAE, noHead: true, artic: 0.8 };
+      case 'samba': return { alt: SAMBA };
+      case 'salsa': return { alt: SALSA, artic: 0.9 };
       default: return { list: SW };
     }
   }
@@ -166,6 +274,18 @@
     [c.guide3, c.guide7].forEach(x => { if (x >= 0) s.add(x); });
     s.add(mod(r + (c.fifth == null ? 7 : 7 + c.fifth), 12));
     return Array.from(s);
+  }
+  // コードの音（根音からの半音）：3度・5度・「6度か♭7」・上の折り返し（オクターブか♭7）。ブギーやソウルのベースの型に使う
+  function bassTones(c) {
+    const third = c.cls === 'sus' ? 5 : (c.guide3 >= 0 ? mod(c.guide3 - c.rootPc, 12) : 4);
+    const fifth = c.cls === 'hdim' || c.cls === 'dim' ? 6 : 7 + (c.fifth || 0);
+    const minor = third === 3;
+    let color, top;
+    if (c.cls === 'dim') { color = 9; top = 12; }
+    else if (c.cls === 'dom') { color = 9; top = 10; }
+    else if (minor) { color = c.six ? 9 : 10; top = 12; }
+    else { color = 9; top = 12; }
+    return { third, fifth, color, top, minor };
   }
   // 1つのコード（拍数 N）のウォーキング。nextPc：次の最初の音のピッチクラス。prev：直前の音（MIDI）
   function walkChunk(c, N, nextPc, prev, rand, prevLine) {
@@ -208,12 +328,17 @@
     }
     return best;
   }
+  const BASS_STYLE = {
+    swing: 'walk', waltz: 'walk', swing2: 'two', ballad: 'two', bossa: 'bossa', funk: 'funk',
+    rock8: 'rock', popballad: 'pop', shuffle: 'boogie', slowblues: 'slow12', soul: 'soul', hiphop: 'hiphop', disco: 'octave',
+    reggae: 'reggae', samba: 'samba', salsa: 'tumbao',
+  };
 
   /* ---------------- ドラム ---------------- */
   function drumsForBar(style, barIdx, bpb, rand, opts) {
-    const ev = [];
+    let ev = [];
     const add = (t, k, v) => ev.push({ t, kind: k, vel: Math.max(8, Math.min(127, Math.round(v * 127 * (0.92 + rand() * 0.16)))) });
-    const fill = opts.fill;
+    const fill = opts.fill, odd = barIdx % 2 === 1;
     switch (style) {
       case 'swing': case 'swing2': {
         const two = style === 'swing2', g = two ? 0.82 : 1;
@@ -253,13 +378,84 @@
         [0, 1.75, 2.5, 3.25].forEach((b, i) => add(b, 'kick', i === 0 ? 0.85 : 0.6));
         break;
       }
+      case 'rock8': {
+        for (let k = 0; k < 8; k++) add(k * 0.5, 'hhClosed', k % 2 ? 0.3 : 0.5);
+        add(1, 'snare', 0.9); add(3, 'snare', 0.9);
+        (odd ? [0, 1.5, 2] : [0, 2, 2.5]).forEach((b, i) => add(b, 'kick', i === 0 ? 0.9 : 0.72));
+        if (barIdx % 8 === 0 || opts.afterFill) add(0, 'crash', 0.5);
+        break;
+      }
+      case 'popballad': {
+        for (let k = 0; k < 8; k++) add(k * 0.5, 'hhClosed', k % 2 ? 0.2 : 0.32);
+        add(1, 'sidestick', 0.5); add(3, 'sidestick', 0.5);
+        add(0, 'kick', 0.6); add(2, 'kick', 0.5); add(odd ? 1.5 : 2.5, 'kick', 0.35);
+        break;
+      }
+      case 'shuffle': {
+        for (let k = 0; k < 8; k++) add(k * 0.5, 'hhClosed', k % 2 ? 0.3 : 0.52);   // 8分はすべて書く。鳴らすときにハネる
+        add(1, 'snare', 0.85); add(3, 'snare', 0.85);
+        add(0, 'kick', 0.8); add(2, 'kick', 0.7); if (odd) add(3.5, 'kick', 0.45);
+        if (opts.afterFill) add(0, 'crash', 0.45);
+        break;
+      }
+      case 'slowblues': {
+        for (let b = 0; b < 4; b++) { add(b, 'hhClosed', 0.5); add(b + 1 / 3, 'hhClosed', 0.22); add(b + 2 / 3, 'hhClosed', 0.32); }
+        add(1, 'snare', 0.8); add(3, 'snare', 0.8);
+        add(0, 'kick', 0.75); add(2, 'kick', 0.65); add(odd ? 3 + 2 / 3 : 1 + 2 / 3, 'kick', 0.4);
+        break;
+      }
+      case 'soul': {
+        for (let k = 0; k < 8; k++) add(k * 0.5, 'tambourine', k % 2 ? 0.25 : 0.42);
+        [0, 1, 2, 3].forEach(b => add(b, 'snare', b % 2 ? 0.8 : 0.42));   // スネアの4つ打ち（2・4拍を強く）
+        (odd ? [0, 2, 2.5] : [0, 1.5, 2]).forEach((b, i) => add(b, 'kick', i === 0 ? 0.8 : 0.6));
+        break;
+      }
+      case 'hiphop': {
+        for (let k = 0; k < 16; k++) add(k * 0.25, 'hhClosed', [0.5, 0.16, 0.34, 0.2][k % 4]);   // 16分。鳴らすときに16分の裏がハネる
+        add(1, 'snare', 0.88); add(3, 'snare', 0.88); add(1, 'clap', 0.45); add(3, 'clap', 0.45);
+        (odd ? [[0, 0.95], [2.5, 0.8], [3.75, 0.5]] : [[0, 0.95], [1.75, 0.55], [2.5, 0.8]]).forEach(([b, v]) => add(b, 'kick', v));
+        if (barIdx % 4 === 3) add(3.5, 'hhOpen', 0.3);
+        break;
+      }
+      case 'disco': {
+        [0, 1, 2, 3].forEach(b => { add(b, 'kick', 0.88); add(b, 'hhClosed', 0.3); add(b + 0.25, 'hhClosed', 0.16); add(b + 0.5, 'hhOpen', 0.36); add(b + 0.75, 'hhClosed', 0.18); });
+        add(1, 'snare', 0.75); add(3, 'snare', 0.75); add(1, 'clap', 0.5); add(3, 'clap', 0.5);
+        if (opts.afterFill) add(0, 'crash', 0.45);
+        break;
+      }
+      case 'reggae': {
+        for (let k = 0; k < 8; k++) add(k * 0.5, 'hhClosed', k % 2 ? 0.42 : 0.26);
+        add(2, 'kick', 0.9); add(2, 'sidestick', 0.7);   // ワンドロップ：3拍目にだけ落とす
+        if (barIdx % 4 === 3) add(3.5, 'tomHigh', 0.4);
+        break;
+      }
+      case 'samba': {
+        for (let k = 0; k < 8; k++) add(k * 0.5, 'shaker', k % 2 ? 0.42 : 0.26);
+        [[0, 0.5], [1.5, 0.38], [2, 0.62], [3.5, 0.38]].forEach(([b, v]) => add(b, 'kick', v));
+        add(1, 'hhPedal', 0.4); add(3, 'hhPedal', 0.4);
+        (odd ? [0.5, 1.5, 2.5, 3] : [0, 1, 2, 2.5, 3.5]).forEach(b => add(b, 'sidestick', 0.48));   // タンボリンの型（2小節）
+        break;
+      }
+      case 'salsa': {
+        (odd ? [0, 1.5, 3] : [1, 2]).forEach(b => add(b, 'clave', 0.62));   // 2-3 のソン・クラーベ
+        [[0, 0.6], [1, 0.36], [1.5, 0.3], [2, 0.6], [3, 0.36], [3.5, 0.3]].forEach(([b, v]) => add(b, 'cowbell', v));
+        add(1, 'congaHi', 0.4); add(3, 'congaLo', 0.55); add(3.5, 'congaLo', 0.5);   // コンガのトゥンバオ（2拍目のスラップ、4拍目のオープン2つ）
+        for (let k = 0; k < 8; k++) add(k * 0.5, 'shaker', k % 2 ? 0.2 : 0.3);
+        add(1.5, 'kick', 0.3); add(3, 'kick', 0.34);
+        break;
+      }
     }
     if (fill) {
+      // フィルイン：4拍目を置きかえる（もとの4拍目のスネア・ハイハットは抜く）
+      const clear4 = () => { ev = ev.filter(e => e.t < 3 - 1e-6 || e.kind === 'kick' || e.kind === 'crash'); };
       if (style === 'funk') { [3, 3.25, 3.5, 3.75].forEach((b, i) => add(b, ['tomHigh', 'tomMid', 'tomLow', 'snare'][i], 0.5 + i * 0.08)); }
-      else if (bpb === 4 && style !== 'bossa') { add(2.5, 'snare', 0.4); add(3, 'snare', 0.46); add(3.5, 'snare', 0.55); if (style === 'swing' || style === 'swing2') add(3.5, 'kick', 0.4); }
+      else if (style === 'rock8' || style === 'disco' || style === 'soul') { clear4(); [3, 3.25, 3.5, 3.75].forEach((b, i) => add(b, ['snare', 'snare', 'tomMid', 'tomLow'][i], 0.55 + i * 0.1)); }
+      else if (style === 'shuffle' || style === 'slowblues') { clear4(); [3, 3 + 1 / 3, 3 + 2 / 3].forEach((b, i) => add(b, 'snare', 0.5 + i * 0.14)); }
+      else if (style === 'swing' || style === 'swing2' || style === 'ballad') { if (bpb === 4) { add(2.5, 'snare', 0.4); add(3, 'snare', 0.46); add(3.5, 'snare', 0.55); if (style !== 'ballad') add(3.5, 'kick', 0.4); } }
     }
     return ev;
   }
+  const FILL_STYLES = { swing: 1, swing2: 1, ballad: 1, funk: 1, rock8: 1, disco: 1, soul: 1, shuffle: 1, slowblues: 1 };
 
   /* ---------------- 本体 ---------------- */
   // slots：C.slotsOf の結果。opts：{style, kind(ピアノ=piano/ギター=guitar/オルガン=organ/エレピ=ep/ビブラフォン=vibes/パッド=pad), seed, bpb, thin}
@@ -276,8 +472,9 @@
     const at = t => { for (let k = slots.length - 1; k >= 0; k--) if (t >= slots[k].t0 - 1e-6) return slots[k]; return slots[0]; };
     const range = kind === 'guitar' ? [48, 68] : kind === 'organ' ? [47, 69] : kind === 'vibes' ? [53, 77] : [52, 75];
     const thin = kind === 'guitar' && style !== 'bossa' ? true : !!opts.thin;
-    const artic = ARTIC[kind] || 0.8;
     const pat = patternsFor(style, kind, bpb);
+    const artic = (ARTIC[kind] || 0.8) * (pat.artic || 1);
+    const jazzy = style === 'swing' || style === 'swing2';
     let prevV = opts.prevVoicing || null;
     const voicings = new Map();
     const voiceOf = (slot) => {
@@ -289,7 +486,7 @@
     };
 
     /* ---- コンピング ---- */
-    let lastPat = null, lastDrumFill = false;
+    let lastPat = null;
     for (let b = 0; b < bars; b++) {
       const b0 = b * bpb;
       const here = slots.filter(s => s.t0 < b0 + bpb - 1e-6 && s.t0 + s.dur > b0 + 1e-6);
@@ -297,17 +494,19 @@
       if (pat.fixed) hits = pat.fixed[0].hits;
       else if (pat.alt) { hits = wchoice(pat.alt[b % 2], rand).hits; }
       else { const p = wchoice(pat.list, rand, lastPat); lastPat = p; hits = p.hits; }
-      hits = hits.map(h => h.slice());
-      // 各コードの頭には必ず1つ打つ（コードが変わるのが聞こえるように）
-      for (const s of here) {
-        const rel = Math.max(0, s.t0 - b0);
-        if (s.t0 < b0 - 1e-6) continue;
-        if (!hits.some(h => h[0] >= rel - 1e-6 && h[0] < rel + 0.6)) hits.push([rel, Math.min(1, s.dur), 0.95]);
+      hits = hits.filter(h => h[0] < bpb - 1e-6).map(h => h.slice());
+      // 各コードの頭には必ず1つ打つ（コードが変わるのが聞こえるように）。レゲエの裏打ちなど、頭を空けるスタイルではしない
+      if (!pat.noHead) {
+        for (const s of here) {
+          const rel = Math.max(0, s.t0 - b0);
+          if (s.t0 < b0 - 1e-6) continue;
+          if (!hits.some(h => h[0] >= rel - 1e-6 && h[0] < rel + 0.6)) hits.push([rel, Math.min(1, s.dur), 0.95]);
+        }
       }
       hits.sort((a, c) => a[0] - c[0]);
       // 次の小節でコードが変わるとき、4拍目の裏で先に鳴らす（アンティシペーション）
       const nextSlot = slots.find(s => Math.abs(s.t0 - (b0 + bpb)) < 1e-6);
-      const antic = !pat.fixed && !pat.alt && nextSlot && here.length === 1 && !hits.some(h => h[0] + h[1] > bpb - 0.6) && rand() < (style === 'swing' || style === 'swing2' ? 0.4 : 0.15) && kind !== 'guitar' && kind !== 'pad';
+      const antic = !pat.fixed && !pat.alt && !pat.noHead && nextSlot && here.length === 1 && !hits.some(h => h[0] + h[1] > bpb - 0.6) && rand() < (jazzy ? 0.4 : 0.15) && kind !== 'guitar' && kind !== 'pad';
       hits.forEach((h, k) => {
         const slot = at(b0 + h[0] + 0.01);
         if (!slot || slot.chord.nc) return;
@@ -343,14 +542,25 @@
           t = e;
         }
       });
-      let prev = null, prevLine = null;
-      const bassStyle = style === 'swing2' || style === 'ballad' ? 'two' : style === 'bossa' ? 'bossa' : style === 'funk' ? 'funk' : 'walk';
+      let prev = null, prevLine = null, lastChord = '', lastUp = false;
+      const chordKey = c => c.rootPc + '|' + (c.suffix || '') + '|' + bassPc(c);
+      const bassStyle = BASS_STYLE[style] || 'walk';
       chunks.forEach((ch, ci) => {
         const c = ch.slot.chord;
         if (ch.nc) return;
         const nx = chunks[(ci + 1) % chunks.length];
         const nextPc = nx && !nx.nc ? bassPc(nx.slot.chord) : null;
         const vel = 78 + Math.round(rand() * 10);
+        const barOdd = Math.floor(ch.t0 / bpb + 1e-6) % 2 === 1;
+        const rel = ch.t0 - Math.floor(ch.t0 / bpb + 1e-6) * bpb;   // 小節の中での、このコードのはじまり
+        const push = (p, dur, midi, v) => { if (p < ch.n - 1e-6) out.bass.push({ t: ch.t0 + p, dur, midi: Math.max(BASS_LO, Math.min(BASS_HI + 3, midi)), vel: Math.max(30, Math.min(120, v)) }); };
+        // 次のコードの根音へ、1〜2半音で近づく音
+        const approach = (from, lo, hi) => {
+          if (nextPc == null) return from;
+          const tm = nearestMidi(nextPc, from, lo, hi);
+          if (tm === from) return from + (rand() < 0.5 ? -2 : 2);
+          return tm + (tm > from ? -1 : 1) * (rand() < 0.5 ? 1 : 2);
+        };
         if (bassStyle === 'walk') {
           const line = walkChunk(c, ch.n, nextPc, prev, rand, prevLine);
           line.forEach((m, i) => out.bass.push({ t: Math.max(0, ch.t0 + i + (rand() - 0.5) * 0.01), dur: 0.92, midi: m, vel: vel + (i === 0 ? 6 : 0) - (i === ch.n - 1 ? 4 : 0) }));
@@ -370,7 +580,6 @@
           } else out.bass.push({ t: ch.t0, dur: 0.95, midi: r, vel });
         } else if (bassStyle === 'bossa') {
           const r = nearestMidi(bassPc(c), prev == null ? 38 : prev, 30, 50);
-          const f = nearestMidi(mod(c.rootPc + 7, 12), r, 30, 52);
           // 2拍ごとに R(付点4分) 5th(8分) 。コードが2拍で変わるときは、そのコードの根音で。
           const parts = ch.n >= 4 ? [0, 2] : [0];
           parts.forEach(p => {
@@ -379,21 +588,85 @@
             if (ch.n - p >= 2) out.bass.push({ t: ch.t0 + p + 1.5, dur: 0.45, midi: ff, vel: vel - 10 });
           });
           prev = r;
-        } else {   // funk
+        } else if (bassStyle === 'funk') {
           const r = nearestMidi(bassPc(c), prev == null ? 38 : prev, 28, 48), o = r + 12 <= 52 ? r + 12 : r;
           const f = nearestMidi(mod(c.rootPc + 7, 12), r, 28, 52), b7 = nearestMidi(mod(c.rootPc + (c.seventh === '7' ? 11 : 10), 12), r, 28, 52);
           [[0, r, 0.45], [0.75, o, 0.2], [1.5, r, 0.4], [2.25, f, 0.2], [2.5, r, 0.45], [3.25, b7, 0.2], [3.5, o, 0.4]].forEach(([p, m, d]) => { if (p < ch.n) out.bass.push({ t: ch.t0 + p, dur: d, midi: m, vel: vel - (p % 1 ? 8 : 0) }); });
           prev = r;
+        } else if (bassStyle === 'rock' || bassStyle === 'octave') {
+          // ロック：根音の8分きざみ。ディスコ：根音とオクターブ上を交互に。コードの最後の8分は、次の根音へ近づくこともある
+          const r = nearestMidi(bassPc(c), prev == null ? 36 : prev, 28, bassStyle === 'octave' ? 40 : 45), steps = Math.round(ch.n * 2);
+          for (let i = 0; i < steps; i++) {
+            let m = bassStyle === 'octave' && i % 2 ? r + 12 : r;
+            if (i === steps - 1 && steps >= 4 && nextPc != null && mod(nextPc - bassPc(c), 12) !== 0 && rand() < 0.4) m = approach(r, 28, 50);
+            push(i * 0.5, bassStyle === 'octave' ? 0.36 : 0.42, m, vel + (i % 2 ? -10 : 0) + (i === 0 ? 4 : 0));
+          }
+          prev = r;
+        } else if (bassStyle === 'pop') {
+          const r = nearestMidi(bassPc(c), prev == null ? 38 : prev, 28, 47), f = nearestMidi(mod(c.rootPc + 7, 12), r, 28, 52);
+          push(0, Math.min(1.9, ch.n * 0.95), r, vel);
+          if (ch.n >= 4) {
+            push(2, 1.4, rand() < 0.55 ? r : f, vel - 6);
+            if (nextPc != null && rand() < 0.55) push(3.5, 0.45, approach(r, 28, 50), vel - 10);
+          }
+          prev = r;
+        } else if (bassStyle === 'boogie' || bassStyle === 'slow12') {
+          // ブギーの型：根音・3度・5度・6度（7thコード）と上がり、同じコードが続けば ♭7・6度・5度・3度と降りる
+          const bt = bassTones(c), r = nearestMidi(bassPc(c), prev == null ? 34 : prev, 28, 40);
+          const same = lastChord === chordKey(c) && ch.n >= 4;
+          const down = same && lastUp;
+          const degs = ch.n >= 4 ? (down ? [bt.top, bt.color, bt.fifth, bt.third] : [0, bt.third, bt.fifth, bt.color]) : ch.n >= 2 ? [0, bt.fifth] : [0];
+          lastUp = ch.n >= 4 && !down;
+          const slash = bassPc(c) !== c.rootPc;
+          const ms = degs.map((d, i) => (slash && i > 0 ? nearestMidi(mod(c.rootPc + d, 12), r + 6, 28, 52) : r + d));
+          ms.forEach((m, i) => {
+            if (bassStyle === 'boogie') { push(i, 0.55, m, vel + (i === 0 ? 4 : 0)); push(i + 0.5, 0.4, m, vel - 14); }   // 同じ音を2つずつ（長・短）
+            else push(i, 0.9, m, vel + (i === 0 ? 4 : 0));
+          });
+          if (bassStyle === 'slow12' && ch.n >= 2 && nextPc != null) push(ch.n - 1 / 3, 0.3, approach(ms[Math.min(ms.length, ch.n) - 1], 28, 52), vel - 10);   // 3連符の3つ目で、次へ
+          prev = r;
+        } else if (bassStyle === 'soul') {
+          const bt = bassTones(c), r = nearestMidi(bassPc(c), prev == null ? 36 : prev, 28, 40), o = r + 12, f = r + bt.fifth, six = r + bt.color;
+          const pat2 = barOdd
+            ? [[0, r, 0.7], [0.75, r, 0.2], [1.5, f, 0.45], [2, o, 0.45], [2.5, six, 0.45], [3, f, 0.45], [3.5, null, 0.45]]
+            : [[0, r, 1.4], [1.5, f, 0.45], [2, o, 0.9], [3, six, 0.45], [3.5, f, 0.45]];
+          pat2.forEach(([p, m, d]) => push(p, d, m == null ? approach(f, 28, 52) : m, vel - (p % 1 ? 8 : 0)));
+          prev = r;
+        } else if (bassStyle === 'hiphop') {
+          const r = nearestMidi(bassPc(c), prev == null ? 36 : prev, 28, 43), f = nearestMidi(mod(c.rootPc + 7, 12), r - 5, 28, 50);
+          (barOdd ? [[0, r, 1.5], [2.5, f, 0.45], [3, r, 0.45], [3.75, null, 0.22]] : [[0, r, 1.5], [1.75, r, 0.22], [2.5, r, 1.0]])
+            .forEach(([p, m, d]) => push(p, d, m == null ? approach(r, 28, 48) : m, vel - (p % 1 ? 6 : 0)));
+          prev = r;
+        } else if (bassStyle === 'reggae') {
+          const bt = bassTones(c), r = nearestMidi(bassPc(c), prev == null ? 36 : prev, 28, 43), f = nearestMidi(mod(c.rootPc + bt.fifth, 12), r - 3, 28, 50);
+          (barOdd ? [[0.5, r, 0.45], [1, r, 0.9], [2.5, f, 0.45], [3, r, 0.9]] : [[0, r, 1.4], [1.5, r, 0.45], [2, f, 0.9], [3, r + bt.third, 0.9]])
+            .forEach(([p, m, d]) => push(p, d, m, vel + 2));
+          prev = r;
+        } else if (bassStyle === 'samba') {
+          // 根音（付点4分）・5度（8分）｜5度（付点4分）・次の根音（8分）
+          const r = nearestMidi(bassPc(c), prev == null ? 38 : prev, 30, 48), f = nearestMidi(mod(c.rootPc + 7 + (c.fifth || 0), 12), r - 5, 28, 50);
+          const nr = nextPc == null ? r : nearestMidi(nextPc, r, 28, 50);
+          [[0, r, 1.3], [1.5, f, 0.45], [2, f, 1.3], [3.5, nr, 0.45]].forEach(([p, m, d]) => { const q = p - rel; if (q >= -1e-6) push(q, d, m, vel - (p % 1 ? 8 : 0)); });
+          prev = r;
+        } else {   // tumbao（サルサ）：2拍目の裏に5度、4拍目に「次の小節の根音」を先取りしてのばす。曲の頭だけ1拍目に根音
+          const r = nearestMidi(bassPc(c), prev == null ? 38 : prev, 30, 48), f = nearestMidi(mod(c.rootPc + 7 + (c.fifth || 0), 12), r, 30, 52);
+          const nr = nextPc == null ? r : nearestMidi(nextPc, r, 28, 50);
+          if (ci === 0) push(0, 1.3, r, vel);
+          [[1.5, f, 1.4], [3, nr, 2.3]].forEach(([p, m, d]) => { const q = p - rel; if (q >= -1e-6) push(q, d, m, vel - 2); });
+          prev = nr;
         }
+        lastChord = chordKey(c);
       });
     }
 
     /* ---- ドラム ---- */
     if (opts.drums !== false) {
+      let lastFill = false;
       for (let b = 0; b < bars; b++) {
-        const fill = b % 4 === 3 && rand() < 0.35 && (b < bars - 1 || bars <= 1 ? true : true);
-        const evs = drumsForBar(style, b, bpb, rand, { fill: fill && b !== 0 });
-        evs.forEach(e => out.drums.push({ t: b * bpb + e.t, kind: e.kind, vel: e.vel }));
+        const fill = b % 4 === 3 && b !== 0 && !!FILL_STYLES[style] && rand() < 0.35;
+        const evs = drumsForBar(style, b, bpb, rand, { fill, afterFill: lastFill });
+        evs.forEach(e => { if (e.t < bpb - 1e-6) out.drums.push({ t: b * bpb + e.t, kind: e.kind, vel: e.vel }); });
+        lastFill = fill;
       }
     }
     out.comp.sort((a, b) => a.t - b.t); out.bass.sort((a, b) => a.t - b.t); out.drums.sort((a, b) => a.t - b.t);

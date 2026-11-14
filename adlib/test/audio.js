@@ -60,23 +60,53 @@ const check = (cond, msg) => { if (!cond) { bad++; console.log('✗', msg); } };
     check(Math.abs(r.cents) < 30 || r.clarity < 0.3, id + ': 音程がずれている ' + r.cents.toFixed(0) + '¢');
   }
 
-  // 2) ミックス全体：スウィング／ボサノバ／バラード／ワルツ／ファンク
+  // 1b) 打楽器ごとの音：1発ずつ鳴らして、鳴っているか・割れていないか・すぐ消えるか・明るさ（ゼロ交差の多さ）
+  const drums = await page.evaluate(async () => {
+    const { Au } = AL;
+    const out = {};
+    for (const kind of Object.keys(Au.DRUMS)) {
+      const sr = 44100, ctx = new OfflineAudioContext(1, sr * 1.5, sr);
+      const E = new Au.Engine(ctx); E.startSession(); E.reverb.drums = 0; E.inst.drums = 'rock';
+      E.drum(kind, 0.05, 100);
+      const d = (await ctx.startRendering()).getChannelData(0);
+      let peak = 0, sum = 0, nan = 0, tail = 0, zc = 0, zn = 0;
+      const a = Math.floor(0.05 * sr), b = Math.floor(0.11 * sr), t0 = Math.floor(0.75 * sr);
+      for (let i = 0; i < d.length; i++) { const x = d[i]; if (x !== x) nan++; const ab = Math.abs(x); if (ab > peak) peak = ab; sum += x * x; if (i >= t0) tail += x * x; }
+      for (let i = a + 1; i < b; i++) { zn++; if ((d[i] >= 0) !== (d[i - 1] >= 0)) zc++; }
+      out[kind] = { peak, nan, tailShare: sum > 0 ? tail / sum : 0, zcHz: zc / 2 / ((b - a) / sr) };
+    }
+    return out;
+  });
+  console.log('--- 打楽器ごとの音（1発） ---');
+  for (const [kind, r] of Object.entries(drums)) {
+    console.log(kind.padEnd(11), 'peak', r.peak.toFixed(2), ' 0.7秒よりあとの割合', (100 * r.tailShare).toFixed(2) + '%', ' 明るさ（ゼロ交差）', Math.round(r.zcHz) + 'Hz');
+    check(r.nan === 0, kind + ': NaN');
+    check(r.peak > 0.03, kind + ': 音が小さすぎる/鳴らない ' + r.peak.toFixed(3));
+    check(r.peak < 1.0, kind + ': 音割れ');
+    if (kind !== 'crash' && kind !== 'ride') check(r.tailShare < 0.02, kind + ': 音が長く残りすぎ ' + (100 * r.tailShare).toFixed(1) + '%');
+  }
+  // 音の高さの順：キック < コンガ（低）< コンガ（高）< カウベル < クラーベ、シェイカー・タンバリンは高い雑音
+  check(drums.kick.zcHz < drums.congaLo.zcHz && drums.congaLo.zcHz < drums.congaHi.zcHz && drums.congaHi.zcHz < drums.cowbell.zcHz && drums.cowbell.zcHz < drums.clave.zcHz, '打楽器の高さの順が変：' + ['kick', 'congaLo', 'congaHi', 'cowbell', 'clave'].map(k => Math.round(drums[k].zcHz)).join(' < '));
+  check(drums.shaker.zcHz > 3000 && drums.tambourine.zcHz > 3000, 'シェイカー・タンバリンが暗い');
+
+  // 2) ミックス全体：すべてのスタイルを、おすすめの楽器と標準のノリで
   const mixes = await page.evaluate(async () => {
     const { T, C, A, S, B, Au } = AL;
     const res = {};
-    const songs = {
-      swing: ['| Dm7 | G7 | Cmaj7 | A7 |', 'swing'], swing2: ['| Cm7 | F7 | Bbmaj7 | Ebmaj7 |', 'swing2'], ballad: ['| Fmaj7 | Em7b5 A7b9 | Dm7 | G7 |', 'ballad'],
-      bossa: ['| Am7 | D7 | Gmaj7 | Cmaj7 |', 'bossa'], waltz: ['| Dm7 | G7 | Cmaj7 | % |', 'waltz'], funk: ['| Cm7 | % | Fm7 | % |', 'funk'],
-    };
+    const TEXTS = { swing: '| Dm7 | G7 | Cmaj7 | A7 |', swing2: '| Cm7 | F7 | Bbmaj7 | Ebmaj7 |', ballad: '| Fmaj7 | Em7b5 A7b9 | Dm7 | G7 |', bossa: '| Am7 | D7 | Gmaj7 | Cmaj7 |', waltz: '| Dm7 | G7 | Cmaj7 | % |', funk: '| Cm7 | % | Fm7 | % |',
+      rock8: '| G | D | Em | C |', popballad: '| C | G | Am | Em |', shuffle: '| A7 | D7 | A7 | E7 |', slowblues: '| G7 | C7 | G7 | D7 |', soul: '| C | Am7 | F | G7 |', hiphop: '| Fmaj7 | Em7 | Dm7 | Em7 A7b9 |',
+      disco: '| Am7 | Dm7 | G7 | Cmaj7 |', reggae: '| Am | % | G | % |', samba: '| Cmaj7 | A7 | Dm7 | G7 |', salsa: '| Am7 | D7 | Am7 | D7 |' };
+    const songs = {};
+    Object.keys(B.STYLES).forEach(id => { songs[id] = [TEXTS[id] || '| Dm7 | G7 | Cmaj7 | % |', id]; });
     for (const [name, [text, style]] of Object.entries(songs)) {
       const st = B.STYLES[style];
       const ch = C.parse(text, { beatsPerBar: st.bpb });
       const slots = C.slotsOf(ch), hs = C.harmonicSlots(slots), an = A.analyze(hs, {});
       const solo = S.generate(hs, an, { seed: 4, level: 2, bpb: st.bpb });
-      const gen = B.generate(slots, { style, seed: 2, kind: 'piano', bpb: st.bpb });
-      const plan = { bpb: st.bpb, chorusBeats: ch.chorusBeats, chorus: () => ({ comp: gen.comp, bass: gen.bass, drums: gen.drums, solo: solo.events }), tempo: () => st.tempo[0], swing: () => st.swing, metronome: false };
+      const gen = B.generate(slots, { style, seed: 2, kind: st.inst.comp, bpb: st.bpb });
+      const plan = { bpb: st.bpb, chorusBeats: ch.chorusBeats, chorus: () => ({ comp: gen.comp, bass: gen.bass, drums: gen.drums, solo: solo.events }), tempo: () => st.tempo[0], feel: () => ({ div: st.sdiv === 4 ? 4 : 2, r: st.swing }), metronome: false };
       const t0 = performance.now();
-      const buf = await Au.renderOffline(plan, null, { loops: 1, tail: 1.5 });
+      const buf = await Au.renderOffline(plan, { mix: {}, reverb: {}, muted: {}, inst: Object.assign({ solo: 'altosax' }, st.inst) }, { loops: 1, tail: 1.5 });
       const dt = performance.now() - t0;
       const L = buf.getChannelData(0), R = buf.getChannelData(1);
       let peak = 0, sum = 0, nan = 0, diff = 0;
@@ -91,7 +121,7 @@ const check = (cond, msg) => { if (!cond) { bad++; console.log('✗', msg); } };
   });
   console.log('--- ミックス ---');
   for (const [name, r] of Object.entries(mixes)) {
-    console.log(name.padEnd(7), '長さ', r.dur.toFixed(1) + 's', 'peak', r.peak.toFixed(2), 'rms', (20 * Math.log10(r.rms + 1e-9)).toFixed(1) + 'dB', 'ステレオ差', r.stereo.toFixed(4), '描画', Math.round(r.ms) + 'ms', 'WAV', Math.round(r.wav / 1024) + 'KB', JSON.stringify(r.notes));
+    console.log(name.padEnd(10), '長さ', r.dur.toFixed(1) + 's', 'peak', r.peak.toFixed(2), 'rms', (20 * Math.log10(r.rms + 1e-9)).toFixed(1) + 'dB', 'ステレオ差', r.stereo.toFixed(4), '描画', Math.round(r.ms) + 'ms', 'WAV', Math.round(r.wav / 1024) + 'KB', JSON.stringify(r.notes));
     check(r.nan === 0, name + ': NaN');
     check(r.peak < 1.0 && r.peak > 0.15, name + ': ピーク ' + r.peak.toFixed(2));
     const dB = 20 * Math.log10(r.rms + 1e-9);
