@@ -158,6 +158,68 @@ eq([BT.TYPE.tov.label, BT.TYPE.tov.btn, BT.TYPE.tov.btnShort, BT.TYPE.tov.kind, 
   const back = BT.importData(JSON.stringify(BT.exportData(g)));
   eq(back.events.filter((e) => e.type === 'tov').length, 3, '書き出して読み込んでも、ターンオーバーは残る');
 }
+
+section('試合時間（止められる時計）');
+{
+  const mk = (len, stopped) => {
+    const g = BT.newGame({ now: Date.UTC(2026, 10, 14, 1, 0, 0), tz: 540, teams: [{ name: 'A', players: [{ no: '7' }] }, { name: 'B', players: [] }] });
+    g.startedAt = Date.UTC(2026, 10, 14, 1, 0, 0);
+    BT.addEvent(g, { t: 0, type: 'period', period: 1 });
+    if (len !== undefined) g.gc = BT.newClock(len, stopped);
+    return g;
+  };
+  const at = (g, t) => { const c = BT.gameClock(g, t); return c && [c.period, c.used, c.left, c.running, c.done]; };
+  eq(BT.gameClock(mk(), 30), null, '時計のない試合は null（これまでの記録は、そのまま）');
+  eq(BT.newClock(600), { len: 600, ot: 300, ev: [] }, '10分のピリオド：延長は 5分');
+  eq([BT.newClock(480).ot, BT.newClock(360).ot, BT.newClock(300).ot, BT.newClock(0).ot, BT.newClock(123).len], [180, 180, 180, 0, 600], '8分・6分・5分のピリオド：延長は 3分／決めないときは 0／知らない長さは 10分');
+  eq(BT.newClock(600, true).ev, [{ t: 0, on: 0 }], '動画を見ながら記録：はじめは止めておく');
+  let g = mk(600);
+  eq(at(g, 0), [1, 0, 600, true, false], 'スタート：残り 10:00・動いている');
+  eq(at(g, 150), [1, 150, 450, true, false], '150 秒たつと、残り 7:30');
+  eq([BT.gcText(BT.gameClock(g, 150)), BT.gcLabel(BT.gameClock(g, 150))], ['7:30', '1Q 残り 7:30'], '「7:30」「1Q 残り 7:30」');
+  eq([BT.gcText(BT.gameClock(g, 0.4)), BT.gcText(BT.gameClock(g, 599.5)), BT.gcText(BT.gameClock(g, 600))], ['10:00', '0:01', '0:00'], '秒は切り上げ（0:00 は、終わったときだけ）');
+  let c = BT.gcToggle(g, 150);
+  eq([c.running, c.left, g.gc.ev], [false, 450, [{ t: 150, on: 0 }]], '止める：その時刻に { on: 0 }');
+  eq(at(g, 200), [1, 150, 450, false, false], '止まっているあいだは進まない（記録の時刻だけが進む）');
+  c = BT.gcToggle(g, 210);
+  eq([c.running, at(g, 220)], [true, [1, 160, 440, true, false]], '動かすと、そこからまた進む');
+  eq(at(g, 100), [1, 100, 500, true, false], '前の時刻の試合時間も出せる（動画を戻したとき）');
+  BT.gcToggle(g, 50);          // あとから、前の時刻で止めた（動画を戻して押した）
+  eq([at(g, 120), at(g, 220)], [[1, 50, 550, false, false], [1, 60, 540, true, false]], 'あとから前の時刻で止めても、時刻の順にたどる（50 で止まり、210 で動く）');
+  g = mk(600);
+  eq(at(g, 700), [1, 600, 0, false, true], '残り 0:00 で止まる（done）');
+  eq(BT.gcToggle(g, 700), null, '終わったあとは、押しても動かない');
+  BT.gcSet(g, 700, 590);
+  eq([at(g, 700), at(g, 705), at(g, 720)], [[1, 590, 10, true, false], [1, 595, 5, true, false], [1, 600, 0, false, true]], '時間を合わせる（残り 10 秒に）→ そこからまた進んで、0:00 で止まる');
+  eq(BT.gcSet(g, 720, -5).used, 0, '合わせる値は 0 より小さくならない');
+  eq(BT.gcSet(g, 720, 9999).used, 600, 'ピリオドの長さより大きくならない');
+  g = mk(600);
+  BT.gcToggle(g, 400);
+  BT.addEvent(g, { t: 500, type: 'period', period: 2 });
+  eq([at(g, 499), at(g, 500), at(g, 530)], [[1, 400, 200, false, false], [2, 0, 600, true, false], [2, 30, 570, true, false]], '次のピリオドが始まると、10:00 に戻って動き出す（前のピリオドで止めていても）');
+  BT.addEvent(g, { t: 2000, type: 'period', period: 5 });
+  eq([at(g, 2010), at(g, 2400)], [[5, 10, 290, true, false], [5, 300, 0, false, true]], '延長（OT1）は 5分');
+  g = mk(0);
+  eq([at(g, 75), BT.gcText(BT.gameClock(g, 75)), BT.gcLabel(BT.gameClock(g, 75))], [[1, 75, null, true, false], '1:15', '1Q 1:15'], '長さを決めない：進んだ時間を数える（残りは null）');
+  eq(at(g, 5000), [1, 5000, null, true, false], '長さを決めないときは、止まらない');
+  g = mk(600, true);
+  eq([at(g, 0), at(g, 40)], [[1, 0, 600, false, false], [1, 0, 600, false, false]], '動画を見ながら記録：はじめは止まったまま（ティップオフの前）');
+  BT.gcToggle(g, 40);
+  eq(at(g, 100), [1, 60, 540, true, false], '動画の 40 秒で動かすと、そこから進む');
+  // 書き出し・読み込み・CSV
+  g = mk(600);
+  BT.gcToggle(g, 150); BT.gcToggle(g, 210); BT.gcSet(g, 300, 250);
+  BT.addEvent(g, { t: 220, type: 'fg2', team: 0, no: '7' });
+  const back = BT.importData(JSON.stringify(BT.exportData(g)));
+  eq(back.gc, g.gc, '書き出して読み込んでも、時計は同じ');
+  eq(at(back, 220), at(g, 220), '読み込んだ試合の試合時間も同じ');
+  const rows = BT.eventsCSV(g).trim().split('\r\n').map((r) => r.split(','));
+  eq([rows[0][rows[0].length - 1], rows[2][rows[2].length - 1]], ['試合時間（残り）', '7:20'], '一覧の CSV：時計のある試合だけ、いちばん後ろに「試合時間（残り）」');
+  ok(!BT.eventsCSV(mk()).includes('試合時間'), '時計のない試合の CSV には、列を足さない');
+  ok(BT.eventsCSV(mk(0)).includes('試合時間（進んだ時間）'), '長さを決めない時計は「試合時間（進んだ時間）」');
+  eq(BT.cleanClock({ len: 480, ot: 120, ev: [{ t: 5, on: 1 }, { t: -1, on: 0 }, { t: 9, set: 99999 }, null, { t: 'x' }] }), { len: 480, ot: 120, ev: [{ t: 5, on: 1 }, { t: 9, set: 5999 }] }, '読み込み：形の合わないものは捨てる');
+  eq([BT.cleanClock(null), BT.cleanClock({ len: 600 })], [null, null], '時計でないものは null');
+}
 let rs = BT.rowSpec(BT.rowTypes({ miss: true, foul: true }));
 ok(rs.k === 8 && Math.abs(rs.units - 7.25) < 1e-9 && rs.minW === 0.75 && rs.weights[1] === 0.75 && rs.weights[7] === 1, '行の幅の割合：「×」は 0.75・ほかは 1', rs);
 ok(['fg2x', 'fg3x', 'ftx'].every((t) => BT.TYPE[t].btn === '×') && BT.TYPE.foul.btn === 'ファウル' && BT.TYPE.foul.btnShort === 'F', 'ボタンの文字：「×」・「ファウル」（狭いときは F）');

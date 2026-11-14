@@ -173,6 +173,18 @@ body[data-view="live"] { overflow: hidden; }
   .tval.long ~ .recdot, .clock:has(.tval.long) .recdot { width: 8px; height: 8px; }
   .clock:has(.tval.long) { padding: 0 7px; gap: 5px; }
 }
+/* とても幅の狭いスマホ（320px など）：上の帯の部品が重ならないよう、もう一段詰める */
+@media (max-width: 340px) {
+  .lbar { gap: 3px; padding-left: 4px; padding-right: 4px; }
+  .clock { min-width: 0; padding: 0 6px; gap: 4px; }
+  .clock .recdot { width: 8px; height: 8px; }
+  .period { min-width: 36px; padding: 0 3px; }
+  .sc { min-width: 1.5em; padding: 0 4px; }
+  .menubtn { min-width: 40px; padding: 0 3px; }
+  .menubtn small { display: none; }
+  .clock:has(.tval.long) { padding: 0 5px; gap: 3px; }
+  .tval.long { font-size: 20px; }
+}
 .dash { font-size: 22px; color: var(--muted); font-weight: 800; }
 .menubtn { height: clamp(46px, 7.4vmin, 64px); min-width: 50px; border: 2px solid var(--line2); border-radius: 12px; background: var(--panel); display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; padding: 0 6px; flex: none; }
 .menubtn span { font-size: 24px; font-weight: 800; }
@@ -953,3 +965,31 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
 .growbar b { font-weight: 700; white-space: nowrap; }
 .growbar small { color: var(--muted); font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .growbar:active { opacity: 0.6; }
+
+/* 試合時間（止められる時計。設定でオン）：上の帯の時計が試合時間になり、押すと止まる・動く。下に小さく、スタートからの時間（動画の時刻）。
+   左の印：動いている＝緑の三角・止まっている＝黄色の2本線（ゆっくり点滅）・終わり（残り 0:00）＝赤い数字 */
+.clock .tcol { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-width: 0; }
+.clock .gcst, .clock .tsub { display: none; }
+.clock.gc .recdot { display: none; }
+.clock.gc .gcst { display: block; flex: none; width: 0; height: 0; border-style: solid; border-width: 7px 0 7px 11px; border-color: transparent transparent transparent var(--k-made); }
+.clock.gc.stopped .gcst, .clock.gc.done .gcst { width: 12px; height: 15px; box-sizing: border-box; border-width: 0 4px; border-color: var(--warn); animation: rec 1.6s ease-in-out infinite; }
+.clock.gc.done .gcst { border-color: var(--bad); animation: none; }
+.clock.gc .tval { font-size: clamp(24px, 5vmin, 40px); }
+.clock.gc .tval.long { font-size: clamp(19px, 4vmin, 32px); }
+.clock.gc .tsub { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 700; line-height: 1; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.clock.gc.stopped { border-color: var(--warn); }
+.clock.gc.stopped .tval { color: var(--warn); }
+.clock.gc.done .tval { color: var(--bad); }
+.clock.gc.ended .gcst { animation: none; border-color: var(--line2); }
+.clock.gc.ended:not(.stopped):not(.done) .gcst { border-color: transparent transparent transparent var(--line2); }
+.short .clock.gc .tval { font-size: 21px; }
+.short .clock.gc .tsub { font-size: 9px; margin-top: 1px; }
+@media (prefers-reduced-motion: reduce) { .clock.gc .gcst { animation: none !important; } }
+/* ピリオドの小窓の中の、試合時間の手直し */
+.gcbox { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel2); }
+.gcbox > b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.gcbox > b small { font-weight: 600; color: var(--muted); margin-left: 4px; }
+.gcbox .gcadj { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.gcbox .gcadj .btn, .gcbox #btnGcToggle { min-height: 42px; }
+/* 記録の一覧：時刻の下に、小さく試合時間 */
+.lrow .lt .lgt { display: block; font-size: 11px; font-weight: 600; color: var(--muted); }

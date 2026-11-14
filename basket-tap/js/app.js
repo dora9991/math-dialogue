@@ -27,6 +27,12 @@
   // いまの時刻：ふつうはスタートからの時間。動画を見ながら記録するときは、動画の時刻（rvNow）
   const elapsed = () => (rvMode() ? rvNow() : BT.elapsed(S.game, now()));
   const curPeriod = () => BT.periodAt(S.game, elapsed());
+  /* 試合時間（止められる時計。設定でオン）：スタートからの時間・動画の時刻とは別に、笛で止まる時計を持つ（試合ごとに game.gc。js/core.js の「試合時間」）。
+     時計のある試合を、記録の途中で開いているときだけ出す（終えた試合には、あとから時計を作らない） */
+  const clockOn = () => !!S.prefs.gameClock;
+  const gcShown = () => !!(clockOn() && S.game && S.game.startedAt && (S.game.gc || !S.game.endedAt));
+  function ensureClock(g) { if (!g.gc || !Array.isArray(g.gc.ev)) g.gc = BT.newClock(S.prefs.periodLen, BT.isReview(g)); return g.gc; }
+  const gcNow = () => (gcShown() ? (ensureClock(S.game), BT.gameClock(S.game, elapsed())) : null);
   function save() {
     if (!S.game) return;
     if (rvReady() && S.rv.match) S.game.rvPos = rvNow();          // 動画を見ながら記録：見ていた所も覚えておく（続きを記録するとき。記録の動画と同じ長さの動画のときだけ）
@@ -545,7 +551,9 @@
     const V = $('#view');
     V.innerHTML = '';
     const L = S.L = { panels: [], btns: [], gb: {} };
-    L.clock = h('button', { class: 'clock', id: 'clock', title: 'スタートからの時間', onclick: openMenu }, h('span', { class: 'recdot' }), h('span', { class: 'tval', id: 'tval' }, '0:00'));
+    // 時計：ふだんは、スタートからの時間（押すとメニュー）。設定で「試合時間」をオンにすると、試合時間（押すと、止まる・動く）と、その下に小さくスタートからの時間
+    L.clock = h('button', { class: 'clock', id: 'clock', title: 'スタートからの時間', onclick: clockTap }, h('span', { class: 'recdot' }), h('i', { class: 'gcst', 'aria-hidden': 'true' }),
+      h('span', { class: 'tcol' }, h('span', { class: 'tval', id: 'tval' }, '0:00'), h('small', { class: 'tsub', id: 'tsub', hidden: true })));
     L.start = h('button', { class: 'startbtn', id: 'btnStart', onclick: start }, '▶ スタート');
     L.period = h('button', { class: 'period', id: 'btnPeriod', 'aria-label': 'ピリオド', onclick: openPeriod }, '1Q');
     L.score = [0, 1].map((tm) => h('span', { class: 'sc', id: 'score' + tm, style: { '--tc': g.teams[tm].color, '--tink': BT.inkOn(g.teams[tm].color) } }, '0'));
@@ -782,8 +790,42 @@
   function tickClock(force) {
     const L = S.L;
     if (!L || !S.game || !S.game.startedAt) return;
-    const s = BT.fmtTime(elapsed(), rvMode());
-    if (force || s !== lastClock) { lastClock = s; const el = $('#tval'); el.textContent = s; el.classList.toggle('long', s.length > 5); }
+    const rv = rvMode();
+    const c = gcNow();
+    const tt = BT.fmtTime(elapsed(), rv);                 // スタートからの時間（動画を見ながら：動画の時刻）
+    const s = c ? BT.gcText(c) : tt;
+    const key = c ? `${s}|${tt}|${c.period}${c.done ? 'd' : c.running ? 'r' : 's'}` : s;
+    if (force || key !== lastClock) {
+      lastClock = key;
+      const el = $('#tval'), sub = $('#tsub');
+      el.textContent = s;
+      el.classList.toggle('long', s.length > 5);
+      L.clock.classList.toggle('gc', !!c);
+      L.clock.classList.toggle('stopped', !!c && !c.running && !c.done);
+      L.clock.classList.toggle('done', !!c && c.done);
+      sub.hidden = !c;
+      if (c) sub.textContent = (rv ? '🎬 ' : '⏱ ') + tt;
+      const tip = c ? `試合時間 ${BT.gcLabel(c)}（${c.done ? '終わり' : c.running ? '動いています。押すと止まります' : '止まっています。押すと動きます'}）・${rv ? '動画の時刻' : 'スタートから'} ${tt}` : rv ? '動画の時刻' : 'スタートからの時間';
+      if (L.clock.title !== tip) { L.clock.title = tip; if (c) L.clock.setAttribute('aria-label', tip); else L.clock.removeAttribute('aria-label'); }
+    }
+    // 残り 0:00 になった瞬間（試合を見ながら記録しているとき）：1回だけ知らせる
+    if (c && !rv && !S.game.endedAt) {
+      const was = L.gcPrev;
+      if (c.done && was && was.running && was.period === c.period) { feel('undo'); say(`${BT.periodLabel(c.period)} の試合時間が終わりました（次のピリオドは、となりのボタンから）`, 'ok', 5000); }
+      L.gcPrev = { period: c.period, running: c.running };
+    }
+  }
+  /* 時計を押した：試合時間が出ているときは、止める・動かす（記録の時刻＝スタートからの時間・動画は、止まらない）。出ていなければメニュー */
+  function clockTap() {
+    const g = S.game;
+    if (!gcShown() || g.endedAt) { openMenu(); return; }
+    ensureClock(g);
+    const c = BT.gcToggle(g, elapsed());
+    if (!c) { say(`${BT.periodLabel(curPeriod())} の試合時間は終わっています（次のピリオドは、となりのボタンから。そこで時間も直せます）`, 'warn', 5000); return; }
+    save();
+    feel(c.running ? 'made' : 'undo');
+    tickClock(true);
+    say(c.running ? `▶ 試合時間を動かしました（${BT.gcLabel(c)}）` : `⏸ 試合時間を止めました（${BT.gcLabel(c)}）`, 'ok', 2500);
   }
   function tick() {
     if (camRec() && S.camSheet) S.camSheet.draw(true);
@@ -863,6 +905,7 @@
     g.date = BT.ymdAt(t0, g.tz);
     BT.addEvent(g, { t: 0, type: 'period', period: g.startPeriod || 1 });
     delete g.startPeriod;
+    if (clockOn()) g.gc = BT.newClock(S.prefs.periodLen, false);         // 試合時間：スタートと同時に動き出す
     save();
     feel('made');
     BT.store.persist();
@@ -877,6 +920,7 @@
   function cancelStart() {
     const g = S.game;
     g.startedAt = null; g.endedAt = null; g.events = []; g.seq = 0;
+    delete g.gc;
     S.redo = [];
     BT.ui.keepAwake(false);
     save();
@@ -948,9 +992,22 @@
       say(`${BT.periodLabel(p)} を始めました（${BT.fmtTime(ev.t)}）`, 'ok');
     };
     const others = [1, 2, 3, 4, 5, 6].filter((p) => p !== cur + 1);
+    // 試合時間（設定でオンのとき）：いまの時間と、ずれたときの手直し（出ている数字を、押した分だけ動かす）・止める／動かす
+    const c = started && !g.endedAt ? gcNow() : null;
+    const adj = (d, lab) => h('button', { class: 'btn small', dataset: { gcadj: String(d) }, onclick: () => {
+      const cc = gcNow();
+      BT.gcSet(g, elapsed(), cc.left != null ? cc.used - d : cc.used + d);
+      save(); tickClock(true); openPeriod();
+    } }, lab);
+    const gcBox = !c ? null : h('div', { class: 'gcbox', id: 'gcBox' },
+      h('b', { id: 'gcNowText' }, `試合時間：${BT.gcLabel(c)}`, h('small', null, c.done ? '（終わり）' : c.running ? '（動いています）' : '（止まっています）')),
+      h('div', { class: 'gcadj' }, adj(-60, '−1分'), adj(-10, '−10秒'), adj(-1, '−1秒'), adj(60, '+1分'), adj(10, '+10秒'), adj(1, '+1秒')),
+      h('div', { class: 'row' }, h('button', { class: 'btn', id: 'btnGcToggle', disabled: c.done, onclick: () => { clockTap(); openPeriod(); } }, c.running ? '⏸ 試合時間を止める' : '▶ 試合時間を動かす')),
+      h('p', { class: 'note' }, `会場の時計とずれたら、上のボタンで合わせます（${c.left != null ? '残りの時間' : '進んだ時間'}を、押した分だけ動かします）。次のピリオドを始めると、${c.len ? BT.fmtTime(c.len) + ' に' : '0:00 に'}戻って動き出します。ピリオドの長さは「設定」の「試合時間」で変えられます。`));
     const s = BT.ui.sheet({
       title: started ? `ピリオド（いまは ${BT.periodLabel(cur)}）` : '始めるピリオド',
       body: h('div', { class: 'periodbox' },
+        gcBox,
         started ? h('button', { class: 'btn primary huge', id: 'btnNextPeriod', onclick: () => pick(cur + 1) }, `${BT.periodLabel(cur + 1)} を始める`) : null,
         h('div', { class: 'row pgrid' }, (started ? others : [1, 2, 3, 4, 5]).map((p) => h('button', { class: 'btn' + (!started && p === cur ? ' on' : ''), onclick: () => pick(p) }, started ? `${BT.periodLabel(p)} にする` : BT.periodLabel(p)))),
         h('p', { class: 'note' }, rvMode() ? '動画を、次のピリオドが始まる所（ティップオフ・最初のスローイン）まで動かしてから押します。その動画の時刻が、ピリオドの始まりになります。あとで「記録の一覧」で直せます。' : started ? '次のピリオドが始まる瞬間に押します。始まった時刻が記録に残り、動画で場面を探すときの目印にもなります。押し忘れたら、あとで「記録の一覧」でピリオドの時刻を直せます（それより後の記録は、自動でそのピリオドになります）。' : 'スタートを押したときのピリオドです（途中から記録するときに）。'))
@@ -1536,6 +1593,7 @@
       const t0 = now();
       Object.assign(g, { mode: 'video', src: { name: file.name, size: file.size || null, duration: null, w: null, h: null }, startedAt: t0, date: BT.ymdAt(t0, g.tz), notes: [], rvPos: 0 });
       BT.addEvent(g, { t: 0, type: 'period', period: 1 });
+      if (clockOn()) g.gc = BT.newClock(S.prefs.periodLen, true);         // 試合時間：動画のはじめは止めておく（ティップオフの所で、時間を押して動かす）
       g.videos = [{ vid: 'file1', n: 1, startedAt: t0, endedAt: null, duration: null, name: file.name, mime: file.type || '', w: null, h: null, bytes: file.size || null, status: 'done', gone: true, file: true }];
       BT.store.saveGame(g);
       BT.store.persist();
@@ -1723,7 +1781,7 @@
     rvSeekEvents(L.rvSeek);
     rvMount();
     rvColors();
-    L.clock.title = '動画の時刻';
+    lastClock = '';          // 時計の説明（動画の時刻）を、次の表示で付け直す
   }
   /* 位置のバーの色（画面の色に合わせる） */
   function rvColors() {
@@ -2230,7 +2288,7 @@
     const row = (e) => {
       const d = BT.TYPE[e.type];
       return h('button', { class: 'lrow' + (e.type === 'period' ? ' per' : ''), dataset: { id: e.id }, onclick: () => openEdit(e.id) },
-        h('b', { class: 'lt' }, BT.fmtTime(e.t)),
+        h('b', { class: 'lt' }, BT.fmtTime(e.t), g.gc && e.type !== 'period' ? h('small', { class: 'lgt' }, BT.gcText(BT.gameClock(g, e.t))) : null),
         e.type === 'period' ? h('span', { class: 'lp' }, `── ${BT.periodLabel(e.period)} 開始 ──`) : [
           e.team == null ? h('i', { class: 'chip neutral' }) : h('i', { class: 'chip', style: { background: teamColor(e.team) } }),
           h('span', { class: 'lno' }, e.no != null ? '#' + e.no : '—'),
@@ -2245,7 +2303,7 @@
       body: h('div', null,
         h('div', { class: 'row tabsrow' },
           tabs.map(([v, lab]) => h('button', { class: 'btn small' + (f === v ? ' on' : ''), onclick: () => openLog(v) }, lab))),
-        h('p', { class: 'note' }, 'タップすると、番号・プレー・時刻を直したり、消したりできます。新しい記録が上です。'),
+        h('p', { class: 'note' }, 'タップすると、番号・プレー・時刻を直したり、消したりできます。新しい記録が上です。' + (g.gc ? `時刻の下の小さな数字は、試合時間（${g.gc.len ? 'そのピリオドの残り' : 'そのピリオドで進んだ時間'}）です。` : '')),
         evs.length ? h('div', { class: 'loglist' }, evs.map(row)) : h('p', { class: 'note' }, 'まだ記録はありません。'))
     });
     return s;
@@ -2258,7 +2316,7 @@
     const changed = () => { save(); if (S.L) updateLive(); openEdit(id); };
     const nudge = (d) => h('button', { class: 'btn small', onclick: () => { e.t = Math.max(0, Math.round((e.t + d) * 10) / 10); changed(); } }, (d > 0 ? '+' : '−') + Math.abs(d) + '秒');
     const body = h('div', { class: 'edit' });
-    body.append(h('div', { class: 'field' }, h('span', null, `時刻（${rvMode() ? '動画の時刻' : 'スタートから'}）：${BT.fmtTime(e.t, true)}`), h('div', { class: 'row' }, nudge(-5), nudge(-1), nudge(-0.5), nudge(0.5), nudge(1), nudge(5))));
+    body.append(h('div', { class: 'field' }, h('span', { id: 'evTime' }, `時刻（${rvMode() ? '動画の時刻' : 'スタートから'}）：${BT.fmtTime(e.t, true)}` + (g.gc && e.type !== 'period' ? `・試合時間 ${BT.gcLabel(BT.gameClock(g, e.t))}` : '')), h('div', { class: 'row' }, nudge(-5), nudge(-1), nudge(-0.5), nudge(0.5), nudge(1), nudge(5))));
     // 動画を見ながら：その場面を見る・映像を見ながらコマ送りで時刻を合わせる・いまの映像の時刻にする
     if (rvMode() && rvReady()) {
       body.append(h('div', { class: 'row rvedit' },
@@ -2420,6 +2478,16 @@
       h('div', { class: 'row' }, [['std', 'ふつう：3P の線あり'], ['mini', 'ミニバス：3P の線なし']].map(([v, lab]) => h('button', { class: 'btn small' + ((p.courtType === 'mini' ? 'mini' : 'std') === v ? ' on' : ''), dataset: { court: v }, onclick: () => { p.courtType = v; savePrefs(); refresh(); openSettings(); } }, lab))),
       h('p', { class: 'note' }, '試合を見ながら記録しているときは「あとで」で飛ばせます（6 秒押さなければ自動で閉じます。記録は残ります）。撮った動画を見ながら記録するときに、特に向いています。フリースローは聞きません。'),
       BT.license.can('shot', S.game) ? null : h('p', { class: 'note warn', id: 'shotLocLock' }, '🔒 シュートの場所は、場面パックの機能です。お試しの 3 試合を使ったので、いまはオンにしても聞きません（この下の「🔑 場面パック」で、購入コードを入れられます）。')));
+    const curLen = BT.GC_LENS.includes(+p.periodLen) ? +p.periodLen : 600;
+    body.append(h('section', { class: 'field', id: 'setClock' }, h('span', null, '試合時間（止められる時計）'),
+      off('gameClock', '試合時間を出す（時間を押すと、止まる・動く）', () => { if (p.gameClock && S.game && S.game.startedAt && !S.game.endedAt) { ensureClock(S.game); save(); } refresh(); openSettings(); }),
+      p.gameClock ? h('div', { class: 'row' }, [[600, '10分（一般・高校）'], [480, '8分（中学）'], [360, '6分（ミニバス）'], [300, '5分'], [0, '決めない（進んだ時間を数える）']].map(([len, lab]) => h('button', { class: 'btn small' + (curLen === len ? ' on' : ''), dataset: { gclen: String(len) }, onclick: () => {
+        p.periodLen = len; savePrefs();
+        if (S.game && S.game.gc && !S.game.endedAt) { S.game.gc.len = len; S.game.gc.ot = BT.gcOtOf(len); save(); }
+        refresh(); openSettings();
+      } }, lab))) : null,
+      h('p', { class: 'note' }, '笛で止まったら時間を押して止め、再開したら押して動かします。スタートからの時間（動画と合わせるための時計）は、止まらずに進むので、小さく下に出します。ピリオドの長さを選ぶと、残りの時間を数えます（延長は、10分のピリオドなら 5分・ほかは 3分）。ずれたら、となりの「1Q」のボタンから直せます。' +
+        '撮った動画を見ながら記録するときは、動画の時刻とは別に、試合時間が進みます（はじめは止まっています。ティップオフの所で時間を押します。動画を戻すと、その時刻の試合時間に戻ります）。')));
     body.append(h('section', { class: 'field' }, h('span', null, '記録の画面'),
       chk('names', '背番号の下に、選手の名前も出す（行の高さに余裕があるとき）', refresh),
       chk('unknown', '「？」の行を出す（だれか分からないときに、チームだけで記録する）', refresh),
@@ -2498,7 +2566,8 @@
           h('li', null, 'ボタンの右上の小さな数は、その選手がそのプレーをした回数です'),
           h('li', null, h('b', null, 'ボタンを足す'), '：「≡ メニュー」→「設定」の「選手のボタン」で、シュートの失敗（×）・Oリバ／Dリバ・アシスト・スティール・ターンオーバー・ファウルを出せます'),
           h('li', null, 'まちがえたら「↶ 取り消す」。どの記録も「≡ メニュー」→「記録の一覧」で直せます。名簿にない背番号は「＋番号」で足せます'),
-          h('li', null, 'ピリオドは、時計の右の「1Q」を押して「2Q を始める」。時計は止まらずに進みます（試合の時計ではなく、スタートからの時間。動画と同じように進むので、あとで動画と合わせられます）')),
+          h('li', null, 'ピリオドは、時計の右の「1Q」を押して「2Q を始める」。時計は止まらずに進みます（試合の時計ではなく、スタートからの時間。動画と同じように進むので、あとで動画と合わせられます）'),
+          h('li', null, h('b', null, '試合時間（止められる時計）'), '：「設定」の「試合時間」をオンにすると、時計が試合時間（残り 10:00 から など）になり、押すと止まる・動きます。スタートからの時間は、その下に小さく出て、止まらずに進みます。ずれたら「1Q」のボタンから直せます。動画を見ながら記録するときも、動画の時刻とは別に進みます')),
         h('h4', null, '時刻を合わせる（試合を見ながら記録したとき）'),
         h('ul', null,
           h('li', null, '記録の1つ（ふつうは「スタート」）を選び、動画をその瞬間（ジャンプボール）で止めて「⏱ この瞬間が、選んだ記録」'),
