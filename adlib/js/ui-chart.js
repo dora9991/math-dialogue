@@ -174,7 +174,7 @@
     if (!title.trim()) return;
     st().title = title.trim(); el.title.value = st().title;
     const list = savedList();
-    const rec = { id: 's' + Date.now().toString(36), title: st().title, text: st().text, style: st().style, tempo: st().tempo };
+    const rec = { id: 's' + Date.now().toString(36), title: st().title, text: st().text, style: st().style, tempo: st().tempo, swing: st().swing, feel: st().feel };
     const same = list.findIndex(s => s.title === rec.title);
     if (same >= 0) { rec.id = list[same].id; list[same] = rec; } else list.unshift(rec);
     U.store.set('saved', list.slice(0, 60));
@@ -185,7 +185,11 @@
   function openSaved(id) {
     const s = savedList().find(x => x.id === id);
     if (!s) return;
-    st().title = s.title; st().style = B.STYLES[s.style] ? s.style : st().style; st().tempo = s.tempo || st().tempo; st().keyOverride = null; st().range = null;
+    // スタイルが変わるときは setStyle を通す（合う楽器に入れかえる）。ノリは、保存してあったもの（なければスタイルの標準）にする。前の曲のノリを持ちこさない
+    if (B.STYLES[s.style] && s.style !== st().style) App.setStyle(s.style);
+    st().title = s.title; st().tempo = s.tempo || st().tempo; st().keyOverride = null; st().range = null;
+    st().swing = typeof s.swing === 'number' && s.swing >= 0.5 && s.swing <= 0.75 ? s.swing : null;
+    st().feel = ['even', 's8', 's16'].indexOf(s.feel) >= 0 ? s.feel : null;
     el.title.value = s.title;
     App.setText(s.text);
     App.emit('settings');

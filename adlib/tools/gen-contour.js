@@ -31,7 +31,7 @@ const CTX = {
   maj7: { ref: 'Cmaj7', title: 'メジャー7th', S: 'C D E F G A B', T: 2, F: 4, V: 6, P: 'C D E G A', pjp: 'メジャー・ペンタ' },
   'maj7#11': { ref: 'Cmaj7#11', title: 'リディアン（maj7♯11）', S: 'C D E F# G A B', T: 2, F: 4, V: 6, P: 'D E F# A B', pjp: 'D メジャー・ペンタ（9-3-♯11-13-7）', tags: ['lydian'] },
   min7: { ref: 'Cm7', title: 'マイナー7th（ドリアン）', S: 'C D Eb F G A Bb', T: 2, F: 4, V: 6, P: 'C Eb F G Bb', pjp: 'マイナー・ペンタ' },
-  min6: { ref: 'Cm6', title: 'マイナー6th（メロディックマイナー）', S: 'C D Eb F G A B', T: 2, F: 4, V: 5, P: 'C D Eb G A', pjp: 'マイナー6のペンタ（1-2-♭3-5-6）' },
+  min6: { ref: 'Cm6', title: 'マイナー6th（メロディックマイナー）', S: 'C D Eb F G A B', T: 2, F: 4, V: 5, P: 'C D Eb G A', pjp: 'メジャー・ペンタの3度を下げた形（1-2-♭3-5-6）' },
   minmaj7: { ref: 'Cm(maj7)', title: 'マイナー・メジャー7th（メロディックマイナー）', S: 'C D Eb F G A B', T: 2, F: 4, V: 6 },
   m7b5: { ref: 'Cm7b5', title: 'ハーフディミニッシュ（ロクリアン♯2）', S: 'C D Eb F Gb Ab Bb', T: 2, F: 4, V: 6, P: 'C Eb F Gb Bb', pjp: '1-♭3-4-♭5-♭7 のペンタ' },
   dim7: { ref: 'Cdim7', title: 'ディミニッシュ7th（全・半）', S: 'C D Eb F Gb Ab A B', T: 2, F: 4, V: 6, tags: ['dim'] },
@@ -50,7 +50,7 @@ const TPL = [
   { key: 'A2', fam: 'leap', lvl: 1, tags: ['leap', 'syncopation'],
     notes: m => `${m.s(0)}:e ${m.s(m.N)}:q. / ${m.s(m.N - 1)}:e ${m.s(m.N - 2)}:e ${m.s(m.N - 3)}:q`,
     name: () => `オクターブ上へ跳んで、のばしてから降りる`,
-    idea: d => `1拍目の裏で1オクターブ上の根音へ跳び、そのままのばす。後半は ${d(2)}・${d(3)} と順に降りて、${d(4)} で止まる。` },
+    idea: (d0, m, d = k => stepName(d0(k))) => `1拍目の裏で1オクターブ上の根音へ跳び、そのままのばす。後半は ${d(2)}・${d(3)} と順に降りて、${d(4)} で止まる。` },
   { key: 'A3', fam: 'leap', lvl: 1, tags: ['leap'],
     notes: m => `${m.s(m.F - m.N)}:e ${m.s(0)}:e ${m.s(m.F)}:q / ${m.s(m.T)}:q r:q`,
     name: d => `下の${d(0)}から、根音・上の${d(2)}へ続けて跳ぶ`,
@@ -62,11 +62,11 @@ const TPL = [
   { key: 'A5', fam: 'leap', lvl: 2, tags: ['leap', 'zigzag'],
     notes: m => `${m.s(m.V - 2)} ${m.s(0)} ${m.s(m.V - 1)} ${m.s(0)} / ${m.s(m.V)} ${m.s(0)} ${m.s(m.N)}:q`,
     name: () => `根音を足場に、上の音が広がっていく`,
-    idea: d => `低い根音と行き来しながら、上の音が ${d(0)}・${d(2)}・${d(4)} と1つずつ上がり、最後は1オクターブ上の根音へ。跳ぶ幅がだんだん広がる。` },
+    idea: (d0, m, d = k => stepName(d0(k))) => `低い根音と行き来しながら、上の音が ${d(0)}・${d(2)}・${d(4)} と1つずつ上がり、最後は1オクターブ上の根音へ。跳ぶ幅がだんだん広がる。` },
   { key: 'A6', fam: 'leap', lvl: 2, tags: ['leap', 'zigzag', 'arp'],
     notes: m => `${m.s(0)} ${m.s(m.F)} ${m.s(m.T)} ${m.s(m.V)} / ${m.s(m.F)} ${m.s(m.N + 1)} ${m.s(m.V)}:q`,
     name: () => `大きく上がって少し戻る、を重ねて登る`,
-    idea: d => `${d(0)}→${d(1)}、${d(2)}→${d(3)}、${d(4)}→${d(5)} と、大きく上がっては少し戻る。コードの音を1つとばしで登っていく、幅の広いジグザグ。` },
+    idea: d => `${d(0)}→${d(1)}、${d(2)}→${d(3)}、${d(4)}→${d(5)} と、大きく上がっては少し戻る。コードの音（最後は 9th）を1つとばしで登っていく、幅の広いジグザグ。` },
   { key: 'A7', fam: 'leap', lvl: 2, tags: ['leap', 'zigzag'],
     notes: m => `${m.s(0)} ${m.s(m.N)} ${m.s(m.F)} ${m.s(m.N)} / ${m.s(m.T)} ${m.s(m.N)} ${m.s(0)}:q`,
     name: () => `上の根音を足場に、下の音が降りていく`,
@@ -79,19 +79,19 @@ const TPL = [
     notes: m => `@s ${m.s(0)} ${m.s(m.F)} ${m.s(m.N)} ${m.s(m.F)} ${m.s(m.T)} ${m.s(m.F)} ${m.s(m.N)} ${m.s(m.F)} / @e ${m.s(m.V)} ${m.s(m.F)} ${m.s(m.T)}:q`,
     name: () => `和音の音を跳びまわる（16分）`,
     idea: d => `根音・${d(1)}・上の根音と跳び、${d(4)} からも同じ ${d(1)} と上の根音へ。16分音符で和音の音を跳びまわってから、後半は8分音符で ${d(8)}・${d(9)} と降りて、${d(10)} で止まる。` },
-  { key: 'A10', fam: 'leap', lvl: 1, tags: ['leap'],
+  { key: 'A10', fam: 'leap', lvl: 1, tags: ['leap', 'rhythm'],
     notes: m => `r:q ${m.s(0)}:e ${m.s(m.F)}:e / ${m.s(m.N)}:q r:q`,
     name: d => `1拍待ってから、${d(0)}→${d(1)}→オクターブ上へ跳ぶ`,
     idea: d => `1拍目は休んで、2拍目から根音・${d(1)}・1オクターブ上の根音へ、8分音符で跳ぶ。最後の音のあとも1拍休む。前後の間（ま）も、フレーズのうち。` },
   /* ---------- ジグザグ・戻る ---------- */
   { key: 'B1', fam: 'zig', lvl: 1, tags: ['zigzag', 'scale'],
     notes: m => `${m.s(0)} ${m.s(2)} ${m.s(1)} ${m.s(3)} ${m.s(2)} ${m.s(4)} ${m.s(6)}:q`,
-    name: (d, m) => `${m.zn}で上がる`,
-    idea: (d, m) => `${d(0)}-${d(1)}、${d(2)}-${d(3)}、${d(4)}-${d(5)} と、${m.zu}。スケールを、階段ではなくジグザグに登って、${d(6)} で止まる。` },
+    name: (d0, m, d = k => stepName(d0(k))) => `${m.zn}で上がる`,
+    idea: (d0, m, d = k => stepName(d0(k))) => `${d(0)}-${d(1)}、${d(2)}-${d(3)}、${d(4)}-${d(5)} と、${m.zu}。スケールを、階段ではなくジグザグに登って、${d(6)} で止まる。` },
   { key: 'B2', fam: 'zig', lvl: 1, tags: ['zigzag', 'scale'],
     notes: m => `${m.s(m.N)} ${m.s(m.N - 2)} ${m.s(m.N - 1)} ${m.s(m.N - 3)} / ${m.s(m.N - 2)} ${m.s(m.N - 4)} ${m.s(m.N - 3)} ${m.s(m.N - 5)}`,
-    name: (d, m) => `${m.zn}で降りる`,
-    idea: (d, m) => `${d(0)}-${d(1)}、${d(2)}-${d(3)}…と、${m.zd}。スケールをジグザグに降りて、${d(7)} で止まる。` },
+    name: (d0, m, d = k => stepName(d0(k))) => `${m.zn}で降りる`,
+    idea: (d0, m, d = k => stepName(d0(k))) => `${d(0)}-${d(1)}、${d(2)}-${d(3)}…と、${m.zd}。スケールをジグザグに降りて、${d(7)} で止まる。` },
   { key: 'B3', fam: 'zig', lvl: 2, tags: ['zigzag', 'scale', 'triplet'],
     notes: m => `${m.s(m.V - m.N)}:t ${m.s(0)}:t ${m.s(1)}:t ${m.s(0)}:t ${m.s(1)}:t ${m.s(2)}:t / ${m.s(1)}:t ${m.s(2)}:t ${m.s(3)}:t ${m.s(m.F)}:q`,
     name: () => `3音ずつ、1歩もどりながら上がる（3連符）`,
@@ -102,12 +102,12 @@ const TPL = [
     idea: d => `スケールを4音ずつ降りるかたまりを、頭を1音ずつ下げて3回。かたまりの頭が ${d(0)}・${d(4)}・${d(8)} と順に降りて、${d(12)} に着地する。` },
   { key: 'B5', fam: 'zig', lvl: 1, tags: ['zigzag', 'scale'],
     notes: m => `${m.s(0)} ${m.s(1)} ${m.s(2)} ${m.s(4)} / ${m.s(2)} ${m.s(1)} ${m.s(0)}:q`,
-    name: d => `${d(0)}-${d(1)}-${d(2)}-${d(3)} と上がって、同じ道を戻る`,
+    name: (d0, m, d = k => stepName(d0(k))) => `${d(0)}-${d(1)}-${d(2)}-${d(3)} と上がって、同じ道を戻る`,
     idea: () => `上がったら、来た道をそのまま戻って、根音で止まる。行って帰るだけなのに、ひとまとまりのフレーズに聞こえる。` },
   { key: 'B6', fam: 'zig', lvl: 1, tags: ['zigzag', 'scale'],
     notes: m => `${m.s(4)} ${m.s(5)} ${m.s(3)} ${m.s(4)} / ${m.s(2)} ${m.s(3)} ${m.s(1)} ${m.s(2)}`,
     name: () => `1つ上がって3度下がる、で降りる`,
-    idea: d => `${d(0)}-${d(1)}、${d(2)}-${d(3)}…と、1つ上がっては3度下がる。上がりながら降りていく、逆向きのジグザグ。${d(7)} で止まる。` },
+    idea: (d0, m, d = k => stepName(d0(k))) => `${d(0)}-${d(1)}、${d(2)}-${d(3)}…と、1つ上がっては3度下がる。上がりながら降りていく、逆向きのジグザグ。${d(7)} で止まる。` },
   { key: 'B7', fam: 'zig', lvl: 2, tags: ['zigzag', 'scale', 'triplet'],
     notes: m => `${m.s(0)}:t ${m.s(1)}:t ${m.s(0)}:t ${m.s(1)}:t ${m.s(2)}:t ${m.s(1)}:t ${m.s(2)}:t ${m.s(3)}:t ${m.s(2)}:t ${m.s(m.F)}:q`,
     name: () => `となりの音にゆれながら、1つずつ上がる（3連符）`,
@@ -116,10 +116,14 @@ const TPL = [
     notes: m => `@s ${m.s(m.N)} ${m.s(m.N - 2)} ${m.s(m.N - 1)} ${m.s(m.N - 3)} ${m.s(m.N - 2)} ${m.s(m.N - 4)} ${m.s(m.N - 3)} ${m.s(m.N - 5)} / ${m.s(m.N - 4)} ${m.s(m.N - 6)} ${m.s(m.N - 5)} ${m.s(m.N - 7)} ${m.s(m.T)}:q`,
     name: (d, m) => `${m.zn}を16分で、1オクターブ降りる`,
     idea: (d, m) => `上の根音から、${m.zd}動きを、16分音符で1オクターブぶん続ける。最後は ${d(12)} に上がって止まる。` },
+  { key: 'B10', fam: 'zig', lvl: 3, tags: ['zigzag', 'scale', 'sixteenth'],
+    notes: m => `@s ${m.s(m.N + 1)} ${m.s(m.N - 1)} ${m.s(m.N)} ${m.s(m.N - 2)} ${m.s(m.N - 1)} ${m.s(m.N - 3)} ${m.s(m.N - 2)} ${m.s(m.N - 4)} / ${m.s(m.N - 3)} ${m.s(m.N - 5)} ${m.s(m.N - 4)} ${m.s(m.N - 6)} ${m.s(m.T)}:q`,
+    name: (d, m) => `${m.zn}を16分で、${d(0)} から1オクターブ降りる`,
+    idea: (d, m) => `上の ${d(0)} から、${m.zd}動きを、16分音符で1オクターブぶん続ける。最後は ${d(12)} に上がって止まる。` },
   { key: 'B9', fam: 'zig', lvl: 2, tags: ['zigzag', 'scale', 'triplet'],
     notes: m => `${m.s(0)}:t ${m.s(2)}:t ${m.s(1)}:t ${m.s(3)}:t ${m.s(2)}:t ${m.s(4)}:t / ${m.s(3)}:t ${m.s(5)}:t ${m.s(4)}:t ${m.s(6)}:q`,
-    name: (d, m) => `${m.zn}を3連符で上がる`,
-    idea: (d, m) => `${d(0)}-${d(1)}、${d(2)}-${d(3)}…と、${m.zu}形を、3連符で。2音ずつの形と3つ割りのリズムがずれて、強く聞こえる音が入れかわっていく。${d(9)} で止まる。` },
+    name: (d0, m, d = k => stepName(d0(k))) => `${m.zn}を3連符で上がる`,
+    idea: (d0, m, d = k => stepName(d0(k))) => `${d(0)}-${d(1)}、${d(2)}-${d(3)}…と、${m.zu}形を、3連符で。2音ずつの形と3つ割りのリズムがずれて、強く聞こえる音が入れかわっていく。${d(9)} で止まる。` },
   /* ---------- 跳ぶ＋ジグザグ（まぜる） ---------- */
   { key: 'C1', fam: 'mix', lvl: 2, tags: ['leap', 'zigzag'],
     notes: m => `${m.s(0)} ${m.s(m.N)} ${m.s(m.N - 2)} ${m.s(m.N - 1)} / ${m.s(m.N - 3)} ${m.s(m.N - 2)} ${m.s(m.N - 4)} ${m.s(m.N - 3)}`,
@@ -131,12 +135,12 @@ const TPL = [
     idea: d => `${d(0)} から ${d(1)} へ跳んで、順に降りて戻る。つづけて ${d(4)} から ${d(5)} へ、同じ形をもう一度。跳んだあとに階段で戻ると、跳躍が歌になる。` },
   { key: 'C3', fam: 'mix', lvl: 2, tags: ['zigzag', 'leap'],
     notes: m => `${m.s(2)} ${m.s(4)} ${m.s(3)} ${m.s(5)} / ${m.s(4)} ${m.s(6)} ${m.s(m.N)} ${m.s(0)}`,
-    name: (d, m) => `${m.zn}で上がり、てっぺんから1オクターブ落ちる`,
-    idea: d => `${d(0)}-${d(1)}、${d(2)}-${d(3)}、${d(4)}-${d(5)} とジグザグで上がって上の根音に届き、そこから1オクターブ下の根音へ落ちる。` },
+    name: (d0, m, d = k => stepName(d0(k))) => `${m.zn}で上がり、てっぺんから1オクターブ落ちる`,
+    idea: (d0, m, d = k => stepName(d0(k))) => `${d(0)}-${d(1)}、${d(2)}-${d(3)}、${d(4)}-${d(5)} とジグザグで上がって上の根音に届き、そこから1オクターブ下の根音へ落ちる。` },
   { key: 'C4', fam: 'mix', lvl: 1, tags: ['leap', 'zigzag', 'rhythm'],
     notes: m => `${m.s(0)}:e ${m.s(m.F)}:e ${m.s(m.N)}:q / r:e ${m.s(m.N - 2)}:e ${m.s(m.N - 1)}:e ${m.s(m.F)}:e`,
     name: () => `跳んで問いかけ、間のあと、ジグザグで答える`,
-    idea: d => `${d(0)}→${d(1)}→オクターブ上の根音と跳んで問いかけ、8分休符のあと、${d(3)}-${d(4)}-${d(5)} と小さなジグザグで答える。` },
+    idea: (d0, m, d = k => stepName(d0(k))) => `${d(0)}→${d(1)}→オクターブ上の根音と跳んで問いかけ、8分休符のあと、${d(3)}-${d(4)}-${d(5)} と小さなジグザグで答える。` },
   { key: 'C5', fam: 'mix', lvl: 2, tags: ['zigzag', 'leap'],
     notes: m => `${m.s(m.N)} ${m.s(m.N - 2)} ${m.s(m.N - 1)} ${m.s(m.N - 3)} / ${m.s(m.T)}:e ${m.s(0)}:e ${m.s(m.F)}:q`,
     name: (d, m) => `${m.zn}で降りて、最後に上へ跳ぶ`,
@@ -157,13 +161,15 @@ const TPL = [
   { key: 'P3', fam: 'pent', lvl: 2, tags: ['pent', 'leap', 'syncopation'], pent: true,
     notes: m => `${m.p(0)} ${m.p(3)} ${m.p(1)} ${m.p(4)} / ${m.p(2)}:e ${m.p(5)}:q.`,
     name: () => `ペンタトニックを2つとばしで跳ぶ`,
-    idea: (d, m) => `${m.pjp}の音を、2つとばして上へ跳び、1つ下から、また跳ぶ。5度前後の跳躍が続く、ひらけた響き。最後の音は、裏拍からのばす。` },
+    idea: (d, m) => `${m.pjp}の音を、2つとばして上へ跳び、1つとばして下がっては、また跳ぶ（跳びはじめの音は、1つずつ上がっていく）。5〜6度の跳躍が続く、ひらけた響き。最後の音は、裏拍からのばす。` },
 ];
 
 /* ---- 道具 ---- */
 const pretty = s => String(s).replace(/b/g, '♭').replace(/#/g, '♯');
 const esc = s => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 const degName = (ctx, deg) => { const p = pretty(deg); return ctx === 'blues7' && p === '♯9' ? '♭3' : p; };
+// スケールを順にたどる文（1-3、2-4、3-5 …）のための呼び名：9・11・13 を 2・4・6 と書く（数字の並びが、音の上がり下がりと同じ向きに読めるように）
+const stepName = n => ({ '9': '2', '11': '4', '13': '6' }[n] || n);
 function material(ctx) {
   const c = CTX[ctx], S = c.S.split(' '), P = c.P ? c.P.split(' ') : null;
   const at = (arr, i) => { const n = arr.length, k = ((i % n) + n) % n; return arr[k] + (4 + Math.floor(i / n)); };
@@ -200,9 +206,10 @@ for (const ctx of ORDER) {
   cand[ctx] = [];
   for (const tp of TPL) {
     if (tp.pent && !m.P) continue;
-    const tags = tp.tags.concat((CTX[ctx].tags || []).filter(t => tp.tags.indexOf(t) < 0));
     let notes;
     try { notes = tp.notes(m); } catch (e) { continue; }
+    // ctx のタグ。lydian は、♯11（F♯）が実際に入っているリックにだけ付ける（いままでのリックと同じ決まり）
+    const tags = tp.tags.concat((CTX[ctx].tags || []).filter(t => tp.tags.indexOf(t) < 0 && (t !== 'lydian' || /F#/.test(notes))));
     let r = tryLick(ctx, notes, tags);
     if (r.l && !cutOK(r.l)) { notes = notes.replace(/\s*\/\s*/g, ' '); r = tryLick(ctx, notes, tags); }   // 切れ目の手前が落ち着かない音なら、切れ目を外す
     const c = { tpl: tp, notes, tags, ok: true, why: [] };
@@ -253,6 +260,13 @@ for (const ctx of ORDER) {
     log(` ${pick} ${c.tpl.key} ${c.notes}${c.ok ? '' : '   ← ' + c.why.join('；')}${c.ok && c.warns && c.warns.length ? '   △ ' + c.warns.join(' / ') : ''}${c.ok && c.dupLen >= 5 ? `   （${c.dupId} と ${c.dupLen} 音同じ）` : ''}`);
   }
 }
+// 選んだ10本どうしで、音の並びが6音以上つづけて同じものがあれば知らせる（同じ ctx のなかで、ほぼ同じリックを出さない）
+let innerDup = 0;
+for (const ctx of ORDER) for (let i = 0; i < chosen[ctx].length; i++) for (let j = i + 1; j < chosen[ctx].length; j++) {
+  const a = chosen[ctx][i], b = chosen[ctx][j], n = lcs(seq(a.l), seq(b.l));
+  if (n >= 6) { innerDup++; console.log(`✗ ${ctx}：${a.tpl.key} と ${b.tpl.key} が ${n} 音つづけて同じ`); }
+}
+if (innerDup && mode !== 'list') process.exit(1);
 const totalChosen = ORDER.reduce((a, c) => a + chosen[c].length, 0);
 log('\n選んだ本数：' + ORDER.map(c => c + ':' + chosen[c].length).join('  ') + '  合計 ' + totalChosen);
 if (mode === 'list') process.exit(0);
@@ -287,7 +301,7 @@ for (const ctx of ORDER) {
     // 拍の頭の度数（音から数える）
     const heads = [0, 1, 2, 3].map(b => { const e = c.l.events.find(x => !x.rest && Math.abs(x.t12 - b * 12) < 1); return e ? degName(ctx, e.deg) : null; });
     const tail = heads.every(Boolean) ? `拍の頭は ${heads.join('・')}。` : (() => { const part = heads.map((h, i) => (h ? `${i + 1}拍目の ${h}` : null)).filter(Boolean); return part.length ? `拍の頭に音が来るのは ${part.join('、')}。` : ''; })();
-    out += `    ['${esc(name)}', '${esc(c.notes)}', '${esc(idea + tail)}', { tags: [${c.tags.map(t => `'${t}'`).join(', ')}], lvl: ${c.tpl.lvl} }],\n`;
+    out += `    ['${esc(name)}', '${esc(c.notes)}', '${esc(idea + tail)}', { tags: [${c.tags.map(t => `'${t}'`).join(', ')}], lvl: ${(ov && ov.lvl) || c.tpl.lvl} }],\n`;
     nOut++;
   }
   out += `  ]);\n`;

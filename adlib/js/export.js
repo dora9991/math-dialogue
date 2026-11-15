@@ -95,8 +95,9 @@
       ev.push({ tick: 0, order: 1, bytes: [0xb0 | ch, 7, tr.volume == null ? 100 : tr.volume] });
       (tr.events || []).forEach(e => {
         if (e.midi < 0 || e.midi > 127) return;
-        const a = e.sm ? posTick(e.t, e.sm) : tick(e.t);
-        let b = e.sm ? posTick(e.t + e.dur, e.em) : tick(e.t + e.dur);
+        const offT = Math.round((e.off || 0) * PPQ);   // 伴奏のロール・ゆらぎ（ノリを入れたあとに足す。再生と同じ）
+        const a = Math.max(0, (e.sm ? posTick(e.t, e.sm) : tick(e.t)) + offT);
+        let b = (e.sm ? posTick(e.t + e.dur, e.em) : tick(e.t + e.dur)) + offT;
         if (b <= a) b = a + 1;
         const vel = Math.max(1, Math.min(127, Math.round(e.vel || 80)));
         ev.push({ tick: a, order: 3, bytes: [0x90 | ch, e.midi, vel] });
