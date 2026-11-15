@@ -172,6 +172,16 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     const r = await page.evaluate(() => { const A = AL.App, c = A.makePlan().chorus(0); return { style: A.st.style, comp: c.comp.length, bass: c.bass.length, drums: c.drums.length, solo: c.solo.length, errs: A.chart.errors.length }; });
     ok(r.style === sid && r.comp > 4 && r.bass > 4 && r.drums > 8 && r.solo > 5 && r.errs === 0, `スタイル ${sid} で伴奏とソロができる：` + JSON.stringify(r));
   }
+  // 画面の下のバーの「リズム」：どのタブからでも変えられる。コード譜タブの「リズム（伴奏のスタイル）」と同じ値になる
+  await page.click('#tabs button[data-tab="solo"]');
+  ok(await page.evaluate(() => { const r = document.getElementById('styleQuick').getBoundingClientRect(); return document.getElementById('styleQuick').value === 'disco' && r.width > 40 && r.top < innerHeight && r.bottom > 0; }), '下のバーに「リズム」があり、いまのスタイルを指している');
+  await page.selectOption('#styleQuick', 'reggae');
+  await page.waitForTimeout(150);
+  ok(await page.evaluate(() => AL.App.st.style === 'reggae' && document.getElementById('styleSel').value === 'reggae' && AL.App.feelKind() === 's8'), '下のバーで変えると、スタイルもノリも変わり、コード譜タブの表示もそろう');
+  await page.click('#tabs button[data-tab="chart"]');
+  await page.selectOption('#styleSel', 'disco');
+  await page.waitForTimeout(150);
+  ok(await page.evaluate(() => document.getElementById('styleQuick').value === 'disco' && [...document.querySelectorAll('#tab-chart .f-label')].some(l => /^リズム/.test(l.innerText))), 'コード譜タブで変えると、下のバーの表示もそろう（欄の名前は「リズム（伴奏のスタイル）」）');
   await page.evaluate(() => { const A = AL.App; A.ensureAudio(); window.__peak = 0; const an = window.__an, buf = new Float32Array(2048); window.__sampler = setInterval(() => { an.getFloatTimeDomainData(buf); let m = 0; for (let i = 0; i < buf.length; i++) m = Math.max(m, Math.abs(buf[i])); if (m > window.__peak) window.__peak = m; }, 30); A.st.countIn = 0; A.play(); });
   await page.waitForTimeout(1500);
   ok(await page.evaluate(() => window.__peak > 0.05 && AL.App.playKind === 'main'), 'ディスコのスタイルで、実際に音が出る');

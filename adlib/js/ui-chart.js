@@ -82,7 +82,7 @@
     root.appendChild(h('div', { class: 'card' },
       h('div', { class: 'card-h' }, h('h2', null, '演奏の設定')),
       h('div', { class: 'fields' },
-        U.field('伴奏のスタイル', el.style, null),
+        U.field('リズム（伴奏のスタイル）', el.style, 'ジャズ・ロック・ブルース・ファンク・ラテンなど16種類。画面の下のバーの「リズム」でも変えられます'),
         h('div', { class: 'field' }, h('label', { class: 'f-label', for: 'keySel' }, 'キー（まるごと移調）'), h('div', { class: 'row gap' }, keyDown, el.keySel, keyUp), el.keyNote),
         h('div', { class: 'field wide' }, h('label', { class: 'f-label' }, 'ノリ（シャッフルの種類と強さ）'), el.feel),
         U.field('カウントイン', el.countIn, null),
