@@ -298,6 +298,12 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
 .pal-b:hover { border-color: var(--accent); }
 .pal-b.st { font-family: var(--font); font-weight: 600; font-size: .8rem; }
 .pal-b .pr { color: var(--muted); font-weight: 500; margin-right: 1px; }
+.midi-parts { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.midi-part { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; }
+.midi-status { margin-top: 10px; font-size: .84rem; color: var(--muted); }
+.midi-status.on { color: var(--accent); font-weight: 600; }
+.midi-howto { margin-top: 10px; }
+.midi-howto ol { margin: 8px 0 6px 1.2em; padding: 0; font-size: .84rem; line-height: 1.6; }
 .help summary { cursor: pointer; color: var(--accent); font-size: .86rem; font-weight: 600; }
 .help ul { margin: 8px 0 0; padding-left: 1.3em; font-size: .86rem; color: var(--ink-2); }
 .help li { margin: 4px 0; }
@@ -4806,6 +4812,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       return s;
     }
     stopSession(fade) {
+      if (this.midiOut && this.midiOut.active()) this.midiOut.panic();   // MIDI で送っている先（Kontakt など）の音も止める
       const s = this.session; if (!s) return;
       this.session = null;
       const t = this.ctx.currentTime, f = fade == null ? 0.06 : fade;
@@ -4829,6 +4836,8 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
 
     /* ---- 音を鳴らす ---- */
     play(part, t, midi, dur, vel, instId) {
+      // MIDI で送るパート：ブラウザでは鳴らさず、合図だけ送る（消してあるパートは送らない）
+      if (this.midiOut && this.midiOut.takes(part)) { if (!this.muted[part]) this.midiOut.note(this.ctx, part, midi, vel, t, t + Math.max(0.03, dur)); return; }
       const id = instId || this.inst[part];
       const fn = VOICES[id] || VOICES.piano;
       let dest = this.dest(part);
@@ -4836,6 +4845,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       fn(this, dest, t, midi, Math.max(0.03, dur), clamp(vel, 1, 127), part);
     }
     drum(kind, t, vel) {
+      if (this.midiOut && this.midiOut.takes('drums')) { if (!this.muted.drums) this.midiOut.drum(this.ctx, kind, vel, t); return; }
       const fn = DRUMS[kind];
       if (fn) fn(this, this.dest('drums'), t, clamp(vel, 1, 127) / 127, this.inst.drums);
     }
@@ -5212,6 +5222,24 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     E.play(part, tStart, evt.midi, dur, evt.vel);
   }
 
+  // 予約の時計：ふつうの setInterval に加えて、ワーカーの中の setInterval でも tick を呼ぶ。
+  // ブラウザが後ろに隠れる（Kontakt の画面を前に出す、など）と、ページの setInterval は1秒に1回まで遅くされ、
+  // 音を出していないページ（全部のパートを MIDI で送っているとき）は、5分ほどでさらに遅くされる。ワーカーの時計は遅くされない。
+  // tick は何回呼んでもよい（予約ずみのところは、もう一度は予約しない）
+  function startTicker(fn, ms) {
+    const id = setInterval(fn, ms);
+    let w = null;
+    try {
+      if (typeof Worker !== 'undefined' && typeof Blob !== 'undefined' && typeof URL !== 'undefined' && URL.createObjectURL) {
+        const url = URL.createObjectURL(new Blob(['setInterval(function () { postMessage(0); }, ' + ms + ');'], { type: 'text/javascript' }));
+        w = new Worker(url);
+        w.onmessage = () => fn(true);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch (e) { w = null; }   // ワーカーを作れない（file:// で開いたときの一部のブラウザなど）：ふつうの時計だけ
+    return { stop() { clearInterval(id); if (w) w.terminate(); } };
+  }
+
   class Player {
     constructor(engine) { this.E = engine; this.ctx = engine.ctx; this.running = false; this.timer = null; this.listeners = {}; }
     on(name, fn) { this.listeners[name] = fn; return this; }
@@ -5246,11 +5274,12 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       this.endU = this.loops === Infinity ? Infinity : this.loops * this.cycleBeats;
       this.running = true;
       this.finished = false;
+      this.workerAt = -1;
       this.tick();
-      this.timer = setInterval(() => this.tick(), 40);
+      this.timer = startTicker(fromWorker => { if (fromWorker) this.workerAt = this.ctx.currentTime; this.tick(); }, 40);
     }
     stop(silent) {
-      if (this.timer) { clearInterval(this.timer); this.timer = null; }
+      if (this.timer) { this.timer.stop(); this.timer = null; }
       const was = this.running;
       this.running = false;
       this.E.stopSession(0.05);
@@ -5280,7 +5309,11 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       if (!this.running) return;
       const ctx = this.ctx, plan = this.plan, feel = feelOf(plan);
       // 先読み（秒）。ノリを入れると、音が最大 (r − 0.5) 拍ぶん後ろへずれるので、そのぶん先まで読む（遅いテンポ × 強いシャッフルでも、予約が間に合うように）
-      const look = ((typeof document !== 'undefined' && document.hidden) ? 2.6 : 0.45) + Math.max(0, feel.r - 0.5) * this.spb;
+      // ページが後ろに隠れたら、遅くされた時計でも間に合うよう先まで読む。ただしワーカーの時計が動いていれば、その必要はない
+      //   （先読みが長いと、止めたあとも MIDI の音がその分だけ鳴ってしまう）
+      const workerAlive = this.workerAt >= 0 && ctx.currentTime - this.workerAt < 0.5;
+      const hidden = typeof document !== 'undefined' && document.hidden && !workerAlive;
+      const look = (hidden ? 2.6 : 0.45) + Math.max(0, feel.r - 0.5) * this.spb;
       const horizonSb = this.anchor.sbeat + (ctx.currentTime + look - this.anchor.time) / this.spb;
       let uH = feelUnmap(horizonSb, feel);
       if (uH > this.endU) uH = this.endU;
@@ -6388,6 +6421,116 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   if (typeof module !== 'undefined' && module.exports) module.exports = AL;
 })();
 
+/* ---- js/midiout.js ---- */
+/* アドリブ・ラボ：MIDI で外の音源（Kontakt など）へ送る（Web MIDI）。
+   ・チェックしたパートは、ブラウザでは鳴らさず、音の「合図」（ノートオン・オフ）を MIDI で送る。音は受けた側（Kontakt など）が出す。
+   ・チャンネルは MIDI の書き出しと同じ：コード 1・ベース 2・ソロ 3・ドラム 10（ドラムは GM の並び：キック 36・スネア 38…）。
+   ・再生は、音を少し先まで予約して鳴らしている（player.js）。MIDI も「この時刻に」と時刻つきで送るので、ノリ（シャッフル）はそのまま出る。
+   ・Chrome・Edge で使える（Safari・iPhone は Web MIDI がない）。
+   画面からは App.setMidi、音の予約からは Engine.play／drum（synth.js）が呼ぶ。 */
+(function () {
+  'use strict';
+  const root = typeof window !== 'undefined' ? window : globalThis;
+  const AL = (root.AL = root.AL || {});
+  const MO = (AL.MO = AL.MO || {});
+
+  // パートごとの MIDI チャンネル（0 始まり）
+  MO.CH = { comp: 0, bass: 1, solo: 2, drums: 9 };
+  MO.PARTS = ['comp', 'bass', 'solo', 'drums'];
+  const S = (MO.state = { access: null, out: null, outName: '', on: false, parts: { comp: true, bass: true, solo: true, drums: true }, offsetMs: 0, sent: 0, error: '' });
+  MO.now = () => (root.performance && root.performance.now ? root.performance.now() : Date.now());   // 検査では差しかえる
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+
+  MO.supported = () => typeof navigator !== 'undefined' && typeof navigator.requestMIDIAccess === 'function';
+
+  // 設定をうつす（{ on, out（送り先の名前）, parts, offset（ms） }）
+  MO.configure = function (cfg) {
+    cfg = cfg || {};
+    S.on = !!cfg.on;
+    S.outName = typeof cfg.out === 'string' ? cfg.out : S.outName;
+    if (cfg.parts) MO.PARTS.forEach(p => { S.parts[p] = cfg.parts[p] !== false; });
+    S.offsetMs = clamp(+cfg.offset || 0, -150, 150);
+    pickOut();
+  };
+  // MIDI を使う許可をもらい、送り先の一覧を作る（はじめての時は、Chrome が「MIDI デバイスの使用を許可しますか」と聞く）
+  MO.connect = function () {
+    if (!MO.supported()) return Promise.reject(new Error('このブラウザは MIDI の送り出しに対応していません'));
+    if (S.access) { pickOut(); return Promise.resolve(MO.outputs()); }
+    return navigator.requestMIDIAccess({ sysex: false }).then(acc => {
+      S.access = acc; S.error = '';
+      acc.onstatechange = () => { pickOut(); if (MO.onchange) MO.onchange(); };   // IAC ドライバをオンにした、などで一覧が変わったとき
+      pickOut();
+      return MO.outputs();
+    }, e => { S.error = (e && e.message) || String(e); throw e; });
+  };
+  MO.outputs = () => (S.access ? Array.from(S.access.outputs.values()).map(o => ({ id: o.id, name: o.name })) : []);
+  // 送り先を名前で選ぶ（id は起動しなおすと変わることがあるので、名前で覚える）。名前がなければ、最初の1つ
+  function pickOut() {
+    const outs = S.access ? Array.from(S.access.outputs.values()) : [];
+    S.out = outs.find(o => o.name === S.outName) || (S.outName ? null : outs[0] || null);
+    if (S.out && !S.outName) S.outName = S.out.name;
+  }
+  MO.select = function (name) { S.outName = name || ''; pickOut(); };
+  MO.outName = () => (S.out ? S.out.name : '');
+  MO.active = () => S.on && !!S.out;
+  MO.takes = part => MO.active() && !!S.parts[part];
+
+  // AudioContext の時刻 t（秒）→ MIDI を送る時刻（performance.now() の ms）。
+  // ブラウザの音が実際に聞こえる時刻にそろえる（getOutputTimestamp）。ずれ合わせ（offsetMs）を足す
+  MO.toPerf = function (ctx, t) {
+    let ms = null;
+    if (ctx && typeof ctx.getOutputTimestamp === 'function') {
+      const ts = ctx.getOutputTimestamp();
+      if (ts && ts.performanceTime > 0) ms = ts.performanceTime + (t - ts.contextTime) * 1000;
+    }
+    if (ms == null) ms = MO.now() + (t - (ctx ? ctx.currentTime : 0)) * 1000;
+    return ms + S.offsetMs;
+  };
+  function send(bytes, ms) {
+    if (!S.out) return;
+    try { S.out.send(bytes, Math.max(MO.now(), ms)); S.sent++; } catch (e) { S.error = (e && e.message) || String(e); }
+  }
+  // 音を1つ（t0〜t1 は AudioContext の時刻）。ノートオフは 2ms 早めて、次の同じ高さの音のオンより先に届くようにする
+  MO.note = function (ctx, part, midi, vel, t0, t1) {
+    const ch = MO.CH[part];
+    if (ch == null) return;
+    const m = clamp(Math.round(midi), 0, 127), v = clamp(Math.round(vel), 1, 127);
+    const on = MO.toPerf(ctx, t0), off = Math.max(on + 5, MO.toPerf(ctx, t1) - 2);
+    send([0x90 | ch, m, v], on);
+    send([0x80 | ch, m, 0], off);
+  };
+  // ドラム（kind：kick・snare・hhClosed…）。GM の音番号は export.js の表を使う
+  MO.drum = function (ctx, kind, vel, t) {
+    const map = (AL.X && AL.X.GM_DRUM) || {};
+    const n = map[kind];
+    if (n == null) return;
+    const v = clamp(Math.round(vel), 1, 127), on = MO.toPerf(ctx, t);
+    send([0x99, n, v], on);
+    send([0x89, n, 0], on + 80);
+  };
+  // 止めたとき：受けた側で鳴っている音を、すべて止める（CC123 オール・ノート・オフ）。
+  // 予約ずみでまだ届いていない合図は、取り消せるブラウザなら取り消す（できなければ、最大0.5秒ほど鳴ってから止まる）
+  MO.panic = function () {
+    if (!S.out) return;
+    try { if (typeof S.out.clear === 'function') S.out.clear(); } catch (e) { /* 取り消せないブラウザ */ }
+    const now = MO.now();
+    MO.PARTS.forEach(p => send([0xb0 | MO.CH[p], 123, 0], now));
+  };
+  // テスト音：チェックしたパートごとに、短く鳴らす（コード＝C の和音、ベース＝C、ソロ＝G、ドラム＝キック・スネア・ハイハット）
+  MO.test = function () {
+    if (!S.out) return [];
+    const t = MO.now() + 30, done = [];
+    const play = (ch, m, at, len) => { send([0x90 | ch, m, 96], t + at); send([0x80 | ch, m, 0], t + at + len); };
+    if (S.parts.comp) { [60, 64, 67].forEach(m => play(MO.CH.comp, m, 0, 700)); done.push('comp'); }
+    if (S.parts.bass) { play(MO.CH.bass, 36, 0, 700); done.push('bass'); }
+    if (S.parts.solo) { play(MO.CH.solo, 79, 150, 500); done.push('solo'); }
+    if (S.parts.drums) { play(MO.CH.drums, 36, 0, 80); play(MO.CH.drums, 42, 250, 80); play(MO.CH.drums, 38, 500, 80); done.push('drums'); }
+    return done;
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = AL;
+})();
+
 /* ---- js/ui-core.js ---- */
 /* アドリブ・ラボ：画面まわりの小道具（DOM の組み立て・保存・通知・ダウンロード）。 */
 (function () {
@@ -6552,6 +6695,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       comp: 'piano', bass: 'upright', drums: 'jazz', soloInst: 'altosax',
       mix: Object.assign({}, MIX_DEF), reverb: Object.assign({}, REV_DEF), muted: {},
       seed: 1, soloSeed: 3, level: 2, density: 1, rest: 1, soloMode: 'same', concert: true,
+      midi: { on: false, out: '', parts: { comp: true, bass: true, solo: true, drums: true }, offset: 0 },
       keyOverride: null, keyCycle: 0, perRow: 4, range: null, tab: 'chart', dictKey: 0,
     };
   }
@@ -6585,6 +6729,9 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     o.level = inList([1, 2, 3], o.level, 2);
     o.density = inList([0, 1, 2], o.density, 1);
     o.rest = inList([0, 1, 2], o.rest, 1);
+    // MIDI で送る（Kontakt など）。送り先は名前で覚える
+    { const m = o.midi && typeof o.midi === 'object' ? o.midi : {}, p = m.parts && typeof m.parts === 'object' ? m.parts : {};
+      o.midi = { on: !!m.on, out: typeof m.out === 'string' ? m.out.slice(0, 200) : '', parts: { comp: p.comp !== false, bass: p.bass !== false, solo: p.solo !== false, drums: p.drums !== false }, offset: Math.round(num(m.offset, -150, 150, 0)) }; }
     o.soloMode = inList(['off', 'same', 'fresh'], o.soloMode, 'same');
     o.concert = !!o.concert;
     o.keyOverride = o.keyOverride && typeof o.keyOverride.tonicPc === 'number' && (o.keyOverride.mode === 'major' || o.keyOverride.mode === 'minor') ? { tonicPc: mod(o.keyOverride.tonicPc | 0, 12), mode: o.keyOverride.mode } : null;
@@ -6768,6 +6915,27 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     ['comp', 'bass', 'drums'].forEach(p => { if (b[p] && st[p] === a[p]) st[p] = b[p]; });
     if (App.engine) { App.engine.inst.comp = st.comp; App.engine.inst.bass = st.bass; App.engine.inst.drums = st.drums; }
   }
+  /* ---------------- MIDI で送る（Kontakt など） ---------------- */
+  // patch：{ on, out, parts, offset }。オンにしたときは、MIDI を使う許可をもらって、送り先の一覧を作る
+  App.midiStatus = '';
+  App.setMidi = function (patch) {
+    Object.assign(st.midi, patch || {});
+    if (patch && patch.parts) st.midi.parts = Object.assign({}, st.midi.parts, patch.parts);
+    const MO = AL.MO;
+    MO.configure(st.midi);
+    save();
+    if (st.midi.on) {
+      App.midiStatus = '接続しています…';
+      MO.connect().then(() => {
+        MO.configure(st.midi);
+        if (!st.midi.out && MO.outName()) { st.midi.out = MO.outName(); save(); }
+        App.midiStatus = MO.outputs().length ? '' : '送り先が見つかりません（下の「Mac での準備」の 1 を見てください）';
+        App.emit('midi');
+      }, e => { App.midiStatus = 'MIDI を使えませんでした：' + ((e && e.message) || e) + '（Chrome の許可を確かめてください）'; App.emit('midi'); });
+    } else App.midiStatus = '';
+    App.emit('midi');
+  };
+
   App.setStyle = function (id) {
     if (!B.STYLES[id]) return;
     const nw = B.STYLES[id];
@@ -6841,6 +7009,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* 対応していないブラウザ */ }
       App.ctx = new AC({ latencyHint: 'interactive' });
       App.engine = new Au.Engine(App.ctx);
+      if (AL.MO) App.engine.midiOut = AL.MO;   // MIDI で送るパートは、ここから外へ（midiout.js。送らない設定のときは何もしない）
       App.player = new Au.Player(App.engine);
       App.player.on('stop', () => { stopFrames(); setPlayKind(null); }).on('end', () => { stopFrames(); setPlayKind(null); });
     }
@@ -7090,6 +7259,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     }
     buildTransport();
     refreshTransport();
+    if (AL.MO) { AL.MO.onchange = () => App.emit('midi'); if (st.midi.on && AL.MO.supported()) App.setMidi({}); else AL.MO.configure(st.midi); }
     App.emit('init');
     U.$$('#tabs button').forEach(b => b.addEventListener('click', () => App.showTab(b.dataset.tab)));
     App.showTab(shared ? 'chart' : st.tab);
@@ -8311,6 +8481,9 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
       h('div', { class: 'card-h' }, h('h2', null, '楽器'), reseed),
       h('div', { class: 'fields' }, U.field('コード', el.comp), U.field('ベース', el.bass), U.field('ドラム', el.drums), U.field('ソロ', el.solo))));
 
+    /* --- MIDI で送る（Kontakt など） --- */
+    root.appendChild(buildMidi());
+
     /* --- ミキサー --- */
     el.mixRows = {};
     const mixCard = h('div', { class: 'card mixer' }, h('div', { class: 'card-h' }, h('h2', null, 'ミキサー'), h('button', { type: 'button', class: 'btn sm ghost', onclick: resetMix }, '初期値にもどす')));
@@ -8379,8 +8552,78 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   function refresh() {
     if (!el.comp) return;
     el.comp.value = st().comp; el.bass.value = st().bass; el.drums.value = st().drums; el.solo.value = st().soloInst;
+    updateMidi();
+  }
+
+  /* ---------------- MIDI で送る（Kontakt など） ---------------- */
+  const MIDI_PARTS = [['comp', 'コード', 1], ['bass', 'ベース', 2], ['solo', 'ソロ', 3], ['drums', 'ドラム', 10]];
+  function buildMidi() {
+    const MO = AL.MO, m = st().midi;
+    const card = h('div', { class: 'card midi-card', id: 'midiCard' }, h('div', { class: 'card-h' }, h('h2', null, 'Kontakt などで鳴らす（MIDI で送る）')));
+    card.appendChild(h('p', { class: 'muted' }, 'チェックしたパートを、ブラウザでは鳴らさず、MIDI でパソコンの中の音源（Kontakt など）へ送ります。▶ を押せば、その場で音源が弾きます（差しかえ・テンポ変更もそのまま）。'));
+    el.midiStatus = h('p', { class: 'midi-status', id: 'midiStatus', role: 'status' });
+    if (!MO.supported()) {
+      card.appendChild(el.midiStatus);
+      el.midiStatus.textContent = 'このブラウザは MIDI の送り出しに対応していません。Mac なら Chrome（か Edge）で開いてください（Safari・iPhone では使えません）。';
+      card.appendChild(midiHowto());
+      return card;
+    }
+    el.midiSw = U.switchEl('MIDI で送る', m.on, on => App.setMidi({ on }), 'オンにすると、チェックしたパートを MIDI で送ります');
+    el.midiSel = h('select', { id: 'midiOut', 'aria-label': 'MIDI の送り先', onchange: () => App.setMidi({ out: el.midiSel.value }) });
+    el.midiParts = {};
+    const parts = h('div', { class: 'midi-parts' });
+    MIDI_PARTS.forEach(([id, label, ch]) => {
+      const cb = h('input', { type: 'checkbox', checked: m.parts[id] ? true : null, onchange: () => App.setMidi({ parts: { [id]: cb.checked } }) });
+      el.midiParts[id] = cb;
+      parts.appendChild(h('label', { class: 'midi-part' }, cb, h('span', null, label + '（' + ch + 'ch）')));
+    });
+    el.midiOffset = sliderRow('タイミング', m.offset, -150, 150, 5, v => App.setMidi({ offset: v }), v => (v > 0 ? '+' : '') + v + ' ms');
+    const testBtn = h('button', { type: 'button', class: 'btn', id: 'midiTest', onclick: () => {
+      if (!MO.active()) { U.toast('先に「MIDI で送る」をオンにして、送り先を選んでください'); return; }
+      const done = MO.test();
+      U.toast(done.length ? 'テスト音を送りました（' + done.map(p => MIDI_PARTS.find(x => x[0] === p)[1]).join('・') + '）' : '送るパートにチェックがありません');
+    } }, '🔔 テスト音を送る');
+    card.appendChild(h('div', { class: 'fields' },
+      h('div', { class: 'field' }, h('label', { class: 'f-label' }, '送る'), el.midiSw),
+      U.field('送り先', el.midiSel, 'Mac なら「IAC ドライバ」のバス'),
+      U.field('送るパート（チャンネル）', parts, 'チェックしたパートは、ブラウザでは鳴りません（ミキサーの音量・残響も効きません。音量は Kontakt で）'),
+      U.field('タイミング', el.midiOffset.root, '音源の音が、ブラウザの音（カウント・メトロノームなど）より遅れて聞こえるときは、マイナスに')));
+    card.appendChild(h('div', { class: 'row gap wrap' }, testBtn));
+    card.appendChild(el.midiStatus);
+    card.appendChild(midiHowto());
+    updateMidi();
+    return card;
+  }
+  function midiHowto() {
+    return h('details', { class: 'help midi-howto' },
+      h('summary', null, 'Mac での準備（はじめに1回だけ）'),
+      h('ol', null,
+        h('li', null, '「Audio MIDI 設定」を開く（アプリケーション → ユーティリティ）。メニューの「ウインドウ」→「MIDI スタジオを表示」→「IAC ドライバ」をダブルクリックして、「装置はオンライン」にチェックを入れる。'),
+        h('li', null, 'Kontakt を単体で起動し、設定（Options／Preferences）の「MIDI」で、IAC ドライバのバス（IAC Driver Bus 1）の入力をオンにする。'),
+        h('li', null, 'Kontakt に音色を読みこみ、それぞれの MIDI チャンネルを合わせる：コード＝1、ベース＝2、ソロ＝3、ドラム＝10（音色の上の帯の「MIDI Ch」）。ドラムは GM の並び（キック 36・スネア 38・ハイハット 42…）で送ります。'),
+        h('li', null, 'このページを Chrome で開き、「MIDI で送る」をオン →（はじめての時は、Chrome が MIDI の使用の許可を聞くので「許可」）→ 送り先にそのバスを選ぶ →「テスト音を送る」で鳴るか確かめる。')),
+      h('p', { class: 'f-hint' }, 'Logic Pro で受けることもできます（ソフトウェア音源のトラックに Kontakt を立てる）。ただ、Kontakt 単体のほうが手順が少なく、軽く済みます。'),
+      h('p', { class: 'f-hint' }, '重いときは、Kontakt の設定（Audio）でバッファ（Latency）を大きめに。弾きながらではなく、聞くための使い方なので、遅れは気になりません。止めたあと、少しだけ音が残ることがあります（先に予約した分）。'));
+  }
+  function updateMidi() {
+    const MO = AL.MO, m = st().midi;
+    if (!el.midiSel) return;
+    el.midiSw.input.checked = !!m.on;
+    const outs = MO.outputs(), cur = MO.outName() || m.out;
+    U.clear(el.midiSel);
+    if (!outs.length) el.midiSel.appendChild(h('option', { value: '' }, m.on ? '（見つかりません）' : '（オンにすると、ここに出ます）'));
+    outs.forEach(o => el.midiSel.appendChild(h('option', { value: o.name }, o.name)));
+    if (cur && !outs.some(o => o.name === cur)) el.midiSel.appendChild(h('option', { value: cur }, cur + '（いまは見つかりません）'));
+    el.midiSel.value = cur || '';
+    el.midiSel.disabled = !m.on;
+    MIDI_PARTS.forEach(([id]) => { el.midiParts[id].checked = !!m.parts[id]; });
+    el.midiStatus.textContent = App.midiStatus || (MO.active()
+      ? '「' + MO.outName() + '」へ送っています（' + MIDI_PARTS.filter(([id]) => m.parts[id]).map(([, l, ch]) => l + ' ' + ch + 'ch').join('・') + '）'
+      : m.on ? '送り先を選んでください' : 'オフ：すべてブラウザの音で鳴らしています');
+    el.midiStatus.classList.toggle('on', MO.active());
   }
   App.on('init', build);
+  App.on('midi', updateMidi);
   App.on('settings', refresh);
   App.on('solo', refresh);
   App.on('tab', name => { if (name === 'sound') refresh(); });
