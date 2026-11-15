@@ -207,4 +207,35 @@ for (const style of Object.keys(B.STYLES)) for (const kind of ['piano', 'guitar'
   eq(a.bass, b.bass); eq(a.comp, b.comp);
   ok(JSON.stringify(a.comp) !== JSON.stringify(c.comp), '種を変えても同じ');
 }
+/* ---- 点検で見つかったもの ---- */
+{
+  // サンバ：1小節に2つコードがあるとき、2つ目のコードも、そのコードの根音から始まる（5度から始めない）
+  const { out } = gen('| Dm7 G7 | Cmaj7 A7 |', 'samba');
+  const at = t => out.bass.find(b => Math.abs(b.t - t) < 1e-6);
+  eq([0, 2, 4, 6].map(t => at(t) && mod(at(t).midi, 12)), [2, 7, 0, 9], 'サンバ：2拍ずつのコードの頭は、どれも根音');
+  eq([1.5, 3.5, 5.5].map(t => at(t) && mod(at(t).midi, 12)), [7, 0, 9], 'サンバ：裏で、次のコードの根音へ');
+  // スロー・ブルース：ベースの音どうしが重ならない（4拍目の音と、3連符3つ目の接近音）
+  const sb = gen('| C7 | F7 | C7 | G7 |', 'slowblues').out.bass;
+  let overlap = 0;
+  for (let i = 1; i < sb.length; i++) if (sb[i].t < sb[i - 1].t + sb[i - 1].dur - 1e-6) overlap++;
+  eq(overlap, 0, 'スロー・ブルース：ベースの音が重なる');
+  ok(sb.some(b => Math.abs(b.t % 1 - 2 / 3) < 1e-6), 'スロー・ブルース：3連符3つ目の接近音がある');
+  // 伴奏の音の位置（t）は、楽譜どおりの拍の位置。ロールやゆらぎは off に分けてある
+  //   （t に混ぜると、3連符の位置の音がシャッフルの式でずらされて、ハイハットと合わなくなる）
+  const Au = require('../js/player.js').Au;
+  for (const style of Object.keys(B.STYLES)) for (const kind of ['piano', 'guitar', 'organ']) {
+    const o = gen('| C7 | F7 | Dm7 G7 | C7 |', style, { comp: kind }).out;
+    const onGrid = t => Math.abs(t * 12 - Math.round(t * 12)) < 1e-6;
+    ok(o.comp.every(e => onGrid(e.t)) && o.bass.every(e => onGrid(e.t)), `${style}/${kind}：コード・ベースの t が拍の位置（1/12 拍の刻み）にない`);
+    ok(o.comp.concat(o.bass).every(e => e.off == null || (Math.abs(e.off) < 0.2 && e.t + e.off >= -1e-9)), `${style}/${kind}：off が大きすぎる／0 より前に出る`);
+  }
+  {
+    // スロー・ブルース（3連符のノリ）：コードの3連符の位置は、ノリを入れても動かない（ハイハットと同じ位置で鳴る）
+    const o = gen('| C7 | F7 | C7 | G7 |', 'slowblues').out, feel = { div: 2, r: 2 / 3 };
+    const trip = o.comp.filter(e => { const f = e.t % 1; return Math.abs(f - 1 / 3) < 1e-6 || Math.abs(f - 2 / 3) < 1e-6; });
+    ok(trip.length > 20, 'スロー・ブルース：コードに3連符の刻みがある：' + trip.length);
+    ok(trip.every(e => Math.abs(Au.feelMap(e.t, feel) - e.t) < 1e-9), 'スロー・ブルース：コードの3連符が、ノリでずれる');
+    ok(o.comp.some(e => e.off), 'ゆらぎ（off）がついている');
+  }
+}
 console.log(`comping: OK（${n}件）`);

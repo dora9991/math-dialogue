@@ -44,7 +44,7 @@
     const b = BREATH[restLevel(o)], dens = Math.min(2, Math.max(0, o.density | 0));
     st.phraseMax = (b.phrase[0] + st.rand() * (b.phrase[1] - b.phrase[0])) * [0.8, 1, 1.25][dens];
   }
-  // 息継ぎ：いま鳴っている音が終わってから、何拍か休む。長く弾いたあとは、休みも1拍長く。
+  // 息継ぎ：いま鳴っている音が終わってから、何拍か休む。長く弾いたあとは、休みも1拍長く（「少なめ」のときは長くしない）。
   // 最後の音が長い（2拍以上）ときは、1拍ぶん短く切って、そのぶんも休みにする（フレーズの終わりを、小節の終わりまでのばしきらない）
   function takeBreath(st, o) {
     const lv = restLevel(o), b = BREATH[lv];
@@ -202,7 +202,8 @@
     const pools = st.an.chords[hi].pools || [{ ctx: 'maj7', w: 1 }];
     let t = from, guard = 0;
     const dens = Math.min(2, Math.max(0, o.density | 0));
-    while (guard++ < 12) {
+    const maxLicks = Math.ceil((to - from) / 1.5) + 2;   // 1回まわるごとに1.5拍以上進むので、これで足りる（何小節つづくコードでも、最後まで埋める）
+    while (guard++ < maxLicks) {
       // 前の音から1拍以上あいていれば、そこでフレーズは切れている（新しいフレーズ）
       if (st.run > 0 && t - st.soundEnd >= 1 - EPS) { st.run = 0; newPhrase(st, o); }
       // 息継ぎ：ひとフレーズぶん弾いたら、休む
@@ -284,15 +285,18 @@
       const f = pick.fit, t0 = slice[0].t0;
       if (f.lead > EPS) {
         fillSingle(st, o, hs, m.at, t0, t0 + f.lead);
-        if (st.restUntil > t0 + f.lead) st.restUntil = t0 + f.lead;   // かたまりのリックを弾くと決めたので、休みはここまで
+        // 手前を埋めているうちに、息継ぎの番になった／フレーズが長くなりすぎた：かたまりは置かない（決めた休みを取り消さない）。
+        // 最初のコードの残りは1コードのリックで埋めて、あとは呼んだ側がコードごとに進める
+        if (!readyAt(t0 + f.lead, f.len)) { fillSingle(st, o, hs, m.at, t0 + f.lead, t0 + durs[0]); return false; }
       }
       commit(st, o, hs, { id: pick.lick.id, ctx, i0: m.at, n: m.n, t: t0 + f.lead, kind: 'pattern', pat: m.id });
       const lastH = slice[slice.length - 1];
       if (f.tail > EPS) fillSingle(st, o, hs, m.at + m.n - 1, lastH.t0 + lastH.dur - f.tail, lastH.t0 + lastH.dur);
+      return true;
     };
-    // いま、このかたまりを弾きはじめてよいか：休みが残っていない。そして、フレーズの頭か、入りの数拍のあとか、弾ききる余裕がある
-    const ready = m => {
-      const t0 = hs[m.at].t0, total = sliceOf(m).reduce((a, h) => a + h.dur, 0);
+    // t0 から total 拍のかたまりを、いま弾きはじめてよいか：休みが残っていない。そして、フレーズの頭か、入りの数拍のあとか、弾ききる余裕がある
+    const ready = m => readyAt(hs[m.at].t0, sliceOf(m).reduce((a, h) => a + h.dur, 0));
+    const readyAt = (t0, total) => {
       if (st.run > 0 && t0 - st.soundEnd >= 1 - EPS) { st.run = 0; newPhrase(st, o); }
       if (st.run > SPLIT.pickup + EPS) {
         // 息継ぎの番：ここで休みを決める（最後の長い音を短く切れれば、かたまりの頭に間に合うこともある）
@@ -322,11 +326,12 @@
           continue;
         }
       }
-      if (m.n < 2 || ready(m)) { placePattern(m, cands); continue; }
+      let k0 = m.at;
+      if (m.n < 2 || ready(m)) { if (placePattern(m, cands)) continue; k0 = m.at + 1; }   // 置かなかったときは、最初のコードだけ済んでいる
       // 息継ぎ：コードごとに進んで休み、休みが済んだところから、短いかたまり（V–I など）があれば、それで入りなおす
-      for (let k = m.at, end = m.at + m.n; k < end;) {
+      for (let k = k0, end = m.at + m.n; k < end;) {
         const m2 = k > m.at ? subMatch(k, end) : null;
-        if (m2 && ready(m2)) { placePattern(m2); k += m2.n; }
+        if (m2 && ready(m2)) k += placePattern(m2) ? m2.n : 1;
         else { single(k); k++; }
       }
     }
@@ -357,7 +362,7 @@
     return (next && next.t > d.t + EPS && next.t < end - EPS ? next.t : end) - d.t;
   }
   // d 番目の決定に置き換えられるリックの候補（同じ長さに収まるもの）
-  function candidates(hs, an, solo, di, extraOpts) {
+  function candidates(hs, an, solo, di) {
     const d = solo.decisions[di], cur = L.byId[d.id], o = solo.opts;
     const lvlMax = 3;
     if (d.kind === 'pattern') {

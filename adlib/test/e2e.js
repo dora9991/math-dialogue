@@ -311,6 +311,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await page.evaluate(() => { const A = AL.App; A.loadPreset('bossa'); A.setSoloParams({ soloSeed: 4242, level: 3, density: 2, rest: 2, soloInst: 'tenorsax' }); A.set({ feel: 's16', swing: 0.6 }); A.swapLick(1, A.suggest(A.solo.decisions[1].i0, 5).list.find(l => l.id !== A.solo.decisions[1].id).id); });
   const shareUrl = await page.evaluate(() => AL.App.shareUrl());
   const soloKey = await page.evaluate(() => JSON.stringify(AL.App.solo.events.map(e => [e.t, e.midi, e.dur])));
+  const instKey = await page.evaluate(() => [AL.App.st.comp, AL.App.st.bass, AL.App.st.drums].join());
   const ctx2 = await browser.newContext({ viewport: { width: 900, height: 800 } });
   const page2 = await ctx2.newPage();
   const errors2 = [];
@@ -324,6 +325,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   ok(soloKey === soloKey2 && soloKey.length > 100, '共有リンクで同じソロ（差しかえたリックも）が再現される');
   ok(await page2.evaluate(() => AL.App.st.soloInst === 'tenorsax' && AL.App.st.level === 3 && AL.App.st.soloSeed === 4242), '共有リンクで楽器・難しさ・番号も再現される');
   ok(await page2.evaluate(() => AL.App.st.rest === 2 && AL.App.st.density === 2 && AL.App.feelKind() === 's16' && Math.abs(AL.App.feel().r - 0.6) < 1e-9), '共有リンクでブレイクの多さ・音の多さ・ノリも再現される');
+  ok(await page2.evaluate(k => [AL.App.st.comp, AL.App.st.bass, AL.App.st.drums].join() === k, instKey), '共有リンクで伴奏の楽器も再現される：' + instKey);
+  // 楽器の入っていない（前の版の）リンク：そのスタイルのおすすめの楽器で開く
+  const oldUrl = await page.evaluate(() => { const A = AL.App; const d = { t: '| G | D | Em | C |', s: 'rock8', p: 120, ti: 'old' }; return location.href.split('#')[0] + '#s=' + btoa(unescape(encodeURIComponent(JSON.stringify(d)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); });
+  await page2.goto('about:blank'); await page2.goto(oldUrl); await page2.waitForTimeout(400);
+  ok(await page2.evaluate(() => { const A = AL.App, r = AL.B.STYLES.rock8.inst; return A.st.style === 'rock8' && A.st.comp === r.comp && A.st.bass === r.bass && A.st.drums === r.drums; }), '楽器の入っていないリンクは、スタイルに合う楽器で開く');
   ok(errors2.length === 0, '共有リンクのページのエラー：' + errors2.join(' | '));
   await ctx2.close();
 

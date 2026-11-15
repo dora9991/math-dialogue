@@ -67,7 +67,7 @@ for (const [name, text] of Object.entries(CHARTS)) {
         const again = S.generate(b.hs, b.an, opts);
         eq(again.events.map(e => [e.t, e.dur, e.midi]), ev.map(e => [e.t, e.dur, e.midi]), `${name}: 同じ種で結果が変わる`);
       }
-      // decisions から作りなおしても、同じ音になる（息継ぎで短く切った最後の音もふくめて）
+      // realize は、同じ decisions から何度作っても同じ音になる（息継ぎで短く切った最後の音もふくめて）
       if (seed % 5 === 0) {
         const re = S.realize(b.hs, b.an, solo);
         eq(re.events.map(e => [e.t, e.dur, e.midi]), ev.map(e => [e.t, e.dur, e.midi]), `${name} seed${seed}: realize しなおすと音が変わる`);
@@ -253,7 +253,7 @@ const fmt = x => Object.entries(x).map(([k, v]) => `${k} ${typeof v === 'number'
         S.candidates(b.hs, b.an, solo, di).forEach(l => {
           const sw = S.swap(b.hs, b.an, solo, di, l.id);
           let end = 0, bad = 0;
-          for (const e of sw.events) { if (e.t < end - 1e-6) bad++; end = Math.max(end, e.t + e.dur); }
+          for (const e of sw.events) { if (e.t < end - 1e-6 || !(e.dur >= 0.2)) bad++; end = Math.max(end, e.t + e.dur); }   // 重なり・短すぎる音（短く切った最後の音が、0 以下にならない）
           tried++;
           if (bad || end > b.total + 1e-6 || sw.decisions[di].id !== l.id) assert.fail(`${name} seed${seed}: ${d.id} → ${l.id} に差しかえると、音が重なる／はみ出す（重なり ${bad}、終わり ${end}）`);
         });
@@ -263,6 +263,35 @@ const fmt = x => Object.entries(x).map(([k, v]) => `${k} ${typeof v === 'number'
   n += tried;
   ok(shared >= 10, '同じコードにリックが2本ある場面が出ていない（この検査の意味がなくなる）：' + shared);
   if (verbose) console.log(`差しかえ：${tried} 通り（同じコードに次のリックがある場面 ${shared}）`);
+}
+// とても長い1コード（16小節・32小節）：最後まで弾く（リックの本数の上限で、後ろが無音にならない）
+{
+  for (const bars of [16, 32]) {
+    const b = build('| Dm7 |' + ' % |'.repeat(bars - 1));
+    let worst = 0;
+    for (let seed = 1; seed <= 10; seed++) for (const rest of [0, 1, 2]) for (const density of [0, 2]) {
+      const solo = S.generate(b.hs, b.an, { seed, level: 2, rest, density, bpb: 4 });
+      const end = Math.max.apply(null, solo.events.map(e => e.t + e.dur));
+      worst = Math.max(worst, b.total - end);
+    }
+    ok(worst <= 8 + 1e-6, `${bars}小節つづく1コード：後ろが ${worst} 拍も無音になる`);
+  }
+}
+// かたまりの最初のコードが長いとき（V7 が何小節も続いてから I へ）：手前を埋めたあとに決めた息継ぎが、取り消されない
+{
+  for (const text of ['| G7 | % | Cmaj7 | % |', '| G7 | % | % | % | Cmaj7 | % | % | % |']) {
+    const b = build(text);
+    for (const [rest, limit] of [[0, 26], [1, 18], [2, 16]]) {
+      let longest = 0;
+      for (let seed = 1; seed <= 40; seed++) for (const density of [0, 1, 2]) {
+        const ev = S.generate(b.hs, b.an, { seed, level: 2, rest, density, bpb: 4 }).events;
+        let start = ev[0].t, end = ev[0].t + ev[0].dur;
+        for (const e of ev) { if (e.t - end >= 1 - 1e-6) { longest = Math.max(longest, end - start); start = e.t; } end = Math.max(end, e.t + e.dur); }
+        longest = Math.max(longest, end - start);
+      }
+      ok(longest <= limit, `${text} ブレイク${rest}：${longest} 拍も弾きつづける（上限 ${limit}）`);
+    }
+  }
 }
 if (verbose) {
   const b = build(CHARTS['251']);

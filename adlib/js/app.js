@@ -48,6 +48,8 @@
     o.tempo = Math.round(num(o.tempo, 40, 320, B.STYLES[o.style].tempo[0]));
     o.swing = o.swing == null ? null : num(o.swing, 0.5, 0.75, null);
     o.feel = inList(['even', 's8', 's16'], o.feel, null);
+    // 古い保存・古い共有リンク（強さだけがあって、ノリの種類がない）：標準がストレートのスタイルでも、付けてあったスウィングが消えないように
+    if (o.feel == null && o.swing != null && o.swing > 0.505 && B.feelKindOf(B.STYLES[o.style]) === 'even') o.feel = 's8';
     o.loops = inList(LOOP_CHOICES, o.loops, 4);
     o.countIn = inList([0, 1, 2], o.countIn, 1);
     o.click = !!o.click;
@@ -456,7 +458,7 @@
     const base = S.generate(App.hs, App.an, App.soloOpts());
     const swaps = [];
     App.solo.decisions.forEach((d, i) => { if (!base.decisions[i] || base.decisions[i].id !== d.id) swaps.push([i, d.id]); });
-    const data = { t: st.text, s: st.style, p: st.tempo, ti: st.title, k: st.keyOverride, ss: st.soloSeed, lv: st.level, dn: st.density, rs: st.rest, si: st.soloInst, sd: st.seed, cn: st.concert ? 1 : 0 };
+    const data = { t: st.text, s: st.style, p: st.tempo, ti: st.title, k: st.keyOverride, ss: st.soloSeed, lv: st.level, dn: st.density, rs: st.rest, si: st.soloInst, ci: st.comp, bi: st.bass, di: st.drums, sd: st.seed, cn: st.concert ? 1 : 0 };
     if (st.swing != null) data.sw = st.swing;
     if (st.feel != null) data.fl = st.feel;
     if (swaps.length) data.sx = swaps;
@@ -478,6 +480,9 @@
       if (d.dn != null) patch.density = d.dn;
       if (d.rs != null) patch.rest = d.rs;
       if (d.si != null) patch.soloInst = d.si;
+      // 伴奏の楽器。入っていないリンク（前の版で作ったもの）は、そのスタイルのおすすめの楽器で開く（ロックのリンクが、ジャズの楽器で鳴らないように）
+      const rec = (B.STYLES[d.s] || {}).inst || {};
+      patch.comp = d.ci != null ? d.ci : rec.comp; patch.bass = d.bi != null ? d.bi : rec.bass; patch.drums = d.di != null ? d.di : rec.drums;
       if (d.sd != null) patch.seed = d.sd;
       if (d.sw != null) patch.swing = d.sw;
       if (d.fl != null) patch.feel = d.fl;

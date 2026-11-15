@@ -163,7 +163,8 @@
     tick() {
       if (!this.running) return;
       const ctx = this.ctx, plan = this.plan, feel = feelOf(plan);
-      const look = (typeof document !== 'undefined' && document.hidden) ? 2.6 : 0.45;
+      // 先読み（秒）。ノリを入れると、音が最大 (r − 0.5) 拍ぶん後ろへずれるので、そのぶん先まで読む（遅いテンポ × 強いシャッフルでも、予約が間に合うように）
+      const look = ((typeof document !== 'undefined' && document.hidden) ? 2.6 : 0.45) + Math.max(0, feel.r - 0.5) * this.spb;
       const horizonSb = this.anchor.sbeat + (ctx.currentTime + look - this.anchor.time) / this.spb;
       let uH = feelUnmap(horizonSb, feel);
       if (uH > this.endU) uH = this.endU;
@@ -205,8 +206,8 @@
         for (const part of ['comp', 'bass']) {
           for (const e of (ch[part] || [])) {
             if (!inWin(e)) continue;
-            const u = base + e.t;
-            playNote(E, part, e, this.timeOf(u, r), this.timeOf(u + e.dur, r));
+            const u = base + e.t, off = (e.off || 0) * this.spb;   // off：ロール・ゆらぎ（拍）。ノリを入れたあとの時刻に足す
+            playNote(E, part, e, this.timeOf(u, r) + off, this.timeOf(u + e.dur, r) + off);
           }
         }
         for (const d of (ch.drums || [])) { if (inWin(d)) E.drum(d.kind, this.timeOf(base + d.t, r), d.vel); }

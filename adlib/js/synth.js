@@ -233,7 +233,7 @@
     o.setPeriodicWave(tone(E, 'organ')); o.frequency.value = f; sub.type = 'sine'; sub.frequency.value = f / 2; sg.gain.value = 0.16;
     const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 6.3; lg.gain.value = 5; lfo.connect(lg); lg.connect(o.detune);
     o.connect(g); sub.connect(sg); sg.connect(g); g.connect(lp); lp.connect(dest);
-    const stop = adsr(g.gain, t, dur, 0.008, 0.09 * Math.pow(v, 0.9), 0, 1, 0.05);
+    const stop = adsr(g.gain, t, dur, 0.008, 0.15 * Math.pow(v, 0.9), 0, 1, 0.05);   // ピアノと同じくらいの大きさに（0.09 では、レゲエの裏打ちなど短い刻みが埋もれた）
     [o, sub, lfo].forEach(x => { x.start(t); x.stop(stop); });
     E.noise(dest, t, 0.02, { hp: 2500, gain: 0.015 * v, decay: 0.006 });   // キークリック
   };
@@ -291,10 +291,10 @@
   VOICES.synbass = (E, dest, t, m, dur, vel) => {
     const ctx = E.ctx, f = freq(m), v = vel / 127, g = ctx.createGain(), lp = lowpass(ctx, 1800, 6);
     const o1 = ctx.createOscillator(), o2 = ctx.createOscillator();
-    o1.type = 'sawtooth'; o1.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f / 2; const sg = ctx.createGain(); sg.gain.value = 0.2;
+    o1.type = 'sawtooth'; o1.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f / 2; const sg = ctx.createGain(); sg.gain.value = 0.3;
     o1.connect(g); o2.connect(sg); sg.connect(g); g.connect(lp); lp.connect(dest);
     lp.frequency.setValueAtTime(f * 12 + 1200 * v, t); lp.frequency.setTargetAtTime(f * 2.5, t + 0.005, 0.12);
-    const stop = adsr(g.gain, t, dur, 0.004, 0.12 * Math.pow(v, 1.0), 0.4, 0.5, 0.05);
+    const stop = adsr(g.gain, t, dur, 0.004, 0.19 * Math.pow(v, 1.0), 0.4, 0.5, 0.05);   // エレキベースと同じくらいの大きさに
     o1.start(t); o2.start(t); o1.stop(stop); o2.stop(stop);
   };
   /* ---- 管楽器 ---- */

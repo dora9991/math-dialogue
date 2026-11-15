@@ -519,7 +519,10 @@
         len = Math.max(0.2, len) * artic;
         v.forEach((m, i) => {
           const roll = (pat.roll || kind === 'guitar') ? i * (kind === 'guitar' ? 0.014 : 0.03) : 0;
-          out.comp.push({ t: Math.max(0, b0 + h[0] + roll + (rand() - 0.5) * 0.012), dur: len, midi: m, vel: Math.round((58 + rand() * 8) * h[2] + (kind === 'guitar' ? -4 : 0)) });
+          // t は拍の位置（楽譜どおり）。off は、ロール（ばらして弾く）と小さなゆらぎ（拍）。ノリ（シャッフル）は t にかけて、off はそのあとに足す
+          //   （t に混ぜると、3連符の位置の音が「3連符でない」と見なされて、シャッフルの式でずらされてしまう）
+          const pos = b0 + h[0];
+          out.comp.push({ t: pos, off: Math.max(-pos, roll + (rand() - 0.5) * 0.012), dur: len, midi: m, vel: Math.round((58 + rand() * 8) * h[2] + (kind === 'guitar' ? -4 : 0)) });
         });
       });
       if (antic) {
@@ -563,7 +566,7 @@
         };
         if (bassStyle === 'walk') {
           const line = walkChunk(c, ch.n, nextPc, prev, rand, prevLine);
-          line.forEach((m, i) => out.bass.push({ t: Math.max(0, ch.t0 + i + (rand() - 0.5) * 0.01), dur: 0.92, midi: m, vel: vel + (i === 0 ? 6 : 0) - (i === ch.n - 1 ? 4 : 0) }));
+          line.forEach((m, i) => out.bass.push({ t: ch.t0 + i, off: Math.max(-(ch.t0 + i), (rand() - 0.5) * 0.01), dur: 0.92, midi: m, vel: vel + (i === 0 ? 6 : 0) - (i === ch.n - 1 ? 4 : 0) }));
           prev = line[line.length - 1]; prevLine = line;
         } else if (bassStyle === 'two') {
           const r = nearestMidi(bassPc(c), prev == null ? 38 : prev, BASS_LO, BASS_HI);
@@ -619,11 +622,12 @@
           lastUp = ch.n >= 4 && !down;
           const slash = bassPc(c) !== c.rootPc;
           const ms = degs.map((d, i) => (slash && i > 0 ? nearestMidi(mod(c.rootPc + d, 12), r + 6, 28, 52) : r + d));
+          const appr = bassStyle === 'slow12' && ch.n >= 2 && nextPc != null;   // 3連符の3つ目で、次のコードへ向かう音を足すか
           ms.forEach((m, i) => {
             if (bassStyle === 'boogie') { push(i, 0.55, m, vel + (i === 0 ? 4 : 0)); push(i + 0.5, 0.4, m, vel - 14); }   // 同じ音を2つずつ（長・短）
-            else push(i, 0.9, m, vel + (i === 0 ? 4 : 0));
+            else push(i, appr && i === ch.n - 1 ? 0.6 : 0.9, m, vel + (i === 0 ? 4 : 0));   // 接近音の前の音は短く（重ねない）
           });
-          if (bassStyle === 'slow12' && ch.n >= 2 && nextPc != null) push(ch.n - 1 / 3, 0.3, approach(ms[Math.min(ms.length, ch.n) - 1], 28, 52), vel - 10);   // 3連符の3つ目で、次へ
+          if (appr) push(ch.n - 1 / 3, 0.3, approach(ms[Math.min(ms.length, ch.n) - 1], 28, 52), vel - 10);
           prev = r;
         } else if (bassStyle === 'soul') {
           const bt = bassTones(c), r = nearestMidi(bassPc(c), prev == null ? 36 : prev, 28, 40), o = r + 12, f = r + bt.fifth, six = r + bt.color;
@@ -646,7 +650,9 @@
           // 根音（付点4分）・5度（8分）｜5度（付点4分）・次の根音（8分）
           const r = nearestMidi(bassPc(c), prev == null ? 38 : prev, 30, 48), f = nearestMidi(mod(c.rootPc + 7 + (c.fifth || 0), 12), r - 5, 28, 50);
           const nr = nextPc == null ? r : nearestMidi(nextPc, r, 28, 50);
-          [[0, r, 1.3], [1.5, f, 0.45], [2, f, 1.3], [3.5, nr, 0.45]].forEach(([p, m, d]) => { const q = p - rel; if (q >= -1e-6) push(q, d, m, vel - (p % 1 ? 8 : 0)); });
+          // 1小節つづくコードは上の型。小節の途中で変わるコード（2拍ずつなど）は、そのコードの根音から始めて、裏で次の根音へ
+          const pat = ch.n >= 4 ? [[0, r, 1.3], [1.5, f, 0.45], [2, f, 1.3], [3.5, nr, 0.45]] : ch.n >= 2 ? [[0, r, 1.3], [ch.n - 0.5, nr, 0.45]] : [[0, r, 0.9]];
+          pat.forEach(([p, m, d]) => push(p, d, m, vel - (p % 1 ? 8 : 0)));
           prev = r;
         } else {   // tumbao（サルサ）：2拍目の裏に5度、4拍目に「次の小節の根音」を先取りしてのばす。曲の頭だけ1拍目に根音
           const r = nearestMidi(bassPc(c), prev == null ? 38 : prev, 30, 48), f = nearestMidi(mod(c.rootPc + 7 + (c.fifth || 0), 12), r, 30, 52);

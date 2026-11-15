@@ -190,8 +190,11 @@
     const lead = d.t - App.hs[d.i0].t0;
     let prev = null;
     for (let i = solo.events.length - 1; i >= 0; i--) { if (solo.events[i].t < d.t - 1e-6) { prev = solo.events[i].midi; break; } }
-    const f = lick.segs.length === 1 ? L.fit(lick, [App.hs[d.i0].t0 + App.hs[d.i0].dur - d.t]) : null;
-    const cut = f && f.cut ? f.cut : null;
+    // 使える長さ：ソロの中の決定なら、差しかえ（S.swap）と同じく、同じコードの次のリックの手前まで。提案の仮の置き場所なら、コードの終わりまで
+    const di = solo.decisions.indexOf(d);
+    const avail = di >= 0 ? S.availOf(App.hs, solo.decisions, di) : App.hs[d.i0].t0 + App.hs[d.i0].dur - d.t;
+    const f = lick.segs.length === 1 ? L.fit(lick, [avail]) : null;
+    const cut = di >= 0 && lick.id === d.id ? d.cut || null : f && f.cut ? f.cut : null;   // いまのリックは、置いたときの切り方のまま
     const r = L.realize(lick, chords, { t0: lead, lo: o.lo, hi: o.hi, prev, limit: cut || undefined, center: o.lo + (o.hi - o.lo) * 0.55 });
     const evs = r.events.filter(e => !e.rest);
     const beats = lick.segs.slice(); beats[0] += lead;
