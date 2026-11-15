@@ -34,6 +34,7 @@
       comp: 'piano', bass: 'upright', drums: 'jazz', soloInst: 'altosax',
       mix: Object.assign({}, MIX_DEF), reverb: Object.assign({}, REV_DEF), muted: {},
       seed: 1, soloSeed: 3, level: 2, density: 1, rest: 1, soloMode: 'same', concert: true,
+      midi: { on: false, out: '', parts: { comp: true, bass: true, solo: true, drums: true }, offset: 0 },
       keyOverride: null, keyCycle: 0, perRow: 4, range: null, tab: 'chart', dictKey: 0,
     };
   }
@@ -67,6 +68,9 @@
     o.level = inList([1, 2, 3], o.level, 2);
     o.density = inList([0, 1, 2], o.density, 1);
     o.rest = inList([0, 1, 2], o.rest, 1);
+    // MIDI で送る（Kontakt など）。送り先は名前で覚える
+    { const m = o.midi && typeof o.midi === 'object' ? o.midi : {}, p = m.parts && typeof m.parts === 'object' ? m.parts : {};
+      o.midi = { on: !!m.on, out: typeof m.out === 'string' ? m.out.slice(0, 200) : '', parts: { comp: p.comp !== false, bass: p.bass !== false, solo: p.solo !== false, drums: p.drums !== false }, offset: Math.round(num(m.offset, -150, 150, 0)) }; }
     o.soloMode = inList(['off', 'same', 'fresh'], o.soloMode, 'same');
     o.concert = !!o.concert;
     o.keyOverride = o.keyOverride && typeof o.keyOverride.tonicPc === 'number' && (o.keyOverride.mode === 'major' || o.keyOverride.mode === 'minor') ? { tonicPc: mod(o.keyOverride.tonicPc | 0, 12), mode: o.keyOverride.mode } : null;
@@ -250,6 +254,27 @@
     ['comp', 'bass', 'drums'].forEach(p => { if (b[p] && st[p] === a[p]) st[p] = b[p]; });
     if (App.engine) { App.engine.inst.comp = st.comp; App.engine.inst.bass = st.bass; App.engine.inst.drums = st.drums; }
   }
+  /* ---------------- MIDI で送る（Kontakt など） ---------------- */
+  // patch：{ on, out, parts, offset }。オンにしたときは、MIDI を使う許可をもらって、送り先の一覧を作る
+  App.midiStatus = '';
+  App.setMidi = function (patch) {
+    Object.assign(st.midi, patch || {});
+    if (patch && patch.parts) st.midi.parts = Object.assign({}, st.midi.parts, patch.parts);
+    const MO = AL.MO;
+    MO.configure(st.midi);
+    save();
+    if (st.midi.on) {
+      App.midiStatus = '接続しています…';
+      MO.connect().then(() => {
+        MO.configure(st.midi);
+        if (!st.midi.out && MO.outName()) { st.midi.out = MO.outName(); save(); }
+        App.midiStatus = MO.outputs().length ? '' : '送り先が見つかりません（下の「Mac での準備」の 1 を見てください）';
+        App.emit('midi');
+      }, e => { App.midiStatus = 'MIDI を使えませんでした：' + ((e && e.message) || e) + '（Chrome の許可を確かめてください）'; App.emit('midi'); });
+    } else App.midiStatus = '';
+    App.emit('midi');
+  };
+
   App.setStyle = function (id) {
     if (!B.STYLES[id]) return;
     const nw = B.STYLES[id];
@@ -323,6 +348,7 @@
       try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* 対応していないブラウザ */ }
       App.ctx = new AC({ latencyHint: 'interactive' });
       App.engine = new Au.Engine(App.ctx);
+      if (AL.MO) App.engine.midiOut = AL.MO;   // MIDI で送るパートは、ここから外へ（midiout.js。送らない設定のときは何もしない）
       App.player = new Au.Player(App.engine);
       App.player.on('stop', () => { stopFrames(); setPlayKind(null); }).on('end', () => { stopFrames(); setPlayKind(null); });
     }
@@ -572,6 +598,7 @@
     }
     buildTransport();
     refreshTransport();
+    if (AL.MO) { AL.MO.onchange = () => App.emit('midi'); if (st.midi.on && AL.MO.supported()) App.setMidi({}); else AL.MO.configure(st.midi); }
     App.emit('init');
     U.$$('#tabs button').forEach(b => b.addEventListener('click', () => App.showTab(b.dataset.tab)));
     App.showTab(shared ? 'chart' : st.tab);

@@ -104,6 +104,7 @@
       return s;
     }
     stopSession(fade) {
+      if (this.midiOut && this.midiOut.active()) this.midiOut.panic();   // MIDI で送っている先（Kontakt など）の音も止める
       const s = this.session; if (!s) return;
       this.session = null;
       const t = this.ctx.currentTime, f = fade == null ? 0.06 : fade;
@@ -127,6 +128,8 @@
 
     /* ---- 音を鳴らす ---- */
     play(part, t, midi, dur, vel, instId) {
+      // MIDI で送るパート：ブラウザでは鳴らさず、合図だけ送る（消してあるパートは送らない）
+      if (this.midiOut && this.midiOut.takes(part)) { if (!this.muted[part]) this.midiOut.note(this.ctx, part, midi, vel, t, t + Math.max(0.03, dur)); return; }
       const id = instId || this.inst[part];
       const fn = VOICES[id] || VOICES.piano;
       let dest = this.dest(part);
@@ -134,6 +137,7 @@
       fn(this, dest, t, midi, Math.max(0.03, dur), clamp(vel, 1, 127), part);
     }
     drum(kind, t, vel) {
+      if (this.midiOut && this.midiOut.takes('drums')) { if (!this.muted.drums) this.midiOut.drum(this.ctx, kind, vel, t); return; }
       const fn = DRUMS[kind];
       if (fn) fn(this, this.dest('drums'), t, clamp(vel, 1, 127) / 127, this.inst.drums);
     }
