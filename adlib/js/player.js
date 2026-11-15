@@ -96,6 +96,24 @@
     E.play(part, tStart, evt.midi, dur, evt.vel);
   }
 
+  // 予約の時計：ふつうの setInterval に加えて、ワーカーの中の setInterval でも tick を呼ぶ。
+  // ブラウザが後ろに隠れる（Kontakt の画面を前に出す、など）と、ページの setInterval は1秒に1回まで遅くされ、
+  // 音を出していないページ（全部のパートを MIDI で送っているとき）は、5分ほどでさらに遅くされる。ワーカーの時計は遅くされない。
+  // tick は何回呼んでもよい（予約ずみのところは、もう一度は予約しない）
+  function startTicker(fn, ms) {
+    const id = setInterval(fn, ms);
+    let w = null;
+    try {
+      if (typeof Worker !== 'undefined' && typeof Blob !== 'undefined' && typeof URL !== 'undefined' && URL.createObjectURL) {
+        const url = URL.createObjectURL(new Blob(['setInterval(function () { postMessage(0); }, ' + ms + ');'], { type: 'text/javascript' }));
+        w = new Worker(url);
+        w.onmessage = () => fn(true);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch (e) { w = null; }   // ワーカーを作れない（file:// で開いたときの一部のブラウザなど）：ふつうの時計だけ
+    return { stop() { clearInterval(id); if (w) w.terminate(); } };
+  }
+
   class Player {
     constructor(engine) { this.E = engine; this.ctx = engine.ctx; this.running = false; this.timer = null; this.listeners = {}; }
     on(name, fn) { this.listeners[name] = fn; return this; }
@@ -130,11 +148,12 @@
       this.endU = this.loops === Infinity ? Infinity : this.loops * this.cycleBeats;
       this.running = true;
       this.finished = false;
+      this.workerAt = -1;
       this.tick();
-      this.timer = setInterval(() => this.tick(), 40);
+      this.timer = startTicker(fromWorker => { if (fromWorker) this.workerAt = this.ctx.currentTime; this.tick(); }, 40);
     }
     stop(silent) {
-      if (this.timer) { clearInterval(this.timer); this.timer = null; }
+      if (this.timer) { this.timer.stop(); this.timer = null; }
       const was = this.running;
       this.running = false;
       this.E.stopSession(0.05);
@@ -164,7 +183,11 @@
       if (!this.running) return;
       const ctx = this.ctx, plan = this.plan, feel = feelOf(plan);
       // 先読み（秒）。ノリを入れると、音が最大 (r − 0.5) 拍ぶん後ろへずれるので、そのぶん先まで読む（遅いテンポ × 強いシャッフルでも、予約が間に合うように）
-      const look = ((typeof document !== 'undefined' && document.hidden) ? 2.6 : 0.45) + Math.max(0, feel.r - 0.5) * this.spb;
+      // ページが後ろに隠れたら、遅くされた時計でも間に合うよう先まで読む。ただしワーカーの時計が動いていれば、その必要はない
+      //   （先読みが長いと、止めたあとも MIDI の音がその分だけ鳴ってしまう）
+      const workerAlive = this.workerAt >= 0 && ctx.currentTime - this.workerAt < 0.5;
+      const hidden = typeof document !== 'undefined' && document.hidden && !workerAlive;
+      const look = (hidden ? 2.6 : 0.45) + Math.max(0, feel.r - 0.5) * this.spb;
       const horizonSb = this.anchor.sbeat + (ctx.currentTime + look - this.anchor.time) / this.spb;
       let uH = feelUnmap(horizonSb, feel);
       if (uH > this.endU) uH = this.endU;

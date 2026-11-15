@@ -12,7 +12,7 @@
 | **リックの提案** | 選んだコード（かたまり）に合うリックを、楽譜つきで提案。▶で伴奏つきで聴けて、「ソロに採用」で差しかえられる |
 | **② ソロ** | コード進行を読んで、辞典のリックをつなげたソロを自動で作る。楽譜（コード記号つき）に再生カーソルが走る。楽器（アルト・テナー・トランペット・フルート・クラリネット・トロンボーン・ギター・ピアノ…）ごとの音域と**移調譜**に対応。難しさ・音の多さ・**ブレイク（間）の多さ**も選べる（やさしい＝8分音符が中心／ふつう＝3連符・16分音符・シンコペーションが混ざる／むずかしい＝16分のランが多い）。階段のように順に上がり下がりするだけにならないよう、跳ぶ・ジグザグの動きを混ぜ、ひとフレーズ弾いたら息継ぎをする。「毎回あたらしいソロ」にすると、コーラスごとに別のソロが流れる |
 | **③ リック辞典** | **950本**。コード1つ（ドミナント・オルタード・リディアン♭7・7sus4・ブルース・maj7・リディアン maj7♯11・m7・m6・m(maj7)・m7♭5・dim7。それぞれに、16分音符・3連符・シンコペーション・付点・間を使った**リズムの濃いリックが10本ずつ**と、1度→5度→オクターブと跳ぶ・3度のジグザグ・進んでは戻る・跳んでからジグザグで降りる、といった**音の動きの形で聞かせるリックが10本ずつ**）、2コード（V→I・ii–V・♭II7→I・バックドア…）、3コード（ii–V–I・ii–V–i・裏コードの ii–V–I・バックドア ii–V）、ターンアラウンド4種。12キー・楽器の移調譜に対応、度数の表示、検索・難しさ・特徴タグでの絞りこみ |
-| **④ 音と書き出し** | ミキサー（音量・残響・消音）。**WAV**／**MIDI**（伴奏＋ソロ＋ドラム）／**MusicXML**（ソロ譜。MuseScore などで開ける）／印刷・PDF／コード譜のテキスト／**共有リンク**（コード譜・スタイル・テンポ・ソロの条件・差しかえたリックまで同じに開く） |
+| **④ 音と書き出し** | **Kontakt などで鳴らす**（パートごとに MIDI で送る。下）。ミキサー（音量・残響・消音）。**WAV**／**MIDI**（伴奏＋ソロ＋ドラム）／**MusicXML**（ソロ譜。MuseScore などで開ける）／印刷・PDF／コード譜のテキスト／**共有リンク**（コード譜・スタイル・テンポ・ソロの条件・差しかえたリックまで同じに開く） |
 
 共有リンクは、リンクを作った版のソロの作り方で再現されます。ソロの作り方を変えた更新（リズムの濃いリックの追加、跳ぶ・ジグザグのリックと息継ぎの追加）より前に作ったリンクは、コード譜・スタイル・テンポは同じでも、ソロは別のものになります（差しかえたリックは、いまの版でその場所に置けるものだけ引きつぎます）。
 
@@ -31,6 +31,16 @@
 https://dora9991.github.io/math-dialogue/adlib/ （GitHub Pages。`gh-pages` ブランチの `adlib/index.html` は、`adlib-all-in-one.html` をそのまま置いたもの）
 
 更新するとき：`node adlib/tools/bundle.cjs` で `adlib-all-in-one.html` を作りなおし、`gh-pages` ブランチの `adlib/index.html` だけを差しかえる（ほかの公開物は変えない）。`npm run deploy` は `gh-pages` を丸ごと入れかえるので、ここでは使わない。
+
+## Kontakt などで鳴らす（MIDI で送る）
+
+④ の「Kontakt などで鳴らす」をオンにすると、チェックしたパートを、ブラウザでは鳴らさず、MIDI でパソコンの中の音源へ送る（Web MIDI）。▶ を押せば、その場で音源が弾く（差しかえ・テンポ変更・ノリもそのまま）。
+
+- チャンネル：コード 1・ベース 2・ソロ 3・ドラム 10（MIDI の書き出しと同じ。ドラムは GM の並び）
+- Chrome・Edge で使える（Safari・iPhone は Web MIDI がないので使えない）
+- Mac での準備：「Audio MIDI 設定」で IAC ドライバをオンにする → Kontakt を単体で起動して、MIDI の入力に IAC ドライバのバスを選ぶ → 音色ごとに MIDI チャンネルを合わせる → このページで送り先にそのバスを選び、「テスト音を送る」。手順は画面にも書いてある
+- 合図は、鳴らす時刻つきで送る（ブラウザの音が聞こえる時刻にそろえる。ずれは「タイミング」で ±150ms 合わせられる）。止めたときは、オール・ノート・オフ（CC123）を送る
+- Kontakt の画面を前に出してブラウザが後ろに隠れても止まらないよう、予約の時計をワーカーでも動かしている（隠れたページの時計は、ブラウザに遅くされるため）
 
 ## 伴奏スタイルとノリ
 
@@ -131,6 +141,7 @@ adlib/
     glyphs.js notation.js  楽譜（Bravura の字形・SVG 描画）
     presets.js          サンプルのコード進行（40曲）
     export.js           MIDI・MusicXML
+    midiout.js          MIDI で外の音源（Kontakt など）へ送る（Web MIDI）
     ui-*.js app.js boot.js  画面
   test/                 検査（下）
   tools/                bundle.cjs（1ファイル化）／gen-contour.js・contour-overrides.js（跳ぶ・ジグザグのリックを作る）／shot-*.js（見た目の確認）／show-licks.js（リックの確認）
@@ -139,9 +150,9 @@ adlib/
 ## 検査
 
 ```sh
-for t in theory chart analysis licks solo comping presets export fuzz player render; do node adlib/test/$t.js; done
+for t in theory chart analysis licks solo comping presets export fuzz player render midiout; do node adlib/test/$t.js; done
 NODE_PATH=$(npm root -g) node adlib/test/audio.js    # 音の検査（ヘッドレス Chromium：音程・音量・ノリ・全スタイルの合成・打楽器）
-NODE_PATH=$(npm root -g) node adlib/test/e2e.js      # 画面の操作の検査（再生・ソロの差しかえ・ブレイク・ノリ・スタイル・辞典・書き出し・全サンプル・共有リンク）
+NODE_PATH=$(npm root -g) node adlib/test/e2e.js      # 画面の操作の検査（再生・ソロの差しかえ・ブレイク・ノリ・スタイル・MIDI で送る・辞典・書き出し・全サンプル・共有リンク）
 ```
 
 `e2e.js` は、Playwright と Chromium が要る。`ADLIB_FILE=adlib/adlib-all-in-one.html` をつけると、1ファイル版を検査できる。

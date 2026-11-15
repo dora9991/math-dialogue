@@ -1,6 +1,6 @@
 /* ブラウザでの総合検査：ヘッドレス Chromium で adlib/index.html（file://）を開き、画面操作をひと通り行う
    使い方：NODE_PATH=$(npm root -g) node adlib/test/e2e.js [スクリーンショットの保存先フォルダ]
-   確かめること：起動・コード入力・解析表示・再生（実際に音が出る）・停止・ソロの差しかえ・ブレイク（間）・ノリ（シャッフル）・伴奏スタイル・
+   確かめること：起動・コード入力・解析表示・再生（実際に音が出る）・停止・ソロの差しかえ・ブレイク（間）・ノリ（シャッフル）・伴奏スタイル・MIDI で送る・
    辞典・移調・範囲くり返し・書き出し・全サンプル・共有リンク */
 const path = require('path'), fs = require('fs');
 const { chromium } = require('playwright');
@@ -176,6 +176,46 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await page.waitForTimeout(1500);
   ok(await page.evaluate(() => window.__peak > 0.05 && AL.App.playKind === 'main'), 'ディスコのスタイルで、実際に音が出る');
   await page.evaluate(() => { AL.App.stop(); clearInterval(window.__sampler); AL.App.st.countIn = 1; AL.App.loadPreset('blues-jazz'); });
+
+  /* 5e) MIDI で送る（Kontakt など）：にせの MIDI 出力で、合図の中身・時刻・止めたときを確かめる */
+  await page.evaluate(() => {
+    window.__midi = [];
+    const out = { id: 'iac1', name: 'IAC Driver Bus 1', send: (d, ts) => window.__midi.push({ d: Array.from(d), ts, at: performance.now() }) };
+    const acc = { outputs: new Map([['iac1', out]]), onstatechange: null };
+    Object.defineProperty(navigator, 'requestMIDIAccess', { value: () => Promise.resolve(acc), configurable: true });
+  });
+  await page.click('#tabs button[data-tab="sound"]');
+  await page.waitForTimeout(150);
+  ok(await page.evaluate(() => !!document.querySelector('#midiCard .sw-in') && /オフ/.test(document.getElementById('midiStatus').innerText)), 'MIDI のカードがあり、はじめはオフ');
+  await page.click('#midiCard .sw');
+  await page.waitForTimeout(300);
+  const mst = await page.evaluate(() => ({ sel: document.getElementById('midiOut').value, status: document.getElementById('midiStatus').innerText, saved: AL.U.store.get('state') && AL.U.store.get('state').midi }));
+  ok(mst.sel === 'IAC Driver Bus 1' && /送っています/.test(mst.status), 'オンにすると、送り先が選ばれる：' + JSON.stringify(mst).slice(0, 160));
+  const peakDuring = async ms => page.evaluate(ms => new Promise(res => { const an = window.__an, buf = new Float32Array(2048); let p = 0; const id = setInterval(() => { an.getFloatTimeDomainData(buf); for (let i = 0; i < buf.length; i++) p = Math.max(p, Math.abs(buf[i])); }, 30); setTimeout(() => { clearInterval(id); res(p); }, ms); }), ms);
+  await page.evaluate(() => { const A = AL.App; A.loadPreset('blues-jazz'); A.st.countIn = 0; A.st.soloMode = 'same'; window.__midi = []; A.play(); });
+  const pk1 = await peakDuring(1800);
+  const m1 = await page.evaluate(() => { const ons = window.__midi.filter(x => (x.d[0] & 0xf0) === 0x90); const ch = {}; ons.forEach(x => { ch[x.d[0] & 15] = (ch[x.d[0] & 15] || 0) + 1; }); return { ch, n: ons.length, late: ons.filter(x => x.ts < x.at - 5).length, span: ons.length ? Math.max(...ons.map(x => x.ts)) - Math.min(...ons.map(x => x.ts)) : 0, ahead: Math.max(...ons.map(x => x.ts - x.at)) }; });
+  ok(m1.ch[0] > 0 && m1.ch[1] > 0 && m1.ch[2] > 0 && m1.ch[9] > 0, 'コード 1ch・ベース 2ch・ソロ 3ch・ドラム 10ch に合図が出る：' + JSON.stringify(m1.ch));
+  ok(m1.late === 0 && m1.span > 800 && m1.ahead < 1500, '合図は、これから鳴る時刻つき（遅れ・まとめ送りなし）：' + JSON.stringify(m1));
+  ok(pk1 < 0.02, '送っているパートは、ブラウザでは鳴らない（ピーク ' + pk1.toFixed(3) + '）');
+  await page.evaluate(() => { window.__midi = []; AL.App.stop(); });
+  await page.waitForTimeout(100);
+  ok(await page.evaluate(() => [0xb0, 0xb1, 0xb2, 0xb9].every(c => window.__midi.some(x => x.d[0] === c && x.d[1] === 123))), '止めると、4つのチャンネルにオール・ノート・オフ');
+  // ベースのチェックを外す：ベースはブラウザで鳴り、MIDI では送らない
+  await page.click('#midiCard .midi-part:has-text("ベース") input');
+  await page.evaluate(() => { window.__midi = []; AL.App.play(); });
+  const pk2 = await peakDuring(1500);
+  const m2 = await page.evaluate(() => { const ons = window.__midi.filter(x => (x.d[0] & 0xf0) === 0x90); return { bass: ons.filter(x => (x.d[0] & 15) === 1).length, comp: ons.filter(x => (x.d[0] & 15) === 0).length }; });
+  await page.evaluate(() => AL.App.stop());
+  ok(m2.bass === 0 && m2.comp > 0 && pk2 > 0.03, 'チェックを外したベースはブラウザで鳴る：' + JSON.stringify(m2) + ' ピーク ' + pk2.toFixed(3));
+  // テスト音
+  await page.evaluate(() => { window.__midi = []; });
+  await page.click('#midiTest');
+  ok(await page.evaluate(() => window.__midi.some(x => x.d[0] === 0x90) && window.__midi.some(x => x.d[0] === 0x99) && !window.__midi.some(x => x.d[0] === 0x91)), 'テスト音（チェックしたパートだけ）');
+  if (shots) await page.screenshot({ path: path.join(shots, 'e2e-midi.png'), fullPage: true });
+  // もとにもどす（このあとの検査は、ブラウザの音で）
+  await page.evaluate(() => { AL.App.setMidi({ on: false, parts: { bass: true } }); AL.App.st.countIn = 1; });
+  ok(await page.evaluate(() => !AL.MO.active() && AL.App.st.midi.parts.bass === true), 'MIDI をオフにもどせる');
 
   /* 6) 辞典 */
   await page.click('#tabs button[data-tab="dict"]');
