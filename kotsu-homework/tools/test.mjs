@@ -293,10 +293,13 @@ await section("宿題を出す：入力のエラー（サーバーを呼ばず�
   await p.fill("#f-start", TODAY); await p.fill("#f-due", day(400)); await submit(); t = await errsText(); ok(t.includes("長すぎ"), "期間が1年より長い：止まる");
   await p.fill("#f-due", ""); await submit(); t = await errsText(); ok(t.includes("期限"), "期限が空：止まる");
   await p.fill("#f-due", day(1));
-  await p.fill("#f-title", "あ".repeat(61)); await submit(); t = await errsText(); ok(t.includes("60字"), "題が61字：止まる"); await p.fill("#f-title", "");
-  await p.fill("#f-note", "い".repeat(201)); await submit(); t = await errsText(); ok(t.includes("200字"), "ひとことが201字：止まる");
+  await p.fill("#f-title", "あ".repeat(61)); ok((await p.inputValue("#f-title")).length === 60, "題：入力欄は60字までしか入らない");
+  const setRaw = (sel, v) => p.evaluate(([s, v]) => { const e = document.querySelector(s); e.value = v; e.dispatchEvent(new Event("input", { bubbles: true })); }, [sel, v]);
+  await setRaw("#f-title", "あ".repeat(61)); await submit(); t = await errsText(); ok(t.includes("60字"), "題が61字（貼りつけなど）：止まる"); await setRaw("#f-title", "");
+  await p.fill("#f-note", "い".repeat(201)); ok((await p.inputValue("#f-note")).length === 200, "ひとこと：入力欄は200字までしか入らない");
+  await setRaw("#f-note", "い".repeat(201)); await submit(); t = await errsText(); ok(t.includes("200字"), "ひとことが201字（貼りつけなど）：止まる");
   ok((await text(p, "#note-count")).includes("201/200"), "ひとことの文字数が見える");
-  await p.fill("#f-note", "");
+  await setRaw("#f-note", "");
   // 個人宛てで生徒なし
   await p.click('#f-target button[data-v="students"]'); await p.waitForSelector("#who-list"); await submit(); t = await errsText(); ok(t.includes("生徒を1人以上"), "個人宛てで生徒が0人：止まる");
   ok(creates() === 0, "ここまで、ひとつもサーバーに送っていない");
