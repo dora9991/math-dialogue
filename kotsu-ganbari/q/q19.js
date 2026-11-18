@@ -42,7 +42,7 @@ const allRaw = [...Object.values(V), H3].map(raw);
 LN.forEach((e) => ext(e[0], e[1]).forEach((p) => allRaw.push(raw(p))));
 const xs = allRaw.map((p) => p[0]), ys = allRaw.map((p) => p[1]);
 const minx = Math.min(...xs), maxx = Math.max(...xs), miny = Math.min(...ys), maxy = Math.max(...ys);
-const VW = 480, VH = 360, K = Math.min((VW - 70) / (maxx - minx), (VH - 60) / (maxy - miny));
+const VW = 440, VH = 350, K = Math.min((VW - 70) / (maxx - minx), (VH - 60) / (maxy - miny));
 const ox = VW / 2 - ((minx + maxx) / 2) * K, oy = VH / 2 - ((miny + maxy) / 2) * K;
 const pr = (p) => { const r = raw(p); return [Math.round((ox + r[0] * K) * 100) / 100, Math.round((oy + r[1] * K) * 100) / 100]; };
 const pt = {}; Object.entries(V).forEach(([k, v]) => (pt[k] = pr(v)));
@@ -69,7 +69,7 @@ function labelOff(at, r = 19) {
   }
   return best;
 }
-const lab = (k, at, o = {}) => P(k, at[0], at[1], k, "n", { dot: false, ...labelOff(at), ...o });
+const lab = (k, at, o = {}) => P(k, at[0], at[1], k, "n", { dot: false, size: 18, ...labelOff(at, 21), ...o });
 const VIS = [["A", "B"], ["A", "D"], ["D", "G"], ["B", "E"], ["E", "F"], ["F", "G"], ["A", "E"], ["A", "G"], ["E", "G"]];   // 見える辺
 const HIDE = [["C", "D"], ["B", "C"], ["C", "F"]];                                                                          // 見えない辺（点線）
 const HID = new Set(HIDE.map(([a, b]) => a + b));

@@ -58,7 +58,7 @@ const lp = { A: "sw", B: "se", C: "se", D: "nw", E: "nw", F: "se" };
 const off = { D: { dy: -14 } };            // 名前の微調整（延ばした直線とかさならないように）
 const VIS = [["A", "B"], ["B", "C"], ["D", "E"], ["E", "F"], ["D", "F"], ["A", "D"], ["B", "E"], ["C", "F"]];
 const prism = [
-  ...Object.keys(V).map((k) => P(k, pt[k][0], pt[k][1], k, lp[k], { dot: false, ...(off[k] || {}) })),
+  ...Object.keys(V).map((k) => P(k, pt[k][0], pt[k][1], k, lp[k], { dot: false, size: 18, ...(off[k] || {}) })),
   ...VIS.map(([a, b]) => seg(a, b, { id: "e" + a + b })),
   seg("A", "C", { id: "eAC", dash: true }),
 ];
