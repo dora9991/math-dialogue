@@ -1,0 +1,21 @@
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+s = open(src, encoding='utf-8').read()
+# 11/30（日本時間）まで、ホームのいちばん上に出す「がんばりまっしょい 解説動画」へのリンク
+BANNER = ('(()=>{try{return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo"}).format(new Date())<="2026-11-30"}catch{return!1}})()'
+          '&&e.jsxs("a",{href:"/math-dialogue/solo/ganbari/",className:"card ganbari-bn",style:{display:"flex",alignItems:"center",gap:12,textDecoration:"none",color:"inherit",'
+          'background:"linear-gradient(135deg,#fff6d6,#ffe29a)",border:"2px solid #ffc94d",margin:"0 0 12px",padding:"12px 14px"},children:['
+          'e.jsx("span",{style:{fontSize:32,lineHeight:1},"aria-hidden":"true",children:"📺"}),'
+          'e.jsxs("span",{className:"grow",children:[e.jsx("b",{style:{display:"block",fontSize:16},children:"期末テスト対策 解説動画"}),'
+          'e.jsx("small",{style:{color:"#7a5a00"},children:"「がんばりまっしょいプリント」問1〜42を、動画で解説 ・ 11月30日まで"})]}),'
+          'e.jsx("span",{style:{fontSize:22,fontWeight:800,color:"#b07a00"},"aria-hidden":"true",children:"›"})]}),')
+def rep(old, new):
+    global s
+    assert s.count(old) == 1, (s.count(old), old[:90])
+    s = s.replace(old, new)
+rep('e.jsx(Fs,{right:e.jsxs("span",{className:"chip lv",title:"学習者レベル",children:["Lv.",oe.lv]})}),e.jsxs("div",{className:"hero hj"',
+    'e.jsx(Fs,{right:e.jsxs("span",{className:"chip lv",title:"学習者レベル",children:["Lv.",oe.lv]})}),' + BANNER + 'e.jsxs("div",{className:"hero hj"')
+rep('e.jsx(Fs,{right:e.jsxs("span",{className:"chip",title:"学習者レベル",children:["Lv.",B.lv]})}),e.jsxs("div",{className:"hero",children:',
+    'e.jsx(Fs,{right:e.jsxs("span",{className:"chip",title:"学習者レベル",children:["Lv.",B.lv]})}),' + BANNER + 'e.jsxs("div",{className:"hero",children:')
+open(dst, 'w', encoding='utf-8').write(s)
+print('ok')

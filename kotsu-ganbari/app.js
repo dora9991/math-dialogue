@@ -1,5 +1,6 @@
 // app.js — 一覧と、動画の画面
-import { createPlayer, fmt } from "./player.js";
+import { createPlayer, fmt, stepDur } from "./player.js";
+import { createWatcher, todaySec, hasRecord, fmtMin } from "./credit.js";
 
 const SECS = [
   { from: 1, to: 13, ic: "✏️", t: "図形の基本・移動・作図", s: "問1〜13" },
@@ -14,7 +15,7 @@ const q = new URLSearchParams(location.search);
 const STILL = q.has("still");
 const $ = (id) => document.getElementById(id);
 
-let manifest = [], player = null, openN = null;
+let manifest = [], player = null, openN = null, current = null;
 const pad = (n) => String(n).padStart(2, "0");
 
 function renderList() {
@@ -64,6 +65,7 @@ async function open(n) {
   prob.innerHTML = `<span class="lb">問${n}</span>${fmt(scene.problem)}`;
   prob.classList.toggle("long", scene.problem.length > 140);
   if (player) player.destroy();
+  current = { n, limitSec: Math.max(60, 2 * scene.steps.reduce((s, st) => s + stepDur(st), 0) / 1000) };
   player = createPlayer($("ov-player"), scene, {
     still: STILL, autoplay: !STILL,
     onEnd: () => { seen.add(n); saveSeen(); renderList(); showNext(idx); },
@@ -88,7 +90,7 @@ function showNext(idx) {
   box.hidden = false;
 }
 function close() {
-  openN = null;
+  openN = null; current = null; watcher && watcher.flush();
   if (player) { player.destroy(); player = null; }
   $("overlay").hidden = true;
   document.body.style.overflow = "";
@@ -111,6 +113,16 @@ window.addEventListener("keydown", (e) => {
   else if (e.key === "ArrowLeft") player.prev();
   else if (e.key === "Escape") $("ov-close").click();
 });
+
+const showToday = () => {
+  const el = $("today");
+  if (!el) return;
+  if (!hasRecord()) { el.hidden = true; return; }
+  el.hidden = false; el.textContent = `⏱ 今日 ${fmtMin(todaySec())}`;
+};
+const watcher = createWatcher({ getPlayer: () => player, getProblem: () => (openN && current && current.n === openN ? current : null), onChange: showToday });
+window.__watcher = watcher;
+showToday();
 
 (async () => {
   try { const r = await fetch(`manifest.json?v=${Date.now()}`); manifest = await r.json(); } catch { manifest = []; }

@@ -89,3 +89,5 @@ sup,sub{font-size:.7em;line-height:0}
 .next-box .pbtn.main{background:var(--teal);color:#fff;border-color:var(--teal)}
 .foot{margin:28px 0 0;font-size:12px;color:var(--ink2)}
 @media (max-width:520px){.cap-in{font-size:17px}.ln{font-size:18px}.top h1{font-size:19px}}
+
+.top .today{display:inline-block;margin-left:6px;background:rgba(255,255,255,.22);border-radius:999px;padding:0 10px;font-weight:800;font-size:13px}
