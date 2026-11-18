@@ -182,7 +182,12 @@ export async function renderDetail(ctx, el, my, id) {
     });
     if (!ok) return;
     try { await rpc("hw_t_delete", { p_token: ctx.token(), p_id: id }); ctx.toast("消しました"); ctx.go("#list"); }
-    catch (e) { if (isAuthError(e)) return ctx.authLost(e); showErr(errText(e)); }
+    catch (e) {
+      if (isAuthError(e)) return ctx.authLost(e);
+      // 「消す」の関数が、サーバーにまだ入っていないとき（ほかの機能は使える）：「締める」を案内する
+      if (e && (e.pgrst === "PGRST202" || e.status === 404)) return showErr("「消す」は、まだ使えません。かわりに「締める」を使ってください（締めた宿題は、生徒の画面から消えます）。");
+      showErr(errText(e));
+    }
   }
   draw();
 }
