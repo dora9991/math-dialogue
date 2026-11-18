@@ -1,6 +1,9 @@
 // 問40：直方体を3点I, J, Kを通る平面で切る（小さい方の体積）
 import { P, seg, poly, rt, txt, geo, solid } from "../dsl.js";
 
+// コマの長さ（ms）：字幕を読む時間をみて、すこし短めにする
+const withDur = (steps) => steps.map((s) => ({ dur: Math.min(12500, Math.round(1500 + s.cap.length * 105 + (s.eq || []).length * 350 + Math.min((s.add || []).length, 5) * 150)), ...s }));
+
 // 3次元の点 [x, y, z]：x＝AB の向き(2cm)、y＝AD の向き(3cm)、z＝上（AE ＝ 6cm、Aが上、Eが下）
 const V = {
   A: [0, 0, 6], B: [2, 0, 6], C: [2, 3, 6], D: [0, 3, 6],
@@ -32,7 +35,7 @@ export default {
   problem: "AB＝2cm、AD＝3cm、AE＝6cmの直方体ABCDEFGHがある。辺AEの中点をIとし、辺BFと辺CGを3等分した点のうち、点B、Cに近い方をそれぞれJ、Kとする。3点I、J、Kを通る平面で直方体を切ったとき、小さい方の立体の体積を求めなさい。",
   answer: "15 cm³",
   view: [0, 0, 440, 350],
-  steps: [
+  steps: withDur([
     {
       cap: "問題：直方体を、3点 I、J、K を通る平面で切るよ。**小さい方の立体の体積**を求めよう。",
       add: [
@@ -60,9 +63,9 @@ export default {
       eq: ["面ADHE ∥ 面BCGF", "→ IL ∥ JK"],
     },
     {
-      cap: "切り口の面をぬってみよう。DL ＝ AI ＝ 3cm だから、L は辺DHの**中点**だよ。",
+      cap: "IL は JK、つまり AD と平行。だから ADLI は長方形で、DL ＝ AI ＝ 3cm。L は辺DHの**中点**だよ。切り口をぬろう。",
       add: [poly(["I", "J", "K", "L"], { fill: "y", w: 0, fo: 0.4, id: "cut" })],
-      eq: ["DL ＝ AI ＝ 3 cm"],
+      eq: ["IL ∥ JK ∥ BC ∥ AD", "→ ADLI は長方形", "DL ＝ AI ＝ 3 cm"],
     },
     {
       cap: "切り口で、直方体は2つの立体に分かれるよ。A、B、C、D をふくむ**上の立体**から、体積を求めよう。",
@@ -76,7 +79,7 @@ export default {
     },
     {
       cap: "上の立体は、向かい合う**台形ABJI**と**台形DCKL**を底面とする**四角柱**だよ。**柱の高さ**は AD ＝ 3cm。",
-      add: [seg("A", "D", { c: "a", w: 3.4, id: "had" }), txt((pr(V.A)[0] + pr(V.D)[0]) / 2 - 10, (pr(V.A)[1] + pr(V.D)[1]) / 2 - 8, "柱の高さ 3cm", { c: "a", anchor: "end", id: "thad", size: 15 })],
+      add: [seg("A", "D", { c: "a", w: 3.4, id: "had" }), txt((pr(V.A)[0] + pr(V.D)[0]) / 2 - 10, (pr(V.A)[1] + pr(V.D)[1]) / 2 - 8, "高さ3cm", { c: "a", anchor: "end", id: "thad", size: 15 })],
       hl: ["tr1", "tr2"],
       eq: ["底面：台形ABJI", "柱の高さ：AD ＝ 3 cm"],
     },
@@ -118,5 +121,5 @@ export default {
       eq: ["// 台形EFJI：EI＝3、FJ＝4、EF＝2", "// 7 × 3 ＝ 21 ✔  15 ＋ 21 ＝ 36 ✔", "=> 小さい方は 15 cm³"],
       fin: true,
     },
-  ],
+  ]),
 };

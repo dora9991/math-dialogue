@@ -69,7 +69,7 @@ const BLUE = "#1f6fe0", PINK = "#d9488f";
 const FC = { ア: "a", イ: BLUE, ウ: "y", エ: "b", オ: "p", カ: PINK };
 
 // ── 展開図（左上・印刷物と同じ形）──────────────────────
-const h = 44, X0 = 26, Y0 = 40;
+const h = 44, X0 = 26, Y0 = 48;
 const n2 = (u, v) => [X0 + u * h, Y0 + v * h];
 const netPoly = (f, o) => { const [c, r] = CELL[f]; return poly([n2(c, r), n2(c + 1, r), n2(c + 1, r + 1), n2(c, r + 1)], o); };
 const netBase = [
@@ -105,20 +105,21 @@ const EDGES = (() => {
   return [...m.values()];
 })();
 if (EDGES.length !== 12) throw new Error("辺が12本になりません");
-function cubeEls(pre, o = {}) {
+function cubeEls(pre) {
   const els = [], ids = [];
   const push = (e) => { els.push(e); ids.push(e.id); return e; };
-  if (o.fills !== false) for (const f of ["イ", "ア", "ウ", "オ", "エ", "カ"]) push(poly(polyOf(f, FIN), { id: pre + "f" + f, fill: FC[f], fo: 0.26, w: 0, base: true }));
+  for (const f of ["イ", "ア", "ウ", "オ", "エ", "カ"]) if (VIS[f]) push(poly(polyOf(f, FIN), { id: pre + "f" + f, fill: FC[f], fo: 0.3, w: 0, base: true }));   // 見える面だけぬる
   EDGES.forEach((e, i) => push(seg(p3(e.a), p3(e.b), { id: pre + "e" + i, c: "g", w: 2.2, dash: !e.vis, base: true })));
-  if (o.letters !== false) for (const f of ["イ", "ア", "ウ", "オ", "エ", "カ"]) { const c = cenS(polyOf(f, FIN)); push(txt(c[0], c[1] + 5, f, { id: pre + "t" + f, size: 15, c: VIS[f] ? "g" : "k", base: true })); }
+  for (const f of ["イ", "ア", "ウ", "オ", "エ", "カ"]) { const c = cenS(polyOf(f, FIN)); push(txt(c[0], c[1] + 5, f, { id: pre + "t" + f, size: VIS[f] ? 16 : 14, c: VIS[f] ? "g" : "k", base: true })); }
   return { els, ids };
 }
-const cubeFill = (f, c, id, fo = 0.45) => poly(polyOf(f, FIN), { fill: c, fo, w: 0, id });
+const cubeFill = (f, c, id, fo = 0.42) => poly(polyOf(f, FIN), { fill: c, fo, w: 0, id });
+const cubeLetter = (f, c, id) => { const ct = cenS(polyOf(f, FIN)); return txt(ct[0], ct[1] + 6, f, { id, size: 18, c, base: true }); };
 
 const clr = (...a) => a.flatMap((x) => x.ids);
 const T0 = { ア: 0, ウ: 0, オ: 0, エ: 0, カ: 0 };
 const pose0 = poseEls("a", T0);
-const pose1 = poseEls("b", { ...T0, ア: 0.5, ウ: 0.5, オ: 0.5 });
+const pose1 = poseEls("b", { ...T0, ア: 0.7, ウ: 0.7, オ: 0.7 });
 const pose2 = poseEls("c", { ...T0, ア: 1, ウ: 1, オ: 1 });
 const pose3 = poseEls("d", { ...T0, ア: 1, ウ: 1, オ: 1, エ: 0.5 });
 const pose4 = poseEls("e", { ...T0, ア: 1, ウ: 1, オ: 1, エ: 1 });
@@ -134,7 +135,7 @@ const place = [
 ];
 const plIds = place.map((e) => e.id);
 const colorIds = Object.keys(CELL).map((f) => "nc" + f);
-const cubeFillIds = ["イ", "ア", "ウ", "オ", "エ", "カ"].map((f) => "g" + "f" + f);
+const cubeFillIds = ["ウ", "エ", "カ"].map((f) => "gf" + f);
 const abOn3 = [
   seg(p3(A3), p3(B3), { c: "a", w: 5, base: true, id: "cAB" }),
   P("cA", ...p3(A3), "A", "nw", { c: "a", r: 5.5, base: true }), P("cB", ...p3(B3), "B", "ne", { c: "a", r: 5.5, base: true }),
@@ -210,7 +211,6 @@ export default {
     },
     {
       cap: "展開図の辺ABは、オの上の辺。組み立てると、**上の奥の辺**（オとエの境目）になるよ。",
-      hide: plIds,
       add: [netAB(), ...abOn3],
       together: true,
       eq: ["// 辺AB ＝ オとエの境目"],
@@ -225,17 +225,18 @@ export default {
     },
     {
       cap: "確かめ：ABをふくむ面は**オ・エ**、ABの両はしでぶつかる面は**ア・ウ**。のこりの**イ・カ**が平行だね。",
-      hide: ["hiI", "hiK", "chiI", "chiK"],
-      add: [netHi("オ", "y", "hy1"), netHi("エ", "y", "hy2"), netHi("ア", BLUE, "hb1"), netHi("ウ", BLUE, "hb2"), netHi("イ", "a", "hr1"), netHi("カ", "a", "hr2"),
-        cubeFill("オ", "y", "cy1", 0.35), cubeFill("エ", "y", "cy2", 0.35), cubeFill("ア", BLUE, "cb1", 0.3), cubeFill("ウ", BLUE, "cb2", 0.3), cubeFill("イ", "a", "cr1"), cubeFill("カ", "a", "cr2")],
+      hide: ["gtオ", "gtア"],
+      add: [netHi("オ", "y", "hy1"), netHi("エ", "y", "hy2"), netHi("ア", BLUE, "hb1"), netHi("ウ", BLUE, "hb2"),
+        cubeFill("エ", "y", "cy2", 0.38), cubeFill("ウ", BLUE, "cb2", 0.3), cubeLetter("オ", "y", "lO1"), cubeLetter("ア", BLUE, "lA1")],
       together: true,
       eq: ["// ABをふくむ：オ、エ（黄）", "// ABとぶつかる：ア、ウ（青）", "// のこり：イ、カ（赤）→ 平行"],
     },
     {
       cap: "(2) **面ア**は、左の面。向かい合う**ウ**（右の面）が平行で、ほかの4つが垂直だよ。",
-      hide: ["hy1", "hy2", "hb1", "hb2", "hr1", "hr2", "cy1", "cy2", "cb1", "cb2", "cr1", "cr2", "netAB", "cAB", "cA", "cB"],
+      hide: ["hy1", "hy2", "hb1", "hb2", "hiI", "hiK", "chiI", "chiK", "cy2", "cb2", "lO1", "lA1", "netAB", "cAB", "cA", "cB", "gtイ", "gtウ", "gtエ", "gtカ"],
       add: [netHi("ア", "a", "gA"), netHi("ウ", "k", "gU"), netHi("イ", "b", "gI"), netHi("エ", "b", "gE"), netHi("オ", "b", "gO"), netHi("カ", "b", "gK"),
-        cubeFill("ア", "a", "dA"), cubeFill("ウ", "k", "dU", 0.3), cubeFill("イ", "b", "dI", 0.38), cubeFill("エ", "b", "dE", 0.38), cubeFill("オ", "b", "dO", 0.38), cubeFill("カ", "b", "dK", 0.38)],
+        cubeFill("ア", "a", "dA", 0.45), cubeFill("ウ", "k", "dU", 0.3),
+        cubeLetter("ア", "a", "lA2"), cubeLetter("ウ", "k", "lU2"), cubeLetter("イ", "b", "lI2"), cubeLetter("エ", "b", "lE2"), cubeLetter("オ", "b", "lO2"), cubeLetter("カ", "b", "lK2")],
       together: true,
       eqClear: true,
       eq: ["## (2) 面アと垂直な面", "ア ＝ 左の面", "向かい合う … ウ（平行）", "となり合う … イ、エ、オ、カ", "=> (2) 面イ、面エ、面オ、面カ"],

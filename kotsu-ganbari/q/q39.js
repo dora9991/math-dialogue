@@ -1,6 +1,9 @@
 // 問39：円が正三角形の外側を転がる（点Oの通り道の長さと、はさまれた部分の面積）
 import { P, seg, poly, arc, circ, ang, rt, txt, dot, path, geo, polar } from "../dsl.js";
 
+// コマの長さ（ms）：字幕を読む時間をみて、すこし短めにする
+const withDur = (steps) => steps.map((s) => ({ dur: Math.min(12500, Math.round(1500 + s.cap.length * 105 + (s.eq || []).length * 350 + Math.min((s.add || []).length, 5) * 150)), ...s }));
+
 const u = 44;                                   // 1cm ＝ 44（図の長さ）
 const s3 = Math.sqrt(3) / 2;
 const BL = [110, 268], BR = [BL[0] + 5 * u, BL[1]], T = [BL[0] + 2.5 * u, BL[1] - 5 * u * s3];   // 正三角形（1辺 5cm）
@@ -25,7 +28,7 @@ export default {
   problem: "半径1cmの円Oが、1辺の長さが5cmの正三角形の辺にそって転がって1周する。\n(1) 点Oが動いてできる線の長さを求めなさい。\n(2) 点Oが動いてできる線と正三角形の辺で囲まれた部分の面積を求めなさい。",
   answer: "(1) 15＋2π cm　(2) 15＋π cm²",
   view: [0, 0, 440, 340],
-  steps: [
+  steps: withDur([
     {
       cap: "問題：半径1cmの円が、正三角形の**外側**を転がって1周するよ。点Oの通り道の長さと、通り道と三角形ではさまれた部分の面積を求めよう。",
       add: [
@@ -150,5 +153,5 @@ export default {
       eq: ["15 ＋ π", "=> (2) 15 ＋ π cm²"],
       fin: true,
     },
-  ],
+  ]),
 };
