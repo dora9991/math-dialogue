@@ -141,7 +141,7 @@ const abOn3 = [
   P("cA", ...p3(A3), "A", "nw", { c: "a", r: 5.5, base: true }), P("cB", ...p3(B3), "B", "ne", { c: "a", r: 5.5, base: true }),
 ];
 
-export default {
+const scene = {
   n: 24,
   title: "立方体の展開図と面の位置",
   problem: "右の図は、立方体の展開図です。この展開図を組み立てて立方体をつくるとき、次のようになる面をすべて答えなさい。\n(1) 辺ABと平行になる面\n(2) 面アと垂直になる面",
@@ -251,3 +251,6 @@ export default {
     },
   ],
 };
+// 図が一度に出るコマ（together）は、字幕を読む長さにそろえる（自動のままだと長すぎる）
+for (const st of scene.steps) if (st.together && !st.dur) st.dur = 1800 + st.cap.length * 100 + (st.eq || []).length * 350;
+export default scene;

@@ -25,7 +25,7 @@ function mk3(pr, verts, faces, pre, k = 0.5, deg = 40) {
 
 // ── 印刷物の投影図（写真を拡大して読みとった寸法。単位はそろえてある）──
 // 地面（基準線）の y を G、図の左はしを x0、縮尺を s とする
-const EXT = 24;
+const EXT = 18;
 // (1) 立面図：円 / 平面図：円（直径 204、どちらも同じ）
 function fig1(pre, x0, G, s, o = {}) {
   const r = 102 * s, cE = G - 155 * s, cP = G + 162 * s;
@@ -73,7 +73,7 @@ const IDS3 = ["rect", "i1", "g", "d1", "d2", "d3", "tri"];
 const ids = (pre, L) => L.map((k) => pre + k);
 
 // 問題の図（3つならべる）と、1つずつ見るときの図（左に大きめ）
-const GB = 132, SB = 0.42, GC = 156, SC = 0.5, XC = 40;
+const GB = 142, SB = 0.42, GC = 156, SC = 0.5, XC = 40;
 const base1 = fig1("p", 40, GB, SB), base2 = fig2("q", 175, GB, SB), base3 = fig3("r", 335, GB, SB);
 const cp1 = fig1("a", XC, GC, SC, { c: "g" }), cp2 = fig2("b", XC, GC, SC, { c: "g" }), cp3 = fig3("c", XC, GC, SC, { c: "g" });
 const baseAll = [...ids("p", IDS1), ...ids("q", IDS2), ...ids("r", IDS3)];

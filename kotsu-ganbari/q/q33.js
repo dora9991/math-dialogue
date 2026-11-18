@@ -172,7 +172,7 @@ const lgIds = legend.map((e) => e.id);
 // 3 次元の面ぬり（答えの面）
 const finFill = (f, c = "a") => poly(FG[f].map((k) => S4[k]), { fill: c, fo: 0.4, w: 0, id: "gx" + f });
 
-export default {
+const scene = {
   n: 33,
   title: "正四面体の展開図と重なり",
   problem: "右の図は、正四面体の展開図である。この展開図を組み立ててできる正四面体について、次の問いに答えなさい。\n(1) 点Bに重なる点はどれか答えなさい。\n(2) 辺ABに重なる辺はどれか答えなさい。\n(3) 点Eに集まる面をア〜エからすべて選びなさい。",
@@ -284,3 +284,6 @@ export default {
     },
   ],
 };
+// 図が一度に出るコマ（together）は、字幕を読む長さにそろえる（自動のままだと長すぎる）
+for (const st of scene.steps) if (st.together && !st.dur) st.dur = 1800 + st.cap.length * 100 + (st.eq || []).length * 350;
+export default scene;
