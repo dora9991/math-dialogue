@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>補助線で角を求める</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="js/geo.js"></script>
+<script>
+/* 平行と合同 第7時：補助線をひいて、角度のなぞを解こう（ikkan の lesson_heikou_new_07 と同じ流れ）。
+   図の角度・数値は ikkan のワークシートと同じ（今日の問い 35°・50° → 85°、例題ブーメラン 40°・35°・30° → 105°、
+   考えよう ア〜ウ、チャレンジ 正五角形 58° → 22°）。例題2 の星形（5つの先の角の和 180°）は、このページで作った図（点の位置は自作）。
+   図は角度から座標を計算して描き、角の主張は座標から測り直して確かめる（GE.verify・CH.check）。 */
+(function () {
+  /* ---- このページの図の道具（角の印を、向きで描く・動かす） ---- */
+  var C = CH.C, RD = Math.PI / 180, OUT = 'rgba(20,40,30,.9)';
+  function nd(a) { return ((a % 360) + 360) % 360; }
+  function dir(p, q) { return Math.atan2(q[1] - p[1], q[0] - p[0]) / RD; }
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  /* 角の印：頂点 V（座標）で、向き a1 から a2 まで左まわり（度）。o：r（px）、col、fill、a、w */
+  function wedge(F, V, a1, a2, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(V), r = o.r || F.s * 1.1, col = o.col || C.chalk, d = nd(a2 - a1);
+    if (o.a === 0) return;
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a);
+    if (o.fill) { g.fillStyle = hexA(col, o.fill === true ? .35 : o.fill); g.beginPath(); g.moveTo(p[0], p[1]); g.arc(p[0], p[1], r, -a1 * RD, -(a1 + d) * RD, true); g.closePath(); g.fill(); }
+    g.strokeStyle = col; g.lineWidth = o.w || 2.4; g.beginPath(); g.arc(p[0], p[1], r, -a1 * RD, -(a1 + d) * RD, true); g.stroke(); g.restore();
+  }
+  function lab(F, p, deg, k, t, o) {
+    o = o || {}; var q = F.X(p), x = q[0] + Math.cos(deg * RD) * F.s * k, y = q[1] - Math.sin(deg * RD) * F.s * k, s = F.s * (o.size || .95);
+    CH.text(F.D, x, y, t, { col: o.col, size: s, a: o.a, outline: OUT, num: o.num });
+  }
+  function moved(V, a1, a2, mv, k) {
+    if (mv.to) return [GE.lerpP(V, mv.to, k), a1, a2];
+    return [GE.rot(V, mv.c, mv.deg * k), a1 + mv.deg * k, a2 + mv.deg * k];
+  }
+  function top(D, s, col, a, row) {
+    var B = CH.box(D, { t: 0, l: .02, r: .02 }), g = D.ctx, f0 = CH.fs(D, 1.05), fs = f0, w;
+    g.save(); g.font = '600 ' + fs + 'px "Klee One", sans-serif'; w = g.measureText(s).width; g.restore();
+    if (w > B.w) fs *= B.w / w;
+    CH.text(D, B.cx, B.y0 + f0 * (.75 + (row || 0) * 1.3), s, { col: col || C.yel, a: a, size: fs, outline: OUT });
+  }
+  /* ∠XVY（V が頂点、180° より小さいほう）の向き [はじめ, おわり] */
+  function ang3(P, s) { var V = P[s[1]], u = dir(V, P[s[0]]), v = dir(V, P[s[2]]); return nd(v - u) <= 180 ? [u, u + nd(v - u)] : [v, v + nd(u - v)]; }
+  function arc3(F, P, s, col, o) { o = o || {}; var sp = ang3(P, s); wedge(F, P[s[1]], sp[0], sp[1], { col: col, fill: o.fill == null ? .3 : o.fill, r: o.r || F.s * 1.4, a: o.a, w: o.w }); }
+  function lab3(F, P, s, t, o) { o = o || {}; var sp = ang3(P, s), w = sp[1] - sp[0]; lab(F, P[s[1]], sp[0] + w / 2 + (o.turn || 0), (o.k || 1) * (w < 35 ? 3.6 : w < 60 ? 2.9 : 2.4), t, { col: o.col, size: o.size || .85, a: o.a }); }
+  function mv3(P, s, mvv, k) { var sp = ang3(P, s); return moved(P[s[1]], sp[0], sp[1], mvv, k); }
+  function wd(F, m, col, o) { o = o || {}; wedge(F, m[0], m[1], m[2], { col: col, fill: o.fill || .5, r: o.r || F.s * 1.4, w: 2.6, a: o.a }); }
+  /* 平行線 ℓ（y＝yl）・m（y＝ym）を x0〜x1 に */
+  function lm(F, yl, ym, x0, x1, o) {
+    o = o || {};
+    [[yl, 'ℓ'], [ym, 'm']].forEach(function (z) { GE.seg(F, [[x0, z[0]], [x1, z[0]]], { w: 2.6 }); lab(F, [x1, z[0]], 0, .9, z[1], { size: 1.1 }); if (o.par !== false) GE.par(F, [[x1 - 1.5, z[0]], [x1 - .6, z[0]]], 1); });
+  }
+  function hline(F, p, x0, x1, a, col) { GE.seg(F, [[x0, p[1]], [x1, p[1]]], { col: col || C.green, dash: [8, 6], w: 2.4, a: a }); }
+  function fitK(D, P, ks, o) { o = o || {}; return GE.fit(D, CH.box(D, { l: .04, r: .04, t: o.t == null ? .15 : o.t, b: o.b == null ? .06 : o.b }), P, { keys: ks, pad: o.pad == null ? .06 : o.pad }); }
+  function glow(F, segs, col, a) { segs.forEach(function (s) { GE.seg(F, s, { col: col, w: 6, a: a, glow: true }); }); }
+  function toY(p, d, y) { return GE.polar(p, (y - p[1]) / Math.sin(d * RD), d); }
+
+  /* ---- 折れ線（1回）：ℓ（y＝4.2）上の A、m（y＝0）上の C、間の E。∠A＝a、∠C＝c → ∠AEC＝a＋c ---- */
+  function zig1(a, c) {
+    var HL = 4.2, E = [5.4, 1.8], A = toY(E, 180 - a, HL), Cc = toY(E, 180 + c, 0), x0 = Math.min(A[0], Cc[0]) - 1.5, x1 = E[0] + 2.6;
+    return { A: A, E: E, C: Cc, R: [A[0] + 1, HL], S: [Cc[0] + 1, 0], G: [E[0] - 1, E[1]], u: [x0, -.5], v: [x1, HL + .5], HL: HL, x0: x0, x1: x1 };
+  }
+  var Z1 = zig1(35, 50);
+  GE.verify(Z1, '∠RAE＝35°、∠SCE＝50°、∠AEC＝85°、∠AEG＝∠RAE、∠GEC＝∠SCE、∠AEC＝∠AEG＋∠GEC、AR∥EG、EG∥CS', null, '今日の問い');
+  /* ---- ブーメラン形 A-B-D-C：∠BAC＝40°、∠ABD＝35°、∠ACD＝30° → ∠BDC＝105°。E は BD の延長と AC の交点 ---- */
+  function dart(A0, b, c) {
+    var A = [0, 6], B = GE.polar(A, 6.2, -90 - A0 / 2), Cc = GE.polar(A, 5.8, -90 + A0 / 2), dBD = dir(B, A) - b, dCD = dir(Cc, A) + c;
+    var Dd = GE.meet(B, GE.polar(B, 1, dBD), Cc, GE.polar(Cc, 1, dCD)), E = GE.meet(B, Dd, A, Cc); return { A: A, B: B, C: Cc, D: Dd, E: E };
+  }
+  var DT = dart(40, 35, 30);
+  GE.verify(DT, '∠BAC＝40°、∠ABD＝35°、∠ACD＝30°、∠DEC＝∠BAC＋∠ABD＝75°、∠BDC＝∠DEC＋∠ECD＝105°、∠BDC＝∠BAC＋∠ABD＋∠ACD', null, '例題');
+  /* ---- 星形（自作）：A〜E は 円のまわりに、少しずつずらしておいた点。星の線は AC・CE・EB・BD・DA ----
+     U＝AC と BE の交点、V＝AD と BE の交点。△UCE・△VBD の外角で、∠AUV＝∠c＋∠e、∠AVU＝∠b＋∠d */
+  var ST = (function () { var A = GE.polar([0, 0], 4.2, 96), B = GE.polar([0, 0], 4.4, 22), Cc = GE.polar([0, 0], 4.0, -50), Dd = GE.polar([0, 0], 4.3, -128), E = GE.polar([0, 0], 4.1, 162);
+    return { A: A, B: B, C: Cc, D: Dd, E: E, U: GE.meet(A, Cc, B, E), V: GE.meet(A, Dd, B, E) }; })();
+  var SA = { a: 'CAD', b: 'EBD', c: 'ACE', d: 'BDA', e: 'CEB' };
+  GE.verify(ST, '∠AUV＝∠ACE＋∠CEB、∠AVU＝∠EBD＋∠BDA、∠CAD＋∠AUV＋∠AVU＝180°、∠CAD＋∠EBD＋∠ACE＋∠BDA＋∠CEB＝180°', null, '例題2（星形）');
+  /* ---- 考えよう ア：折れ線 A→E→F→C（35°、80°、25° → ∠x＝70°）、イ：ブーメラン（50°、x、35°、125° → 40°）、ウ：三角定規（25° → 20°）（答えは出さない。検算だけ） ---- */
+  var ZA = (function () { var HL = 5, A = [2, HL], E = toY(A, -35, 3.7), Fp = toY(E, 180 - 35 + 80, 1.7), Cc = toY(Fp, -25, 0); return { A: A, E: E, F: Fp, C: Cc, R: [3, HL], L: [Cc[0] - 1, 0], HL: HL }; })();
+  GE.verify(ZA, '∠RAE＝35°、∠AEF＝80°、∠LCF＝25°、∠EFC＝70°', null, '考えようア');
+  var ZI = dart(50, 40, 35); GE.verify(ZI, '∠BAC＝50°、∠ABD＝40°、∠ACD＝35°、∠BDC＝125°', null, '考えようイ');
+  var ZU = (function () { var HL = 4.2, A = [1.2, HL], len = HL / Math.sin(70 * RD), Cc = GE.polar(A, len, -70), B = GE.polar(A, len * Math.SQRT2, -25); return { A: A, B: B, C: Cc, R: [A[0] + 1, HL], S: [Cc[0] + 1, 0], HL: HL }; })();
+  GE.verify(ZU, '∠RAB＝25°、∠BAC＝∠ABC＝45°、∠ACB＝90°、∠SCB＝20°', null, '考えようウ');
+  /* ---- チャレンジ：ℓ∥m、正五角形 ABCDE（A は ℓ 上、C は m 上）。m と CB の角 58° → ∠x（ℓ と AE の角）＝22°。N は B を通る ℓ の平行線上の点 ---- */
+  var PT = (function () { var a = 50, s = 3, V = [[0, 0]]; for (var k = 0; k < 4; k++) V.push(GE.polar(V[k], s, -a - 72 * k));
+    return { A: V[0], B: V[1], C: V[2], D: V[3], E: V[4], R: [1, 0], L: [-1, 0], S: [V[2][0] + 1, V[2][1]], N: [V[1][0] - 1, V[1][1]] }; })();
+  GE.verify(PT, '∠SCB＝58°、∠LAE＝22°、∠ABC＝∠BCD＝∠CDE＝∠DEA＝∠EAB＝108°、∠NBC＝∠SCB、∠NBA＝∠RAB＝50°、∠ABC＝∠NBA＋∠NBC、∠LAE＋∠EAB＋∠BAR＝180°、AB＝BC＝CD＝DE＝EA、AR∥BN', null, 'チャレンジ');
+  CH.check(108 - 58 === 50 && 180 - 108 - 50 === 22, 'チャレンジの式');
+
+  /* 考えようの道具：線を通す点と向き。ℓ や図の線分に平行に近いと、ぴったり平行にして印を出す */
+  var TH = [
+    { nm: 'ア', P: ZA, pts: ['A', 'E', 'F', 'C'], segs: [['A', 'E'], ['E', 'F'], ['F', 'C']], par: true, x0: .3, x1: Math.max(ZA.E[0], ZA.C[0]) + 2.2, yl: ZA.HL,
+      angs: [['RAE', '35°'], ['AEF', '80°'], ['EFC', 'x'], ['LCF', '25°']] },
+    { nm: 'イ', P: ZI, pts: ['A', 'B', 'C', 'D'], segs: [['A', 'B'], ['A', 'C'], ['B', 'D'], ['D', 'C']],
+      angs: [['BAC', '50°'], ['ABD', 'x'], ['ACD', '35°'], ['BDC', '125°']] },
+    { nm: 'ウ', P: ZU, pts: ['A', 'B', 'C'], segs: [['A', 'B'], ['A', 'C'], ['C', 'B']], par: true, x0: .2, x1: ZU.B[0] + 2.6, yl: ZU.HL,
+      angs: [['RAB', '25°'], ['BAC', '45°'], ['ABC', '45°'], ['SCB', 'x']], right: 'ACB' }
+  ];
+  function probe(f, which, deg) {
+    var P = f.P, V = P[f.pts[which]], cand = f.segs.map(function (s) { return [nd(dir(P[s[0]], P[s[1]])) % 180, s]; }), hit = null;
+    if (f.par) cand.unshift([0, 'ℓ']);
+    cand.forEach(function (z) { var e = Math.abs(((deg - z[0]) % 180 + 270) % 180 - 90); if (e < 1.6 && !hit) { hit = z[1]; deg = z[0]; } });
+    return { V: V, deg: deg, hit: hit };
+  }
+
+  K3.run({
+    no: '第7時', title: '補助線をひいて、角度のなぞを解こう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '06.html', label: '◀ 第6時' }, { href: '08.html', label: '第8時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '補助線をひいて求める', q: 'ℓ∥m のとき、∠x の大きさを求めたい。図に補助線を1本かき加えるとしたら、どこにどんな線をひけばよいだろう。',
+        notes: ['① 自分の考え（3分）　補助線を図にかき入れて、求め方を書こう。', '② ペアの考え（3分）　ちがうひき方があれば。'],
+        draw: function (D) { zigDraw(D, 0, false); } },
+      { tag: '今日の問い', q: 'どこに、どんな線をひく？ ∠x は？', a: 'E を通り、ℓ に平行な直線をひく。∠x＝35°＋50°＝85°', sub: '錯角は等しいから、∠x は 35° と 50° の2つに分かれる', dur: 7,
+        b: { t: 'E を通り ℓ に平行な補助線 → 錯角で ∠x＝35°＋50°＝<b>85°</b>', col: C.yel },
+        draw: function (D) { zigDraw(D, D.ph ? D.t : 0, true); } },
+      { tag: 'ことば', bh: 'ことば', q: '角を求めるために、図にかき入れる線を何という？ 今日の問いでは、どんな性質を使った？', a: '補助線。平行線の錯角（Z の形を2つ）', sub: 'これまでに使った性質：平行線の同位角・錯角、三角形の内角の和 180°、外角＝となりあわない2つの内角の和', dur: 5,
+        b: [{ t: '<b>補助線</b> … 角を求めるために、図にかき入れる線', col: C.green }, { t: '平行線では <b>同位角</b>・<b>錯角</b> が等しい', col: C.green }, { t: '三角形の内角の和 <b>180°</b>、外角＝となりあわない2つの内角の和', col: C.green }],
+        draw: function (D) {
+          var P = Z1, F = fitK(D, P, ['u', 'v']), t = D.ph ? D.t : 0, E = P.E, a1 = D.ph ? CH.smooth(.05, .2, t) * (1 - CH.smooth(.45, .52, t)) : 0, a2 = D.ph ? CH.smooth(.52, .67, t) : 0;
+          if (a1 > 0) glow(F, [[P.A, [P.A[0] + 3, P.HL]], [P.A, E], [E, [E[0] - 3.1, E[1]]]], C.yel, a1 * .6);
+          if (a2 > 0) glow(F, [[[E[0] - 3.1, E[1]], E], [E, P.C], [P.C, [P.C[0] + 3, 0]]], C.pink, a2 * .6);
+          lm(F, P.HL, 0, P.x0, P.x1); hline(F, E, E[0] - 3.1, E[0] + 2.4, 1);
+          lab(F, [E[0] + 2.4, E[1]], 0, 1.8, '補助線', { col: C.green, size: .85 });
+          GE.seg(F, ['A', 'E'], { w: 2.8 }); GE.seg(F, ['E', 'C'], { w: 2.8 });
+          arc3(F, P, 'RAE', C.yel); arc3(F, P, 'GEA', C.yel, { r: F.s * 1.8 }); arc3(F, P, 'SCE', C.pink); arc3(F, P, 'GEC', C.pink, { r: F.s * 1.8 });
+          lab3(F, P, 'RAE', '35°', { col: C.yel }); lab3(F, P, 'SCE', '50°', { col: C.pink }); lab3(F, P, 'GEA', '35°', { col: C.yel, k: 1.1 }); lab3(F, P, 'GEC', '50°', { col: C.pink, k: 1.1 });
+          GE.labels(F, ['A', 'E', 'C'], { dir: { A: 'n', E: 'e', C: 's' } });
+          if (D.ph) top(D, t < .5 ? '錯角（Z の形）：ℓ と、E を通る補助線' : '錯角（Z の形）：E を通る補助線と、m', t < .5 ? C.yel : C.pink, Math.max(a1, a2));
+        } },
+      { tag: '例題', bh: '例題　ブーメラン形', q: '∠BAC＝40°、∠ABD＝35°、∠ACD＝30° である。補助線をひいて、∠x（∠BDC）の大きさを求めよう。', a: '105°',
+        sub: 'BD をのばし、AC との交点を E とする。△ABE の外角で ∠DEC＝40°＋35°＝75°、△DEC の外角で ∠x＝75°＋30°＝105°', dur: 9,
+        b: { t: 'BD をのばす → ∠DEC＝40°＋35°＝75°、∠x＝75°＋30°＝<b>105°</b>（40°＋35°＋30°）', col: C.pink },
+        draw: function (D) {
+          var P = DT, F = fitK(D, P, ['A', 'B', 'C', 'D']), t = D.ph ? D.t : 0, g = D.ph ? CH.smooth(0, .08, t) : 0;
+          var h1 = D.ph ? CH.smooth(.08, .16, t) * (1 - CH.smooth(.5, .56, t)) : 0, h2 = D.ph ? CH.smooth(.54, .62, t) : 0;
+          if (h1 > 0) GE.poly(F, 'ABE', { col: C.yel, fa: .2 * h1, stroke: false });
+          if (h2 > 0) GE.poly(F, 'DEC', { col: C.blue, fa: .25 * h2, stroke: false });
+          if (g > 0) GE.seg(F, ['D', 'E'], { col: C.green, dash: [8, 6], w: 2.4, a: g });
+          [['A', 'B'], ['A', 'C'], ['B', 'D'], ['D', 'C']].forEach(function (s) { GE.seg(F, s, { w: 2.8 }); });
+          arc3(F, P, 'BAC', C.yel); arc3(F, P, 'ABD', C.pink); arc3(F, P, 'ACD', C.blue); arc3(F, P, 'BDC', C.orange, { fill: .2, r: F.s * 1.2 });
+          lab3(F, P, 'BAC', '40°', { col: C.yel }); lab3(F, P, 'ABD', '35°', { col: C.pink }); lab3(F, P, 'ACD', '30°', { col: C.blue });
+          lab3(F, P, 'BDC', D.ph && t > .95 ? '105°' : 'x', { col: C.orange, size: .95 });
+          if (D.ph) {
+            if (t > .16 && t < .56) { wd(F, mv3(P, 'BAC', { to: P.E }, CH.ease(CH.smooth(.16, .32, t))), C.yel, { r: F.s * 1.3 }); if (t > .32) wd(F, mv3(P, 'ABE', { c: GE.mid(P.B, P.E), deg: 180 }, CH.ease(CH.smooth(.32, .48, t))), C.pink, { r: F.s * 1.3 }); }
+            if (t > .48) { arc3(F, P, 'DEC', C.green, { fill: .35, r: F.s * 1.3, a: CH.smooth(.48, .54, t) }); lab3(F, P, 'DEC', '75°', { col: C.green, a: CH.smooth(.48, .54, t), k: .95 }); }
+            if (t > .62) { wd(F, mv3(P, 'DEC', { to: P.D }, CH.ease(CH.smooth(.62, .76, t))), C.green, { r: F.s * 1.0 }); if (t > .76) wd(F, mv3(P, 'ACD', { c: GE.mid(P.C, P.D), deg: 180 }, CH.ease(CH.smooth(.76, .9, t))), C.blue, { r: F.s * 1.0 }); }
+            var msg = t < .1 ? ['BD をのばして、AC との交点を E とする', C.green] : t < .55 ? ['△ABE の外角：∠DEC＝40°＋35°＝75°', C.yel] : t < .95 ? ['△DEC の外角：∠x＝75°＋30°', C.blue] : ['∠x＝105°（＝40°＋35°＋30°）', C.orange];
+            top(D, msg[0], msg[1], CH.smooth(0, .04, t));
+          }
+          GE.labels(F, ['A', 'B', 'C', 'D'].concat(D.ph && t > .05 ? ['E'] : []), { dir: { A: 'n', B: 'w', C: 'e', D: 'nw', E: 'ne' } });
+        } },
+      { tag: '例題', bh: '例題2　星形', q: '星形の 5つの先の角 ∠a、∠b、∠c、∠d、∠e の和は、何度だろう。', a: '180°', sub: '外角の性質で、∠c＋∠e を U に、∠b＋∠d を V に集める。△AUV の内角の和で ∠a＋(∠c＋∠e)＋(∠b＋∠d)＝180°', dur: 9,
+        b: { t: '星形の先の角の和 … △AUV に集めて <b>180°</b>', col: C.pink },
+        draw: function (D) {
+          var P = ST, F = fitK(D, P, ['A', 'B', 'C', 'D', 'E'], { pad: .08 }), t = D.ph ? D.t : 0, cl = { a: C.yel, b: C.pink, c: C.blue, d: C.green, e: C.orange };
+          var h = D.ph ? CH.smooth(.8, .9, t) : 0;
+          if (h > 0) GE.poly(F, 'AUV', { col: C.yel, fa: .3 * h, stroke: false });
+          [['A', 'C'], ['C', 'E'], ['E', 'B'], ['B', 'D'], ['D', 'A']].forEach(function (s) { GE.seg(F, s, { w: 2.6 }); });
+          'abcde'.split('').forEach(function (k) { arc3(F, P, SA[k], cl[k], { r: F.s * 1.3 }); lab3(F, P, SA[k], k, { col: cl[k], size: .95, k: 1.05 }); });
+          if (D.ph) {
+            var k1 = CH.ease(CH.smooth(.05, .3, t)), k2 = CH.ease(CH.smooth(.38, .63, t));
+            wd(F, mv3(P, SA.c, { to: P.U }, k1), cl.c, { r: F.s * 1.2 }); wd(F, mv3(P, SA.e, { c: GE.mid(P.U, P.E), deg: 180 }, k1), cl.e, { r: F.s * 1.2 });
+            if (t > .38) { wd(F, mv3(P, SA.d, { to: P.V }, k2), cl.d, { r: F.s * 1.2 }); wd(F, mv3(P, SA.b, { c: GE.mid(P.V, P.B), deg: 180 }, k2), cl.b, { r: F.s * 1.2 }); }
+            GE.labels(F, ['U', 'V'], { dir: { U: 'e', V: 'w' }, a: CH.smooth(0, .05, t) });
+            var msg = t < .36 ? ['△UCE の外角：∠AUV＝∠c＋∠e', C.blue] : t < .8 ? ['△VBD の外角：∠AVU＝∠b＋∠d', C.green] : ['△AUV で　∠a＋(∠c＋∠e)＋(∠b＋∠d)＝180°', C.yel];
+            top(D, msg[0], msg[1], CH.smooth(0, .04, t));
+          }
+          GE.labels(F, ['A', 'B', 'C', 'D', 'E'], { a: .85 });
+        } },
+      { tag: '考えよう', q: 'ア〜ウの ∠x の大きさを求めよう（ア・ウは ℓ∥m）。補助線を、できるだけいろいろなひき方で見つけよう。うまくいく補助線には、どんな共通点があるだろう。',
+        notes: ['ちがうひき方を見つけて、同じ答えになるか確かめよう。', 'スライダーで、図・線を通す点・線の向きを変えられます（ℓ や図の線と平行になると、平行の印が出ます）。'],
+        sliders: [{ key: 'k', label: '図', min: 0, max: 2, step: 1, val: 0, fmt: function (v) { return 'アイウ'.charAt(v); } },
+          { key: 'p', label: '線を通す点', min: 0, max: 3, step: 1, val: 1, fmt: function (v) { return v; } },
+          { key: 'd', label: '線の向き', min: 0, max: 179, step: 1, val: 30, fmt: function (v) { return v + '°'; } }],
+        draw: function (D) {
+          var f = TH[D.V.k], P = f.P, pi = Math.min(D.V.p, f.pts.length - 1), ks = f.pts.slice(), ex = {};
+          if (f.par) { ex.u = [f.x0, -.6]; ex.v = [f.x1, f.yl + .6]; }
+          var Q = Object.assign({}, P, ex), F = fitK(D, Q, f.par ? ['u', 'v'] : ks, { t: .1, b: .04, pad: f.par ? .02 : .08 }), pr = probe(f, pi, D.V.d), g = D.ctx, Rb = CH.box(D, { l: 0, r: 0, t: 0, b: 0 });
+          var out = document.getElementById('sl-p-o'); if (out) out.textContent = f.pts[pi] + ' を通る';
+          g.save(); g.beginPath(); g.rect(Rb.x0, Rb.y0, Rb.w, Rb.h); g.clip();
+          GE.line(F, [pr.V, GE.polar(pr.V, 1, pr.deg)], { col: pr.hit ? C.green : C.yel, w: 2.4, dash: [8, 6] }); g.restore();
+          if (f.par) lm(F, f.yl, 0, f.x0, f.x1);
+          f.segs.forEach(function (s) { GE.seg(F, s, { w: 2.8 }); });
+          f.angs.forEach(function (z) { var x = z[1] === 'x'; arc3(F, P, z[0], x ? C.orange : C.chalk, { fill: x ? .3 : .1, r: F.s * 1.2 }); lab3(F, P, z[0], z[1], { col: x ? C.orange : C.chalk }); });
+          if (f.right) GE.right(F, f.right);
+          if (pr.hit) { if (pr.hit === 'ℓ') GE.par(F, [[f.x1 - 1.5, f.yl], [f.x1 - .6, f.yl]], 1, { col: C.green }); else GE.par(F, pr.hit, 1, { col: C.green }); GE.par(F, [pr.V, GE.polar(pr.V, 1.4, pr.deg)], 1, { col: C.green }); }
+          GE.dot(F, pr.V, { col: pr.hit ? C.green : C.yel, r: F.s * .22 });
+          GE.labels(F, ks, { a: .9 });
+          CH.text(D, F.R.x0 + F.s * .8, F.R.y0 + F.s * .2, f.nm, { size: F.s * 1.3 });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'ℓ∥m で、ABCDE は正五角形である。∠x の大きさを求めよう。', a: '22°',
+        sub: 'B を通り ℓ に平行な直線をひく。錯角で、B の 108° は 58° と 50° に分かれる。A のところで一直線だから ∠x＝180°−108°−50°＝22°', dur: 8,
+        notes: ['ヒント① B を通って、ℓ に平行な直線をひいてみよう。', 'ヒント② 正五角形の 1つの内角は、何度かな。'],
+        b: { t: 'B を通る平行線：108°＝58°＋50° → ∠x＝180°−108°−50°＝<b>22°</b>', col: C.orange },
+        draw: function (D) {
+          var P = PT, x0 = Math.min(P.A[0], P.E[0], P.D[0]) - 2.2, x1 = Math.max(P.A[0], P.B[0], P.C[0]) + 3.2, Q = Object.assign({ u: [x0, P.C[1] - .5], v: [x1, .5] }, P);
+          var F = fitK(D, Q, ['u', 'v'], { pad: .02 }), t = D.ph ? D.t : 0, g = D.ph ? CH.smooth(0, .1, t) : 0;
+          if (g > 0) hline(F, P.B, P.B[0] - 3.4, P.B[0] + 2.2, g);
+          lm(F, 0, P.C[1], x0, x1);
+          GE.poly(F, 'ABCDE', { col: C.blue, fa: .12, stroke: C.chalk, sw: 2.8 });
+          'ABCDE'.split('').forEach(function (k, i) { GE.tick(F, [P[k], P['ABCDE'.charAt((i + 1) % 5)]], 1); });
+          arc3(F, P, 'SCB', C.pink); lab3(F, P, 'SCB', '58°', { col: C.pink });
+          arc3(F, P, 'LAE', C.orange, { r: F.s * 1.6 }); lab3(F, P, 'LAE', D.ph && t > .9 ? '22°' : 'x', { col: C.orange, k: 1.2 });
+          if (D.ph) {
+            if (t > .1) { var k1 = CH.ease(CH.smooth(.1, .3, t)); wd(F, mv3(P, 'SCB', { c: GE.mid(P.B, P.C), deg: 180 }, k1), C.pink, { r: F.s * 1.4 }); }
+            if (t > .32) { var a2 = CH.smooth(.32, .42, t); arc3(F, P, 'ABC', C.chalk, { fill: 0, r: F.s * 2.4, a: a2 }); lab(F, P.B, 20, 2.0, '108°', { a: a2, size: .8 }); arc3(F, P, 'NBA', C.yel, { r: F.s * 1.4, a: CH.smooth(.42, .5, t) }); lab3(F, P, 'NBA', '50°', { col: C.yel, a: CH.smooth(.42, .5, t), k: 1.1 }); lab3(F, P, 'NBC', '58°', { col: C.pink, a: a2, k: 1.1 }); }
+            if (t > .55) { var k3 = CH.ease(CH.smooth(.55, .75, t)); wd(F, mv3(P, 'NBA', { c: GE.mid(P.A, P.B), deg: 180 }, k3), C.yel, { r: F.s * 1.4 }); }
+            if (t > .75) { var a4 = CH.smooth(.75, .85, t); lab3(F, P, 'RAB', '50°', { col: C.yel, a: a4, k: 1.1 }); arc3(F, P, 'EAB', C.chalk, { fill: .1, r: F.s * 1.0, a: a4 }); lab3(F, P, 'EAB', '108°', { a: a4, size: .75 }); }
+            var msg = t < .32 ? ['B を通り ℓ に平行な直線：錯角で 58°', C.pink] : t < .55 ? ['B の内角 108°＝58°＋50°', C.yel] : t < .9 ? ['錯角で、A のところにも 50°', C.yel] : ['一直線：∠x＝180°−108°−50°＝22°', C.orange];
+            top(D, msg[0], msg[1], CH.smooth(0, .04, t));
+          }
+          GE.labels(F, ['A', 'B', 'C', 'D', 'E'], { dir: { A: 'n', B: 'e', C: 'se', D: 'sw', E: 'w' } });
+        } }
+    ]
+  });
+
+  /* 今日の問いの図。ans：答えの段（E を通る平行線 → 35° と 50° が、錯角の位置へ） */
+  function zigDraw(D, t, ans) {
+    var P = Z1, F = fitK(D, P, ['u', 'v']), E = P.E, g = ans ? CH.smooth(0, .12, t) : 0;
+    if (g > 0) hline(F, E, E[0] - 3.1, E[0] + 2.4, g);
+    lm(F, P.HL, 0, P.x0, P.x1);
+    GE.seg(F, ['A', 'E'], { w: 2.8 }); GE.seg(F, ['E', 'C'], { w: 2.8 });
+    arc3(F, P, 'RAE', C.yel); arc3(F, P, 'SCE', C.pink); arc3(F, P, 'AEC', C.orange, { fill: .15, r: F.s * 2.4 });
+    lab3(F, P, 'RAE', '35°', { col: C.yel }); lab3(F, P, 'SCE', '50°', { col: C.pink });
+    lab(F, E, ans && t > .05 ? 188 : 180, 4.4, ans && t > .85 ? '85°' : 'x', { col: C.orange, size: 1.05 });
+    if (ans) {
+      if (t > .15) wd(F, mv3(P, 'RAE', { c: GE.mid(P.A, E), deg: 180 }, CH.ease(CH.smooth(.15, .45, t))), C.yel, { r: F.s * 1.6 });
+      if (t > .48) wd(F, mv3(P, 'SCE', { c: GE.mid(P.C, E), deg: 180 }, CH.ease(CH.smooth(.48, .78, t))), C.pink, { r: F.s * 1.6 });
+      if (t > .45) lab3(F, P, 'GEA', '35°', { col: C.yel, k: 1.15, a: CH.smooth(.45, .5, t) });
+      if (t > .78) lab3(F, P, 'GEC', '50°', { col: C.pink, k: 1.15, a: CH.smooth(.78, .83, t) });
+      var msg = t < .15 ? ['E を通り、ℓ に平行な直線をひく', C.green] : t < .48 ? ['35° は 錯角の位置へ', C.yel] : t < .85 ? ['50° も 錯角の位置へ', C.pink] : ['∠x＝35°＋50°＝85°', C.orange];
+      top(D, msg[0], msg[1], CH.smooth(0, .04, t));
+    }
+    GE.labels(F, ['A', 'E', 'C'], { dir: { A: 'n', E: 'e', C: 's' } });
+  }
+})();
+</script>
+</body>
+</html>

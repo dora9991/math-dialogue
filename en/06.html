@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>接線の作図</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 円 第6時：円の外の点から、接線を作図しよう（ikkan の lesson_en_06 と同じ流れ）。
+   今日の問いは、A を通る直線を回して、円と 1点だけで交わる（接する）ところをさがす道具つき。接点では ∠APO＝90°。
+   例題は作図の手順が 1つずつ動く：① AO の垂直二等分線で中点 M → ② M を中心に半径 MA の円 → ③ 円 O との交点 P、Q が接点 → ④ わけ（半円の弧に対する円周角は 90°）。
+   考えようは AP＝AQ のわけ（OA の長さを変える道具。答えは出さない）。チャレンジは 4辺が円に接する四角形（AB＋CD＝BC＋DA）。
+   円 O は半径 3、A は OA＝6（接線と AO の角が 30° になり、直線を回す道具で ちょうど接する向きがえらべる）。数値はページの中で計算し直している（自作）。 */
+(function () {
+  var C = CH.C, RAD = Math.PI / 180, O = [0, 0], R = 3;
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  /* ---- 円の図の道具（このページの中だけで使う） ---- */
+  function on(a) { return GE.polar(O, R, a); }                                         // 円周上の点（向き a 度）
+  function dg(x) { var r = Math.round(x * 10) / 10; return (Math.abs(r - Math.round(r)) < .05 ? String(Math.round(r)) : r.toFixed(1)) + '°'; }
+  /* 図の四角（fig）と、字を書く四角（side）。よこ長ならみぎ、たて長なら下 */
+  function lay(D, k) {
+    var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
+    if (B.w > B.h * 1.25 && B.w > 560) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .08, B.x1, B.y1), wide: true }; }
+    var h = B.h * .25; return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .04, B.y1 - h + 4, B.x1, B.y1), wide: false };
+  }
+  /* 円をふくめて、四角に入れる（円の大きさは、点が動いても変わらない） */
+  function fitC(D, Rr, P, o) { o = o || {}; return GE.fit(D, Rr, P, { keys: ['O'], bounds: GE.circBounds(O, R).concat(o.bounds || []), pad: o.pad == null ? .07 : o.pad }); }
+  function circle(F, o) { GE.circ(F, O, R, o); }
+  /* 円周の一部を太く（a0 → a1 は反時計まわり、度） */
+  function arcOn(F, a0, a1, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(O);
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.yel; g.lineWidth = o.w || 6; g.lineCap = 'round';
+    g.shadowColor = o.col || C.yel; g.shadowBlur = 8;
+    g.beginPath(); g.arc(p[0], p[1], R * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  function segs(F, ss, o) { ss.split(' ').forEach(function (s) { GE.seg(F, s, o); }); }
+  function dots(F, ks, o) { ks.split('').forEach(function (k) { if (F.P[k]) GE.dot(F, k, o); }); }
+  /* 点の名前：{A: 向き（度）} */
+  function nm(F, m, o) {
+    o = o || {}; Object.keys(m).forEach(function (k) {
+      if (m[k] == null || !F.P[k]) return; var p = F.X(k), r = F.s * .95;
+      CH.text(F.D, p[0] + Math.cos(m[k] * RAD) * r, p[1] - Math.sin(m[k] * RAD) * r, k, { size: F.s, col: (o.col && o.col[k]) || C.chalk, a: o.a, outline: 'rgba(20,40,30,.9)' });
+    });
+  }
+  /* 角のしるし。字（座標から計算した大きさ、または o.t）は、二等分線の上の、2辺にふれないところに置く */
+  function mark(F, s, col, o) {
+    o = o || {}; var r = o.r || F.s * 1.05;
+    GE.arc(F, s, { col: col, fill: o.fill == null ? .3 : o.fill, a: o.a, r: r, n: o.n });
+    var t = o.t === false ? null : (o.t || dg(GE.ang(F.P, s))); if (!t) return;
+    var A = F.X(s[0]), V = F.X(s[1]), B = F.X(s[2]), a1 = Math.atan2(A[1] - V[1], A[0] - V[0]), d = Math.atan2(B[1] - V[1], B[0] - V[0]) - a1;
+    while (d > Math.PI) d -= 2 * Math.PI; while (d <= -Math.PI) d += 2 * Math.PI;
+    var sz = F.s * .82, g = F.D.ctx; g.save(); g.font = '600 ' + sz + 'px ' + FONT; var w = g.measureText(t).width; g.restore();
+    var m = a1 + d / 2, need = (Math.max(w, sz) / 2 + 3) / Math.sin(Math.abs(d) / 2), dd = CH.clamp(Math.max(r + sz * .9, need), 0, o.max || F.s * 4.2);
+    CH.text(F.D, V[0] + Math.cos(m) * dd, V[1] + Math.sin(m) * dd, t, { col: col, size: sz, a: o.a, outline: 'rgba(20,40,30,.9)' });
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする） */
+  function say(D, Rr, rows, o) {
+    o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
+    var nc = Rr.w > Rr.h * 2.5 && rows.length > 3 ? 2 : 1, per = Math.ceil(rows.length / nc), cw = Rr.w / nc;   // 下の帯では 2列
+    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * 1.6)), g = D.ctx;
+    rows.forEach(function (r, i) {
+      g.save(); g.font = '600 ' + s + 'px ' + FONT; var w = g.measureText(r.t).width; g.restore();
+      var sz = w > cw - 6 ? s * (cw - 6) / w : s, c = Math.floor(i / per), j = i % per;
+      CH.text(D, Rr.x0 + c * cw, Rr.y0 + s * .8 + j * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left' });
+    });
+  }
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  /* 図の四角の中だけに描く */
+  function clip(F, fn) { var g = F.D.ctx, r = F.R; g.save(); g.beginPath(); g.rect(r.x0, r.y0, r.w, r.h); g.clip(); fn(); g.restore(); }
+  /* 中心 c・半径 r の円の、a0 → a1（反時計まわり、度）の弧。r は座標の長さ */
+  function arcAt(F, c, r, a0, a1, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(c); g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2.2; g.lineCap = 'round';
+    if (o.dash) g.setLineDash([8, 7]); g.beginPath(); g.arc(p[0], p[1], r * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  /* 円 O（半径 R）の外の点 A からの接点 [P, Q] */
+  function tPts(A) { var d = Math.hypot(A[0], A[1]), th = Math.acos(R / d) / RAD, a = Math.atan2(A[1], A[0]) / RAD; return [on(a + th), on(a - th)]; }
+  function ext(A, P, k) { return GE.lerpP(A, P, 1 + k / GE.len({}, [A, P])); }      // A → P を、P の先へ k だけのばした点
+
+  /* ---- 数と検算 ---- */
+  var A0 = [6, 0], TP = tPts(A0), M0 = GE.mid(O, A0), RHO = 3.8, HH = Math.sqrt(RHO * RHO - 9);
+  var P1 = { O: O, A: A0, P: TP[0], Q: TP[1], M: M0, U: [3, HH], V: [3, -HH] };
+  GE.verify(P1, '∠APO＝∠AQO＝90°、OP⊥AP、OQ⊥AQ、AP＝AQ、MA＝MO＝MP＝MQ＝3、AU＝OU＝AV＝OV、UV⊥OA、OM＝MA', null, '接線の作図');
+  CH.check(GE.near(GE.ang(P1, 'OAP'), 30) && GE.near(GE.len(P1, 'OP'), R), '接線と AO の角 30°');
+  var BOUND = [[-3.2, -3.6], [6.4, 3.6]];
+  var X1 = ext(A0, TP[0], 1.6), X2 = ext(A0, TP[1], 1.6);
+  CH.check(BOUND[1][1] > X1[1] && BOUND[0][1] < X2[1], '図の四角に接線が入る');
+  /* チャレンジ：4辺が円に接する四角形（A、B、C、D から接点までの長さ a、b、c、d） */
+  var TN = [2, 5, 7, 3], lo = 1, hi = 10;
+  for (var it = 0; it < 80; it++) { var mid = (lo + hi) / 2, sm = TN.reduce(function (s, t) { return s + Math.atan(t / mid); }, 0); if (sm > Math.PI) lo = mid; else hi = mid; }
+  var RQ = (lo + hi) / 2, half = TN.map(function (t) { return Math.atan(t / RQ) / RAD; });   // A、B、C、D のところの半分の角
+  var T1 = 270, VB = T1 + half[1], T2 = T1 + 2 * half[1], VC = T2 + half[2], T3 = T2 + 2 * half[2], VD = T3 + half[3], T4 = T3 + 2 * half[3], VA = T4 + half[0];
+  function vtx(a, t) { return GE.polar(O, Math.hypot(RQ, t), a); }
+  var P8 = { O: O, A: vtx(VA, TN[0]), B: vtx(VB, TN[1]), C: vtx(VC, TN[2]), D: vtx(VD, TN[3]), E: GE.polar(O, RQ, T1), F: GE.polar(O, RQ, T2), G: GE.polar(O, RQ, T3), H: GE.polar(O, RQ, T4) };
+  GE.verify(P8, 'AB＝7、BC＝12、CD＝10、DA＝5、AE＝AH＝2、BE＝BF＝5、CF＝CG＝7、DG＝DH＝3、AB＋CD＝BC＋DA', null, 'チャレンジ');
+  CH.check(['AB', 'BC', 'CD', 'DA'].every(function (s, i) { var f = GE.foot(O, P8[s[0]], P8[s[1]]); return GE.near(Math.hypot(f[0], f[1]), RQ, 1e-6); }) && 7 + 10 - 12 === 5, 'チャレンジ：4辺が円に接する');
+
+  /* 円 O と点 A（作図の図の土台） */
+  function base(D, extra) {
+    var P = { O: O, A: A0 }; Object.keys(extra || {}).forEach(function (k) { P[k] = extra[k]; });
+    var L = lay(D), F = fitC(D, L.fig, P, { bounds: BOUND });
+    circle(F); return { F: F, L: L, P: P };
+  }
+  /* 接線と半径（o.rt：直角の濃さ、o.tk：AP＝AQ の印、o.a） */
+  function tangents(F, o) {
+    o = o || {}; var a = o.a == null ? 1 : o.a;
+    clip(F, function () { GE.seg(F, [A0, X1], { col: C.yel, w: 3, a: a }); GE.seg(F, [A0, X2], { col: C.yel, w: 3, a: a }); });
+    if (o.rad) { GE.seg(F, [O, TP[0]], { col: C.pink, a: o.rad }); GE.seg(F, [O, TP[1]], { col: C.pink, a: o.rad }); }
+    if (o.rt) { GE.right(F, 'APO', { col: C.pink, a: o.rt, fill: true }); GE.right(F, 'AQO', { col: C.pink, a: o.rt, fill: true }); }
+    if (o.tk) { GE.tick(F, 'AP', 1, { col: C.green, a: o.tk }); GE.tick(F, 'AQ', 1, { col: C.green, a: o.tk }); }
+  }
+  /* 作図（st：1〜4 の手順、t：その手順の進み） */
+  function cons(D, st, t) {
+    var m = base(D, { P: TP[0], Q: TP[1], M: M0, U: [3, HH], V: [3, -HH] }), F = m.F, k;
+    GE.seg(F, [O, A0], { col: 'rgba(242,240,230,.7)', w: 1.8 });
+    /* ① 垂直二等分線 */
+    k = st > 1 ? 1 : CH.smooth(0, .55, t);
+    [A0, O].forEach(function (c) { ['U', 'V'].forEach(function (z) { var d = Math.atan2(m.P[z][1] - c[1], m.P[z][0] - c[0]) / RAD; if (k) arcAt(F, c, RHO, d - 18 * k, d + 18 * k, { col: C.blue, w: 2 }); }); });   // A、O を中心に、半径 3.8 の弧
+    var k2 = st > 1 ? 1 : CH.smooth(.55, .85, t);
+    if (k2) { clip(F, function () { GE.seg(F, [[3, HH + .6], [3, -HH - .6]], { col: C.blue, w: 2, a: k2 }); }); GE.dot(F, 'M', { col: C.blue, a: k2, r: F.s * .2 }); nm(F, { M: 300 }, { a: k2, col: { M: C.blue } }); }
+    if (st === 1 && t > .85) { GE.tick(F, 'OM', 1, { col: C.blue, a: CH.smooth(.85, 1, t) }); GE.tick(F, 'MA', 1, { col: C.blue, a: CH.smooth(.85, 1, t) }); }
+    /* ② 円 M */
+    if (st >= 2) { var k3 = st > 2 ? 1 : CH.smooth(0, .8, t); arcAt(F, M0, 3, 0, 360 * k3, { col: C.green, w: 2.2 }); if (st === 2) GE.seg(F, 'MA', { col: C.green, w: 3, a: CH.smooth(0, .3, t) }); }
+    /* ③ 交点と接線 */
+    if (st >= 3) {
+      var k4 = st > 3 ? 1 : CH.smooth(0, .35, t), k5 = st > 3 ? 1 : CH.smooth(.35, .85, t);
+      [TP[0], TP[1]].forEach(function (p) { var z = F.X(p); CH.circle(D, z[0], z[1], F.s * .45, { stroke: C.yel, sw: 2.4, a: k4 }); });
+      if (k5) clip(F, function () { GE.seg(F, [A0, GE.lerpP(A0, X1, k5)], { col: C.yel, w: 3 }); GE.seg(F, [A0, GE.lerpP(A0, X2, k5)], { col: C.yel, w: 3 }); });
+      nm(F, { P: 75, Q: 285 }, { a: k4, col: { P: C.yel, Q: C.yel } });
+    }
+    /* ④ わけ */
+    if (st >= 4) {
+      var k6 = CH.smooth(0, .4, t), k7 = CH.smooth(.4, .8, t);
+      arcAt(F, M0, 3, 0, 180, { col: C.yel, w: 6, a: k6 * .8 }); GE.seg(F, [O, TP[0]], { col: C.pink, a: k6 }); GE.seg(F, [O, TP[1]], { col: C.pink, a: k6 * .5 });
+      GE.right(F, 'APO', { col: C.pink, a: k7, fill: true });
+    }
+    dots(F, 'OA'); nm(F, { O: 225, A: 0 });
+    return m;
+  }
+  var STEP = ['① AO の垂直二等分線 → 中点 M', '② M を中心に、半径 MA の円', '③ 交点 P、Q → 直線 AP、AQ', '④ ∠APO＝90°（半円の弧）'];
+  function consStep(n, q, a, sub, b) {
+    return { tag: '例題', bh: n === 1 ? '例題　接線の作図' : null, q: q, a: a, sub: sub, dur: n === 4 ? 3 : 4, b: { t: b, col: C.pink },
+      draw: function (D) { var m = cons(D, D.ph ? n : n - 1, D.ph ? D.t : 1); say(D, m.L.side, STEP.slice(0, D.ph ? n : n - 1).map(function (s, i) { return { t: s, col: i === n - 1 ? C.yel : C.chalk }; })); } };
+  }
+
+  K3.run({
+    no: '第6時', title: '円の外の点から、接線を作図しよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '05.html', label: '◀ 第5時' }, { href: '07.html', label: '第7時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '円の外の点 A からひく接線', q: '円 O の外の点 A から、円に接する直線をひきたい。接点 P は、どこにあるだろう。どうすれば見つけられるだろう。',
+        notes: ['① 自分の考え（3分）　接点が、どんな点か。目をつけたことを。', '② ペアの考え（3分）', 'スライダーで、A を通る直線の向きを変えられます。'],
+        sliders: [{ key: 'ph', label: '直線の向き', min: -50, max: 50, step: 2, val: 16, fmt: function (x) { return CH.mnum(x) + '°'; } }],
+        draw: function (D) {
+          var m = base(D), F = m.F, a = (180 + D.V.ph) * RAD, u = [Math.cos(a), Math.sin(a)], b = A0[0] * u[0], c = 36 - 9, disc = b * b - c, n = disc > 1e-9 ? 2 : disc > -1e-9 ? 1 : 0;
+          clip(F, function () { GE.seg(F, [A0, [A0[0] + u[0] * 14, A0[1] + u[1] * 14]], { col: n === 1 ? C.yel : C.blue, w: 2.6 }); });
+          if (n) { var r1 = -b - Math.sqrt(Math.max(0, disc)), r2 = -b + Math.sqrt(Math.max(0, disc)); [r1, r2].slice(0, n).forEach(function (s) { GE.dot(F, [A0[0] + u[0] * s, A0[1] + u[1] * s], { col: n === 1 ? C.yel : C.blue, r: F.s * .22 }); }); }
+          dots(F, 'OA'); nm(F, { O: 225, A: 0 });
+          say(D, m.L.side, [{ t: '円と直線の交点 … ' + ['0こ', '1こ（接する）', '2こ'][n], col: n === 1 ? C.yel : C.blue }]);
+        } },
+      { tag: '今日の問い', q: '接点 P は、どんな点？', a: '∠APO＝90° になる点', sub: '円の接線は、接点を通る半径に垂直。だから ∠APO＝90° になる点 P をさがせばよい', dur: 3,
+        b: { t: '接点 P … 半径 OP と接線 AP が垂直 → <b>∠APO＝90°</b> になる点', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, m = base(D, { P: TP[0], Q: TP[1] }), F = m.F;
+          if (D.ph) tangents(F, { a: CH.smooth(0, .3, t), rad: CH.smooth(.3, .6, t), rt: CH.smooth(.6, .9, t) });
+          dots(F, D.ph ? 'OAPQ' : 'OA'); nm(F, D.ph ? { O: 225, A: 0, P: 75, Q: 285 } : { O: 225, A: 0 });
+          if (D.ph) say(D, m.L.side, [{ t: '接線 ⊥ 半径 OP', col: C.pink, a: CH.smooth(.3, .6, t) }, { t: '∠APO＝90°', col: C.yel, a: CH.smooth(.6, .9, t) }]);
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '円の接線と、接点を通る半径は、どんな関係？ 円の外の点からひいた 2本の接線の長さは？', a: '垂直。2本の接線の長さは等しい', sub: '点 A から接点までの長さを、接線の長さという（AP＝AQ）', dur: 2.5,
+        b: [{ t: '円の接線は、接点を通る半径に <b>垂直</b>', col: C.green }, { t: '円の外の点からの 2つの接線の長さは <b>等しい</b>（AP＝AQ）', col: C.green }, { t: '半円の弧に対する円周角は <b>90°</b>（第3時）', col: C.green }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, m = base(D, { P: TP[0], Q: TP[1] }), F = m.F;
+          tangents(F, { rad: 1, rt: 1, tk: D.ph ? CH.smooth(.3, .8, t) : 0 });
+          dots(F, 'OAPQ'); nm(F, { O: 225, A: 0, P: 75, Q: 285 });
+          if (D.ph) say(D, m.L.side, [{ t: '接線 ⊥ 半径', col: C.pink }, { t: 'AP＝AQ（接線の長さ）', col: C.green, a: CH.smooth(.3, .8, t) }]);
+        } },
+      consStep(1, '円 O の外の点 A から、2本の接線を作図しよう。① はじめに、何をかく？', 'AO の垂直二等分線（中点 M）', 'A と O を中心に、同じ半径の弧をかき、その交点を結ぶ。AO との交点が M', '① AO の垂直二等分線 → AO の <b>中点 M</b>'),
+      consStep(2, '② つぎに、どんな円をかく？', 'M を中心に、半径 MA の円', 'この円は、O も通る（AO が直径の円）', '② M を中心に、半径 <b>MA</b> の円（AO が直径）'),
+      consStep(3, '③ 接点は？ 接線は？', '円 O との交点 P、Q が接点。直線 AP、AQ が接線', '作図に使った線は、消さずに残しておく', '③ 円 O との <b>交点 P、Q</b> → 直線 AP、AQ が <b>接線</b>'),
+      consStep(4, '④ 作図のわけ：∠APO は、なぜ 90° になる？', 'AO が直径の円の、周上の点だから', '半円の弧に対する円周角は 90°。OP⊥AP だから、AP は接線', '④ P は AO が直径の円の上 → ∠APO＝<b>90°</b>（半円の弧）→ AP は接線'),
+      { tag: '考えよう', q: 'AP、AQ は円 O の接線で、P、Q は接点である。AP＝AQ となるわけを、2つの三角形に目をつけて、説明しよう。',
+        notes: ['目をつける三角形と、等しいところを見つけよう。', '仮定・結論・証明の順に書こう。', 'スライダーで、OA の長さを変えたり、補助線をひいたりできます。'],
+        sliders: [{ key: 'd', label: 'OA の長さ', min: 3.6, max: 7, step: .1, val: 6, fmt: function (x) { return x.toFixed(1); } },
+          { key: 'aux', label: '補助線', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? 'OA・OP・OQ' : '—'; } }],
+        draw: function (D) {
+          var A = [D.V.d, 0], T = tPts(A), P = { O: O, A: A, P: T[0], Q: T[1] }, L = lay(D), F = fitC(D, L.fig, P, { bounds: [[-3.2, -3.4], [7.2, 3.4]] });
+          circle(F); segs(F, 'AP AQ', { col: C.yel, w: 3 });
+          if (D.V.aux) { segs(F, 'OP OQ', { col: C.pink }); GE.seg(F, 'OA', { col: C.blue }); GE.right(F, 'APO', { col: C.pink }); GE.right(F, 'AQO', { col: C.pink }); }
+          dots(F, 'OAPQ'); nm(F, { O: 180, A: 0, P: 80, Q: 280 });
+          say(D, L.side, [{ t: 'AP＝' + GE.len(P, 'AP').toFixed(2), col: C.yel }, { t: 'AQ＝' + GE.len(P, 'AQ').toFixed(2), col: C.yel }]);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '四角形 ABCD の 4つの辺は、すべて 1つの円に接している。AB＝7cm、BC＝12cm、CD＝10cm のとき、DA の長さを求めよう。',
+        notes: ['ヒント① 各頂点から接点までの長さに、同じ文字をつけてみよう。', 'ヒント② AB＋CD と BC＋DA を、その文字で表すと？'],
+        a: 'DA＝5cm', sub: 'A、B、C、D から接点までの長さを a、b、c、d とすると、AB＋CD＝a＋b＋c＋d＝BC＋DA。7＋10＝12＋DA', dur: 6,
+        b: { t: 'AB＋CD＝BC＋DA（＝a＋b＋c＋d）→ 7＋10＝12＋DA → DA＝<b>5cm</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = lay(D), F = GE.fit(D, L.fig, P8, { keys: ['A', 'B', 'C', 'D'], pad: .08 }), cols = [C.yel, C.pink, C.green, C.blue], vs = 'ABCD';
+          GE.circ(F, O, RQ); segs(F, 'AB BC CD DA');
+          var tp = { A: ['E', 'H'], B: ['E', 'F'], C: ['F', 'G'], D: ['G', 'H'] }, nmL = 'abcd';
+          vs.split('').forEach(function (v, i) {
+            var a = D.ph ? CH.smooth(.05 + i * .12, .17 + i * .12, t) : 0; if (!a) return;
+            tp[v].forEach(function (e) { GE.seg(F, v + e, { col: cols[i], w: 5, a: a }); var mm = F.X(GE.mid(P8[v], P8[e])), dd = F.X(O), u = [mm[0] - dd[0], mm[1] - dd[1]], l = Math.hypot(u[0], u[1]); CH.text(D, mm[0] + u[0] / l * F.s * .9, mm[1] + u[1] / l * F.s * .9, nmL[i], { col: cols[i], a: a, size: F.s * .95, outline: 'rgba(20,40,30,.9)' }); });
+          });
+          var lab = function (s, txt, k) { var p = F.X(GE.mid(P8[s[0]], P8[s[1]])), dd = F.X(O), u = [p[0] - dd[0], p[1] - dd[1]], l = Math.hypot(u[0], u[1]); CH.text(D, p[0] + u[0] / l * F.s * 2.2, p[1] + u[1] / l * F.s * 2.2, txt, { col: C.chalk, size: F.s * .85, a: k, outline: 'rgba(20,40,30,.9)' }); };
+          lab('AB', '7cm', 1); lab('BC', '12cm', 1); lab('CD', '10cm', 1); lab('DA', D.ph && t > .9 ? '5cm' : '？', 1);
+          dots(F, 'ABCDEFGH'); nm(F, { A: VA, B: VB, C: VC, D: VD });
+          if (D.ph) say(D, L.side, [{ t: 'AB＋CD＝(a＋b)＋(c＋d)', a: CH.smooth(.55, .7, t) }, { t: 'BC＋DA＝(b＋c)＋(d＋a)', a: CH.smooth(.62, .77, t) }, { t: '7＋10＝12＋DA', col: C.orange, a: CH.smooth(.75, .88, t) }, { t: 'DA＝5cm', col: C.orange, a: CH.smooth(.88, 1, t) }]);
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

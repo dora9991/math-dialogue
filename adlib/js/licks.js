@@ -231,7 +231,7 @@
       if (prev) {
         const leap = Math.abs(e.midi - prev.midi);
         if (leap > 12) errors.push(`音のとびが大きすぎる（${leap}半音：${T.pitchStr(prev.p)}→${T.pitchStr(e.p)}）`);
-        else if (leap > 9) warns.push(`大きなとび ${leap}半音（${T.pitchStr(prev.p)}→${T.pitchStr(e.p)}）`);
+        else if (leap > 9 && lick.tags.indexOf('leap') < 0) warns.push(`大きなとび ${leap}半音（${T.pitchStr(prev.p)}→${T.pitchStr(e.p)}）`);   // 跳ぶためのリック（leap）は、1オクターブまでは注意を出さない
       }
       const pc = e.midi % 12, ok = allowed[e.seg].has(mod(e.midi, 12));
       const onBeat = e.t12 % TPB === 0;

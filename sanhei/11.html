@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>どこまで見えるか</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三平方の定理 第11時：高いところから、どこまで見えるかを、式で表そう（ikkan の lesson_sanhei_11 と同じ流れ）。
+   地球の円（半径 6400km）と、高さ h の点 P からひいた接線 PT。△OTP は ∠OTP＝90° の直角三角形。
+   図の高さは、見やすいように大きくかいてある（字の数は、本当の値）。考えようは、高さのスライダーで、見えるきょりの帯がのびる（数は出さない）。
+   数値は ikkan のまま（自作）。見えるきょりは、接点の座標から計算し直して照らし合わせる（CH.check）。 */
+(function () {
+  var C = CH.C, RE = 6400, RAD = Math.PI / 180;
+  /* 高さ h（km）の点 P（O の真上）からの接点 T と、PT の長さ（座標で） */
+  function tangent(R, h) { var P = [0, R + h], ph = Math.acos(R / (R + h)), T = [R * Math.sin(ph), R * Math.cos(ph)]; return { P: P, T: T, PT: Math.hypot(T[0] - P[0], T[1] - P[1]), dot: T[0] * (T[0] - P[0]) + T[1] * (T[1] - P[1]) }; }
+  function rel(a, b) { return Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b)); }
+  [0.02, 0.45, 3, 10].forEach(function (h) { var g = tangent(RE, h); CH.check(Math.abs(g.dot) < 1e-6 * RE * RE && rel(g.PT * g.PT, 12800 * h + h * h), '今日の問い（PT² ＝ 12800h ＋ h²、h＝' + h + '）'); });
+  var EX = [{ p: '校舎の屋上', m: 20, h: '0.02', s: '256.0004', d: 16 }, { p: '展望台', m: 450, h: '0.45', s: '5760.2025', d: 76 }, { p: '山の頂上', m: 3000, h: '3', s: '38409', d: 196 }, { p: '飛行機', m: 10000, h: '10', s: '128100', d: 358 }];
+  EX.forEach(function (e) { var h = e.m / 1000, g = tangent(RE, h); CH.check(String(h) === e.h && rel(12800 * h + h * h, +e.s) && Math.round(g.PT) === e.d, '例題（' + e.m + 'm → 約' + e.d + 'km）'); });
+  var L60 = Math.sqrt(12800 * .06), L20 = Math.sqrt(12800 * .02);
+  CH.check(rel(L60 * L60, 768) && rel(Math.pow(16 * Math.sqrt(3), 2), 768) && rel(L20, 16) && Math.round(L60 * 10) / 10 === 27.7 && Math.round(L60 + L20) === 44, 'チャレンジ（16√3 ＋ 16 ≒ 44）');
+
+  /* ---- 図の道具 ---- */
+  /* 図の四角（fig）と字の四角（side）。よこ長なら左右、たて長なら上下 */
+  function lay(D, k) {
+    var B = CH.box(D, { l: .03, r: .03, t: .03, b: .04 });
+    if (B.w > B.h * 1.2) { var w = B.w * (k || .42); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .1, B.x1, B.y1), wide: true }; }
+    var h = B.h * .3; return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .04, B.y1 - h + 6, B.x1, B.y1), wide: false };
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする） */
+  function say(D, Rr, rows, o) {
+    o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
+    var s = Math.min(o.size || CH.fs(D, 1), Rr.h / (rows.length * 1.7));
+    rows.forEach(function (r, i) {
+      var sz = CH.fitSize(D, r.t, Rr.w - 6, s);
+      CH.text(D, Rr.x0, Rr.y0 + s * .8 + i * s * 1.7, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left' });
+    });
+  }
+  /* 地球の図（全体）。hd：図の上の高さ（地球の半径を 10 とする） */
+  function earth(D, Rr, hd, o) {
+    o = o || {}; var g = tangent(10, hd), P = { O: [0, 0], P: g.P, T: g.T, Q: [0, 10] };
+    var F = GE.fit(D, Rr, P, { bounds: GE.circBounds([0, 0], 10).concat([[0, 10 + hd]]), pad: .08 });
+    GE.circ(F, 'O', 10, { fill: 'rgba(154,216,255,.13)', w: 2.4 });
+    if (o.tri) GE.poly(F, 'OTP', { col: C.yel, fa: .25 * o.tri, stroke: false });
+    GE.seg(F, ['O', 'T'], { col: o.tri ? C.yel : C.chalk, w: 2.2 });
+    GE.seg(F, ['O', 'Q'], { col: C.chalk, w: 1.6, dash: true });
+    GE.seg(F, ['Q', 'P'], { col: C.pink, w: 3.2 });
+    GE.seg(F, ['P', 'T'], { col: C.yel, w: 3.2, glow: true, ext: [0, .35] });
+    if (o.tri) { GE.right(F, 'OTP', { col: C.yel, a: o.tri }); GE.seg(F, ['O', 'P'], { col: C.yel, w: 2, a: o.tri }); }
+    ['O', 'P', 'T'].forEach(function (k) { GE.dot(F, k); });
+    nm(F, { O: 225, P: 90, T: 20 });
+    var s = F.s * .85, q = F.X('Q'), p = F.X('P');
+    CH.text(D, q[0] - s * .6, (q[1] + p[1]) / 2, o.hlab || 'h km', { col: C.pink, size: s, align: 'right', outline: 'rgba(20,40,30,.9)' });
+    var m = F.X(GE.mid(P.O, P.T)), ot = F.X('T'), oo = F.X('O'), dx = ot[0] - oo[0], dy = ot[1] - oo[1], dl = Math.hypot(dx, dy);
+    CH.text(D, m[0] - dy / dl * s * 1.9, m[1] + dx / dl * s * 1.9, '6400km', { col: o.tri ? C.yel : C.chalk, size: s, outline: 'rgba(20,40,30,.9)' });
+    if (o.op) { var mo = F.X([0, 5 + hd / 2]); CH.text(D, mo[0] - s * .5, mo[1], o.op, { col: C.yel, size: s, align: 'right', a: o.tri, outline: 'rgba(20,40,30,.9)' }); }
+    return F;
+  }
+  function nm(F, m, o) {
+    o = o || {}; Object.keys(m).forEach(function (k) {
+      var p = F.X(k), r = F.s * .95;
+      CH.text(F.D, p[0] + Math.cos(m[k] * RAD) * r, p[1] - Math.sin(m[k] * RAD) * r, k, { size: F.s, col: (o.col && o.col[k]) || C.chalk, a: o.a, outline: 'rgba(20,40,30,.9)' });
+    });
+  }
+  /* 例題の表。shown(c)：列 c（1〜4）の答えの濃さ */
+  function table(D, Rr, shown) {
+    var s = Math.min(CH.fs(D, .78), Rr.w * .76 / 4 / 5.4);
+    CH.table(D, Rr, ['場所'].concat(EX.map(function (e) { return e.p; })), [
+      ['高さ'].concat(EX.map(function (e) { return e.m + 'm'; })),
+      ['h（km）'].concat(EX.map(function (e) { return e.h; })),
+      ['PT²'].concat(EX.map(function (e) { return e.s; })),
+      ['PT（km）'].concat(EX.map(function (e) { return '約' + e.d; }))
+    ], { fw: .24, size: s, show: function (r, c) { return r >= 2 && c >= 1 ? shown(c) : 1; }, hl: function (r, c) { return r === 4 && c >= 1 && shown(c) > .5 ? C.yel : null; } });
+  }
+
+  K3.run({
+    no: '第11時', title: '高いところから、どこまで見えるかを、式で表そう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '10.html', label: '◀ 第10時' }, { href: '12.html', label: '第12時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '地球（半径 6400km）と、高さ h km の点 P',
+        q: '地球を半径 6400km の球と考える。地面から高さ h km の点 P から見える、いちばん遠い地点 T までのきょり PT を、h を使った式で表そう。',
+        notes: ['① 自分の考え（3分）　図の中に直角三角形をさがして、式を。', '② ペアの考え（3分）', '図の高さは、見やすいように大きくかいてある。'],
+        draw: function (D) { var L = CH.box(D, { l: .06, r: .06, t: .04, b: .04 }); earth(D, L, 4.5); } },
+
+      { tag: '今日の問い', q: 'PT と OT は、どんな関係？ どんな三角形ができる？', a: 'PT ⊥ OT。△OTP は ∠OTP＝90° の直角三角形',
+        sub: 'PT は地球にふれる線（接線）、T はふれる点（接点）。接線は、接点を通る半径に垂直', dur: 3,
+        b: { t: 'PT ⊥ OT → △OTP は <b>∠OTP＝90°</b> の直角三角形（斜辺は OP ＝ 6400＋h）', col: C.yel },
+        draw: function (D) { var L = CH.box(D, { l: .06, r: .06, t: .04, b: .04 }); earth(D, L, 4.5, { tri: D.ph ? CH.smooth(0, .5, D.t) : 0, op: '6400＋h' }); } },
+
+      { tag: '今日の問い', q: 'PT を h の式で表すと？', a: 'PT ＝ √(12800h ＋ h²)', sub: 'PT² ＝ OP² − OT² ＝ (6400＋h)² − 6400² ＝ 12800h ＋ h²', dur: 4,
+        b: { t: 'PT² ＝ (6400＋h)² − 6400² ＝ <b>12800h ＋ h²</b>　PT ＝ √(12800h ＋ h²)', col: C.yel },
+        draw: function (D) {
+          var L = lay(D, .46), t = D.ph ? D.t : 0;
+          earth(D, L.fig, 4.5, { tri: 1, op: '6400＋h' });
+          say(D, L.side, [{ t: 'PT² ＝ OP² − OT²', col: C.chalk }, { t: '＝ (6400＋h)² − 6400²', a: CH.smooth(.1, .3, t) }, { t: '＝ 6400² ＋ 12800h ＋ h² − 6400²', a: CH.smooth(.35, .55, t) }, { t: '＝ 12800h ＋ h²', col: C.yel, a: CH.smooth(.6, .8, t) }], { size: CH.fs(D, 1.05) });
+        } },
+
+      { tag: 'ことば', bh: 'ことば', q: '円にふれる直線、ふれる点を何という？ その直線と半径は、どんな関係？', a: '接線・接点。接線は、接点を通る半径に垂直', dur: 6,
+        b: [{ t: '円にふれる直線 … <b>接線</b>、ふれる点 … <b>接点</b>', col: C.green }, { t: '接線は、接点を通る半径に <b>垂直</b>', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .08, r: .08, t: .06, b: .06 }), t = D.ph ? D.t : 0, ang = 60 + 60 * Math.sin(t * Math.PI * 2) * (1 - CH.smooth(.85, 1, t));
+          var T = GE.polar([0, 0], 5, ang), u = [-Math.sin(ang * RAD), Math.cos(ang * RAD)], P = { O: [0, 0], T: T, A: [T[0] + u[0] * 4, T[1] + u[1] * 4], B: [T[0] - u[0] * 4, T[1] - u[1] * 4] };
+          var F = GE.fit(D, R, P, { keys: ['O'], bounds: GE.circBounds([0, 0], 7.5), pad: .02 });
+          GE.circ(F, 'O', 5, { w: 2.4 });
+          GE.seg(F, ['A', 'B'], { col: C.yel, w: 3.2, glow: true });
+          GE.seg(F, ['O', 'T'], { col: C.pink, w: 2.6 });
+          GE.right(F, 'OTA', { col: C.chalk });
+          GE.dot(F, 'O'); GE.dot(F, 'T', { col: C.yel });
+          var s = F.s, a = F.X('A'), tt = F.X(T), m = F.X(GE.mid([0, 0], T));
+          CH.text(D, a[0], a[1] - s * 1.1, '接線', { col: C.yel, size: s, outline: 'rgba(20,40,30,.9)' });
+          var d = [Math.cos(ang * RAD), -Math.sin(ang * RAD)];
+          CH.text(D, tt[0] + d[0] * s * 1.5, tt[1] + d[1] * s * 1.5, '接点', { col: C.yel, size: s, outline: 'rgba(20,40,30,.9)' });
+          CH.text(D, m[0] - d[1] * s * 1.2, m[1] + d[0] * s * 1.2, '半径', { col: C.pink, size: s * .9, outline: 'rgba(20,40,30,.9)' });
+          nm(F, { O: 225 });
+        } },
+
+      { tag: '例題', bh: '例題　PT² ＝ 12800h ＋ h²（PT は 小数第1位を四捨五入）', q: '校舎の屋上（高さ 20m）から見えるきょりは、約何 km？', a: '約 16km',
+        sub: '高さを km に直す 20m ＝ 0.02km　PT² ＝ 12800 × 0.02 ＋ 0.02² ＝ 256.0004　PT ≒ 16', dur: 2.5,
+        b: { t: '20m ＝ 0.02km → PT² ＝ 256.0004 → <b>約 16km</b>', col: C.yel },
+        draw: function (D) {
+          var B = CH.box(D, { l: .04, r: .04, t: .03, b: .04 }), t = D.ph ? D.t : 0, rows = CH.rows(B, 2, .06);
+          earth(D, rows[0], 1.2, { hlab: '20m' });
+          table(D, rows[1], function (c) { return c === 1 ? CH.smooth(.1, .6, t) : 0; });
+        } },
+
+      { tag: '例題', q: '展望台（450m）・山の頂上（3000m）・飛行機（10000m）からは？', a: '約 76km・約 196km・約 358km',
+        sub: 'h ＝ 0.45・3・10　PT² ＝ 5760.2025・38409・128100', dur: 4,
+        b: { t: '450m … 約 76km　3000m … 約 196km　10000m … <b>約 358km</b>', col: C.yel },
+        draw: function (D) {
+          var B = CH.box(D, { l: .04, r: .04, t: .03, b: .04 }), t = D.ph ? D.t : 0, rows = CH.rows(B, 2, .06);
+          var j = D.ph ? Math.min(2, Math.floor(t / .3)) : -1;
+          earth(D, rows[0], j < 0 ? 4.5 : [2, 3.2, 4.5][j], { hlab: j < 0 ? 'h km' : ['450m', '3000m', '10000m'][j] });
+          table(D, rows[1], function (c) { return c === 1 ? 1 : D.ph ? CH.smooth((c - 2) * .3, (c - 2) * .3 + .25, t) : 0; });
+        } },
+
+      { tag: '考えよう', bh: '考えよう',
+        q: '高さが 1m・4m・9m・16m の場所から見えるきょりを、PT² ＝ 12800h として求め、表にまとめよう（小数第1位まで）。どんなことに気づくだろう。',
+        notes: ['高さ（m）を km に直してから、式に入れよう。', '高さが 4倍・9倍・16倍になると、見えるきょりは どうなるだろう。ほかの高さでも確かめよう。', 'スライダーで高さを変えると、見えるきょりの帯がのびます（目もりは km）。'],
+        sliders: [{ key: 'h', label: '高さ', min: 0, max: 20, step: 1, val: 1, fmt: function (x) { return x + 'm'; } }],
+        draw: function (D) {
+          var B = CH.box(D, { l: .05, r: .05, t: .03, b: .02 }), rows = CH.rows(B, 2, .08), hm = D.V.h, d = Math.sqrt(12800 * hm / 1000);
+          var fr = CH.rect(rows[0].x0, rows[0].y0, rows[0].x1, rows[0].y1 + rows[0].h * .3);
+          earth(D, fr, .4 + 4.6 * hm / 20, { hlab: hm + 'm' });
+          var nl = CH.rect(rows[1].x0 + 10, rows[1].y0 + rows[1].h * .35, rows[1].x1 - 10, rows[1].y0 + rows[1].h * .6), X = CH.numline(D, nl, 0, 18, 1, { lab: 2, unit: '（km）' }), s = CH.fs(D, .85);
+          CH.fillRect(D, X(0), nl.y1 - s * 1.3, X(d), nl.y1 - s * .35, { fill: 'rgba(255,226,122,.55)', stroke: C.yel });
+          CH.text(D, X(0), nl.y1 - s * 2.1, '見えるきょり（高さ ' + hm + 'm）', { col: C.yel, size: s, align: 'left' });
+        } },
+
+      { tag: 'チャレンジ', bh: 'チャレンジ',
+        q: 'PT² ＝ 12800h と考える。海面からの高さ 60m の灯台がある。海面からの高さ 20m の船の見張り台から、この灯台の光が見えはじめるのは、灯台から約何 km のところか。',
+        a: '約 44km', sub: '灯台から水平線まで √(12800 × 0.06) ＝ √768 ＝ 16√3 ≒ 27.7、見張り台から水平線まで √(12800 × 0.02) ＝ 16、あわせて 27.7 ＋ 16 ≒ 44', dur: 6,
+        banner: function (s) { if (!s.ph) return ''; return s.t < .35 ? '灯台から 水平線まで 16√3 ≒ 27.7km' : s.t < .7 ? '見張り台から 水平線まで 16km' : '2つの見通しの線は、水平線の点 T でつながる'; },
+        b: { t: '16√3 ＋ 16 ≒ 27.7 ＋ 16 ≒ <b>約 44km</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, d1 = 4.33, d2 = 2.5, R = 10, Lp = [-d1, R], Sp = [d2, R];
+          function base(p) { var l = Math.hypot(p[0], p[1]); return [p[0] / l * R, p[1] / l * R]; }
+          var P = { L: Lp, S: Sp, T: [0, R], M: base(Lp), N: base(Sp) };
+          var Rr = CH.box(D, { l: .06, r: .06, t: .14, b: .1 }), F = GE.fit(D, Rr, P, { bounds: [[-5.2, 9], [5.2, 11]], pad: .04 }), g = D.ctx;
+          g.save(); g.beginPath(); g.rect(Rr.x0 - 20, Rr.y0 - 40, Rr.w + 40, Rr.h + 60); g.clip();
+          var o = F.X([0, 0]); CH.circle(D, o[0], o[1], R * F.u, { fill: 'rgba(154,216,255,.16)', stroke: C.chalk, sw: 2.4 });
+          g.restore();
+          /* 灯台と船 */
+          GE.seg(F, ['M', 'L'], { col: C.chalk, w: 7 }); CH.circle(D, F.X('L')[0], F.X('L')[1], F.s * .35, { fill: C.yel });
+          var n = F.X('N'), sp = F.X('S'), w = F.s * 1.4;
+          CH.poly(D, [[n[0] - w, n[1] - w * .45], [n[0] + w, n[1] - w * .45], [n[0] + w * .6, n[1] + w * .05], [n[0] - w * .6, n[1] + w * .05]], { fill: 'rgba(242,240,230,.6)', stroke: C.chalk, sw: 1.6 });
+          CH.line(D, n[0], n[1] - w * .45, sp[0], sp[1], { col: C.chalk, w: 2.4 });
+          GE.seg(F, ['L', 'S'], { col: 'rgba(242,240,230,.5)', w: 1.6, dash: true });
+          var a1 = CH.smooth(.05, .3, t), a2 = CH.smooth(.38, .62, t);
+          if (a1 > 0) { GE.seg(F, ['L', GE.lerpP(Lp, P.T, a1)], { col: C.yel, w: 4, glow: true }); }
+          if (a2 > 0) { GE.seg(F, ['S', GE.lerpP(Sp, P.T, a2)], { col: C.pink, w: 4, glow: true }); }
+          GE.dot(F, 'T', { col: C.yel });
+          var s = F.s * .9, l = F.X('L'), tt = F.X('T');
+          CH.text(D, l[0] + s, l[1] - s * 2.8, '灯台 60m', { size: s, outline: 'rgba(20,40,30,.9)' });
+          CH.text(D, sp[0], sp[1] - s * 2.8, '見張り台 20m', { size: s, outline: 'rgba(20,40,30,.9)' });
+          CH.text(D, tt[0], tt[1] + s * 1.3, 'T（水平線）', { size: s * .9, outline: 'rgba(20,40,30,.9)' });
+          if (a1 >= 1) { var m1 = F.X(GE.mid(Lp, P.T)); CH.text(D, m1[0], m1[1] - s * 1.1, '16√3 ≒ 27.7', { col: C.yel, size: s, outline: 'rgba(20,40,30,.9)' }); }
+          if (a2 >= 1) { var m2 = F.X(GE.mid(Sp, P.T)); CH.text(D, m2[0], m2[1] - s * 1.1, '16', { col: C.pink, size: s, outline: 'rgba(20,40,30,.9)' }); }
+          if (t > .75) CH.text(D, tt[0], Rr.y1 - s * .5, '27.7 ＋ 16 ≒ 44（km）', { col: C.orange, size: s * 1.25, a: CH.smooth(.75, .9, t), outline: 'rgba(20,40,30,.9)' });
+          CH.text(D, Rr.cx, F.X([0, 11.3])[1] - s * 2, '（高さは、見やすいように大きくかいてある）', { size: s * .75, col: 'rgba(242,240,230,.7)' });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

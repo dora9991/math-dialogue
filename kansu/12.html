@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>いろいろな関数</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 関数 y＝ax² 第12時：身のまわりから、いろいろな関数を見つけよう（ikkan の lesson_kansu_12 と同じ流れ）。
+   宅配料金の表から、段が 1つずつのびて階段のグラフ。点 P が左から右へ走ると、料金がとびとびに変わる。
+   区切りの 2kg を虫めがねで：800円の段は ●（ふくむ）、1000円の段は ○（ふくまない）。例題は紙を折る（2倍ずつ）と、駐車場の料金を読む。
+   考えようは、重さのスライダーで点 P を動かす道具（「x は 1つに決まらない」は書かない）。チャレンジはタクシー料金。
+   数値は ikkan と同じ（ikkan で自作したもの）（駐車場だけ、横軸を分にした）。料金は、切り上げの式で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, OUT = 'rgba(20,40,30,.92)';
+  /* ---- 分数入りの字（[2/3] をたての分数に）。canvas 用（measure で幅だけ）と、右の板書（HTML）用 ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    if (o.measure) return w;
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+  function sg(v) { return (v >= 0 ? '＋' : '') + S(v); }
+  /* 座標平面。o：x・y（範囲）、gx・gy（方眼）、lx・ly（目もりの字の間かく）、asp（横÷縦の上限）、ux・uy（単位） */
+  function plane(D, R, o) {
+    var s = CH.fs(D, .72), xr = o.x, yr = o.y, gx = o.gx || 1, gy = o.gy || 1, lx = o.lx || gx, ly = o.ly || gy, g = D.ctx, i, v;
+    var Rp = CH.rect(R.x0 + s * (o.pl == null ? 2.4 : o.pl), R.y0 + s * 1.9, R.x1 - s * 2.1, R.y1 - s * (o.ux && yr[0] >= 0 ? 2.8 : 1.6));
+    if (o.asp && Rp.w > Rp.h * o.asp) { v = Rp.h * o.asp; Rp = CH.rect(Rp.cx - v / 2, Rp.y0, Rp.cx + v / 2, Rp.y1); }
+    var X = function (x) { return Rp.x0 + (x - xr[0]) / (xr[1] - xr[0]) * Rp.w; }, Y = function (y) { return Rp.y1 - (y - yr[0]) / (yr[1] - yr[0]) * Rp.h; };
+    g.save(); g.globalAlpha = D.ga; g.strokeStyle = 'rgba(242,240,230,.12)'; g.lineWidth = 1; g.beginPath();
+    for (i = Math.ceil(xr[0] / gx - 1e-9); i * gx <= xr[1] + 1e-9; i++) { g.moveTo(X(i * gx), Rp.y0); g.lineTo(X(i * gx), Rp.y1); }
+    for (i = Math.ceil(yr[0] / gy - 1e-9); i * gy <= yr[1] + 1e-9; i++) { g.moveTo(Rp.x0, Y(i * gy)); g.lineTo(Rp.x1, Y(i * gy)); }
+    g.stroke(); g.restore();
+    var Pl = CH.plane(D, Rp, { x: xr, y: yr, fit: false, grid: false, nums: false });
+    var ox = CH.clamp(0, xr[0], xr[1]), oy = CH.clamp(0, yr[0], yr[1]);
+    for (i = Math.ceil(xr[0] / lx - 1e-9); i * lx <= xr[1] + 1e-9; i++) { v = i * lx; if (!i) continue; CH.line(D, X(v), Y(oy) - 4, X(v), Y(oy) + 4, { w: 1.4 }); CH.text(D, X(v), Y(oy) + s, S(v), { size: s, num: true }); }
+    for (i = Math.ceil(yr[0] / ly - 1e-9); i * ly <= yr[1] + 1e-9; i++) { v = i * ly; if (!i) continue; CH.line(D, X(ox) - 4, Y(v), X(ox) + 4, Y(v), { w: 1.4 }); CH.text(D, X(ox) - s * .6, Y(v), S(v), { size: s, num: true, align: 'right' }); }
+    if (o.ux) CH.text(D, Rp.x1 + s * .3, Y(oy) + s * 2.1, o.ux, { size: s, align: 'right', col: 'rgba(242,240,230,.75)' });
+    if (o.uy) CH.text(D, X(ox) + s * 1.7, Rp.y0 - s * .9, o.uy, { size: s, align: 'left', col: 'rgba(242,240,230,.75)' });
+    return Pl;
+  }
+  function lab(D, Pl, x, y, txt, col, o) { o = o || {}; return TX(D, Pl.X(x) + (o.dx || 0), Pl.Y(y) + (o.dy || 0), txt, { col: col, size: o.size || CH.fs(D, .85), align: o.align || 'left', outline: OUT, a: o.a }); }
+  function glow(D, Pl, x, y, col, a) { var r = CH.fs(D, .3); CH.circle(D, Pl.X(x), Pl.Y(y), r * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
+  /* 字の行（左そろえ）。四角 R の幅に入らないときは、ぜんぶ同じだけ小さく */
+  function lines(D, R, L, size) {
+    var s = size || CH.fs(D, .95), wm = 1, gap = 1.75;
+    L.forEach(function (l) { if (l) wm = Math.max(wm, TX(D, 0, 0, l.t, { size: s, measure: true })); });
+    s *= Math.min(1, R.w / wm, R.h / (L.length * gap * s));
+    L.forEach(function (l, i) { if (l && l.a !== 0) TX(D, R.x0, R.y0 + s * (.95 + i * gap), l.t, { size: s, col: l.col || C.chalk, a: l.a, align: 'left' }); });
+  }
+  /* 字の行（上）と、座標平面の四角（下） */
+  function strip(D, n) {
+    var R = CH.box(D, { l: .02, r: .02, t: .01, b: .02 }), s = CH.fs(D, .95), h = n * 1.75 * s;
+    return { T: CH.rect(R.x0 + R.w * .04, R.y0, R.x1 - R.w * .02, R.y0 + h), P: CH.rect(R.x0, R.y0 + h, R.x1, R.y1) };
+  }
+  /* 2点を結ぶ直線（のばした線はうすく）と、増加量の三角形 */
+  function sec(D, Pl, f, p, q, col, o) {
+    o = o || {}; var m = (f(q) - f(p)) / (q - p), a = o.a == null ? 1 : o.a;
+    if (o.ext !== false) CH.lin(D, Pl, m, f(p) - m * p, { col: col, w: 1.6, a: a * .5, dash: [7, 7] });
+    CH.pseg(D, Pl, [p, f(p)], [q, f(q)], { col: col, w: 3.2, a: a, glow: true });
+    CH.pt(D, Pl, p, f(p), { col: col, a: a, r: CH.fs(D, .27) }); CH.pt(D, Pl, q, f(q), { col: col, a: a, r: CH.fs(D, .27) });
+  }
+  function tri(D, Pl, f, p, q, col, o) {
+    o = o || {}; var fp = f(p), fq = f(q), s = CH.fs(D, o.k || .8), a = o.a, up = fq >= fp;
+    CH.pseg(D, Pl, [p, fp], [q, fp], { col: col, w: 2.2, dash: true, a: a });
+    CH.pseg(D, Pl, [q, fp], [q, fq], { col: col, w: 2.2, dash: true, a: a });
+    if (o.lx !== false) CH.text(D, Pl.X((p + q) / 2), Pl.Y(fp) + (up ? s * .9 : -s * .9), o.lx || sg(q - p), { col: col, size: s, a: a, outline: OUT });
+    if (o.ly !== false) CH.text(D, Pl.X(q) + (o.left ? -s * .45 : s * .45), Pl.Y((fp + fq) / 2), o.ly || sg(fq - fp), { col: col, size: s, a: a, align: o.left ? 'right' : 'left', outline: OUT });
+  }
+  /* x 軸の上の帯（x の増加量）と、点からおろした点線 */
+  function band(D, Pl, p, q, a) { CH.pseg(D, Pl, [p, 0], [q, 0], { col: C.yel, w: 7, a: (a == null ? 1 : a) * .55 }); }
+  /* 表の下の矢印（セルの中心から中心へ） */
+  function hop(D, x0, x1, y, col, txt, a, sz) {
+    var g = D.ctx, s = sz || CH.fs(D), h = s * 1.05, d = Math.abs(x1 - x0);
+    g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.strokeStyle = col; g.lineWidth = 2.2; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo((x0 + x1) / 2, y + h * 1.6, x1, y); g.stroke(); g.restore();
+    var ang = Math.atan2(-h * 1.6, (x1 - x0) / 2), hd = Math.min(9, d * .25);
+    CH.arrow(D, x1 - Math.cos(ang) * hd * 1.2, y - Math.sin(ang) * hd * 1.2, x1, y, { col: col, a: a, head: hd, w: 2.2 });
+    CH.text(D, (x0 + x1) / 2, y + h * 1.2, txt, { col: col, size: s * .9, a: a, outline: OUT });
+  }
+
+  /* ---- 数（ikkan と同じ）と検算 ---- */
+  var FARE = [[0, 2, 800], [2, 5, 1000], [5, 10, 1300], [10, 20, 1700]];   /* a＜x≦b のとき y */
+  var PARK = [[0, 60, 500], [60, 90, 600], [90, 120, 700], [120, 150, 800], [150, 180, 900]];   /* 分 */
+  var TAXI = []; (function () { TAXI.push([0, 1, 500]); for (var i = 0; i < 7; i++) TAXI.push([1 + .4 * i, 1.4 + .4 * i, 580 + 80 * i]); })();
+  function look(segs, x) { for (var i = 0; i < segs.length; i++) if (x > segs[i][0] + 1e-9 && x <= segs[i][1] + 1e-9) return segs[i][2]; return null; }
+  function fare(x) { return x <= 2 ? 800 : x <= 5 ? 1000 : x <= 10 ? 1300 : 1700; }
+  function park(m) { return 500 + 100 * Math.max(0, Math.ceil((m - 60) / 30)); }
+  function taxi(m) { return 500 + 80 * Math.ceil(Math.max(0, m - 1000) / 400); }
+  CH.check([.5, 2, 2.5, 5, 5.1, 10, 12, 20].every(function (x) { return look(FARE, x) === fare(x); }) && look(FARE, 2) === 800 && look(FARE, 2.01) === 1000, '今日の問い（宅配料金、2kg ちょうどは 800円）');
+  CH.check([0, 1, 2, 3, 4, 5].map(function (x) { return Math.pow(2, x); }).join() === '1,2,4,8,16,32', '例題（1）（紙を折る）');
+  CH.check([30, 60, 80, 90, 120, 130, 150, 180].every(function (m) { return look(PARK, m) === park(m); }) && [80, 120, 130].map(park).join() === '600,700,800', '例題（2）（駐車場）');
+  CH.check([2.01, 3, 4.5, 5].every(function (x) { return fare(x) === 1000; }) && fare(2) !== 1000 && fare(5.01) !== 1000, '考えよう（ここで確かめるだけ）');
+  (function () { var best = 0; for (var m = 1; m <= 8000; m++) if (taxi(m) <= 900) best = m; CH.check(taxi(2500) === 820 && taxi(3000) === 900 && taxi(3001) === 980 && best === 3000 && [.5, 1.2, 2.5, 3, 3.3].every(function (k) { return look(TAXI, k) === taxi(Math.round(k * 1000)); }), 'チャレンジ（820円、3km 以下）'); })();
+
+  /* 階段のグラフ。segs：[a, b, y]（a＜x≦b のとき y）。左はし ○、右はし ●。o：n（かく段の数。小数なら途中まで）、col、hl(i)→色、alpha(i)、ylab（段の高さを y 軸に書く） */
+  function stairs(D, Pl, segs, o) {
+    o = o || {}; var n = o.n == null ? segs.length : o.n, r = CH.fs(D, .24), s = CH.fs(D, .72);
+    segs.forEach(function (g, i) {
+      var k = CH.clamp(n - i, 0, 1); if (k <= 0) return; var col = (o.hl && o.hl(i)) || o.col || C.yel, a = o.alpha ? o.alpha(i) : 1;
+      CH.pseg(D, Pl, [g[0], g[2]], [g[0] + (g[1] - g[0]) * k, g[2]], { col: col, w: 3.2, a: a });
+      CH.pt(D, Pl, g[0], g[2], { col: col, open: true, r: r, a: a });
+      if (k >= 1) CH.pt(D, Pl, g[1], g[2], { col: col, r: r, a: a });
+      if (o.ylab && o.ylab(i)) { CH.pseg(D, Pl, [0, g[2]], [g[0], g[2]], { col: col, dash: [3, 5], w: 1.2, a: a * .7 }); CH.text(D, Pl.X(0) - s * .6, Pl.Y(g[2]), String(g[2]), { size: s, num: true, align: 'right', col: col, a: a, outline: OUT }); }
+    });
+  }
+  /* 点 P と、軸への点線 */
+  function probe(D, Pl, x, y, col, txt, o) {
+    o = o || {}; var a = o.a == null ? 1 : o.a;
+    CH.pseg(D, Pl, [x, 0], [x, y], { col: col, dash: true, w: 1.8, a: a }); CH.pseg(D, Pl, [0, y], [x, y], { col: col, dash: true, w: 1.8, a: a });
+    CH.pt(D, Pl, x, y, { col: col, r: CH.fs(D, .34), a: a });
+    if (txt) lab(D, Pl, x, y, txt, col, { dx: CH.fs(D, .6), dy: -CH.fs(D, .9), a: a, align: o.al || 'left' });
+  }
+  function lay1(D) {
+    var R = CH.box(D, { l: .02, r: .03, t: .01, b: .02 }), s = CH.fs(D, .85), T = CH.rect(R.x0 + R.w * .03, R.y0 + s * .2, R.x1 - R.w * .02, R.y0 + s * .2 + s * 3.2);
+    return { T: T, P: CH.rect(R.x0, T.y1 + s * .2, R.x1, R.y1), s: s };
+  }
+  function table1(D, L, o) { return CH.table(D, L.T, ['重さ x（kg）', '0＜x≦2', '2＜x≦5', '5＜x≦10', '10＜x≦20'], [['料金 y（円）', '800', '1000', '1300', '1700']], Object.assign({ fw: .25, size: L.s, rh: L.s * 1.6, top: true }, o || {})); }
+  function fplane(D, R) {
+    var Pl = plane(D, R, { x: [0, 21], y: [0, 2080], gx: 1, lx: 5, gy: 100, ly: 1000, pl: 3.4, ux: '（kg）', uy: '（円）' }), s = CH.fs(D, .72);
+    CH.line(D, Pl.X(2), Pl.Y(0) - 4, Pl.X(2), Pl.Y(0) + 4, { w: 1.4 }); CH.text(D, Pl.X(2), Pl.Y(0) + s, '2', { size: s, num: true });
+    return Pl;
+  }
+  var ylabF = function (i) { return i !== 1; };
+
+  K3.run({
+    no: '第12時', title: '身のまわりから、いろいろな関数を見つけよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '11.html', label: '◀ 第11時' }, { href: '13.html', label: '第13時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '宅配サービスの料金', q: 'ある宅配サービスの料金は、荷物の重さ x kg で、表のように決まっている。x と y の関係を、グラフに表そう。y は x の関数といえるだろうか。（グラフでは、端の点をふくむときは ●、ふくまないときは ○ でかく。）',
+        notes: ['① 自分の考え（3分）　グラフをかき、関数といえるか、わけも書こう。', '② ペアの考え（3分）　自分とちがう考え・気づきを書こう。'],
+        draw: function (D) { var L = lay1(D); table1(D, L); fplane(D, L.P); } },
+      { tag: '今日の問い', q: 'グラフは、どんな形になる？ y は x の関数といえる？', a: '階段のような形。関数といえる', sub: '重さ x を決めると、料金 y が、ただ 1つに決まる。2kg ちょうどは 800円（●）、2kg をこえると 1000円（○ の所はふくまない）', dur: 9,
+        b: { t: '階段のような形のグラフ。x を決めると y が<b>ただ1つ</b>に決まる → <b>関数</b>といえる', col: C.yel },
+        draw: function (D) {
+          var L = lay1(D), t = D.ph ? D.t : 0, n = D.ph ? 4 * CH.smooth(.03, .5, t) : 0, k = Math.min(3, Math.floor(n));
+          table1(D, L, { hl: function (r, c) { return D.ph && t < .52 && c === k + 1 ? C.yel : null; } });
+          var Pl = fplane(D, L.P); stairs(D, Pl, FARE, { n: n, ylab: ylabF });
+          if (t > .55) { var x = CH.lerp(.4, 18, CH.smooth(.56, .98, t)), y = fare(x); probe(D, Pl, x, y, C.pink, 'P（' + (Math.round(x * 10) / 10) + 'kg、' + y + '円）', { a: CH.smooth(.55, .6, t), al: x > 12 ? 'right' : 'left' }); }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'x の値を決めると、y の値がただ1つに決まるとき、y は x の何という？ グラフの端の点を、ふくむとき・ふくまないときは、どうかく？', a: '関数。ふくむ ●、ふくまない ○',
+        sub: '式で表せない関係でも、関数のことがある。2kg ちょうどは 800円の段の ●。1000円の段の左はし（2kg）は ○ で、ふくまない', dur: 4,
+        b: [{ t: 'x を決めると y が<b>ただ1つ</b>に決まる → y は x の<b>関数</b>（式で表せなくてもよい）', col: C.green }, { t: 'グラフの端の点 … ふくむ <b>●</b>、ふくまない <b>○</b>', col: C.green }],
+        draw: function (D) {
+          var L = lay1(D), t = D.ph ? D.t : 0; table1(D, L, { hl: function (r, c) { return D.ph && (c === 1 || c === 2) ? C.green : null; } });
+          var Pl = fplane(D, L.P); stairs(D, Pl, FARE, { ylab: ylabF });
+          if (!D.ph) return;
+          var a = CH.smooth(0, .3, t), rr = Math.min(Pl.R.w, Pl.R.h) * .3, cx = Pl.X(2) + rr * 1.5, cy = Pl.Y(1500), g = D.ctx, Z = rr / (Pl.X(1.2) - Pl.X(0)), uy = (Pl.Y(0) - Pl.Y(1)) * Z;
+          var mx = function (x) { return cx + (x - 2) * (Pl.X(1) - Pl.X(0)) * Z; }, my = function (y) { return cy - (y - 900) * uy; };
+          CH.circle(D, Pl.X(2), Pl.Y(900), CH.fs(D, 1.1), { stroke: 'rgba(242,240,230,.8)', sw: 1.6, a: a });
+          CH.line(D, Pl.X(2) + CH.fs(D, .8), Pl.Y(900) - CH.fs(D, .8), cx - rr * .7, cy + rr * .7, { col: 'rgba(242,240,230,.5)', w: 1.4, dash: [4, 5], a: a });
+          CH.circle(D, cx, cy, rr, { fill: 'rgba(20,46,34,.96)', stroke: C.chalk, sw: 2.4, a: a });
+          g.save(); g.beginPath(); g.arc(cx, cy, rr - 1.5, 0, Math.PI * 2); g.clip();
+          CH.line(D, mx(0), my(800), mx(2), my(800), { col: C.yel, w: 5, a: a }); CH.line(D, mx(2), my(1000), mx(5), my(1000), { col: C.yel, w: 5, a: a });
+          CH.line(D, mx(2), my(700), mx(2), my(1100), { col: 'rgba(242,240,230,.4)', w: 1.4, dash: [4, 5], a: a });
+          CH.circle(D, mx(2), my(800), CH.fs(D, .45), { fill: C.yel, stroke: 'rgba(20,30,24,.8)', sw: 1.6, a: a }); CH.circle(D, mx(2), my(1000), CH.fs(D, .45), { fill: '#1f3a2c', stroke: C.yel, sw: 3, a: a });
+          var s = CH.fs(D, .75), a2 = CH.smooth(.35, .6, t), a3 = CH.smooth(.6, .85, t);
+          g.restore();
+          var TL = [['● 2kg ちょうどは 800円', C.green, a2], ['○ 1000円の段に 2kg は入らない', C.pink, a3]], x0 = cx + rr + s * .8, ww = 0, yc = cy;
+          TL.forEach(function (l) { ww = Math.max(ww, TX(D, 0, 0, l[0], { size: s, measure: true })); }); var ss = s * Math.min(1, (L.P.x1 - x0 - s * .4) / ww);
+          if (ss < s * .8) { ss = s * Math.min(1, L.P.w * .9 / ww); x0 = Math.max(L.P.x0 + ss, Math.min(cx - ww * ss / s / 2, L.P.x1 - ww * ss / s - ss)); yc = cy + rr + ss * 2.3; }
+          else CH.text(D, cx, cy + rr + s * 1.1, '2kg のまわりを大きくした図', { size: s * .85, col: 'rgba(242,240,230,.8)', a: a });
+          CH.fillRect(D, x0 - ss * .4, yc - ss * 1.9, x0 + ww * ss / s + ss * .4, yc + ss * 1.9, { fill: 'rgba(20,46,34,.92)', stroke: 'rgba(242,240,230,.35)', sw: 1.2, a: a2 });
+          TL.forEach(function (l, i) { TX(D, x0, yc + (i ? .85 : -.85) * ss, l[0], { size: ss, col: l[1], a: l[2], align: 'left' }); });
+        } },
+      { tag: '例題', bh: '例題', q: '（1）1枚の紙を、2つに折ることをくり返す。x 回折ったときの、紙の重なりの枚数を y 枚とする。表をうめて、y は x の関数といえるか調べよう。', a: '1、2、4、8、16、32。関数といえる',
+        sub: '1回折るごとに 2倍。折る回数 x を決めると、枚数 y がただ 1つに決まる（グラフは、とびとびの点）', dur: 7,
+        b: { t: '（1）紙を折る … 1・2・4・8・16・32枚 → x を決めると y がただ1つ → <b>関数</b>', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .02, r: .03, t: .01, b: .02 }), s = CH.fs(D, .85), t = D.ph ? D.t : 0, n = D.ph ? Math.min(5, Math.floor(t * 6.2)) : 1;
+          var T = CH.rect(R.x0 + R.w * .03, R.y0 + s * .2, R.x1 - R.w * .02, R.y0 + s * 3.4);
+          CH.table(D, T, ['x（回）', '0', '1', '2', '3', '4', '5'], [['y（枚）'].concat([0, 1, 2, 3, 4, 5].map(function (x) { return String(Math.pow(2, x)); }))], { fw: .2, size: s, rh: s * 1.6, top: true, show: function (r, c) { return r === 1 && c > 0 ? (c - 1 <= n ? 1 : 0) : 1; }, hl: function (r, c) { return D.ph && c - 1 === n && t < .97 ? C.yel : null; } });
+          var y0 = T.y1 + s * .4, Rs = CH.rect(R.x0, y0, R.x0 + R.w * .3, R.y1), Pl = plane(D, CH.rect(R.x0 + R.w * .3, y0, R.x1, R.y1), { x: [0, 5.6], y: [0, 34], gy: 2, ly: 4, ux: '（回）', uy: '（枚）' });
+          for (var x = 0; x <= n; x++) CH.pt(D, Pl, x, Math.pow(2, x), { col: x === n ? C.yel : C.orange, r: CH.fs(D, .3), lab: x === n ? '(' + x + ', ' + Math.pow(2, x) + ')' : null, dir: 'nw' });
+          var m = Math.pow(2, n), bw = Rs.w * .62, lh = Math.min((Rs.h - s * 4) / 34, 6), xb = Rs.cx - bw / 2, yb = Rs.y1 - s * 2.4;
+          for (var i = 0; i < m; i++) CH.fillRect(D, xb, yb - (i + 1) * lh, xb + bw, yb - i * lh - Math.max(.6, lh * .25), { fill: i % 2 ? 'rgba(242,240,230,.85)' : 'rgba(242,240,230,.6)' });
+          CH.text(D, Rs.cx, yb + s * 1.1, n + '回 → ' + m + '枚', { col: C.yel, size: s });
+        } },
+      { tag: '例題', q: '（2）駐車場の料金は、1時間まで 500円、1時間をこえると 30分ごとに 100円ずつ加わる（30分に満たない時間は切り上げ）。ア 1時間20分　イ 2時間ちょうど　ウ 2時間10分 の料金を、グラフから読もう。', a: 'ア 600円　イ 700円　ウ 800円',
+        sub: 'ア 80分 → 60＜x≦90 の段。イ 120分 → 700円の段の右はし ●（800円の段の左はしは ○ でふくまない）。ウ 130分 → 120＜x≦150 の段', dur: 9,
+        b: { t: '（2）ア 80分 → <b>600円</b>　イ 120分 → <b>700円</b>（●）　ウ 130分 → <b>800円</b>', col: C.pink },
+        draw: function (D) {
+          var L = strip(D, 3), t = D.ph ? D.t : 0, Pl = plane(D, L.P, { x: [0, 192], y: [0, 1040], gx: 10, lx: 30, gy: 100, ly: 1000, pl: 3.2, ux: '（分）', uy: '（円）' });
+          var Q = [[80, .05, .3, 'ア'], [120, .36, .62, 'イ'], [130, .68, .92, 'ウ']], cur = -1;
+          Q.forEach(function (q, i) { if (t >= q[1]) cur = i; });
+          stairs(D, Pl, PARK, { ylab: function () { return true; }, hl: function (i) { return cur >= 0 && look(PARK, Q[cur][0]) === PARK[i][2] ? C.pink : null; } });
+          if (cur >= 0) { var q = Q[cur], x = q[0], y = look(PARK, x); probe(D, Pl, x, y, C.pink, q[3] + ' ' + x + '分 → ' + y + '円', { a: CH.smooth(q[1], q[1] + .06, t), al: 'right' }); if (x === 120) { glow(D, Pl, 120, 700, C.green); glow(D, Pl, 120, 800, C.pink, .6); } }
+          lines(D, L.T, [{ t: 'ア 1時間20分＝80分 → 600円', col: C.yel, a: D.ph ? CH.smooth(.05, .15, t) : 0 }, { t: 'イ 2時間ちょうど＝120分 → 700円（● の方）', col: C.green, a: CH.smooth(.36, .46, t) }, { t: 'ウ 2時間10分＝130分 → 800円', col: C.yel, a: CH.smooth(.68, .78, t) }]);
+        } },
+      { tag: '考えよう', bh: '考えよう', q: '宅配料金のグラフで、料金 y が 1000円のとき、重さ x は何 kg といえるだろう。y を決めると、x は決まるだろうか。',
+        notes: ['料金が 1000円のときの重さ x を書こう。', 'ほかの料金でも調べて、気づいたことを書こう。', 'スライダーで、重さ x（点 P）を動かせます。点線は y＝1000。'],
+        sliders: [{ key: 'x', label: '重さ x', min: .5, max: 20, step: .5, val: 3, fmt: function (v) { return v + 'kg'; } }],
+        draw: function (D) {
+          var L = lay1(D), x = D.V.x, y = fare(x); table1(D, L);
+          var Pl = fplane(D, L.P); CH.lin(D, Pl, 0, 1000, { col: C.blue, w: 2, dash: [8, 6] }); lab(D, Pl, 20.8, 1000, 'y＝1000', C.blue, { align: 'right', dy: -CH.fs(D, .8) });
+          stairs(D, Pl, FARE, { ylab: ylabF });
+          probe(D, Pl, x, y, C.pink, 'P（' + x + 'kg、' + y + '円）', { al: x > 12 ? 'right' : 'left' });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ　タクシー料金', q: 'あるタクシーの料金は、1km まで 500円。1km をこえると、400m ごとに 80円ずつ加わる（400m に満たない分は 400m に切り上げる）。① 2.5km 走ったときの料金は？ ② 料金が 900円以下ですむのは、何 km 以下のときか。', a: '① 820円　② 3km 以下',
+        sub: '① こえた分 1500m。1500÷400＝3.75 → 4回分。500＋80×4＝820　② 900−500＝400、400÷80＝5回分。1km＋400m×5＝3km（3km ちょうどは 900円の段の ●）', dur: 10,
+        b: { t: '① 1500÷400＝3.75 → 4回分 → <b>820円</b>　② 400÷80＝5回分 → 1＋0.4×5 → <b>3km 以下</b>', col: C.orange },
+        draw: function (D) {
+          var L = strip(D, 4), t = D.ph ? D.t : 0, Pl = plane(D, L.P, { x: [0, 4.3], y: [0, 1160], gx: .2, lx: 1, gy: 100, ly: 1000, pl: 3.2, ux: '（km）', uy: '（円）' });
+          var a1 = CH.smooth(.05, .2, t), a2 = CH.smooth(.5, .62, t), ph2 = t >= .5;
+          stairs(D, Pl, TAXI, { hl: function (i) { return D.ph ? (!ph2 && TAXI[i][2] === 820 && t > .2 ? C.pink : ph2 && TAXI[i][2] === 900 ? C.green : null) : null; }, ylab: function (i) { return TAXI[i][2] === 500 || (D.ph && !ph2 && TAXI[i][2] === 820 && t > .2) || (ph2 && TAXI[i][2] === 900); } });
+          if (D.ph && !ph2) { probe(D, Pl, 2.5, 820, C.pink, '2.5km', { a: a1 }); }
+          if (ph2) { CH.lin(D, Pl, 0, 900, { col: C.green, w: 2, dash: [8, 6], a: a2 }); CH.pseg(D, Pl, [3, 0], [3, 900], { col: C.green, dash: true, w: 1.8, a: CH.smooth(.65, .75, t) }); glow(D, Pl, 3, 900, C.green, CH.smooth(.65, .75, t)); lab(D, Pl, 3, 0, '3km', C.green, { dx: CH.fs(D, .4), dy: -CH.fs(D, .7), a: CH.smooth(.7, .8, t) }); }
+          lines(D, L.T, [{ t: '① こえた分 1500m → 1500÷400＝3.75 → 4回分', col: C.pink, a: D.ph ? a1 : 0 }, { t: '　 500＋80×4＝820（円）', col: C.pink, a: CH.smooth(.25, .35, t) },
+            { t: '② 900−500＝400 → 400÷80＝5回分', col: C.green, a: a2 }, { t: '　 1km＋400m×5＝3km → 3km 以下', col: C.green, a: CH.smooth(.75, .85, t) }]);
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

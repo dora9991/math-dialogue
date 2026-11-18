@@ -1,5 +1,5 @@
 /* アドリブ・ラボ：書き出し（MIDI・MusicXML）。画面を持たない純粋な関数だけ。
-   ・MIDI：伴奏とソロを別トラックにした標準 MIDI ファイル（フォーマット1）。スウィングは時間をずらして書く（16分音符のある拍だけは、再生と同じくずらさない）
+   ・MIDI：伴奏とソロを別トラックにした標準 MIDI ファイル（フォーマット1）。ノリ（8分・16分のシャッフル）は時間をずらして書く（再生と同じ時間になる）
    ・MusicXML：ソロの譜面（コード記号つき）。MuseScore・Finale・Sibelius・Dorico などで開ける */
 (function () {
   'use strict';
@@ -22,8 +22,8 @@
     }
     return out;
   }
-  // 16分音符のある拍の音には、straight = true をつける（スウィングさせない。player.js の markStraight と同じ約束なので、再生・WAV と同じ時間で書ける）
-  const markStraight = evs => (AL.Au && AL.Au.markStraight ? AL.Au.markStraight(evs) : evs);
+  // ソロの音に、拍ごとの弾き方の印（sm・em）をつける。player.js の markFeel と同じ約束なので、再生・WAV と同じ時間で書ける
+  const markFeel = evs => (AL.Au && AL.Au.markFeel ? AL.Au.markFeel(evs) : evs);
   // plan（player.js の設計図）から、loops コーラスぶんを1本の時間にならべる
   function collect(plan, loops, opts) {
     opts = opts || {};
@@ -33,7 +33,7 @@
       (ch.comp || []).forEach(e => out.comp.push(Object.assign({}, e, { t: e.t + off })));
       (ch.bass || []).forEach(e => out.bass.push(Object.assign({}, e, { t: e.t + off })));
       (ch.drums || []).forEach(e => out.drums.push(Object.assign({}, e, { t: e.t + off })));
-      if (opts.solo !== false) markStraight(mergeTies(ch.solo || [])).forEach(e => out.solo.push(Object.assign({}, e, { t: e.t + off })));
+      if (opts.solo !== false) markFeel(mergeTies(ch.solo || [])).forEach(e => out.solo.push(Object.assign({}, e, { t: e.t + off })));
     }
     return out;
   }
@@ -47,7 +47,10 @@
     altosax: 65, tenorsax: 66, trumpet: 56, flute: 73, clarinet: 71, trombone: 57,
   };
   // ドラムのパーツ → General MIDI のパーカッション番号
-  const GM_DRUM = { kick: 36, snare: 38, sidestick: 37, hhClosed: 42, hhPedal: 44, hhOpen: 46, ride: 51, crash: 49, tomHigh: 50, tomMid: 47, tomLow: 43, brush: 40 };
+  const GM_DRUM = {
+    kick: 36, snare: 38, sidestick: 37, hhClosed: 42, hhPedal: 44, hhOpen: 46, ride: 51, crash: 49, tomHigh: 50, tomMid: 47, tomLow: 43, brush: 40,
+    clap: 39, tambourine: 54, cowbell: 56, congaHi: 62, congaLo: 64, clave: 75, shaker: 82,
+  };
 
   const vlq = n => { n = Math.max(0, Math.round(n)); const b = [n & 0x7f]; while ((n >>= 7)) b.unshift((n & 0x7f) | 0x80); return b; };
   const u16 = n => [(n >> 8) & 0xff, n & 0xff];
@@ -65,11 +68,14 @@
     return [0x4d, 0x54, 0x72, 0x6b].concat(u32(out.length), out);
   }
 
-  // opts：{ title, bpb, tempo, timeMap(拍→拍)、keyFifths, keyMinor, markers:[{t,text}],
+  // opts：{ title, bpb, tempo, feel:{ div, r }（ノリ。なければ timeMap(拍→拍)）、keyFifths, keyMinor, markers:[{t,text}],
   //         tracks:[{ name, channel, program, events:[{t,dur,midi,vel}] }], drums:{ name, events:[{t,kind,vel}] } }
   function buildMidi(opts) {
-    const tm = opts.timeMap || (b => b);
+    const Au = AL.Au, feel = opts.feel && Au && Au.feelMap ? opts.feel : null;
+    const tm = feel ? (b => Au.feelMap(b, feel)) : (opts.timeMap || (b => b));
     const tick = b => Math.round(tm(b) * PPQ);
+    // ソロの音（sm・em の印つき）：16分音符のある拍はずらさない、付点8分＋16分はシャッフルの位置で（再生と同じ）
+    const posTick = (b, mode) => Math.round((feel ? Au.feelPos(b, feel, mode) : (mode === 's' ? b : tm(b))) * PPQ);
     const bpb = opts.bpb || 4;
     const tracks = [];
     // 0番：テンポ・拍子・調・コード記号（マーカー）
@@ -89,9 +95,9 @@
       ev.push({ tick: 0, order: 1, bytes: [0xb0 | ch, 7, tr.volume == null ? 100 : tr.volume] });
       (tr.events || []).forEach(e => {
         if (e.midi < 0 || e.midi > 127) return;
-        const at = e.straight ? (x => Math.round(x * PPQ)) : tick;   // ストレートの音は、時間をずらさない（拍の頭は同じ）
-        const a = at(e.t);
-        let b = at(e.t + e.dur);
+        const offT = Math.round((e.off || 0) * PPQ);   // 伴奏のロール・ゆらぎ（ノリを入れたあとに足す。再生と同じ）
+        const a = Math.max(0, (e.sm ? posTick(e.t, e.sm) : tick(e.t)) + offT);
+        let b = (e.sm ? posTick(e.t + e.dur, e.em) : tick(e.t + e.dur)) + offT;
         if (b <= a) b = a + 1;
         const vel = Math.max(1, Math.min(127, Math.round(e.vel || 80)));
         ev.push({ tick: a, order: 3, bytes: [0x90 | ch, e.midi, vel] });

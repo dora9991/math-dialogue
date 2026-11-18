@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>調査を批判的に読む</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 標本調査 第4時：調査の方法と結果を、批判的に読み取ろう（ikkan の lesson_hyouhon_04 と同じ流れ）。
+   体育館に来ていた 60人の 7割 → 市の中学生全体では？（標本のかたより）。確かめる 3つの観点：選び方・大きさ・質問のしかた。
+   考えようは、全校 480人の読書の時間を、選び方（図書室・運動部・くじ）と人数を変えて調べる道具。データ・場面はすべて自作（実際の調査ではない。たねつきの乱数で、毎回同じ）。 */
+(function () {
+  var C = CH.C, FF = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', NF = '"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif';
+  var DIM = 'rgba(242,240,230,.75)', INK = '#22302a', PAPER = 'rgba(242,240,230,.92)', GR = ['#9ad8ff', '#ffc078', '#a9f0b0'];
+  function ft(D, x, y, s, o, mw) {
+    o = o || {}; var g = D.ctx, z = o.size || CH.fs(D), p = {}, k;
+    g.save(); g.font = (o.w || 600) + ' ' + z + 'px ' + (o.num ? NF : FF); var w = g.measureText(s).width; g.restore();
+    for (k in o) p[k] = o[k]; p.size = w > mw ? z * mw / w : z; CH.text(D, x, y, s, p); return p.size;
+  }
+  /* 折り返して書く（左よせ）。行数を返す */
+  function wrap(D, x, y, s, o, mw, lh) {
+    var g = D.ctx, z = o.size || CH.fs(D), line = '', n = 0; g.save(); g.font = (o.w || 600) + ' ' + z + 'px ' + FF;
+    var out = []; for (var i = 0; i < s.length; i++) { var t = line + s.charAt(i); if (g.measureText(t).width > mw && line) { out.push(line); line = s.charAt(i); } else line = t; }
+    out.push(line); g.restore();
+    out.forEach(function (l, j) { var p = {}; for (var k in o) p[k] = o[k]; p.align = o.align || 'left'; p.size = z; CH.text(D, x, y + j * lh, l, p); n++; });
+    return n;
+  }
+  function wide(D) { return D.W > D.H * .9; }
+  function pick(seed, n, k) { var r = CH.rng(seed), a = []; for (var i = 0; i < n; i++) a.push(i); for (var j = 0; j < k; j++) { var m = j + Math.floor(r() * (n - j)), x = a[j]; a[j] = a[m]; a[m] = x; } return a.slice(0, k); }
+  function set(a) { var o = {}; a.forEach(function (i) { o[i] = 1; }); return o; }
+  function stream(seed) { var r = CH.rng(seed); for (var w = 0; w < 10; w++) r(); return r; }
+
+  /* 今日の問い：体育館の 60人のうち 42人。市の中学生 600人（体育館の 60人をふくむ） */
+  CH.check(CH.near(42 / 60, .7), '今日の問い　42÷60＝0.7');
+  var GYM = set(pick(11, 60, 42)), CITY = (function () { var r = stream(2), a = []; for (var i = 0; i < 540; i++) a.push(r() < .42 ? 1 : 0); return a; })();
+  var CITYALL = (42 + CH.sum(CITY)) / 600;
+  CH.check(CH.sum(CITY) === 227 && CH.f2(CITYALL) === '0.45', '今日の問い　市全体（たとえば）0.45');
+  /* 例題：900人。A班 20人中 14人、B班 200人中 124人 */
+  CH.check(CH.near(124 / 200, .62) && CH.near(900 * 124 / 200, 558) && CH.near(900 * 14 / 20, 630), '例題　およそ 558人');
+  function trials(seed, N, Y, n, T) { var r = stream(seed), out = []; for (var j = 0; j < T; j++) { var a = [], c = 0; for (var i = 0; i < N; i++) a.push(i); for (var q = 0; q < n; q++) { var m = q + Math.floor(r() * (N - q)), x = a[q]; a[q] = a[m]; a[m] = x; if (a[q] < Y) c++; } out.push(c / n); } return out; }
+  var T20 = trials(2, 900, 558, 20, 15), T200 = trials(3, 900, 558, 200, 15);
+  CH.check(Math.min.apply(null, T20) === .25 && Math.max.apply(null, T20) === .75 && Math.min.apply(null, T200) === .58 && Math.max.apply(null, T200) === .685, '例題　選びなおした標本（たねつきの乱数）');
+  /* 考えよう：全校 480人。0 図書室によくいる 60人、1 運動部 150人、2 そのほか 270人。1：毎日 30分以上 読書する */
+  var GRP = [], perm = pick(3, 480, 480); perm.forEach(function (p, i) { GRP[p] = i < 60 ? 0 : i < 210 ? 1 : 2; });
+  var READ = (function () { var r = stream(4), a = []; for (var i = 0; i < 480; i++) a.push(r() < [.8, .15, .3][GRP[i]] ? 1 : 0); return a; })();
+  var LIB = [], SPO = []; for (var i = 0; i < 480; i++) { if (GRP[i] === 0) LIB.push(i); if (GRP[i] === 1) SPO.push(i); }
+  var LOT = pick(5, 480, 60), READALL = CH.sum(READ) / 480;
+  function plan(m, n) { return (m === 0 ? LIB : m === 1 ? SPO : LOT).slice(0, n); }
+  function rate(ids) { return ids.reduce(function (s, i) { return s + READ[i]; }, 0) / ids.length; }
+  CH.check(CH.f2(READALL) === '0.31' && CH.f2(rate(plan(0, 60))) === '0.73' && CH.f2(rate(plan(1, 60))) === '0.17' && CH.f2(rate(plan(2, 60))) === '0.30', '考えよう　たねつきの乱数');
+  /* チャレンジ */
+  CH.check(600 / 60 === 10 && 200 / 10 + 160 / 10 + 240 / 10 === 60 && 7 + 8 + 15 === 30 && 600 * 30 / 60 === 300 && 200 * 7 / 20 + 160 * 8 / 16 + 240 * 15 / 24 === 300, 'チャレンジ　およそ 300人');
+
+  /* 市の広報（紙のカード） */
+  function paper(D, R, lines) {
+    CH.fillRect(D, R.x0, R.y0, R.x1, R.y1, { fill: PAPER, stroke: 'rgba(20,30,24,.5)', sw: 1.5 });
+    var s = CH.fs(D), y = R.y0 + s * .9, pad = s * .8;
+    lines.forEach(function (L) { var z = s * (L.k || 1), n = wrap(D, R.x0 + pad, y, L.t, { col: L.col || INK, size: z, w: L.w || 600 }, R.w - pad * 2, z * 1.35); y += n * z * 1.35 + (L.gap || s * .3); });
+    return y;
+  }
+  /* 人の並び（cols 列）。col(i) → 色、ring(i) → 黄の輪 */
+  function people(D, R, n, cols, col, ring) {
+    var rows = Math.ceil(n / cols), cw = Math.min(R.w / cols, R.h / rows), x0 = R.cx - cw * cols / 2, y0 = R.y0, out = [];
+    for (var i = 0; i < n; i++) {
+      var x = x0 + (i % cols + .5) * cw, y = y0 + (Math.floor(i / cols) + .5) * cw; CH.circle(D, x, y, cw * .34, { fill: col(i) });
+      if (ring && ring(i)) CH.circle(D, x, y, cw * .5, { stroke: C.yel, sw: 1.4 });
+    }
+    return { x0: x0, y0: y0, x1: x0 + cw * cols, y1: y0 + cw * rows, cw: cw };
+  }
+  function bubble(D, x, y, w, h, txt, o) {
+    o = o || {}; var g = D.ctx; g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.beginPath();
+    var r = Math.min(w, h) * .25; g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.lineTo(x + w * .3, y + h); g.lineTo(x + w * .18, y + h + h * .35); g.lineTo(x + w * .2, y + h); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+    g.fillStyle = o.fill || 'rgba(242,240,230,.12)'; g.fill(); g.strokeStyle = o.col || C.chalk; g.lineWidth = 2; g.stroke(); g.restore();
+    if (txt) { var s = o.size || CH.fs(D, .85); if (Array.isArray(txt)) txt.forEach(function (l, j) { ft(D, x + s * .5, y + s * (.9 + j * 1.3), l, { align: 'left', col: o.tcol || C.chalk, size: s, a: o.a }, w - s); }); else wrap(D, x + s * .5, y + s * .9, txt, { col: o.tcol || C.chalk, size: s, a: o.a }, w - s, s * 1.3); }
+  }
+
+  K3.run({
+    no: '第4時', title: '調査の方法と結果を、批判的に読み取ろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '03.html', label: '◀ 第3時' }, { href: '05.html', label: '第5時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '市の広報の見出し', q: '市の広報に、見出し「市内の中学生の7割が、毎日1時間以上運動している」がのった。調査の方法は「土曜日の午前に、市営体育館に来ていた中学生 60人に聞いたところ、42人が『はい』と答えた」。この見出しは、正しいといえるだろうか。',
+        notes: ['① 自分の考え（3分）　正しいか、どこに目をつけたかを書こう。', '② ペアの考え（3分）　自分とちがう点があれば、書こう。'],
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .06, b: .08 }), s = CH.fs(D), w = wide(D);
+          var P = w ? CH.rect(R.x0, R.y0 + R.h * .08, R.x0 + R.w * .58, R.y0 + R.h * .08 + Math.min(R.h * .6, s * 9.6)) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .5);
+          paper(D, P, [{ t: '市の広報', k: .7, col: '#4b6b5a' }, { t: '市内の中学生の7割が、毎日1時間以上運動している', k: 1.2, w: 700 }, { t: '調査の方法：土曜日の午前に、市営体育館に来ていた中学生 60人に聞いたところ、42人が「はい」と答えた。', k: .78, col: '#3b4a42' }]);
+          var G = w ? CH.rect(R.x0 + R.w * .64, R.y0 + s * 1.6, R.x1, R.y0 + R.h * .55) : CH.rect(R.x0 + R.w * .1, P.y1 + s * 1.8, R.x1 - R.w * .1, R.y1 - s * 1.6);
+          ft(D, G.cx, G.y0 - s * .8, '体育館の 60人（● はい）', { col: DIM, size: s * .85 }, G.w);
+          var Q = people(D, G, 60, 10, function (i) { return GYM[i] ? C.yel : 'rgba(242,240,230,.25)'; });
+          ft(D, G.cx, Q.y1 + s * .9, '42 ÷ 60 ＝ 0.7', { col: C.yel }, G.w);
+        } },
+      { tag: '今日の問い', q: 'この見出しは、正しいといえる？', a: 'いえない', sub: '42÷60＝0.7 で、計算は合っている。でも、聞いたのは 体育館に来ていた中学生だけ。運動をよくする人が多いはずなので、標本がかたよっている', dur: 4,
+        b: { t: '体育館に来た中学生だけ → 標本が <b>かたよっている</b> → 正しいとはいえない', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .08, b: .08 }), s = CH.fs(D), t = D.ph ? D.t : 0, w = wide(D), a = CH.smooth(.05, .4, t);
+          var G = w ? CH.rect(R.x0, R.y0 + s * 1.4, R.x0 + R.w * .6, R.y1) : CH.rect(R.x0, R.y0 + s * 1.4, R.x1, R.y0 + R.h * .62);
+          var cols = 30, rows = 20, cw = Math.min(G.w / cols, G.h / rows), x0 = G.cx - cw * cols / 2, y0 = G.y0, k = 0;
+          ft(D, x0 + cw * cols / 2, R.y0 + s * .4, '市の中学生（たとえば 600人。● 毎日1時間以上運動）', { col: DIM, size: s * .8, a: a }, w ? R.w * .62 : R.w);
+          for (var i = 0; i < 600; i++) {
+            var c = i % cols, r = Math.floor(i / cols), gym = c < 10 && r < 6, x = x0 + (c + .5) * cw, y = y0 + (r + .5) * cw, yes;
+            if (gym) yes = GYM[r * 10 + c]; else yes = CITY[k++];
+            CH.circle(D, x, y, cw * .34, { fill: yes ? C.yel : 'rgba(242,240,230,.25)', a: gym ? 1 : a });
+          }
+          CH.fillRect(D, x0 + 1, y0 + 1, x0 + cw * 10 - 1, y0 + cw * 6 - 1, { stroke: C.pink, sw: 2.6 });
+          CH.text(D, x0 + cw * 5, y0 + cw * 6 + s * .55, '体育館', { col: C.pink, size: s * .8, outline: 'rgba(20,40,30,.85)' });
+          if (t > .45) {
+            var a2 = CH.smooth(.45, .7, t), P = w ? CH.rect(R.x0 + R.w * .66, R.y0 + R.h * .12, R.x1, R.y1) : CH.rect(R.x0, G.y0 + cw * rows + s * .8, R.x1, R.y1), bw = P.w * (w ? .85 : .6), bh = Math.min(s * 1.2, P.h * .12);
+            [[42 / 60, C.pink, '体育館の 60人', '0.70'], [CITYALL, C.yel, '市の中学生 全体', CH.f2(CITYALL)]].forEach(function (b, j) {
+              var y = w ? P.y0 + j * s * 3.4 : P.y0 + j * bh * 2.1, lx = w ? P.x0 : P.x0, bx = w ? P.x0 : P.x1 - bw - s * 2.2;
+              if (w) { ft(D, lx, y, b[2], { align: 'left', col: b[1], size: s * .85, a: a2 }, P.w); y += s * .8; }
+              else ft(D, bx - s * .4, y + bh / 2, b[2], { align: 'right', col: b[1], size: s * .8, a: a2 }, bx - P.x0 - s * .5);
+              CH.fillRect(D, bx, y, bx + bw, y + bh, { stroke: 'rgba(242,240,230,.35)', sw: 1, a: a2 }); CH.fillRect(D, bx, y, bx + bw * b[0], y + bh, { fill: CH.C.yel === b[1] ? 'rgba(255,226,122,.45)' : 'rgba(255,157,178,.45)', stroke: b[1], a: a2 });
+              CH.text(D, bx + bw + s * .3, y + bh / 2, b[3], { align: 'left', col: b[1], size: s * .85, a: a2, num: true });
+            });
+            if (w) { wrap(D, P.x0, P.y0 + s * 7.6, '体育館に来る中学生は、運動をよくする人が多い', { col: C.chalk, size: s * .85, a: CH.smooth(.65, .85, t) }, P.w, s * 1.2); ft(D, P.x0, P.y0 + s * 10.4, '→ 標本が かたよっている', { align: 'left', col: C.pink, a: CH.smooth(.75, .95, t) }, P.w); }
+            else ft(D, P.cx, P.y0 + bh * 4.6, '体育館の中学生は 運動をよくする人が多い → かたより', { col: C.pink, size: s * .85, a: CH.smooth(.65, .85, t) }, P.w);
+          }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '調査の結果を読むとき、どんなことを確かめるとよいだろう？ 3つあげよう。', a: '標本の選び方・標本の大きさ・質問のしかた', sub: '選び方に かたよりはないか。大きさは 十分か。質問が、ある答えを みちびいていないか', dur: 3.5,
+        b: [{ t: '標本の<b>選び方</b>に、かたよりはないか', col: C.green }, { t: '標本の<b>大きさ</b>は、十分か', col: C.green }, { t: '<b>質問</b>のしかたは、適切か', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .1, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, w = wide(D);
+          if (w) { var H = Math.min(R.h, s * 11); R = CH.rect(R.x0, R.cy - H / 2, R.x1, R.cy + H / 2); }
+          var ps = CH.split(D, R, 3, .08), TT = [['① 標本の選び方', 'かたよりはないか'], ['② 標本の大きさ', '十分か'], ['③ 質問のしかた', '答えをみちびいていないか']];
+          ps.forEach(function (P, j) {
+            var a = CH.smooth(.1 + j * .25, .3 + j * .25, t), on = t > .1 + j * .25;
+            CH.fillRect(D, P.x0, P.y0, P.x1, P.y1, { stroke: on ? C.green : 'rgba(242,240,230,.35)', sw: on ? 2 : 1.2, fill: 'rgba(242,240,230,.04)' });
+            var th = w ? s * 3 : P.h * .45, I = w ? CH.rect(P.x0 + P.w * .12, P.y0 + th + s * .4, P.x1 - P.w * .12, P.y1 - s * .8) : CH.rect(P.x0 + P.w * .55, P.y0 + P.h * .12, P.x1 - P.w * .05, P.y1 - P.h * .12);
+            var tx = w ? P.cx : P.x0 + P.w * .28, mw = w ? P.w * .9 : P.w * .52;
+            ft(D, tx, P.y0 + (w ? s * 1 : P.h * .32), on ? TT[j][0] : '？', { col: C.green, a: on ? a : 1, size: s }, mw);
+            if (on) ft(D, tx, P.y0 + (w ? s * 2.2 : P.h * .68), TT[j][1], { col: DIM, a: a, size: s * .8 }, mw);
+            if (j === 0) people(D, I, 40, 8, function (i) { return 'rgba(242,240,230,.3)'; }, function (i) { return i % 8 < 3 && i < 24; });
+            if (j === 1) people(D, I, 40, 8, function (i) { return 'rgba(242,240,230,.3)'; }, function (i) { return i === 13 || i === 30; });
+            if (j === 2) bubble(D, I.x0, I.y0, I.w, Math.min(I.h * .6, s * 3.4), '〜と思いませんか？', { size: Math.min(s * .8, I.w / 11) });
+          });
+        } },
+      { tag: '例題', bh: '例題　調査の問題点', q: 'ア〜ウの調査の問題点は？　ア 図書館の前で、出てきた人 100人に、読書が好きかを聞いた。　イ 全校生徒 600人から、くじで 4人を選び、好きな給食を聞いた。　ウ 「勉強しないと、損だと思いませんか」と聞いた。',
+        a: 'ア 標本がかたよっている　イ 標本が小さすぎる　ウ 質問が答えをみちびく', sub: 'ア 図書館に来る人は、読書が好きな人が多い　イ 4人では、全校のようすを表せない　ウ「損」と先に言って、「はい」と答えさせる', dur: 4,
+        b: [{ t: 'ア … 標本が <b>かたよっている</b>（図書館に来る人）', col: C.yel }, { t: 'イ … 標本が <b>小さすぎる</b>（4人）', col: C.yel }, { t: 'ウ … 質問が 答えを <b>みちびく</b>', col: C.yel }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .08, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, w = wide(D);
+          if (w) { var H = Math.min(R.h, s * 13); R = CH.rect(R.x0, R.cy - H / 2, R.x1, R.cy + H / 2); }
+          var ps = CH.split(D, R, 3, .08), AN = ['標本が かたよっている', '標本が 小さすぎる', '質問が 答えをみちびく'];
+          ps.forEach(function (P, j) {
+            var I = w ? CH.rect(P.x0, P.y0 + s * 1.6, P.x1, P.y1 - s * 2.4) : CH.rect(P.x0 + P.w * .2, P.y0 + s * .2, P.x1 - P.w * .2, P.y1 - s * 1.6), lab = ['ア', 'イ', 'ウ'][j];
+            if (w) ft(D, P.cx, P.y0 + s * .5, lab + (j === 0 ? '　図書館の前で 100人' : j === 1 ? '　600人から くじで 4人' : '　質問の文'), { col: C.chalk, size: s * .9 }, P.w);
+            else ft(D, P.x0, P.cy - s * .5, lab, { col: C.chalk, size: s * 1.2, align: 'left' }, s * 2);
+            if (j === 0) {
+              var bw = Math.min(I.w * .7, I.h * .9), bx = I.cx - bw / 2, by = I.y0 + bw * .22, bh = bw * .38;
+              CH.poly(D, [[bx - bw * .06, by], [I.cx, I.y0], [bx + bw * 1.06, by]], { fill: 'rgba(201,176,255,.25)', stroke: C.lav });
+              CH.fillRect(D, bx, by, bx + bw, by + bh, { fill: 'rgba(201,176,255,.15)', stroke: C.lav });
+              ft(D, I.cx, by + bh * .45, '図書館', { col: C.lav, size: Math.min(s * .85, bh * .45) }, bw * .9);
+              people(D, CH.rect(bx - bw * .1, by + bh + s * .3, bx + bw * 1.1, I.y1), 100, 20, function (i) { return i % 7 === 3 || i % 11 === 5 ? 'rgba(242,240,230,.3)' : C.yel; });
+            }
+            if (j === 1) people(D, I, 600, 30, function (i) { return i === 47 || i === 212 || i === 389 || i === 566 ? C.yel : 'rgba(242,240,230,.22)'; }, function (i) { return i === 47 || i === 212 || i === 389 || i === 566; });
+            if (j === 2) { var bz = Math.min(s * .8, I.w / 9), bh2 = Math.max(Math.min(I.h * .55, s * 3.8), bz * 3); bubble(D, I.x0 + I.w * .02, I.y0 + s * .2, I.w * .96, bh2, ['勉強しないと、', '損だと思いませんか？'], { size: bz }); if (w) ft(D, I.cx, I.y0 + bh2 + s * 2.2, '「はい」「はい」「はい」…', { col: C.yel, size: s * .8 }, I.w); }
+            if (t > .05 + j * .3) ft(D, P.cx + (w ? 0 : s), P.y1 - s * (w ? 1 : .6), AN[j], { col: C.pink, a: CH.smooth(.05 + j * .3, .25 + j * .3, t), size: s * .95 }, P.w);
+          });
+        } },
+      { tag: '例題', q: '全校生徒 900人の賛成の人数を推定する。無作為に選んで、A班は 20人中 14人、B班は 200人中 124人が賛成だった。どちらの結果を使うのがよい？ 賛成は、およそ何人？',
+        a: 'B班の結果　およそ 558人', sub: 'B班のほうが標本が大きく、選びなおしても割合が ぶれにくい。124÷200＝0.62 → 900×0.62＝558（A班の 0.7 を使うと 630 で、はなれる）', dur: 5,
+        b: { t: '標本が大きい <b>B班</b>　900 × 124/200 ＝ <b>およそ 558人</b>', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .07, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, h = Math.min(s * 1.7, R.h * .09), lw = Math.min(R.w * .22, s * 6.5), x = R.x0 + lw, tw = R.w - lw;
+          var lab = function (y, txt, col, a) { ft(D, x - s * .4, y + h / 2, txt, { align: 'right', size: s * .82, col: col || DIM, a: a }, lw - s * .5); };
+          lab(R.y0, 'A班 20人', C.blue); CH.tape(D, x, R.y0, tw, h, [{ v: 14, col: C.blue, txt: '賛成 14（0.7）' }, { v: 6, col: '#7d8a84', txt: '6' }], 20);
+          lab(R.y0 + h * 1.5, 'B班 200人', C.orange); CH.tape(D, x, R.y0 + h * 1.5, tw, h, [{ v: 124, col: C.orange, txt: '賛成 124（0.62）' }, { v: 76, col: '#7d8a84', txt: '76' }], 200);
+          if (t > .05) {
+            var a = CH.smooth(.05, .3, t), Y = R.y0 + h * 3.2 + s * 1.2, NR = CH.rect(x, Y, R.x1 - s, Y + s * 3.6), X;
+            ft(D, R.x0, Y - s * .3, 'もし 何回も 選びなおしたら…（15回ずつ、賛成の割合）', { align: 'left', col: C.chalk, size: s * .85, a: a }, R.w);
+            Y += s * .9;
+            X = CH.numline(D, CH.rect(x, Y + s * 4.2, R.x1 - s, Y + s * 4.2), .2, .8, .05, { lab: .1, a: a, fmt: function (v) { return v.toFixed(1); } });
+            var n1 = Math.round(15 * CH.smooth(.1, .45, t)), n2 = Math.round(15 * CH.smooth(.3, .6, t));
+            lab(Y + s * .8 - h / 2, '20人ずつ', C.blue, a); lab(Y + s * 2.6 - h / 2, '200人ずつ', C.orange, a);
+            T20.slice(0, n1).forEach(function (v, i) { CH.circle(D, X(v), Y + s * .8 + ((i * 7) % 5 - 2) * s * .14, s * .26, { fill: 'rgba(154,216,255,.8)', a: a }); });
+            T200.slice(0, n2).forEach(function (v, i) { CH.circle(D, X(v), Y + s * 2.6 + ((i * 7) % 5 - 2) * s * .14, s * .26, { fill: 'rgba(255,192,120,.85)', a: a }); });
+            if (t > .6) ft(D, R.cx, Y + s * 6.2, '20人では ぶれが大きい。200人なら ぶれが小さい', { col: C.green, a: CH.smooth(.6, .75, t), size: s * .9 }, R.w);
+          }
+          if (t > .8) ft(D, R.cx, R.y1 - s * .2, 'B班の割合で　900 × 124/200 ＝ 558（人）', { col: C.yel, a: CH.smooth(.8, .95, t), size: s * 1.05 }, R.w);
+        } },
+      { tag: '考えよう', q: '全校生徒 480人の「1日の読書の時間」を、標本調査で調べたい。標本の選び方・大きさ・質問の文を決めて、よい調査の計画を立てよう。',
+        notes: ['① 選び方・大きさ・質問の文を決めて、計画を書こう。', '② その計画の よいところ・心配なところは？ ほかの人の計画に、質問や意見を出そう。', 'スライダーで、選び方と人数を変えて、標本の結果が どう変わるか 調べられます（● は 毎日30分以上 読書する人）。'],
+        sliders: [{ key: 'm', label: '選び方', min: 0, max: 2, step: 1, val: 0, fmt: function (x) { return ['図書室にいた人', '運動部の人', '名簿から くじで'][x]; } },
+          { key: 'n', label: '人数', min: 5, max: 60, step: 5, val: 10, fmt: function (x) { return x + '人'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .06, b: .06 }), s = CH.fs(D), w = wide(D), m = D.V.m, n = D.V.n, ids = plan(m, n), on = set(ids), r = rate(ids);
+          var G = w ? CH.rect(R.x0, R.y0 + s * 1.3, R.x0 + R.w * .58, R.y1) : CH.rect(R.x0, R.y0 + s * 1.3, R.x1, R.y0 + R.h * .66);
+          ft(D, w ? G.cx : R.cx, R.y0 + s * .3, '全校 480人（名簿の順。● 毎日30分以上 読書）', { col: DIM, size: s * .8 }, w ? G.w : R.w);
+          var Q = people(D, G, 480, 24, function (i) { return READ[i] ? (on[i] ? C.green : 'rgba(169,240,176,.55)') : (on[i] ? 'rgba(242,240,230,.75)' : 'rgba(242,240,230,.16)'); }, function (i) { return on[i]; });
+          var P = w ? CH.rect(R.x0 + R.w * .64, R.y0 + R.h * .12, R.x1, R.y1) : CH.rect(R.x0, Q.y1 + s * .6, R.x1, R.y1);
+          var t1 = ['図書室にいた人', '運動部の人', '名簿から くじで'][m] + '　' + n + '人', t2 = '30分以上 … ' + Math.round(r * n) + '人', t3 = '標本の割合 … ' + CH.f2(r);
+          if (w) {
+            ft(D, P.x0, P.y0, t1, { align: 'left', col: C.chalk }, P.w); ft(D, P.x0, P.y0 + s * 1.6, t2, { align: 'left', col: C.green }, P.w); ft(D, P.x0, P.y0 + s * 3.2, t3, { align: 'left', col: C.yel, size: s * 1.1 }, P.w);
+            var bw = P.w * .85, bh = s * 1.1, y = P.y0 + s * 4.6; CH.fillRect(D, P.x0, y, P.x0 + bw, y + bh, { stroke: 'rgba(242,240,230,.35)', sw: 1 }); CH.fillRect(D, P.x0, y, P.x0 + bw * r, y + bh, { fill: 'rgba(255,226,122,.45)', stroke: C.yel });
+            [0, .5, 1].forEach(function (v) { CH.text(D, P.x0 + bw * v, y + bh + s * .7, String(v), { size: s * .7, num: true, col: DIM }); });
+            ft(D, P.x0, P.y0 + s * 7.6, '全校（ふつうは わからない）… ' + CH.f2(READALL), { align: 'left', col: DIM, size: s * .8 }, P.w);
+          } else {
+            ft(D, P.cx, P.y0 + s * .3, t1 + '　' + t2, { col: C.green, size: s }, P.w);
+            ft(D, P.cx, P.y0 + s * 1.7, t3 + '　（全校 ' + CH.f2(READALL) + '・ふつうは わからない）', { col: C.yel, size: s }, P.w);
+          }
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '全校生徒 600人（1年 200人、2年 160人、3年 240人）から、学年の人数に合わせて 60人を無作為に選ぶ。① 各学年から、何人ずつ選ぶ？　② 賛成は 1年 7人、2年 8人、3年 15人だった。全校の賛成は、およそ何人？',
+        a: '① 1年 20人・2年 16人・3年 24人　② およそ 300人', sub: '600÷60＝10 → 10人に1人を選ぶ。賛成 7＋8＋15＝30 → 600×30/60＝300（学年ごとに 70＋80＋150＝300 でも同じ）', dur: 5,
+        b: { t: '① 20人・16人・24人　② 600 × 30/60 ＝ <b>およそ 300人</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .1, b: .1 }), s = CH.fs(D), t = D.ph ? D.t : 0, h = Math.min(s * 2, R.h * .12), lw = Math.min(R.w * .2, s * 5.5), x = R.x0 + lw, tw = R.w - lw;
+          var G = [200, 160, 240], SM = [20, 16, 24], YS = [7, 8, 15], NM = ['1年', '2年', '3年'];
+          var lab = function (y, txt, a) { ft(D, x - s * .4, y + h / 2, txt, { align: 'right', size: s * .8, col: DIM, a: a }, lw - s * .5); };
+          lab(R.y0, '全校 600人'); CH.tape(D, x, R.y0, tw, h, G.map(function (v, i) { return { v: v, col: GR[i], txt: NM[i] + ' ' + v }; }), 600);
+          var y2 = R.y0 + h * 2.2;
+          if (t > .05) {
+            var a = CH.smooth(.05, .3, t); lab(y2, '選ぶ 60人', a);
+            CH.tape(D, x, y2, tw, h, SM.map(function (v, i) { return { v: v, col: GR[i], txt: t > .2 ? NM[i] + ' ' + v + '人' : '' }; }), 60, { a: a });
+            for (var j = 0; j <= 3; j++) { var xx = x + tw * [0, 200, 360, 600][j] / 600; CH.line(D, xx, R.y0 + h, xx, y2, { col: C.yel, dash: [3, 4], a: a }); }
+            ft(D, x + tw / 2, R.y0 + h * 1.6, '600 ÷ 60 ＝ 10 → 10人に 1人', { col: C.yel, a: a, size: s * .85, outline: 'rgba(20,40,30,.9)' }, tw);
+          }
+          var y3 = y2 + h * 1.9;
+          if (t > .4) {
+            var a2 = CH.smooth(.4, .6, t), xs = x; lab(y3, '賛成', a2);
+            SM.forEach(function (v, i) { var wd = tw * v / 60; CH.tape(D, xs, y3, wd, h, [{ v: YS[i], col: C.pink, txt: String(YS[i]) }, { v: v - YS[i], col: '#7d8a84', txt: '', a: .4 }], v, { a: a2 }); xs += wd; });
+            ft(D, R.cx, y3 + h + s * 1.1, '賛成 7 ＋ 8 ＋ 15 ＝ 30（人）　→　割合 30/60', { col: C.pink, a: a2, size: s * .9 }, R.w);
+          }
+          if (t > .7) {
+            var a3 = CH.smooth(.7, .9, t), y4 = y3 + h + s * 2.8;
+            ft(D, R.cx, y4, '600 × 30/60 ＝ 300', { col: C.yel, a: a3, size: s * 1.15 }, R.w);
+            ft(D, R.cx, y4 + s * 1.6, '学年ごとに 200×7/20＋160×8/16＋240×15/24 ＝ 70＋80＋150 ＝ 300', { col: C.chalk, a: a3, size: s * .8 }, R.w);
+          }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

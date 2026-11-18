@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>拡大と面積</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 相似な図形 第14時：2倍に拡大すると、面積も2倍になるだろうか（ikkan の lesson_souji_14 と同じ流れ）。
+   正方形 ア（1辺 1cm）を 2倍・3倍にした イ・ウ に、ア が 4こ・9こ しきつめられる。直角三角形 エ（3cm と 2cm）を 2倍・3倍にした オ・カ にも、
+   エ が 4こ・9こ（うち 1こ・3こ は 180° 回して）しきつめられる。数値は ikkan のまま、図の座標はこのページの自作。
+   面積・周の長さは、図の座標から計算し直して照らし合わせる（CH.check）。考えよう（A4 と A3）は、紙を実際の大きさの割合でならべる・重ねる道具だけ。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)';
+  /* ---- 図の道具（このページの中だけ） ---- */
+  function area(P) { var s = 0; for (var i = 0; i < P.length; i++) { var q = P[(i + 1) % P.length]; s += P[i][0] * q[1] - q[0] * P[i][1]; } return Math.abs(s) / 2; }
+  function peri(P) { var s = 0; for (var i = 0; i < P.length; i++) { var q = P[(i + 1) % P.length]; s += Math.hypot(q[0] - P[i][0], q[1] - P[i][1]); } return s; }
+  function sc(P, k, d) { d = d || [0, 0]; return P.map(function (p) { return [p[0] * k + d[0], p[1] * k + d[1]]; }); }
+  function cen(P) { var c = [0, 0]; P.forEach(function (p) { c[0] += p[0] / P.length; c[1] += p[1] / P.length; }); return c; }
+  /* もとの形 src を、しきつめる場所 cell（inv：180° 回す）へ、e（0→1）だけ動かす */
+  function moveTo(src, cell, e) {
+    var c0 = cen(src), c1 = cen(cell.pts), th = cell.inv ? Math.PI * e : 0, co = Math.cos(th), si = Math.sin(th), m = [c0[0] + (c1[0] - c0[0]) * e, c0[1] + (c1[1] - c0[1]) * e];
+    return src.map(function (p) { var x = p[0] - c0[0], y = p[1] - c0[1]; return [m[0] + x * co - y * si, m[1] + x * si + y * co]; });
+  }
+  /* cells を、t0〜t1 の間に 1こずつ、src から飛ばしてしきつめる。おいた数を返す */
+  function fly(F, src, cells, t, t0, t1, col) {
+    var n = cells.length, d = Math.min(.12, (t1 - t0) * .5), placed = 0;
+    cells.forEach(function (cell, i) {
+      var s = t0 + (t1 - t0 - d) * (n > 1 ? i / (n - 1) : 0); if (t < s) return;
+      var e = CH.ease(CH.clamp((t - s) / d, 0, 1));
+      GE.polyP(F, moveTo(src, cell, e), { col: col || C.yel, fa: e >= 1 ? .28 : .5, sw: 2 });
+      if (e >= 1) placed++;
+    });
+    return placed;
+  }
+  /* 三角形（0・a・b）を k 倍した三角形を、もとの三角形 k² こでしきつめる（上向き k(k+1)/2 こ、180° 回したもの k(k−1)/2 こ） */
+  function triCells(a, b, k, d) {
+    var out = [];
+    for (var j = 0; j < k; j++) for (var i = 0; i + j < k; i++) {
+      var o = [d[0] + i * a[0] + j * b[0], d[1] + i * a[1] + j * b[1]];
+      out.push({ pts: [o, [o[0] + a[0], o[1] + a[1]], [o[0] + b[0], o[1] + b[1]]], inv: false });
+      if (i + j < k - 1) out.push({ pts: [[o[0] + a[0] + b[0], o[1] + a[1] + b[1]], [o[0] + b[0], o[1] + b[1]], [o[0] + a[0], o[1] + a[1]]], inv: true });
+    }
+    return out;
+  }
+  function sqCells(k, d) { var out = []; for (var j = 0; j < k; j++) for (var i = 0; i < k; i++) out.push({ pts: sc(SQ, 1, [d[0] + i, d[1] + j]), inv: false }); return out; }
+  /* 直角の印（頂点 v、向き a・b は点） */
+  function rightMark(F, v, a, b) {
+    var V = F.X(v), A = F.X(a), B = F.X(b), h = F.s * .5, u = [A[0] - V[0], A[1] - V[1]], w = [B[0] - V[0], B[1] - V[1]], lu = Math.hypot(u[0], u[1]), lw = Math.hypot(w[0], w[1]);
+    u = [u[0] / lu * h, u[1] / lu * h]; w = [w[0] / lw * h, w[1] / lw * h];
+    CH.poly(F.D, [[V[0] + u[0], V[1] + u[1]], [V[0] + u[0] + w[0], V[1] + u[1] + w[1]], [V[0] + w[0], V[1] + w[1]]], { stroke: C.chalk, sw: 1.8, close: false });
+  }
+  function tx(F, p, s, o) { o = o || {}; var q = F.X(p); CH.text(F.D, q[0] + (o.dx || 0) * F.s, q[1] + (o.dy || 0) * F.s, s, { size: F.s * (o.size || 1), col: o.col, a: o.a, align: o.align, outline: o.outline === false ? null : OUT }); }
+
+  /* ---- 今日の問い：正方形 ア・イ・ウ（1辺 1・2・3cm）。下をそろえて、同じ縮尺でならべる ---- */
+  var SQ = [[0, 0], [1, 0], [1, 1], [0, 1]], SQX = [0, 2.4, 6], SQK = [1, 2, 3], SQN = ['ア', 'イ', 'ウ'], SQC = [C.blue, C.green, C.orange];
+  var SQB = { a: [-.4, -1.5], b: [9.4, 3.9] };
+  CH.check(SQK.map(function (k) { return area(sc(SQ, k)); }).join() === '1,4,9' && SQK.map(function (k) { return peri(sc(SQ, k)); }).join() === '4,8,12', '今日の問い：正方形の面積と周');
+  CH.check(sqCells(2, [0, 0]).length === 4 && sqCells(3, [0, 0]).length === 9 && CH.near(CH.sum(sqCells(3, [0, 0]).map(function (c) { return area(c.pts); })), area(sc(SQ, 3))), '今日の問い：しきつめる数');
+  function squares(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .04, r: .04, t: .1, b: .08 }), F = GE.fit(D, R, SQB, { pad: .02 });
+    SQK.forEach(function (k, i) {
+      GE.polyP(F, sc(SQ, k, [SQX[i], 0]), { col: SQC[i], fa: .14, sw: 2.6 });
+      tx(F, [SQX[i] + k / 2, -.5], SQN[i], { col: SQC[i], size: 1.1 }); tx(F, [SQX[i] + k / 2, -1.15], '1辺 ' + k + 'cm', { size: .85 });
+    });
+    return F;
+  }
+
+  /* ---- 例題：直角三角形 エ（3cm と 2cm）・オ（2倍）・カ（3倍）。直角は左下 ---- */
+  var TA = [3, 0], TB = [0, 2], TX = [0, 4.4, 12.2], TN = ['エ', 'オ', 'カ'], TC = [C.blue, C.green, C.orange], TBND = { a: [-.6, 0], b: [21.4, 6.3] };
+  function triK(k, x) { return [[x, 0], [x + TA[0] * k, 0], [x, TB[1] * k]]; }
+  CH.check(area(triK(1, 0)) === 3 && area(triK(2, 0)) === 12 && area(triK(3, 0)) === 27 && [2, 3].every(function (k) { var c = triCells(TA, TB, k, [0, 0]); return c.length === k * k && CH.near(CH.sum(c.map(function (x) { return area(x.pts); })), area(triK(k, 0))); }), '例題：三角形の面積としきつめ');
+  /* 図の下の字は、画面の px でずらす（せまい画面でも重ならない）。下に字の 3行分をあける */
+  function tris(D) {
+    var R = CH.box(D, { l: .03, r: .03, t: .1, b: .06 }), fs = CH.fs(D), F = GE.fit(D, CH.rect(R.x0, R.y0, R.x1, R.y1 - fs * 3.6), TBND, { pad: .02 });
+    [1, 2, 3].forEach(function (k, i) {
+      var P = triK(k, TX[i]);
+      GE.polyP(F, P, { col: TC[i], fa: .14, sw: 2.6 }); rightMark(F, P[0], P[1], P[2]);
+      under(F, [TX[i] + 1.5 * k, 0], 0, 3 * k + 'cm', { size: .85 }); tx(F, [TX[i] - .2, k], 2 * k + 'cm', { size: .85, align: 'right' });
+      under(F, [TX[i] + 1.5 * k, 0], 1, TN[i], { col: TC[i], size: 1.1 });
+    });
+    return F;
+  }
+  function under(F, p, row, s, o) { var q = F.X(p); o = o || {}; CH.text(F.D, q[0], q[1] + F.s * (.75 + row * 1.15), s, { size: F.s * (o.size || 1), col: o.col, a: o.a, outline: OUT }); }
+
+  /* ---- 例題（2）：半径 4cm と 6cm の円 ---- */
+  CH.check(CH.near(2 * Math.PI * 4 / (2 * Math.PI * 6), 2 / 3) && CH.near(Math.PI * 16 / (Math.PI * 36), 4 / 9), '例題（2）：円の周と面積の比');
+
+  /* ---- 考えよう：A5・A4・A3 の紙（横 × 縦 mm） ---- */
+  var PAPER = { A5: [148, 210], A4: [210, 297], A3: [297, 420] };
+  CH.check(Math.abs(420 / 297 - Math.SQRT2) < .001 && Math.abs(297 / 210 - Math.SQRT2) < .001 && Math.abs(210 / 148 - Math.SQRT2) < .01 && CH.near(420 * 297 / (297 * 210), 2), '考えよう：紙の大きさ（ここで確かめるだけ）');
+
+  /* ---- チャレンジ：縦 15cm・横 20cm → どちらも 20％ふやす（18cm・24cm）。1マス＝縦 3cm・横 4cm ---- */
+  CH.check(15 * 1.2 === 18 && 20 * 1.2 === 24 && 18 * 24 === 432 && CH.near(432 / 300, 1.44) && 15 / 3 === 5 && 20 / 4 === 5 && 18 / 3 === 6 && 24 / 4 === 6 && 36 - 25 === 11 && CH.near(11 / 25, .44), 'チャレンジ：44％');
+
+  K3.run({
+    no: '第14時', title: '2倍に拡大すると、面積も2倍になるだろうか', flat: true, hint: '', alt: '拡大した正方形・三角形と、しきつめる図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '13.html', label: '◀ 第13時' }, { href: '15.html', label: '第15時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '正方形 ア（1辺 1cm）・イ（2倍）・ウ（3倍）', q: '正方形 ア（1辺 1cm）を 2倍、3倍に拡大すると、イ、ウになる。イ、ウの面積は、それぞれ ア の何倍になるだろう。',
+        notes: ['① 自分の考え（3分）　予想を書いてから、調べよう。', '② ペアの考え（3分）　ほかの図形（長方形など）でも調べよう。'],
+        draw: function (D) { squares(D); } },
+      { tag: '今日の問い', q: 'イ、ウ に、ア をしきつめよう。それぞれ ア の何倍？', a: 'イ は 4倍、ウ は 9倍', sub: 'イ 2×2＝4（cm²）、ウ 3×3＝9（cm²）。2倍に拡大しても、面積は 2倍にはならない', dur: 6,
+        b: { t: '2倍に拡大 → 面積は <b>4倍</b>（2×2）　3倍 → <b>9倍</b>（3×3）', col: C.yel },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .44 ? 'イ に ア をしきつめると…' : s.t < 1 ? 'ウ に ア をしきつめると…' : 'イ は 4こ分、ウ は 9こ分'; },
+        draw: function (D) {
+          var F = squares(D), t = D.ph ? D.t : 0, src = sc(SQ, 1, [SQX[0], 0]);
+          var n1 = fly(F, src, sqCells(2, [SQX[1], 0]), t, .02, .42), n2 = fly(F, src, sqCells(3, [SQX[2], 0]), t, .46, .96);
+          if (n1) tx(F, [SQX[1] + 1, 2.5], n1 + 'こ', { col: C.yel, size: 1.1 }); if (n2) tx(F, [SQX[2] + 1.5, 3.5], n2 + 'こ', { col: C.yel, size: 1.1 });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '形が同じで大きさのちがう図形で、対応する辺の長さの比を何という？ その比が m：n のとき、周の長さの比・面積の比は？', a: '相似比。周の長さの比 m：n、面積の比 m²：n²',
+        sub: '1辺を k倍にすると、周の長さは k倍、面積は k×k＝k²倍', dur: 1,
+        notes: ['スライダーで、何倍に拡大するかを変えられます。'],
+        sliders: [{ key: 'k', label: '拡大', min: 1, max: 5, step: 1, val: 3, fmt: function (x) { return x + '倍'; } }],
+        b: [{ t: '対応する辺の長さの比 … <b>相似比</b>', col: C.green }, { t: '相似比 m：n → 周の長さの比 <b>m：n</b>、面積の比 <b>m²：n²</b>', col: C.green }],
+        banner: function (s) { return s.ph ? '周の長さ ' + s.V.k + '倍、面積 ' + s.V.k * s.V.k + '倍' : ''; },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .1, b: .06 }), F = GE.fit(D, R, { a: [-.4, -1.6], b: [7.4, 5.2] }, { pad: .02 }), k = D.V.k, x0 = 2;
+          GE.polyP(F, SQ, { col: C.blue, fa: .2, sw: 2.6 }); tx(F, [.5, -.5], 'もとの形', { size: .8, col: C.blue }); tx(F, [.5, -1.15], '1辺 1cm', { size: .8 });
+          var big = sc(SQ, k, [x0, 0]);
+          GE.polyP(F, big, { col: C.orange, fa: .1, stroke: false });
+          for (var i = 1; i < k; i++) { GE.seg(F, [[x0 + i, 0], [x0 + i, k]], { w: 1.2, col: 'rgba(242,240,230,.4)' }); GE.seg(F, [[x0, i], [x0 + k, i]], { w: 1.2, col: 'rgba(242,240,230,.4)' }); }
+          CH.poly(D, big.map(function (p) { return F.X(p); }), { stroke: D.ph ? C.yel : C.orange, sw: D.ph ? 3.6 : 2.6 });
+          tx(F, [x0 + k / 2, -.5], k + '倍に拡大', { size: .8, col: C.orange }); tx(F, [x0 + k / 2, -1.15], '1辺 ' + k + 'cm', { size: .8 });
+          if (D.ph) tx(F, [x0 + k / 2, k / 2], k * k + 'こ分', { col: C.yel, size: 1.2 });
+        } },
+      { tag: '例題', bh: '例題　直角三角形を拡大する', q: '直角をはさむ 2辺が 3cm と 2cm の直角三角形 エ を、2倍、3倍に拡大して オ、カ をつくった。オ、カ の面積は、それぞれ エ の何倍？',
+        a: 'オ 12cm²（4倍）、カ 27cm²（9倍）', sub: 'エ 3×2÷2＝3、オ 6×4÷2＝12、カ 9×6÷2＝27（cm²）。三角形でも、2倍 → 2²倍、3倍 → 3²倍', dur: 7,
+        b: [{ t: 'エ 3cm²　オ <b>12cm²</b>（4倍）　カ <b>27cm²</b>（9倍）', col: C.blue }],
+        banner: function (s) { if (!s.ph) return ''; return s.t < .4 ? 'オ に エ をしきつめると…' : s.t < 1 ? 'カ に エ をしきつめると…（向きを変えたものも）' : 'オ は 4こ分、カ は 9こ分'; },
+        draw: function (D) {
+          var F = tris(D), t = D.ph ? D.t : 0, src = triK(1, TX[0]);
+          var n1 = fly(F, src, triCells(TA, TB, 2, [TX[1], 0]), t, .02, .38), n2 = fly(F, src, triCells(TA, TB, 3, [TX[2], 0]), t, .42, .94);
+          if (n1) tx(F, [TX[1] + 3.6, 2.6], n1 + 'こ', { col: C.yel, size: 1.1 }); if (n2) tx(F, [TX[2] + 5.4, 3.9], n2 + 'こ', { col: C.yel, size: 1.1 });
+          if (t >= 1) ['3cm²', '12cm²（4倍）', '27cm²（9倍）'].forEach(function (s, i) { under(F, [TX[i] + 1.5 * (i + 1), 0], 2, s, { col: C.yel, size: .85 }); });
+        } },
+      { tag: '例題', bh: '例題（2）　半径 4cm と 6cm の円', q: '（2）半径 4cm の円と、半径 6cm の円がある。周の長さの比と、面積の比は？', a: '周の長さの比 2：3、面積の比 4：9',
+        sub: '円はいつも相似。相似比 4：6＝2：3　周 8π：12π＝2：3、面積 16π：36π＝4：9', dur: 4,
+        b: { t: '（2）相似比 2：3 → 周 8π：12π＝<b>2：3</b>、面積 16π：36π＝<b>4：9</b>', col: C.blue },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .5 ? '小さい円を 1.5倍に拡大すると…' : '周 8π → 12π、面積 16π → 36π'; },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .12, b: .08 }), F = GE.fit(D, R, { a: [-4.4, -7.4], b: [19.4, 6.4] }, { pad: .02 }), t = D.ph ? D.t : 0, A = [0, 0], B = [13, 0];
+          var k = CH.ease(CH.smooth(.05, .45, t)), r = 4 * (1 + .5 * k), c = [A[0] + (B[0] - A[0]) * k, 0], la = CH.smooth(.55, .75, t);
+          [[A, 4, C.blue, '4cm'], [B, 6, C.orange, '6cm']].forEach(function (q) {
+            var p = F.X(q[0]); CH.circle(D, p[0], p[1], q[1] * F.u, { stroke: q[2], sw: 2.6, fill: 'rgba(242,240,230,.05)' });
+            GE.seg(F, [q[0], [q[0][0] + q[1], 0]], { col: q[2], w: 2 }); GE.dot(F, q[0]); tx(F, [q[0][0] + q[1] / 2, .6], q[3], { size: .85 });
+          });
+          if (t > .02 && t < 1) { var p = F.X(c); CH.circle(D, p[0], p[1], r * F.u, { stroke: C.yel, sw: 3, fill: 'rgba(255,226,122,.12)' }); }
+          if (la > 0) {
+            var pa = F.X(A), pb = F.X(B);
+            CH.circle(D, pa[0], pa[1], 4 * F.u, { fill: 'rgba(154,216,255,.25)', a: la }); CH.circle(D, pb[0], pb[1], 6 * F.u, { fill: 'rgba(255,192,120,.22)', a: la });
+            CH.circle(D, pa[0], pa[1], 4 * F.u, { stroke: C.yel, sw: 4, a: la }); CH.circle(D, pb[0], pb[1], 6 * F.u, { stroke: C.yel, sw: 4, a: la });
+            tx(F, [0, -1.6], '16π', { col: C.chalk, a: la }); tx(F, [13, -2.2], '36π', { col: C.chalk, a: la, size: 1.2 });
+            tx(F, [0, -5.6], '周 8π', { col: C.yel, a: la, size: .9 }); tx(F, [13, -7], '周 12π', { col: C.yel, a: la, size: .9 });
+          }
+        } },
+      { tag: '考えよう', q: 'A4 の紙（縦 297mm、横 210mm）と A3 の紙（縦 420mm、横 297mm）は、相似とみなせる。面積の比と、辺の長さの比を調べて、気づいたことを書こう。',
+        notes: ['電卓を使って、縦・横・面積の「A3÷A4」を求めよう（小数第2位まで）。', 'A5（縦 210mm、横 148mm）と A4 でも調べよう。', 'スライダーで、くらべる紙と、ならべ方（重ねると、対角線で形をくらべられる）を変えられます。'],
+        sliders: [{ key: 'p', label: 'くらべる紙', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? 'A5 と A4' : 'A4 と A3'; } },
+          { key: 'o', label: 'ならべ方', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? '重ねる' : 'ならべる'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .08, b: .04 }), F = GE.fit(D, R, { a: [-95, -55], b: [700, 440] }, { pad: .02 });
+          var nm = D.V.p ? ['A5', 'A4'] : ['A4', 'A3'], S = PAPER[nm[0]], L = PAPER[nm[1]], ov = D.V.o, ox = ov ? 0 : S[0] + 120;
+          var rS = [[0, 0], [S[0], 0], [S[0], S[1]], [0, S[1]]], rL = sc([[0, 0], [L[0], 0], [L[0], L[1]], [0, L[1]]], 1, [ox, 0]);
+          GE.polyP(F, rL, { col: C.orange, fa: .12, sw: 2.6 }); GE.polyP(F, rS, { col: C.blue, fa: ov ? .28 : .14, sw: 2.6 });
+          if (ov) GE.seg(F, [[0, 0], [L[0], L[1]]], { col: C.yel, dash: [8, 6], w: 2 });
+          tx(F, [ox + L[0] / 2, L[1] * .72], nm[1], { col: C.orange, size: 1.3 }); tx(F, [S[0] / 2, S[1] * (ov ? .32 : .55)], nm[0], { col: C.blue, size: 1.3 });
+          tx(F, [ox + L[0] / 2, -28], '横 ' + L[0] + 'mm', { size: .8, col: C.orange }); tx(F, [ox + L[0] + 12, L[1] / 2], '縦 ' + L[1] + 'mm', { size: .8, col: C.orange, align: 'left' });
+          tx(F, [S[0] / 2, ov ? 22 : -28], '横 ' + S[0] + 'mm', { size: .8, col: C.blue }); tx(F, [ov ? 12 : -12, S[1] / 2], '縦 ' + S[1] + 'mm', { size: .8, col: C.blue, align: ov ? 'left' : 'right' });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '縦 15cm、横 20cm の長方形の、縦と横を、どちらも 20％ ふやして、新しい長方形をつくった。面積は、もとの長方形より、何％ふえただろう。',
+        a: '44％ふえた', sub: '相似比 1：1.2＝5：6、面積の比 25：36。36÷25＝1.44倍（面積 300cm² → 432cm²）', dur: 6,
+        b: { t: '相似比 5：6 → 面積の比 25：36 → 1.44倍 → <b>44％ふえる</b>', col: C.orange },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .32 ? '縦 3cm・横 4cm のマスで 5×5＝25マス' : s.t < .62 ? '縦も横も 1.2倍にすると…' : s.t < .82 ? '6×6＝36マス' : '36÷25 ＝ 1.44倍（11マスふえた）'; },
+        draw: function (D) {
+          var R = CH.box(D, { l: .08, r: .08, t: .1, b: .08 }), F = GE.fit(D, R, { a: [-5, -4], b: [30, 20.5] }, { pad: .02 }), t = D.ph ? D.t : 0;
+          var g = CH.smooth(.04, .25, t), k = 1 + .2 * CH.ease(CH.smooth(.32, .62, t)), W = 20 * k, H = 15 * k, nw = CH.smooth(.62, .75, t);
+          if (nw > 0) for (var j = 0; j < 6; j++) for (var i = 0; i < 6; i++) if (i === 5 || j === 5) GE.polyP(F, [[i * 4, j * 3], [i * 4 + 4, j * 3], [i * 4 + 4, j * 3 + 3], [i * 4, j * 3 + 3]], { col: C.pink, fa: .35 * nw, stroke: false });
+          GE.polyP(F, [[0, 0], [W, 0], [W, H], [0, H]], { col: C.orange, fa: .1, sw: 2.6 });
+          GE.polyP(F, [[0, 0], [20, 0], [20, 15], [0, 15]], { col: C.blue, fa: .16, sw: 2.6 });
+          if (g > 0) {
+            var nx = t > .62 ? 6 : 5;
+            for (var a = 1; a < nx; a++) { GE.seg(F, [[a * 4, 0], [a * 4, nx * 3]], { w: 1.2, col: 'rgba(242,240,230,.5)', a: g }); GE.seg(F, [[0, a * 3], [nx * 4, a * 3]], { w: 1.2, col: 'rgba(242,240,230,.5)', a: g }); }
+          }
+          tx(F, [10, -1.6], '20cm', { size: .85, col: C.blue }); tx(F, [-.8, 7.5], '15cm', { size: .85, col: C.blue, align: 'right' });
+          if (t > .62) { var a2 = CH.smooth(.62, .72, t); tx(F, [12, 19.6], '24cm', { size: .85, col: C.orange, a: a2 }); tx(F, [24.8, 9], '18cm', { size: .85, col: C.orange, align: 'left', a: a2 }); }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

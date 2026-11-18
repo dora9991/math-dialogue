@@ -92,26 +92,44 @@ for (const [name, style] of [['autumn', 'swing'], ['waltz', 'waltz'], ['bossa', 
   ok(on.tick === 320, 'スウィングの裏拍：' + on.tick);
   ok(off.tick === 480, 'スウィングの終わり：' + off.tick);
 }
-// 16分音符のある拍は、MIDI でもスウィングさせない（再生・WAV と同じ時間で書く）
+// ノリ（feel）を渡しても同じ：8分シャッフルは裏拍、16分シャッフルは16分の裏だけがずれる
 {
-  const pr = P.byId.autumn, b = build(pr.text, 'swing', 1), sw = 2 / 3;
-  let nStraight = 0, n16 = 0, wrong16 = 0, mism = 0;
-  for (const seed of [1, 2, 3, 4, 5]) {
-    const solo = S.generate(b.hs, b.an, { seed, level: 3, density: 2, bpb: b.bpb });
-    const plan = Object.assign({}, b.plan, { chorus: () => ({ comp: [], bass: [], drums: [], solo: solo.events }) });
-    const col = X.collect(plan, 1);
-    const midi = X.buildMidi({ tempo: 120, bpb: b.bpb, timeMap: beat => Au.swingMap(beat, sw), tracks: [{ name: 'ソロ', channel: 2, program: 0, events: col.solo }] });
-    const m = readMidi(midi);
-    const ons = m.tracks[1].filter(e => e.st === 0x90).map(e => e.tick).sort((x, y) => x - y);
-    const want = col.solo.map(e => (e.straight ? Math.round(e.t * 480) : Math.round(Au.swingMap(e.t, sw) * 480))).sort((x, y) => x - y);
-    if (JSON.stringify(ons) !== JSON.stringify(want)) mism++;
-    nStraight += col.solo.filter(e => e.straight).length;
-    // 1/4・3/4拍の位置から始まる音（16分の音）は、拍を4等分した位置（120 ティックの倍数）にいる
-    col.solo.forEach(e => { const f = e.t - Math.floor(e.t + 1e-6); if (Math.abs(f - 0.25) < 0.02 || Math.abs(f - 0.75) < 0.02) { n16++; if (!ons.includes(Math.round(e.t * 480))) wrong16++; } });
+  const evs = [{ t: 0.5, dur: 0.5, midi: 60, vel: 80 }, { t: 1.25, dur: 0.25, midi: 62, vel: 80 }, { t: 1.5, dur: 0.25, midi: 64, vel: 80 }, { t: 1.75, dur: 0.25, midi: 65, vel: 80 }];
+  const onsOf = feel => readMidi(X.buildMidi({ tempo: 120, bpb: 4, feel, tracks: [{ name: 'x', channel: 0, program: 0, events: evs }] })).tracks[1].filter(e => e.st === 0x90).map(e => e.tick);
+  ok(JSON.stringify(onsOf({ div: 2, r: 2 / 3 })) === JSON.stringify([320, 640, 800, 880]), '8分シャッフル（伴奏）：' + onsOf({ div: 2, r: 2 / 3 }));
+  ok(JSON.stringify(onsOf({ div: 4, r: 2 / 3 })) === JSON.stringify([240, 640, 720, 880]), '16分シャッフル（伴奏）：' + onsOf({ div: 4, r: 2 / 3 }));
+  ok(JSON.stringify(onsOf({ div: 2, r: 0.5 })) === JSON.stringify([240, 600, 720, 840]), 'ストレート：' + onsOf({ div: 2, r: 0.5 }));
+}
+// ソロは、MIDI でも再生・WAV と同じ時間で書く：16分音符のある拍はずらさない／付点8分＋16分はシャッフルの裏拍の位置
+{
+  const pr = P.byId.autumn, b = build(pr.text, 'swing', 1);
+  for (const feel of [{ div: 2, r: 2 / 3 }, { div: 2, r: 0.6 }, { div: 4, r: 0.62 }, { div: 2, r: 0.5 }]) {
+    let nStraight = 0, nDot = 0, n16 = 0, wrong16 = 0, wrongDot = 0, mism = 0;
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      const solo = S.generate(b.hs, b.an, { seed, level: 3, density: 2, bpb: b.bpb });
+      const plan = Object.assign({}, b.plan, { chorus: () => ({ comp: [], bass: [], drums: [], solo: solo.events }) });
+      const col = X.collect(plan, 1);
+      const midi = X.buildMidi({ tempo: 120, bpb: b.bpb, feel, tracks: [{ name: 'ソロ', channel: 2, program: 0, events: col.solo }] });
+      const m = readMidi(midi);
+      const ons = m.tracks[1].filter(e => e.st === 0x90).map(e => e.tick).sort((x, y) => x - y);
+      // 再生（player.js）と同じ式で出した位置と、1つ残らず同じ
+      const want = col.solo.map(e => Math.round(Au.feelPos(e.t, feel, e.sm) * 480)).sort((x, y) => x - y);
+      if (JSON.stringify(ons) !== JSON.stringify(want)) mism++;
+      col.solo.forEach(e => {
+        const fl = Math.floor(e.t + 1e-6), f = e.t - fl, q = Math.abs(f - 0.25) < 0.02 || Math.abs(f - 0.75) < 0.02;
+        if (e.sm === 's') { nStraight++; if (q && feel.div === 2) { n16++; if (!ons.includes(Math.round(e.t * 480))) wrong16++; } }
+        // 付点の拍の16分：シャッフルなら裏拍の位置（fl + r）、ストレート（r = 0.5）なら書いたとおり（fl + 0.75）
+        if (e.sm === 'd' && q && feel.div === 2) { nDot++; if (!ons.includes(Math.round((fl + (feel.r > 0.505 ? feel.r : 0.75)) * 480))) wrongDot++; }
+      });
+    }
+    const tag = `MIDI（div${feel.div} r${feel.r.toFixed(2)}）`;
+    ok(nStraight > 0, tag + '：難しさ3のソロに、16分音符のある拍がない');
+    ok(mism === 0, tag + '：ソロの音の時間が、再生と合わない（' + mism + '本）');
+    if (feel.div === 2) {
+      ok(n16 > 0 && wrong16 === 0, tag + '：16分の音が拍を4等分した位置にない ' + wrong16 + '/' + n16);
+      ok(nDot > 0 && wrongDot === 0, tag + '：付点8分＋16分の16分が、シャッフルの裏拍の位置にない ' + wrongDot + '/' + nDot);
+    }
   }
-  ok(nStraight > 0, 'MIDI：難しさ3のソロに、16分音符のある拍がない');
-  ok(n16 > 0 && wrong16 === 0, 'MIDI：16分の音が拍を4等分した位置にない ' + wrong16 + '/' + n16);
-  ok(mism === 0, 'MIDI：ストレートの音の時間が、再生と合わない（' + mism + '本）');
 }
 
 // 2) MusicXML

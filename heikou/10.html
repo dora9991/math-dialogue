@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>合同な三角形を見つける</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="js/geo.js"></script>
+<script>
+/* 平行と合同 第10時：合同条件を使って、合同な三角形を見つけよう（ikkan の lesson_heikou_new_10 と同じ流れ）。
+   図の座標は ikkan と同じ（たこ形 ABCD、重なった三角形 △ABE・△ACD、AB∥CD の図、正方形と BE＝CF）。例題のカード（ア〜カ）は自作の数値で、ウとエは「合同でない」組（6cm の辺の両端の角がちがう）。
+   長さ・角・合同は、座標から計算し直して確かめる（GE.verify・CH.check）。考えよう（あと何がわかれば △AOB≡△DOC か）の答えは出さない（長さをくらべる道具だけ）。 */
+(function () {
+  var C = CH.C, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  function rad(d) { return d * Math.PI / 180; }
+  function pol(c, r, d) { return [c[0] + r * Math.cos(rad(d)), c[1] + r * Math.sin(rad(d))]; }
+  function triSSS(ab, bc, ca) { var x = (ab * ab + bc * bc - ca * ca) / (2 * bc); return [[x, Math.sqrt(ab * ab - x * x)], [0, 0], [bc, 0]]; }
+  function rigid(ps, o) { var t = rad(o.rot || 0), c = Math.cos(t), s = Math.sin(t), to = o.to || [0, 0]; return ps.map(function (p) { var x = o.flip ? -p[0] : p[0], y = p[1]; return [x * c - y * s + to[0], x * s + y * c + to[1]]; }); }
+  function bb(ps) { var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity; ps.forEach(function (p) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }); return { x0: x0, x1: x1, y0: y0, y1: y1, w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 }; }
+  function cen(ps) { var c = [0, 0]; ps.forEach(function (p) { c[0] += p[0] / ps.length; c[1] += p[1] / ps.length; }); return c; }
+  function named(names, ps, P) { P = P || {}; names.split('').forEach(function (k, i) { P[k] = ps[i]; }); return P; }
+  function pick(P, names) { return names.split('').map(function (k) { return P[k]; }); }
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  function sF(D, pts, s) { var ks = Object.keys(pts); return { X: function (k) { return typeof k === 'string' ? pts[k] : k; }, D: D, P: pts, s: s, u: 1, c: cen(ks.map(function (k) { return pts[k]; })) }; }
+  function sideTxt(F, a, b, txt, c, o) {
+    o = o || {}; var p = F.X(a), q = F.X(b), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], cc = F.X(c), d = [q[0] - p[0], q[1] - p[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L];
+    if (n[0] * (m[0] - cc[0]) + n[1] * (m[1] - cc[1]) < 0) n = [-n[0], -n[1]];
+    var s = o.size || F.s * .8, off = s * .72 + Math.abs(n[0]) * tw(F.D, txt, s) / 2;
+    CH.text(F.D, m[0] + n[0] * off, m[1] + n[1] * off, txt, { size: s, col: o.col || C.chalk, a: o.a, outline: OUT });
+  }
+  function labs(F, names, o) { var ks = names.split(''); GE.labels(Object.assign({}, F, { c: cen(ks.map(function (k) { return F.P[k]; })) }), ks, o); }
+  function place(polys, cells, fill) {
+    var u = Infinity;
+    polys.forEach(function (ps, i) { var b = bb(ps); u = Math.min(u, cells[i].w * fill / Math.max(b.w, .01), cells[i].h * fill / Math.max(b.h, .01)); });
+    return polys.map(function (ps, i) { var b = bb(ps), c = cells[i]; return ps.map(function (p) { return [c.cx + (p[0] - b.cx) * u, c.cy - (p[1] - b.cy) * u]; }); });
+  }
+  function topY(D, R) { return (CH.box(D, { t: 0, b: 0 }).y0 + R.y0) / 2; }
+  function reflectAll(ps, a, b, k) { return ps.map(function (p) { return GE.lerpP(p, GE.reflect(p, a, b), k); }); }
+
+  /* ---------- 今日の問い：たこ形 ABCD（AB＝AD、CB＝CD）。AC は共通 → 3組の辺 ---------- */
+  var KP = { A: [0, 3.2], B: [-2, .9], C: [0, -1.8], D: [2, .9] }, KFIG = { segs: ['AB', 'BC', 'CD', 'DA', 'AC'], ticks: [['AB', 1], ['AD', 1], ['CB', 2], ['CD', 2]], dir: { A: 'n', B: 'w', C: 's', D: 'e' } };
+  GE.checkFig(KP, KFIG, '今日の問い たこ形');
+  GE.verify(KP, 'AB＝AD、CB＝CD、△ABC≡△ADC', null, '今日の問い');
+  CH.check(!GE.near(GE.len(KP, 'AB'), GE.len(KP, 'CB')), 'たこ形の2組の辺はちがう長さ');
+  function kiteF(D, o) { var R = CH.box(D, o || { l: .1, r: .1, t: .1, b: .1 }); return GE.fit(D, R, KP, { pad: .12 }); }
+
+  /* ---------- 例題：重なった三角形。AB＝AC、AD＝AE（D は AB 上、E は AC 上）→ △ABE≡△ACD（∠A は共通） ---------- */
+  var OA = [0, 4.4], OB = [-2.6, 0], OC = [2.6, 0], OP = { A: OA, B: OB, C: OC, D: GE.lerpP(OA, OB, .4), E: GE.lerpP(OA, OC, .4) };
+  var OFIG = { segs: ['AB', 'AC', 'BC', 'BE', 'CD'], ticks: [['AB', 1], ['AC', 1], ['AD', 2], ['AE', 2]], dir: { A: 'n', B: 'sw', C: 'se', D: 'w', E: 'e' } };
+  GE.checkFig(OP, OFIG, '例題 重なった三角形');
+  GE.verify(OP, 'AB＝AC、AE＝AD、∠BAE＝∠CAD、△ABE≡△ACD、BE＝CD', null, '例題 重なった三角形');
+
+  /* ---------- 例題：カード ア〜カ（ア・オ … 3組の辺、イ・カ … 2組の辺とその間の角、ウ・エ … 合同でない） ---------- */
+  var KA = triSSS(5, 6, 3), KI = [[0, 0], [5, 0], pol([0, 0], 4, 40)], KU = [[0, 0], [6, 0], GE.meet([0, 0], pol([0, 0], 1, 50), [6, 0], pol([6, 0], 1, 120))];
+  var KE = rigid([[0, 0], [6, 0], GE.meet([0, 0], pol([0, 0], 1, 50), [6, 0], pol([6, 0], 1, 110))], { rot: 18 }), KO = rigid(KA, { flip: true, rot: 100 }), KK = rigid(KI, { rot: 150 });
+  var CARDS = [KA, KI, KU, KE, KO, KK], KANA = ['ア', 'イ', 'ウ', 'エ', 'オ', 'カ'];
+  /* カードに書く字：辺 [i, j, 字]、角 [頂点, 字] */
+  var CSIDE = [[[0, 1, '5cm'], [1, 2, '6cm'], [2, 0, '3cm']], [[0, 1, '5cm'], [0, 2, '4cm']], [[0, 1, '6cm']], [[0, 1, '6cm']], [[0, 1, '5cm'], [1, 2, '6cm'], [2, 0, '3cm']], [[0, 1, '5cm'], [0, 2, '4cm']]];
+  var CANG = [[], [[0, '40°']], [[0, '50°'], [1, '60°']], [[0, '50°'], [2, '60°']], [], [[0, '40°']]];
+  var WQ = {}; ['ABC', 'DEF', 'GHI', 'JKL', 'MNQ', 'RST'].forEach(function (nm, i) { named(nm, CARDS[i], WQ); });
+  GE.verify(WQ, 'AB＝MN＝5、BC＝NQ＝6、CA＝QM＝3、△ABC≡△MNQ、DE＝RS＝5、DF＝RT＝4、∠EDF＝∠SRT＝40°、△DEF≡△RST、GH＝JK＝6、∠HGI＝∠KJL＝50°、∠GHI＝∠JLK＝60°、∠JKL＝70°', null, '例題 カード');
+  CH.check(!GE.near(GE.len(WQ, 'GI'), GE.len(WQ, 'JL')) && !GE.near(GE.len(WQ, 'HI'), GE.len(WQ, 'KL')), 'ウとエは合同でない');
+  function cellsN(D, R, n) { var wide = D.W > D.H * 1.05, nc = wide ? 3 : 2, nr = Math.ceil(n / nc), rows = CH.rows(R, nr, .06), out = []; rows.forEach(function (r) { out = out.concat(CH.cols(r, nc, .05)); }); return out.slice(0, n); }
+  /* 辺 ab を、a を中心に回して、b が辺 a2b2 にのるように動かす（同じ長さの辺を重ねる） */
+  function alignMove(src, dst, k) {
+    var e = CH.ease(k), th = Math.atan2(dst[1][1] - dst[0][1], dst[1][0] - dst[0][0]) - Math.atan2(src[1][1] - src[0][1], src[1][0] - src[0][0]);
+    while (th > Math.PI) th -= Math.PI * 2; while (th <= -Math.PI) th += Math.PI * 2;
+    return src.map(function (p) { var q = GE.rot(p, src[0], th * e * 180 / Math.PI); return [q[0] + (dst[0][0] - src[0][0]) * e, q[1] + (dst[0][1] - src[0][1]) * e]; });
+  }
+
+  /* ---------- 考えよう：線分 AD と BC が O で交わり、AB∥CD。C・D を O から k 倍の所に（k＝1.25 が ikkan の図） ---------- */
+  var HA = [-2.2, 1.6], HB = [1.8, 1.6], HO = GE.meet(HA, [2.5, -1.6], HB, [-2.5, -1.6]);
+  function hgP(k) { return { A: HA, B: HB, O: HO, D: GE.add(HO, GE.sub(HO, HA).map(function (v) { return v * k; })), C: GE.add(HO, GE.sub(HO, HB).map(function (v) { return v * k; })) }; }
+  (function () { var P = hgP(1.25); CH.check(GE.near(P.D[0], 2.5) && GE.near(P.D[1], -1.6) && GE.near(P.C[0], -2.5) && GE.near(P.C[1], -1.6), '考えよう：k＝1.25 で ikkan の図'); GE.verify(P, 'AB∥CD、∠OAB＝∠ODC、∠OBA＝∠OCD、∠AOB＝∠DOC', null, '考えよう（等しい角）'); GE.verify(hgP(1), 'AO＝DO、BO＝CO、AB＝DC、△AOB≡△DOC', null, '考えよう（k＝1 のとき。答えは出さない）'); })();
+
+  /* ---------- チャレンジ：正方形 ABCD（1辺 4）、E は BC 上、F は CD 上、BE＝CF。P は AE と BF の交点 ---------- */
+  var T35 = 4 * Math.tan(rad(35)), SP = { A: [0, 0], B: [4, 0], C: [4, 4], D: [0, 4], E: [4, T35], F: [4 - T35, 4] };
+  SP.P = GE.meet(SP.A, SP.E, SP.B, SP.F);
+  GE.verify(SP, 'AB＝BC、BE＝CF、∠ABE＝∠BCF＝90°、△ABE≡△BCF、∠BAE＝∠CBF＝35°、∠ABF＝55°、∠APB＝90°', null, 'チャレンジ 正方形');
+  CH.check(180 - 35 - 55 === 90 && 90 - 35 === 55, 'チャレンジの計算');
+
+  K3.run({
+    no: '第10時', title: '合同条件を使って、合同な三角形を見つけよう', flat: true, hint: '', alt: '合同な三角形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '09.html', label: '◀ 第9時' }, { href: '11.html', label: '第11時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: 'たこ形の △ABC と △ADC', q: 'AB＝AD、CB＝CD の四角形 ABCD に、対角線 AC をひいた。△ABC と △ADC は、合同といえるだろうか。合同なら ≡ で表し、使った合同条件も答えよう。',
+        notes: ['① 自分の考え（3分）　等しいものを 3つさがそう。', '② ペアの考え（3分）　見つけ方を、くらべよう。'],
+        draw: function (D) { var F = kiteF(D); GE.poly(F, 'ABCD', { col: C.blue, fa: .12, stroke: false }); GE.figure(F, KFIG); } },
+      { tag: '今日の問い', q: '△ABC と △ADC で、等しいものを 3つ見つけよう。合同といえる？', a: '△ABC≡△ADC（3組の辺）', sub: 'AB＝AD、CB＝CD、AC は共通。3組の辺が、それぞれ等しい。AC で折ると、ぴったり重なる', dur: 6,
+        b: { t: '<b>△ABC≡△ADC</b> … AB＝AD、CB＝CD、AC は共通（3組の辺）', col: C.yel },
+        draw: function (D) {
+          var F = kiteF(D, { l: .1, r: .1, t: .16, b: .08 }), t = D.ph ? D.t : 0, a1 = CH.smooth(.02, .16, t), a2 = CH.smooth(.2, .34, t), a3 = CH.smooth(.38, .52, t), k = CH.smooth(.58, .92, t);
+          GE.poly(F, 'ABC', { col: C.blue, fa: .16, stroke: false }); GE.poly(F, 'ADC', { col: C.orange, fa: .16, stroke: false });
+          GE.figure(F, KFIG);
+          if (a1 > 0) { GE.seg(F, 'AB', { col: C.yel, w: 5, glow: true, a: a1 }); GE.seg(F, 'AD', { col: C.yel, w: 5, glow: true, a: a1 }); }
+          if (a2 > 0) { GE.seg(F, 'CB', { col: C.pink, w: 5, glow: true, a: a2 }); GE.seg(F, 'CD', { col: C.pink, w: 5, glow: true, a: a2 }); }
+          if (a3 > 0) { GE.seg(F, 'AC', { col: C.green, w: 5, glow: true, a: a3 }); var m = F.X(GE.mid(KP.A, KP.C)); CH.text(D, m[0] + F.s * 1.6, m[1], '共通', { col: C.green, size: F.s * .9, a: a3, outline: OUT }); }
+          if (k > 0) GE.polyP(F, [KP.A, GE.lerpP(KP.B, KP.D, CH.ease(k)), KP.C], { col: C.yel, fa: .25 });
+          if (k >= 1) CH.text(D, F.R.cx, topY(D, F.R), '△ABC≡△ADC', { col: C.yel, size: CH.fs(D, 1.2), outline: OUT });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '辺 AC のように、2つの三角形のどちらにもふくまれる辺（角）を、何という？', a: '共通な辺（角）', sub: '説明では「AC は共通」と書く。合同条件の3つ（3組の辺・2組の辺とその間の角・1組の辺とその両端の角）と、いっしょに使う', dur: 3,
+        b: [{ t: '2つの三角形のどちらにもふくまれる辺（角）… <b>共通</b>な辺（角）', col: C.green }, { t: '合同条件 … <b>3組の辺</b>・<b>2組の辺とその間の角</b>・<b>1組の辺とその両端の角</b>', col: C.green }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, sp = 1.6 * CH.smooth(.05, .6, t), P = { A: GE.add(KP.A, [-sp, 0]), B: GE.add(KP.B, [-sp, 0]), C: GE.add(KP.C, [-sp, 0]), Q: GE.add(KP.A, [sp, 0]), D: GE.add(KP.D, [sp, 0]), S: GE.add(KP.C, [sp, 0]), U: [-3.8, 3.2], V: [3.8, -1.8] };
+          var R = CH.box(D, { l: .08, r: .08, t: .1, b: .1 }), F = GE.fit(D, R, P, { pad: .1, keys: ['A', 'B', 'C', 'D', 'U', 'V'] }), g = CH.smooth(.6, .8, t);
+          GE.poly(F, 'ABC', { col: C.blue, fa: .18 }); GE.poly(F, 'QDS', { col: C.orange, fa: .18 });
+          GE.seg(F, 'AC', { col: C.green, w: 3 + 2 * g, glow: g > 0 }); GE.seg(F, 'QS', { col: C.green, w: 3 + 2 * g, glow: g > 0 });
+          GE.labels(Object.assign({}, F, { c: cen(pick(P, 'ABC')) }), ['A', 'B', 'C']); GE.labels(Object.assign({}, F, { c: cen(pick(P, 'QDS')) }), ['Q', 'D', 'S'], { name: { Q: 'A', S: 'C' } });
+          if (g > 0) { var m1 = F.X(GE.mid(P.A, P.C)), m2 = F.X(GE.mid(P.Q, P.S)); CH.text(D, (m1[0] + m2[0]) / 2, m1[1], 'AC は共通', { col: C.green, size: F.s, a: g, outline: OUT }); }
+        } },
+      { tag: '例題', bh: '例題　重なった三角形', q: 'AB＝AC、AD＝AE（D は AB 上、E は AC 上）。BE・CD をひくとき、合同な三角形を ≡ で表し、合同条件も答えよう。', a: '△ABE≡△ACD（2組の辺とその間の角）',
+        sub: 'AB＝AC、AE＝AD、∠A は共通（∠BAE＝∠CAD）。重なった図は、2つの三角形に分けて見る', dur: 6,
+        b: { t: '<b>△ABE≡△ACD</b> … AB＝AC、AE＝AD、∠A は共通（2組の辺とその間の角）', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, r: .1, t: .14, b: .08 }), F = GE.fit(D, R, OP, { pad: .1 }), t = D.ph ? D.t : 0, a1 = CH.smooth(.02, .18, t), a2 = CH.smooth(.24, .4, t), a3 = CH.smooth(.46, .6, t), k = CH.smooth(.66, .95, t);
+          if (a1 > 0) GE.poly(F, 'ABE', { col: C.blue, fa: .28 * a1, stroke: false });
+          if (a2 > 0) GE.poly(F, 'ACD', { col: C.orange, fa: .28 * a2, stroke: false });
+          GE.figure(F, OFIG);
+          if (a1 > 0) { GE.seg(F, 'AB', { col: C.blue, w: 4.5, glow: true, a: a1 }); GE.seg(F, 'AE', { col: C.blue, w: 4.5, glow: true, a: a1 }); GE.seg(F, 'BE', { col: C.blue, w: 3, a: a1 }); }
+          if (a2 > 0) { GE.seg(F, 'AC', { col: C.orange, w: 4.5, glow: true, a: a2 }); GE.seg(F, 'AD', { col: C.orange, w: 4.5, glow: true, a: a2 }); GE.seg(F, 'CD', { col: C.orange, w: 3, a: a2 }); }
+          if (a3 > 0) GE.arc(F, 'BAC', { col: C.yel, fill: .45, r: F.s * 1.5, a: a3, lab: '共通' });
+          if (k > 0) GE.polyP(F, reflectAll(pick(OP, 'ABE'), [0, 0], [0, 1], k), { col: C.yel, fa: .2 });
+        } },
+      { tag: '例題', bh: '例題　カード', q: 'ア〜カのカードから、合同な三角形の組を見つけ、合同条件も答えよう。（カードの数は、わかっている辺や角）', a: 'アとオ（3組の辺）、イとカ（2組の辺とその間の角）',
+        sub: 'ウとエは合同でない。ウは 6cm の辺の両端の角が 50°・60°。エの 60° は、6cm の辺の両端の角ではない（両端の角は 50°・70°）', dur: 7,
+        b: { t: 'カード … <b>アとオ</b>（3組の辺）、<b>イとカ</b>（2組の辺とその間の角）。ウとエは合同でない', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .03, r: .03, t: .04, b: .06 }), cs = cellsN(D, R, 6), S = place(CARDS, cs, .64), s = CH.fs(D, .78), t = D.ph ? D.t : 0;
+          var k1 = CH.smooth(.02, .3, t), k2 = CH.smooth(.36, .64, t), k3 = CH.smooth(.7, .95, t), mv = [0, 0, 0, k3, k1, k2];
+          var caps = { 0: ['3組の辺', C.yel, k1], 4: ['3組の辺', C.yel, k1], 1: ['2組の辺と間の角', C.pink, k2], 5: ['2組の辺と間の角', C.pink, k2], 2: ['合同でない', C.green, k3], 3: ['合同でない', C.green, k3] };
+          cs.forEach(function (c, i) {
+            CH.card(D, c.cx, c.cy, c.w, c.h, '', { col: 'rgba(242,240,230,.35)', fill: 'rgba(242,240,230,.05)', sw: 1.4 });
+            CH.text(D, c.x0 + s * 1.1, c.y0 + s * 1.1, KANA[i], { size: s * 1.35, col: C.yel });
+            if (caps[i][2] >= 1) CH.text(D, c.cx, c.y1 - s * .8, caps[i][0], { size: s * .95, col: caps[i][1], outline: OUT });
+            var ps = S[i], F = sF(D, named('abc', ps), s), cc = cen(ps), ghost = mv[i] > 0;
+            CH.poly(D, ps, ghost ? { stroke: 'rgba(242,240,230,.4)', sw: 1.4, dash: true } : { fill: 'rgba(154,216,255,.16)', stroke: C.chalk, sw: 2.2 });
+            if (ghost) return;
+            CSIDE[i].forEach(function (e) { sideTxt(F, 'abc'[e[0]], 'abc'[e[1]], e[2], cc, { size: s * .88 }); GE.seg(F, 'abc'[e[0]] + 'abc'[e[1]], { col: C.yel, w: 3 }); });
+            CANG[i].forEach(function (g) { var v = 'abc'[g[0]], an = 'abc'[(g[0] + 2) % 3] + v + 'abc'[(g[0] + 1) % 3]; GE.arc(F, an, { col: C.pink, fill: .35, lab: g[1], r: s * 1.05 }); });
+          });
+          var Q = named('abc', S[0], named('def', S[1], named('ghi', S[2], named('jkl', S[3], named('mnq', S[4], named('rst', S[5]))))));
+          if (k1 > 0) CH.poly(D, GE.moveTri(Q, 'mnq', 'abc', k1), { fill: 'rgba(255,226,122,.28)', stroke: C.yel, sw: 2.6 });
+          if (k2 > 0) CH.poly(D, GE.moveTri(Q, 'rst', 'def', k2), { fill: 'rgba(255,157,178,.28)', stroke: C.pink, sw: 2.6 });
+          if (k3 > 0) CH.poly(D, alignMove(S[3], S[2], k3), { fill: 'rgba(169,240,176,.25)', stroke: C.green, sw: 2.6 });
+        } },
+      { tag: '考えよう', q: '線分 AD と BC は点 O で交わり、AB∥CD である。△AOB≡△DOC といえるために、あと何がわかればよいだろう。いくつか見つけよう。',
+        notes: ['① 図の中で、等しい角を見つけて、同じ印をつけよう。', '② あと何がわかれば、△AOB≡△DOC といえるだろう。「わかること」と「使う合同条件」を、いくつか書こう。', 'スライダーで、AB∥CD のまま、C・D を O から遠ざけたり近づけたりできます。長さをくらべよう。'],
+        sliders: [{ key: 'k', label: 'C・D の位置', min: .6, max: 1.6, step: .05, val: 1.25, fmt: function (x) { return 'OD は OA の ' + x.toFixed(2) + ' 倍'; } }],
+        draw: function (D) {
+          var k = D.V.k, P = hgP(k), big = hgP(1.6), R = CH.box(D, { l: .04, r: .04, t: .08, b: .08 }), rs = CH.split(D, R, 2, .06), wide = D.W > D.H * 1.05;
+          var Pf = Object.assign({ U: big.C, V: big.D, W: hgP(.6).C }, P), F = GE.fit(D, wide ? CH.rect(rs[0].x0, rs[0].y0, rs[0].x1 + rs[0].w * .15, rs[0].y1) : rs[0], Pf, { pad: .08, keys: ['A', 'B', 'U', 'V', 'W'] });
+          GE.poly(F, 'AOB', { col: C.blue, fa: .14, stroke: false }); GE.poly(F, 'DOC', { col: C.orange, fa: .14, stroke: false });
+          GE.figure(F, { segs: ['AB', 'CD', 'AD', 'BC'], pars: [['AB', 1], ['CD', 1]], dots: ['O'], labels: ['A', 'B', 'C', 'D', 'O'], dir: { A: 'nw', B: 'ne', C: 'sw', D: 'se', O: 'e' } });
+          var pr = [['AO', 'DO'], ['BO', 'CO'], ['AB', 'DC']], f1 = function (v) { return v.toFixed(1); };
+          var tr = wide ? CH.rect(rs[1].x0 + rs[1].w * .2, rs[1].y0, rs[1].x1, rs[1].y1) : rs[1];
+          CH.table(D, tr, ['', '△AOB', '△DOC'], pr.map(function (p, i) { return [['1組め', '2組め', '3組め'][i], p[0] + ' ' + f1(GE.len(P, p[0])), p[1] + ' ' + f1(GE.len(P, p[1]))]; }),
+            { fw: .3, hl: function (r, c) { return r > 0 && c > 0 && GE.near(GE.len(P, pr[r - 1][0]), GE.len(P, pr[r - 1][1]), 1e-6) ? C.yel : null; } });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ　正方形', q: '正方形 ABCD の辺 BC 上に E、辺 CD 上に F を、BE＝CF となるようにとる。AE と BF の交点を P とする。① 合同な三角形と合同条件は？ ② ∠BAE＝35° のとき、∠APB は？',
+        a: '① △ABE≡△BCF（2組の辺とその間の角）② 90°', sub: 'AB＝BC、BE＝CF、∠ABE＝∠BCF＝90°。対応する角だから ∠CBF＝∠BAE＝35°、∠ABF＝90°−35°＝55°、∠APB＝180°−35°−55°＝90°', dur: 6,
+        b: { t: '<b>△ABE≡△BCF</b>（2組の辺とその間の角）→ ∠CBF＝35° → <b>∠APB＝90°</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, r: .1, t: .08, b: .1 }), F = GE.fit(D, R, SP, { pad: .14, keys: ['A', 'B', 'C', 'D'] }), t = D.ph ? D.t : 0, k = CH.smooth(.04, .5, t), a2 = CH.smooth(.55, .7, t), a3 = CH.smooth(.76, .92, t);
+          GE.poly(F, 'ABE', { col: C.blue, fa: .16, stroke: false }); GE.poly(F, 'BCF', { col: C.orange, fa: .16, stroke: false });
+          GE.figure(F, { segs: ['AB', 'BC', 'CD', 'DA', 'AE', 'BF'], ticks: [['BE', 1], ['CF', 1]], rights: ['ABC', 'BCD'], labels: false });
+          GE.arc(F, 'BAE', { lab: '35°', r: F.s * 1.4 });
+          if (k > 0) { var e = CH.ease(k); GE.polyP(F, pick(SP, 'ABE').map(function (p) { return GE.rot(p, [2, 2], 90 * e); }), { col: C.yel, fa: .22 }); }
+          if (a2 > 0) GE.arc(F, 'CBF', { col: C.pink, fill: .4, lab: '35°', r: F.s * 1.4, a: a2 });
+          if (a3 > 0) { GE.right(F, 'APB', { col: C.yel, fill: true, a: a3 }); var p = F.X('P'); CH.text(D, p[0] - F.s * 1.6, p[1] + F.s * .3, '90°', { col: C.yel, a: a3, size: F.s * .9, outline: OUT }); }
+          GE.labels(F, ['A', 'B', 'C', 'D', 'E', 'F', 'P'], { dir: { A: 'sw', B: 'se', C: 'ne', D: 'nw', E: 'e', F: 'n', P: 'nw' } });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>立体の仲間分け</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+<script src="js/k3.js"></script>
+<script>
+/* 空間図形 第1時：立体を仲間分けして、特徴をとらえよう（ikkan の lesson_kukan_new_01 と同じ流れ）。
+   面・辺・頂点の数は、立体の形から数えて、n角柱（面 n+2・辺 3n・頂点 2n）・n角錐（面 n+1・辺 2n・頂点 n+1）と照らし合わせる。 */
+(function () {
+  var C = K3.COL, v = K3.v, K = K3;
+  var SH = {
+    a: { m: K.pyramid(K.regPoly(4, 1.5), [0, 0, 2.8]), col: C.lav, name: 'ア 四角錐' },
+    i: { m: K.cylinder(1.2, 2.8), col: C.blue, name: 'イ 円柱' },
+    u: { m: K.prism(K.regPoly(3, 1.5), 2.8), col: C.orange, name: 'ウ 三角柱' },
+    e: { m: K.cone(1.3, 2.8), col: C.pink, name: 'エ 円錐' },
+    o: { m: K.prism(K.regPoly(5, 1.3), 2.8), col: C.green, name: 'オ 五角柱' },
+    k: { m: K.pyramid(K.regPoly(3, 1.6), [0, 0, 2.8]), col: C.yel, name: 'カ 三角錐' }
+  };
+  var ORDER = ['a', 'i', 'u', 'e', 'o', 'k'], FR = K.frame([0, 0, 1.3], 2.2);
+  function count(m) {
+    var E = K.edgesOf(m).filter(function (e) { return e.f.length === 1 || m.F[e.f[0]].g !== m.F[e.f[1]].g; });
+    var used = {}; E.forEach(function (e) { used[e.a] = 1; used[e.b] = 1; });
+    var G = {}; m.F.forEach(function (f) { G[f.g] = 1; });
+    return { F: Object.keys(G).length, E: E.length, V: Object.keys(used).length };
+  }
+  var TABLE = [['三角柱', K.prism(K.regPoly(3, 1.5), 2.8), 3, 'p'], ['四角柱', K.prism(K.regPoly(4, 1.5), 2.8), 4, 'p'], ['五角柱', K.prism(K.regPoly(5, 1.3), 2.8), 5, 'p'], ['三角錐', K.pyramid(K.regPoly(3, 1.6), [0, 0, 2.8]), 3, 'y'], ['四角錐', K.pyramid(K.regPoly(4, 1.5), [0, 0, 2.8]), 4, 'y']];
+  TABLE.forEach(function (x) { var c = count(x[1]), n = x[2], want = x[3] === 'p' ? [n + 2, 3 * n, 2 * n] : [n + 1, 2 * n, n + 1]; if ((c.F !== want[0] || c.E !== want[1] || c.V !== want[2]) && window.console) console.error('数がちがう', x[0], c); });
+  /* ギャラリー：shown(i) が真の立体だけ、濃く */
+  function gallery(D, o) {
+    o = o || {}; var g = D.grid(6, { cols: [6, 3, 2] });
+    ORDER.forEach(function (k, i) {
+      var s = SH[k], p = g.pos[i], S = D.sub(p.cx, p.cy, g.size / 2, FR), al = o.alpha ? o.alpha(k) : 1;
+      S.mesh(s.m, { col: s.col, a: al });
+      var nc = o.nameCol ? o.nameCol(k) : null;
+      D.text(p.cx, p.ly, s.name + (nc ? '　' + nc[1] : ''), { size: .85, a: Math.max(.35, al), col: nc ? nc[0] : undefined });
+    });
+  }
+
+  K.run({
+    no: '第1時', title: '立体を仲間分けして、特徴をとらえよう',
+    model: FR, view: { th: -62, ps: 22 },
+    links: [{ href: 'index.html', label: '目次' }, { href: '../seitamentai/index.html', label: '第2時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '仲間分け', q: 'ア〜カの立体を、自分で観点を決めて、仲間分けしよう。', spin: true,
+        notes: ['① 自分の分け方（3分）　どこに目をつけたかも。', '② ペアの分け方（3分）　自分とちがう観点は？'],
+        draw: function (D) { gallery(D); } },
+      { tag: '今日の問い', q: '底面が 2つの立体と、1つの立体に分けると？', a: '2つ … イ・ウ・オ、1つ … ア・エ・カ', sub: '底面が 2つ（合同で平行）の立体と、先がとがった立体', dur: 2, spin: true,
+        b: { t: '底面が 2つ … イ・ウ・オ　／　1つで先がとがる … ア・エ・カ', col: C.yel },
+        draw: function (D) { gallery(D, { alpha: function (k) { if (!D.ph || D.t >= 1) return 1; var two = 'iuo'.indexOf(k) >= 0; return D.t < .5 ? (two ? 1 : .3) : (two ? .3 : 1); }, nameCol: function (k) { return D.ph && D.t >= .5 ? ('iuo'.indexOf(k) >= 0 ? [C.yel, '底面 2つ'] : [C.pink, '底面 1つ']) : null; } }); } },
+      { tag: '今日の問い', q: '平面だけで囲まれた立体と、曲面がある立体に分けると？', a: '平面だけ … ア・ウ・オ・カ、曲面あり … イ・エ', dur: 1, spin: true,
+        b: { t: '平面だけ … ア・ウ・オ・カ　／　曲面がある … イ・エ', col: C.blue },
+        draw: function (D) { gallery(D, { alpha: function (k) { return !D.ph || 'auok'.indexOf(k) >= 0 ? 1 : .3; }, nameCol: function (k) { return D.ph ? ('auok'.indexOf(k) >= 0 ? [C.blue, '平面だけ'] : [C.pink, '曲面あり']) : null; } }); } },
+      { tag: 'ことば', bh: 'ことば', q: 'それぞれの立体の なかまを、何という？', a: '角柱・円柱・角錐・円錐', sub: '底面以外のまわりの面を <b>側面</b>、平面だけで囲まれた立体を <b>多面体</b> という', dur: 1, spin: true,
+        b: [{ t: '底面が 2つ … <b>角柱</b>（ウ・オ）・<b>円柱</b>（イ）', col: C.green }, { t: '底面が 1つで先がとがる … <b>角錐</b>（ア・カ）・<b>円錐</b>（エ）', col: C.green }, { t: 'まわりの面 … <b>側面</b>　平面だけで囲まれた立体 … <b>多面体</b>', col: C.green }],
+        draw: function (D) { gallery(D); } },
+      { tag: '例題', bh: '例題　面・辺・頂点の数', model: K.frame([0, 0, 1.4], 2.4), view: { th: -62, ps: 22 },
+        q: '面・辺・頂点の数を、数え落としをしないで 数える くふうは？（三角柱・四角柱・五角柱・三角錐・四角錐）',
+        a: '底面にいくつ、側面にいくつ、と分けて数える', sub: '五角柱の辺 … 底面 5 × 2 ＝ 10、側面 5 → 15', dur: 3,
+        b: [{ t: '面・辺・頂点 … 三角柱 5・9・6　四角柱 6・12・8　五角柱 7・15・10', col: C.orange }, { t: '三角錐 4・6・4　四角錐 5・8・5　（底面と側面に分けて数える）', col: C.orange }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, m = K.prism(K.regPoly(5, 1.3), 2.8);
+          D.mesh(m, { col: C.green, a: .85, edgeStyle: function (e) {
+            var top = m.V[e.a][2] > 1 && m.V[e.b][2] > 1, bot = m.V[e.a][2] < 1 && m.V[e.b][2] < 1, side = !top && !bot;
+            if (top || bot) return t > 0 && t < .66 ? { col: C.yel, w: 2.4 } : null;
+            return t >= .66 ? { col: C.pink, w: 2.4 } : null;
+          } });
+          var lab = t <= 0 ? '五角柱' : t < .66 ? '底面の辺 5 × 2 ＝ 10' : '側面の辺 5 → 10 ＋ 5 ＝ 15';
+          D.text(D.W / 2, D.H * .82, lab, { col: t < .66 ? C.yel : C.pink, size: 1.1 });
+        } },
+      { tag: '考えよう', model: K.frame([0, 0, 1.4], 2.4), view: { th: -62, ps: 22 },
+        q: '表の立体について、（頂点）−（辺）＋（面）を計算しよう。どんなことに気づくだろう。',
+        notes: ['気づいたこと', 'ほかの立体を1つ選んで、同じように確かめよう。', 'スライダーで、角柱・角錐と、底面の辺の数を変えられます。'],
+        sliders: [{ key: 'kind', label: '立体', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? '角錐' : '角柱'; } }, { key: 'n', label: '底面の辺の数', min: 3, max: 8, step: 1, val: 3, fmt: function (x) { return x + '本'; } }],
+        draw: function (D) {
+          var n = D.V.n, m = D.V.kind ? K.pyramid(K.regPoly(n, 1.5), [0, 0, 2.8]) : K.prism(K.regPoly(n, 1.5), 2.8);
+          D.mesh(m, { col: D.V.kind ? C.lav : C.blue, dots: true });
+          var c = count(m); D.text(D.W / 2, D.H * .84, '頂点 ' + c.V + '　辺 ' + c.E + '　面 ' + c.F, { size: 1.05 });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: K.frame([0, 0, 1.4], 2.4), view: { th: -62, ps: 22 },
+        q: '面の数が 7、辺の数が 15 の多面体がある。頂点の数は？ そのような立体の例は？',
+        a: '頂点 10、五角柱', sub: '（頂点）−（辺）＋（面）＝ 2 から、頂点 ＝ 2 ＋ 15 − 7 ＝ 10', dur: 2, spin: true,
+        b: { t: '頂点 ＝ 2 ＋ 15 − 7 ＝ <b>10</b>（例：五角柱）', col: C.orange },
+        draw: function (D) { if (D.ph) D.mesh(K.prism(K.regPoly(5, 1.3), 2.8), { col: C.green, dots: true, a: v.smooth(.3, .8, D.t) }); else D.text(D.W / 2, D.H / 2, '？', { size: 4, plain: true, col: 'rgba(242,240,230,.4)' }); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

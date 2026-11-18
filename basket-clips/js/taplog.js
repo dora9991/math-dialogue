@@ -5,6 +5,10 @@
      startedAt（スタートを押した時刻・エポックミリ秒）、teams（自分・相手の名前・色・名簿）、
      events: [{ id, t（スタートからの秒）, type（fg2・reb・pass など／'period' はピリオドの始まり）, team（0 自分・1 相手・null チームなし）, no（背番号）}]
      チームなし：記録の画面の下の「パスミス」「★ あとで見る」（だれのかは決めずに、時刻だけ）。チームの絞り込みでは外さない。
+     videos: [{ vid, n, startedAt（録画を始めた時刻・エポックミリ秒）, duration, name }]：その端末のカメラで撮影しながら記録した動画（なくてよい）。
+       記録と同じ時計なので、その動画なら時刻あわせがいらない（videoAnchors）。
+     mode: 'video'：撮った動画を見ながら記録した試合（t は、その動画の時刻）。videos の1本（file: true）の startedAt が記録と同じなので、
+       同じ動画を開けば（ファイル名・長さで見分ける）時刻あわせがいらない。notes：💬 コメント・スタンプ（t は記録の時刻。形は notes.js）
    くわしくは basket-tap/js/core.js の先頭。
 
    時刻あわせ（sync）：記録の時刻 t と、動画の時刻 v の対応を「合わせた点」anchors: [{ t, v }] で持つ。
@@ -23,21 +27,31 @@
     fg3x: { label: '3P失敗', short: '3P×', pts: 0, grp: 'miss' },
     ftx: { label: 'フリースロー失敗', short: 'FT×', pts: 0, grp: 'miss' },
     reb: { label: 'リバウンド', pts: 0, grp: 'reb' },
+    oreb: { label: 'オフェンスリバウンド', short: 'Oリバ', pts: 0, grp: 'reb' },
+    dreb: { label: 'ディフェンスリバウンド', short: 'Dリバ', pts: 0, grp: 'reb' },
     ast: { label: 'アシスト', pts: 0, grp: 'ast' },
     stl: { label: 'スティール', pts: 0, grp: 'stl' },
     blk: { label: 'ブロック', pts: 0, grp: 'blk' },
     pass: { label: 'パスミス', pts: 0, grp: 'pass' },
-    tov: { label: 'ミス（その他）', pts: 0, grp: 'tov' },
+    tov: { label: 'ターンオーバー', pts: 0, grp: 'tov' },
     foul: { label: 'ファウル', pts: 0, grp: 'foul' },
     mark: { label: '★ あとで見る', pts: 0, grp: 'mark' }
   };
   /* 絞り込みのまとまり（並び順も） */
   const GROUPS = [
     { id: 'score', label: '得点' }, { id: 'miss', label: 'シュート失敗' }, { id: 'reb', label: 'リバウンド' }, { id: 'pass', label: 'パスミス' },
-    { id: 'tov', label: 'ミス（その他）' }, { id: 'stl', label: 'スティール' }, { id: 'ast', label: 'アシスト' }, { id: 'blk', label: 'ブロック' },
+    { id: 'tov', label: 'ターンオーバー' }, { id: 'stl', label: 'スティール' }, { id: 'ast', label: 'アシスト' }, { id: 'blk', label: 'ブロック' },
     { id: 'foul', label: 'ファウル' }, { id: 'mark', label: '★ あとで見る' }
   ];
-  const WIN = { lead: 6, lag: 2 };      // タップした瞬間の「前 6 秒・後 2 秒」（人がタップするのは、プレーの 1〜2 秒あと）
+  const WIN = { lead: 10, lag: 2 };     // タップした瞬間の「前 10 秒・後 2 秒」（人がタップするのは、プレーの 1〜2 秒あと。前は、攻めの組み立てから見られるように長め）
+  const WIN_BY = { reb: { lead: 5, lag: 2 }, mark: { lead: 5, lag: 2 } };      // プレーごとの長さ（はじめ）：リバウンド・★ あとで見る は前 5 秒
+  /* そのプレー（まとまり grp）の1場面の長さ：win.by[grp]（プレーごとに変えたもの）があればそれ、なければ win（ふつう） */
+  function winFor(win, grp) {
+    const w = Object.assign({}, WIN, win || {});
+    const b = win && win.by && win.by[grp];
+    const pick = (k) => (b && isFinite(b[k]) && b[k] >= 0 ? +b[k] : +w[k]);
+    return { lead: pick('lead'), lag: pick('lag') };
+  }
 
   const periodLabel = (p) => (p <= 4 ? p + 'Q' : 'OT' + (p - 4));
   const isHex = (c) => /^#[0-9a-f]{6}$/i.test(c || '');
@@ -78,10 +92,15 @@
     events.forEach((e, i) => { if (seen.has(e.id)) e.id = 'x' + i + '_' + e.id; seen.add(e.id); });
     events.sort((a, b) => a.t - b.t);
     if (!events.some((e) => e.type !== 'period')) throw new Error('この記録には、プレーの記録がありません');
+    const videos = (Array.isArray(obj.videos) ? obj.videos : []).filter((v) => v && isFinite(v.startedAt) && v.startedAt > 0).slice(0, 50)
+      .map((v, i) => ({ vid: String(v.vid || 'v' + i).slice(0, 40), n: isFinite(v.n) ? Math.round(v.n) : i + 1, startedAt: +v.startedAt, duration: isFinite(v.duration) ? +v.duration : null, name: String(v.name || '').slice(0, 120), gone: !!v.gone, file: !!v.file }));
+    const review = obj.mode === 'video';
     return {
       format: 'basket-tap', id: String(obj.id || '').slice(0, 40), title: String(obj.title || '').slice(0, 40), date: /^\d{4}-\d{2}-\d{2}$/.test(obj.date || '') ? obj.date : '',
       startedAt: isFinite(obj.startedAt) && obj.startedAt > 0 ? +obj.startedAt : null, tz: isFinite(obj.tz) ? +obj.tz : 540,
-      teams, events, file: fileName ? String(fileName).slice(0, 80) : '', loadedAt: Date.now()
+      teams, events, videos, file: fileName ? String(fileName).slice(0, 80) : '', loadedAt: Date.now(),
+      mode: review ? 'video' : '', src: review && obj.src && typeof obj.src === 'object' ? { name: String(obj.src.name || '').slice(0, 120), duration: isFinite(obj.src.duration) ? +obj.src.duration : null } : null,
+      notes: BS.notes ? BS.notes.cleanAll(obj.notes) : []
     };
   }
 
@@ -114,6 +133,19 @@
   }
   /* 合わせた点を、全部 d 秒ずらす（動画の時刻を後ろへ＝プラス） */
   const shift = (anchors, d) => cleanAnchors(anchors).map((a) => ({ t: a.t, v: Math.round((a.v + d) * 100) / 100 }));
+  /* 記録の時刻 t に効いている点の番号（t より前で、いちばん後ろの点。t がどの点より前なら最初の点）。点がなければ -1 */
+  function anchorIndex(anchors, t) {
+    const A = cleanAnchors(anchors);
+    let k = A.length ? 0 : -1;
+    A.forEach((x, i) => { if (x.t <= t + 1e-9) k = i; });
+    return k;
+  }
+  /* 記録の時刻 t に効いている点だけを d 秒ずらす（その点の区間の場面だけがずれる。点が1つなら shift と同じ） */
+  function shiftAt(anchors, t, d) {
+    const A = cleanAnchors(anchors);
+    const k = anchorIndex(A, t);
+    return A.map((a, i) => (i === k ? { t: a.t, v: Math.round((a.v + d) * 100) / 100 } : a));
+  }
   /* いちばん近くで効いている点を、(t, v) に置きかえる（ほかの点はそのまま。点がなければ足す） */
   function setAnchor(anchors, t, v, add) {
     const A = cleanAnchors(anchors);
@@ -131,22 +163,29 @@
 
   /* ---------- 場面（クリップ） ----------
      filter: { teams: [自分を出すか, 相手を出すか]（チームなしの記録には効かない）, groups: { score: true, … }（なし＝全部）, players: ['0:7', …]（空＝全員） }
-     win: { lead, lag } / duration：動画の長さ / off：{ id: true }（外した場面）
-     戻り値 { clips: [{ id, t, at, team, no, type, label, period, t0, t1, on, n, total }], outside: 動画の外の数 } */
-  function clips(log, anchors, filter, win, duration, off) {
+     win: { lead, lag, by: { reb: { lead, lag }, … } }（by：プレーのまとまりごとの長さ。なければ全部 lead・lag）/ duration：動画の長さ / off：{ id: true }（外した場面）
+     adds：自分で足した場面 [{ id, at（動画の秒）, type, team, no, memo }]（記録にはないもの。時刻あわせを変えても動かない）
+     戻り値 { clips: [{ id, t, at, team, no, type, label, period, t0, t1, on, n, total, user（自分で足した場面）}], outside: 動画の外の数 } */
+  function clips(log, anchors, filter, win, duration, off, adds) {
     const out = [];
     let outside = 0;
     if (!log || !cleanAnchors(anchors).length) return { clips: out, outside };
     const f = filter || {};
-    const w = Object.assign({}, WIN, win || {});
     const end = duration > 0 ? duration : Infinity;
     const ps = new Set(f.players || []);
+    const pass = (e) => !(f.teams && e.team != null && f.teams[e.team] === false) && !(f.groups && Object.keys(f.groups).length && !f.groups[e.grp]) && !(ps.size && !(e.no != null && ps.has(e.team + ':' + e.no)));
+    addPlays(adds).forEach((a) => {
+      if (!pass(a)) return;
+      if (!(a.at >= 0 && a.at <= end)) { outside++; return; }
+      const w = winFor(win, a.grp);
+      out.push({ id: a.id, t: null, at: Math.round(a.at * 100) / 100, team: a.team, no: a.no, type: a.type, grp: a.grp, label: addLabel(log, a), memo: a.memo, period: null, user: true, on: !(off && off[a.id]),
+        t0: Math.max(0, a.at - w.lead), t1: Math.min(end, a.at + w.lag) });
+    });
     plays(log).forEach((e) => {
-      if (f.teams && e.team != null && f.teams[e.team] === false) return;
-      if (f.groups && Object.keys(f.groups).length && !f.groups[e.grp]) return;
-      if (ps.size && !(e.no != null && ps.has(e.team + ':' + e.no))) return;
+      if (!pass(e)) return;
       const at = toVideo(e.t, anchors);
       if (at == null || at < 0 || at > end) { outside++; return; }
+      const w = winFor(win, e.grp);
       out.push({ id: e.id, t: e.t, at: Math.round(at * 100) / 100, team: e.team, no: e.no, type: e.type, grp: e.grp, label: eventLabel(log, e), period: e.period, on: !(off && off[e.id]),
         t0: Math.max(0, at - w.lead), t1: Math.min(end, at + w.lag) });
     });
@@ -172,11 +211,24 @@
     return out;
   }
 
-  /* 絞り込みの数（まとまりごと・選手ごと）。チームの絞り込みは効かせる */
-  function counts(log, filter) {
+  /* 自分で足した場面をそろえる（種類が分からなければ ★、得点はチームなしにできないので自分） */
+  function addPlays(adds) {
+    return (Array.isArray(adds) ? adds : []).filter((a) => a && typeof a.id === 'string' && isFinite(a.at)).map((a) => {
+      const type = TYPES[a.type] ? a.type : 'mark', d = TYPES[type];
+      const team = a.team === 0 || a.team === 1 ? a.team : d.pts ? 0 : null;
+      return { id: a.id, at: +a.at, type, grp: d.grp, team, no: team != null && a.no != null ? normNo(a.no) : null, memo: String(a.memo || '').slice(0, 30), label: d.label };
+    });
+  }
+  /* 自分で足した場面の呼び名：「#7 たけし 2P成功：メモ」 */
+  function addLabel(log, a) {
+    const base = eventLabel(log, { type: a.type, team: a.team, no: a.no, label: a.label });
+    return a.memo ? `${base}：${a.memo}` : base;
+  }
+  /* 絞り込みの数（まとまりごと・選手ごと）。チームの絞り込みは効かせる（adds：自分で足した場面も数える） */
+  function counts(log, filter, adds) {
     const f = filter || {};
     const grp = {}, players = {};
-    plays(log).forEach((e) => {
+    plays(log).concat(addPlays(adds)).forEach((e) => {
       if (f.teams && e.team != null && f.teams[e.team] === false) return;
       grp[e.grp] = (grp[e.grp] || 0) + 1;
       if (e.team != null && e.no != null) { const k = e.team + ':' + e.no; players[k] = (players[k] || 0) + 1; }
@@ -300,6 +352,28 @@
     return { anchors: [{ t: 0, v: Math.round(v0 * 10) / 10 }], inside, total: plays(log).length };
   }
 
+  /* ---------- 撮影しながら記録した動画（時刻あわせがいらない） ---------- */
+  /* その動画での合わせた点：記録の t 秒 ＝ 動画の t ＋（記録のスタート − 録画の始まり）秒 */
+  function videoAnchors(log, video) {
+    if (!log || !log.startedAt || !video || !isFinite(video.startedAt)) return null;
+    const off = (log.startedAt - video.startedAt) / 1000;
+    const t = Math.max(0, Math.round(-off * 10) / 10);
+    return [{ t, v: Math.round((t + off) * 100) / 100 }];
+  }
+  /* 開いた動画が、記録の videos のどれか：ファイル名が同じ、または長さがほぼ同じ（1つだけ）。なければ null */
+  function matchVideo(log, name, duration) {
+    const vs = (log && log.videos) || [];
+    if (!vs.length) return null;
+    const norm = (s) => String(s || '').normalize('NFC').toLowerCase().replace(/\.(mp4|mov|m4v|webm)$/, '');
+    const byName = name ? vs.filter((v) => v.name && norm(v.name) === norm(name)) : [];
+    if (byName.length === 1) return byName[0];
+    if (duration > 0) {
+      const byDur = vs.filter((v) => v.duration > 0 && Math.abs(v.duration - duration) <= Math.max(1.5, v.duration * 0.005));
+      if (byDur.length === 1) return byDur[0];
+    }
+    return null;
+  }
+
   /* 同じブラウザの「バスケ タップ記録」が保存した試合の一覧（同じサイトなら読める） */
   function localGames(storage) {
     const ls = storage || (function () { try { return root.localStorage; } catch (e) { return null; } })();
@@ -315,5 +389,5 @@
     try { return JSON.parse(ls.getItem('btap:game:' + id) || 'null'); } catch (e) { return null; }
   }
 
-  BS.taplog = { TYPES, GROUPS, WIN, periodLabel, parse, plays, teamName, playerName, eventLabel, score, cleanAnchors, toVideo, shift, setAnchor, clips, reel, counts, matchShots, creationTime, parseISO, fromCreation, localGames, localGame };
+  BS.taplog = { TYPES, GROUPS, WIN, WIN_BY, winFor, addPlays, normNo, periodLabel, parse, plays, teamName, playerName, eventLabel, score, cleanAnchors, toVideo, shift, anchorIndex, shiftAt, setAnchor, clips, reel, counts, matchShots, creationTime, parseISO, fromCreation, videoAnchors, matchVideo, localGames, localGame };
 })(typeof window !== 'undefined' ? window : globalThis);

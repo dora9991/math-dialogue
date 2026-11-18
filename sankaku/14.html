@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>平行線と面積</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三角形と四角形 第14時：形を変えても面積が変わらないのは、どんなときだろう（ikkan の lesson_sankaku_14 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。面積は座標（外積）から計算し直して CH.check で確かめる（「△ABC＝△DBC」の行は GE.verify では確かめられないため）。
+   今日の問い：底辺 BC に平行な直線 ℓ の上を頂点が動いても、△の面積（数字で表示）は 7.5cm² のまま（スライダー）。
+   考えよう：ℓ 上の点 P で、△PBC が二等辺三角形になる場所をさがす道具（答えは出さない）。 */
+(function () {
+  var C = CH.C;
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .06, r: .06, t: .1, b: .12 }); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), g = D.ctx; g.save(); g.font = '600 ' + size + 'px "Klee One",sans-serif'; var w = g.measureText(s).width; g.restore(); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({}, o, { size: size })); }
+  /* 三角形の面積（座標から） */
+  function area(P, t) { var a = P[t[0]], b = P[t[1]], c = P[t[2]]; return Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) / 2; }
+  function f1(x) { return (Math.round(x * 10) / 10).toFixed(1); }
+  /* GE.proof に、行ごとの色分けを足す（L の行の hl: ['…', '…'] を、黄・ピンク…で光らせる。△ はうすくぬる。fa でぬりの濃さ、ex で図を足す） */
+  function proof(def, o) {
+    o = o || {}; var st = GE.proof(def, o), L = (def.L || []).slice();
+    if (L.length && !L[0].r && /で$|で、?$/.test(L[0].t)) L.shift();
+    var off = st.length - L.length - (def.point ? 1 : 0);
+    L.forEach(function (l, k) {
+      if (!l.hl) return;
+      var s = st[off + k], ask = l.ask != null ? l.ask : (l.c ? 'c' : l.r ? ((def.lv || 1) <= 1 ? 'r' : 't') : false);
+      s.draw = function (D) {
+        var F = GE.fit(D, CH.box(D, o.box || { l: .06, r: .06, t: .1, b: .12 }), def.P, { pad: def.pad });
+        (def.tri || []).forEach(function (t, j) { GE.poly(F, t, { col: j ? C.orange : C.blue, fa: .2, stroke: false }); });
+        GE.figure(F, def.fig);
+        if (o.draw) o.draw(D, F, { i: 1, ph: D.ph, t: D.ph ? D.t : (s.a ? 0 : 1) });
+        if (s.a && !D.ph && ask !== 'r') return;
+        var a = D.ph ? CH.smooth(0, .3, D.t) : 1;
+        l.hl.forEach(function (h, j) {
+          var col = GE.HL[j % GE.HL.length];
+          h.replace(/△([A-Z]{3})/g, function (m, t) { GE.poly(F, t, { col: col, fa: l.fa == null ? .3 : l.fa, sw: 3, a: a }); return m; });
+          GE.glow(F, h, def.alias, { col: col, a: a });
+        });
+        if (l.ex) l.ex(D, F, a);
+      };
+    });
+    return st;
+  }
+  var SQ = ['AB', 'BC', 'CD', 'DA'];
+
+  /* ---- 今日の問い：BC＝5cm、ℓ と BC のあいだ 3cm。A(1.8, 3)、P(9, 3) ---- */
+  var T0 = { B: [0, 0], C: [5, 0], A: [1.8, 3], P: [9, 3], f0: [-1.6, -0.9], f1: [10.6, 3.7] };
+  CH.check(GE.near(area(T0, 'ABC'), 7.5) && GE.near(area(T0, 'PBC'), 7.5) && GE.isPar(T0, 'AP', 'BC') && 5 * 3 / 2 === 7.5, '今日の問い：面積 7.5');
+  [-3, 0, 1.8, 4, 9, 10].forEach(function (x) { var P = { B: [0, 0], C: [5, 0], X: [x, 3] }; CH.check(GE.near(area(P, 'XBC'), 7.5), '今日の問い：ℓ 上のどこでも 7.5（x＝' + x + '）'); });
+  function stage(D, o) {
+    o = o || {}; var F = GE.fit(D, box(D, { l: .04, r: .04, t: .16, b: .14 }), T0, { keys: ['f0', 'f1'], pad: .03 }), s = F.s;
+    GE.line(F, [[0, 3], [1, 3]], { col: 'rgba(242,240,230,.55)', w: 1.8 });
+    var lx = F.X([10.5, 3]); CH.text(D, lx[0], lx[1] - s * .8, 'ℓ', { size: s * 1.1 });
+    GE.seg(F, [[-1.4, 0], [10.4, 0]], { col: 'rgba(242,240,230,.25)', w: 1.4, dash: true });
+    var b0 = F.X([-0.7, 0]), b1 = F.X([-0.7, 3]); CH.line(D, b0[0], b0[1], b1[0], b1[1], { col: C.blue, w: 1.6 }); CH.line(D, b0[0] - 5, b0[1], b0[0] + 5, b0[1], { col: C.blue, w: 1.6 }); CH.line(D, b1[0] - 5, b1[1], b1[0] + 5, b1[1], { col: C.blue, w: 1.6 });
+    CH.text(D, b0[0] - s * .4, (b0[1] + b1[1]) / 2, '3cm', { col: C.blue, size: s * .85, align: 'right' });
+    var m = F.X([2.5, 0]); CH.text(D, m[0], m[1] + s * 1.2, 'BC＝5cm', { col: C.blue, size: s * .85 });
+    return F;
+  }
+  function todayFig(D) {
+    var F = stage(D);
+    GE.poly(F, 'ABC', { col: C.blue, fa: .25 }); GE.seg(F, 'PB', { dash: true }); GE.seg(F, 'PC', { dash: true });
+    GE.figure(F, { segs: ['AB', 'AC', 'BC'], dots: ['A', 'P'], labels: ['A', 'B', 'C', 'P'], dir: { A: 'n', P: 'n', B: 'sw', C: 'se' } });
+    return F;
+  }
+
+  /* ---- 例題：台形 ABCD（AD∥BC）、O は対角線の交点 ---- */
+  var T1 = { A: [1.2, 2.6], B: [0, 0], C: [4.8, 0], D: [3.6, 2.6] }; T1.O = GE.meet(T1.A, T1.C, T1.B, T1.D);
+  CH.check(GE.near(area(T1, 'ABC'), area(T1, 'DBC')) && GE.near(area(T1, 'ABO'), area(T1, 'DCO')) && GE.near(area(T1, 'ABC') - area(T1, 'OBC'), area(T1, 'ABO')) && GE.near(area(T1, 'DBC') - area(T1, 'OBC'), area(T1, 'DCO')) && GE.near(area(T1, 'ABD'), area(T1, 'ACD')), '例題：台形の中の面積');
+  CH.check(!GE.near(area(T1, 'ABO'), area(T1, 'OBC')) && !GE.near(area(T1, 'ABO'), area(T1, 'AOD')), '例題：ほかの三角形とは等しくない');
+  var DEF_EX = {
+    id: '第14時 例題', lv: 1, ttl: '例題　台形の中の三角形',
+    q: '台形 ABCD は AD∥BC で、O は対角線の交点である。（1）△ABC と面積が等しい三角形は？　（2）△ABO と面積が等しい三角形は？', P: T1,
+    fig: { segs: SQ.concat(['AC', 'BD']), pars: [['AD', 1], ['BC', 1]], dots: ['O'], dir: { O: 'n' } },
+    hyp: 'AD∥BC（O は対角線の交点）',
+    L: [{ t: '△ABC＝△DBC', r: '底辺 BC が共通で、AD∥BC だから高さが等しい', n: 1, ask: false, q: '（1）△ABC と面積が等しい三角形は？　わけも。', a: '△DBC（底辺 BC が共通で、AD∥BC だから高さが等しい）',
+      hl: ['△ABC', '△DBC'], ex: function (D, F, a) { GE.seg(F, ['A', [T1.A[0], 0]], { col: C.yel, dash: true, a: a }); GE.seg(F, ['D', [T1.D[0], 0]], { col: C.pink, dash: true, a: a }); } },
+      { t: '△ABO＝△ABC−△OBC、△DCO＝△DBC−△OBC', n: 2, ask: false, q: '（2）△ABO と △DCO は、①の三角形から、どうやってつくれる？', a: 'どちらも、①の三角形から、共通の △OBC をひく', hl: ['△ABO', '△DCO', '△OBC'] },
+      { t: '①②より　△ABO＝△DCO', ask: false, q: 'したがって、△ABO と面積が等しい三角形は？', a: '△DCO', hl: ['△ABO', '△DCO'] }]
+  };
+
+  /* ---- 考えよう：B(0,0)・C(5,0)、ℓ は y＝3。ℓ 上の P で、△PBC が二等辺三角形になる P（答えは出さない。ここで確かめるだけ） ---- */
+  (function () { var xs = []; for (var i = -120; i <= 220; i++) { var x = i / 20, P = { B: [0, 0], C: [5, 0], P: [x, 3] }, a = GE.len(P, 'PB'), b = GE.len(P, 'PC'); if (GE.near(a, b) || GE.near(a, 5) || GE.near(b, 5)) xs.push(x); } CH.check(xs.join() === '-4,1,2.5,4,9', '考えよう：二等辺三角形になる P は 5か所'); })();
+
+  /* ---- チャレンジ：平行四辺形 ABCD、EF∥BD（CE：CB＝CF：CD＝2：5） ---- */
+  var T8 = { B: [0, 0], C: [4.6, 0] }; T8.A = GE.polar([0, 0], 2.8, 68); T8.D = GE.add(T8.A, [4.6, 0]); T8.E = [4.6 * .6, 0]; T8.F = GE.lerpP(T8.C, T8.D, .4);
+  (function () {
+    var t = area(T8, 'ABE'), all = [], ks = ['A', 'B', 'C', 'D', 'E', 'F'];
+    for (var i = 0; i < 6; i++) for (var j = i + 1; j < 6; j++) for (var k = j + 1; k < 6; k++) { var n = ks[i] + ks[j] + ks[k], v = area(T8, n); if (v > 1e-9 && GE.near(v, t)) all.push(n); }
+    CH.check(GE.isPar(T8, 'EF', 'BD') && all.join() === 'ABE,ADF,BDE,BDF', 'チャレンジ：△ABE と面積が等しい三角形は3つ');
+  })();
+  var DEF_CH = {
+    id: '第14時 チャレンジ', lv: 2, ttl: 'チャレンジ　面積が等しい三角形をつなぐ',
+    q: '平行四辺形 ABCD で、辺 BC、CD 上の点 E、F は EF∥BD である。△ABE と面積が等しい三角形を、すべて答えよう。使った平行線も。', P: T8,
+    fig: { segs: SQ.concat(['BD', 'AE', 'AF', 'DE', 'BF', 'EF']), pars: [['BD', 1], ['EF', 1]], dots: ['E', 'F'], dir: { E: 's', F: 'e' } },
+    hyp: '平行四辺形 ABCD、EF∥BD',
+    L: [{ t: '△ABE＝△DBE', r: 'AD∥BC で、底辺 BE が共通', n: 1, hint: '△ABE と、底辺 BE が共通で、面積が等しい三角形は？　使う平行線も。', hl: ['△ABE', '△DBE'] },
+      { t: '△DBE＝△DBF', r: 'EF∥BD で、底辺 BD が共通', n: 2, hint: '△DBE と、底辺 BD が共通で、面積が等しい三角形は？　使う平行線も。', hl: ['△DBE', '△DBF'] },
+      { t: '△DBF＝△DAF', r: 'AB∥DC で、底辺 DF が共通', n: 3, hint: '△DBF と、底辺 DF が共通で、面積が等しい三角形は？　使う平行線も。', hl: ['△DBF', '△DAF'] },
+      { t: '①②③より　△ABE＝△DBE＝△DBF＝△DAF', ask: false, q: 'まとめると、△ABE と面積が等しい三角形は？', a: '△DBE、△DBF、△DAF の3つ', hl: ['△ABE', '△DBE', '△DBF', '△DAF'], fa: .1 }]
+  };
+
+  var steps = [
+    { tag: '今日の問い', bh: '今日の問い　△ABC と △PBC', q: '直線 ℓ は、辺 BC と平行である。頂点 A を、ℓ 上の点 P まで動かして、△PBC をつくる。△ABC と △PBC の面積を、くらべよう。',
+      notes: ['① 自分の考え（3分）　面積をくらべて、わかったこと。', '② ペアの考え（3分）　P を ℓ 上のほかの場所にとっても、同じだろうか。'],
+      draw: function (D) { todayFig(D); } },
+    { tag: '今日の問い', q: '△ABC と △PBC の面積は？', a: 'どちらも 7.5cm²（等しい）', sub: '底辺 BC＝5cm が共通で、ℓ∥BC だから高さは どちらも 3cm。5×3÷2＝7.5', dur: 4,
+      sliders: [{ key: 'x', label: '頂点を動かす', min: -3, max: 10, step: .1, val: 1.8, anim: [1.8, 9], fmt: function () { return ''; } }],
+      b: { t: '△ABC＝△PBC＝7.5cm²（底辺 BC が共通で、高さが等しい）', col: C.yel },
+      draw: function (D) {
+        if (!D.ph) { todayFig(D); return; }
+        var F = stage(D), s = F.s, x = D.V.x, X = [x, 3], P = { B: [0, 0], C: [5, 0], X: X };
+        GE.poly(F, 'ABC', { col: C.blue, fa: .12, stroke: false });
+        GE.polyP(F, [X, [0, 0], [5, 0]], { col: C.yel, fa: .3 });
+        GE.seg(F, [X, [x, 0]], { col: C.yel, dash: true, w: 2 });
+        if (x < 0 || x > 5) GE.seg(F, [[x < 0 ? x : 5, 0], [x < 0 ? 0 : x, 0]], { col: C.yel, dash: true, w: 1.6 });
+        GE.figure(F, { segs: ['BC'], labels: ['B', 'C'], dir: { B: 'sw', C: 'se' } });
+        GE.dot(F, X, { col: C.yel, r: s * .22 });
+        var xp = F.X(X); CH.text(D, xp[0], xp[1] - s * 1.1, 'P', { size: s, col: C.yel });
+        var cx = F.X([(x + 5) / 3, 1]); say(D, cx[0], cx[1], f1(area(P, 'XBC')) + 'cm²', { col: C.yel, size: s * 1.1, outline: 'rgba(20,40,30,.9)' });
+        say(D, F.R.cx, F.R.y0 - s * 1.4, '面積 ＝ 5 × 3 ÷ 2 ＝ ' + f1(area(P, 'XBC')) + '（cm²）', { col: C.yel, maxW: F.R.w });
+      } },
+    { tag: 'ことば', bh: 'ことば', q: '面積を変えずに形を変えることを何という？　「△ABC＝△PBC」の「＝」は、何が等しいことを表している？', a: '等積変形。面積', sub: '平行線の間のきょりは、どこでも等しい。だから ℓ∥BC なら、ℓ 上のどの点を頂点にしても、高さは同じ', dur: 3,
+      b: [{ t: '平行線の間のきょりは、どこでも<b>等しい</b>', col: C.green }, { t: 'ℓ∥BC ならば △ABC＝△PBC（<b>面積</b>が等しい）', col: C.green }, { t: '面積を変えずに形を変える … <b>等積変形</b>', col: C.green }],
+      draw: function (D) {
+        var F = stage(D), s = F.s, xs = [-1, 1.8, 4.2, 6.6, 9.2], cols = [C.green, C.blue, C.yel, C.orange, C.pink];
+        xs.forEach(function (x, i) {
+          var a = D.ph ? CH.smooth(i * .16, i * .16 + .2, D.t) : (x === 1.8 ? 1 : 0); if (a <= 0) return;
+          GE.polyP(F, [[x, 3], [0, 0], [5, 0]], { col: cols[i], fa: .12, a: a });
+          GE.seg(F, [[x, 3], [x, 0]], { col: cols[i], dash: true, w: 1.6, a: a });
+          var p = F.X([x, 3]); CH.text(D, p[0], p[1] - s * .9, '7.5', { col: cols[i], size: s * .9, a: a });
+        });
+        GE.figure(F, { segs: ['BC'], labels: ['B', 'C'], dir: { B: 'sw', C: 'se' } });
+      } }
+  ].concat(proof(DEF_EX, { tag: '例題' })).concat([
+    { tag: '考えよう', q: 'ℓ∥BC（BC＝5cm、ℓ と BC のあいだは 3cm）。ℓ 上に点 P をとって、△PBC が二等辺三角形になるようにしたい。P を、できるだけ多く見つけよう。',
+      notes: ['P をスライダーで動かして、PB・PC・BC の長さをくらべよう（等しい長さは黄色になる）。', 'コンパスの円を出して、ℓ との交わりを見てもよい。', '見つけた P の数と、△PBC の面積を書こう。気づいたことも。'],
+      sliders: [{ key: 'x', label: 'P を動かす', min: -6, max: 11, step: .1, val: 6.5, fmt: function () { return ''; } },
+        { key: 'c', label: 'コンパス', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? 'B・C を中心に半径 BC' : '—'; } }],
+      draw: function (D) {
+        var x = D.V.x, P = { B: [0, 0], C: [5, 0], P: [x, 3], f0: [-6.4, -0.9], f1: [11.4, 4] }, F = GE.fit(D, box(D, { l: .04, r: .04, t: .1, b: .2 }), P, { keys: ['f0', 'f1'], pad: .02 }), s = F.s, g = D.ctx;
+        GE.line(F, [[0, 3], [1, 3]], { col: 'rgba(242,240,230,.55)', w: 1.8 }); var lx = F.X([11.2, 3]); CH.text(D, lx[0], lx[1] - s * .8, 'ℓ', { size: s * 1.1 });
+        if (D.V.c) ['B', 'C'].forEach(function (k) { var o = F.X(k); g.save(); g.globalAlpha = D.ga * .6; g.strokeStyle = C.blue; g.lineWidth = 1.6; g.setLineDash([6, 5]); [[.25, 1.0], [Math.PI - 1.0, Math.PI - .25]].forEach(function (r) { g.beginPath(); g.arc(o[0], o[1], 5 * F.u, -r[1], -r[0]); g.stroke(); }); g.restore(); });
+        var pb = GE.len(P, 'PB'), pc = GE.len(P, 'PC'), eq = function (u, v) { return Math.abs(u - v) < .005; };
+        GE.polyP(F, [P.P, P.B, P.C], { col: C.blue, fa: .15, stroke: false });
+        GE.seg(F, 'PB', { col: eq(pb, pc) || eq(pb, 5) ? C.yel : C.chalk, w: 2.6 }); GE.seg(F, 'PC', { col: eq(pb, pc) || eq(pc, 5) ? C.yel : C.chalk, w: 2.6 });
+        GE.seg(F, 'BC', { col: eq(pb, 5) || eq(pc, 5) ? C.yel : C.chalk, w: 2.6 });
+        GE.dot(F, 'P', { col: C.chalk, r: s * .18 });
+        GE.labels(F, ['B', 'C', 'P'], { dir: { B: 'sw', C: 'se', P: 'n' } });
+        var t1 = 'PB ' + pb.toFixed(2) + '　　PC ' + pc.toFixed(2) + '　　BC 5.00', t2 = '面積 ' + f1(area(P, 'PBC')) + 'cm²', tc = eq(pb, pc) || eq(pb, 5) || eq(pc, 5) ? C.yel : C.chalk, y0 = F.X([0, -0.9])[1] + s * .8;
+        if (D.W < 600) { say(D, F.R.cx, y0, t1, { col: tc, size: s * 1.1, maxW: F.R.w }); say(D, F.R.cx, y0 + s * 1.5, t2, { col: tc, size: s * 1.1 }); }
+        else say(D, F.R.cx, y0, t1 + '　　' + t2, { col: tc, size: s * .95, maxW: F.R.w });
+      } }
+  ]).concat(proof(DEF_CH, { tag: 'チャレンジ' }));
+
+  K3.run({
+    no: '第14時', title: '形を変えても面積が変わらないのは、どんなときだろう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '13.html', label: '◀ 第13時' }, { href: '15.html', label: '第15時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

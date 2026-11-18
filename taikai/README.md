@@ -14,7 +14,7 @@
 |---|---|
 | 手元のパソコン・タブレット | `taikai-all-in-one.html` をダウンロードして、ダブルクリック（1ファイルで全部入り。ネットにつながっていなくても動く。字体だけはネットから読む） |
 | フォルダごと | `index.html` をブラウザで開く（ビルドもサーバーも要らない） |
-| 手元のサーバーで | `python3 -m http.server 8794 --directory taikai` → http://localhost:8794/ （カメラでQRを読むときは、こちらか https で開く） |
+| 手元のサーバーで | `python3 -m http.server 8798 --directory taikai` → http://localhost:8798/ （カメラでQRを読むときは、こちらか https で開く） |
 | ウェブ（GitHub Pages） | https://dora9991.github.io/math-dialogue/taikai/ （だれでも開ける。データは開いた人のブラウザの中だけで、ほかの人の申込・受付は見えない） |
 
 - 公開サイト：`#/`（ホーム）

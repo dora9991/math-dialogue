@@ -68,15 +68,13 @@
     ));
 
     /* --- カード2：演奏設定 --- */
-    el.style = U.select(Object.keys(B.STYLES).map(id => [id, B.STYLES[id].jp]), st().style, v => App.setStyle(v), { id: 'styleSel', 'aria-label': '伴奏のスタイル' });
+    el.style = U.select(B.STYLE_GROUPS.map(g => ({ group: g.jp, items: Object.keys(B.STYLES).filter(id => B.STYLES[id].group === g.id).map(id => [id, B.STYLES[id].jp]) })), st().style, v => App.setStyle(v), { id: 'styleSel', 'aria-label': '伴奏のスタイル' });
     el.styleNote = h('p', { class: 'f-hint' });
     el.keySel = h('select', { id: 'keySel', 'aria-label': 'キー（コード譜をまるごと移調）', onchange: () => App.transposeTo(+el.keySel.value) });
     const keyDown = h('button', { type: 'button', class: 'btn sm', 'aria-label': '半音下げる', title: '半音下げる', onclick: () => App.transposeBy(-1) }, '♭');
     const keyUp = h('button', { type: 'button', class: 'btn sm', 'aria-label': '半音上げる', title: '半音上げる', onclick: () => App.transposeBy(1) }, '♯');
     el.keyNote = h('p', { class: 'f-hint' });
-    el.swing = h('input', { type: 'range', class: 'rng', id: 'swingRng', min: 50, max: 72, step: 1, 'aria-label': 'スウィングの深さ', oninput: () => { App.set({ swing: +el.swing.value / 100 }); updateSwingLabel(); } });
-    el.swingVal = h('span', { class: 'val' });
-    el.swingReset = h('button', { type: 'button', class: 'btn sm ghost', onclick: () => { App.set({ swing: null }); refreshSettings(); } }, '標準にもどす');
+    el.feel = App.feelControl('');
     el.countIn = U.seg([[0, 'なし'], [1, '1小節'], [2, '2小節']], st().countIn, v => App.set({ countIn: v }), 'カウントイン');
     el.click = U.switchEl('メトロノーム（クリック）', st().click, v => App.set({ click: v }));
     el.keyCycle = U.seg([[0, 'しない'], [1, '半音ずつ'], [2, '全音ずつ'], [5, '4度ずつ']], st().keyCycle, v => { App.set({ keyCycle: v }); App._backing = {}; App._cyc = {}; if (App.playKind === 'main') App.stop(); }, 'キーを順に変える');
@@ -86,7 +84,7 @@
       h('div', { class: 'fields' },
         U.field('伴奏のスタイル', el.style, null),
         h('div', { class: 'field' }, h('label', { class: 'f-label', for: 'keySel' }, 'キー（まるごと移調）'), h('div', { class: 'row gap' }, keyDown, el.keySel, keyUp), el.keyNote),
-        h('div', { class: 'field' }, h('label', { class: 'f-label' }, 'スウィングの深さ'), h('div', { class: 'row gap' }, el.swing, el.swingVal), h('div', { class: 'row gap' }, el.swingReset, h('p', { class: 'f-hint' }, '50% は均等な8分音符、67% で3連符のハネ。'))),
+        h('div', { class: 'field wide' }, h('label', { class: 'f-label' }, 'ノリ（シャッフルの種類と強さ）'), el.feel),
         U.field('カウントイン', el.countIn, null),
         U.field('くり返すたびにキーを上げる（練習用）', el.keyCycle, '1コーラスごとに、コード譜をキーごと移調して演奏します（画面の譜面はもとのキーのまま。いまのキーは再生バーに出ます）。同じリックを全部のキーで練習したいときに。'),
         h('div', { class: 'field' }, el.click),
@@ -176,7 +174,7 @@
     if (!title.trim()) return;
     st().title = title.trim(); el.title.value = st().title;
     const list = savedList();
-    const rec = { id: 's' + Date.now().toString(36), title: st().title, text: st().text, style: st().style, tempo: st().tempo };
+    const rec = { id: 's' + Date.now().toString(36), title: st().title, text: st().text, style: st().style, tempo: st().tempo, swing: st().swing, feel: st().feel };
     const same = list.findIndex(s => s.title === rec.title);
     if (same >= 0) { rec.id = list[same].id; list[same] = rec; } else list.unshift(rec);
     U.store.set('saved', list.slice(0, 60));
@@ -187,7 +185,11 @@
   function openSaved(id) {
     const s = savedList().find(x => x.id === id);
     if (!s) return;
-    st().title = s.title; st().style = B.STYLES[s.style] ? s.style : st().style; st().tempo = s.tempo || st().tempo; st().keyOverride = null; st().range = null;
+    // スタイルが変わるときは setStyle を通す（合う楽器に入れかえる）。ノリは、保存してあったもの（なければスタイルの標準）にする。前の曲のノリを持ちこさない
+    if (B.STYLES[s.style] && s.style !== st().style) App.setStyle(s.style);
+    st().title = s.title; st().tempo = s.tempo || st().tempo; st().keyOverride = null; st().range = null;
+    st().swing = typeof s.swing === 'number' && s.swing >= 0.5 && s.swing <= 0.75 ? s.swing : null;
+    st().feel = ['even', 's8', 's16'].indexOf(s.feel) >= 0 ? s.feel : null;
     el.title.value = s.title;
     App.setText(s.text);
     App.emit('settings');
@@ -206,13 +208,11 @@
   }
 
   /* ---------------- 設定の表示 ---------------- */
-  function updateSwingLabel() { el.swingVal.textContent = Math.round(App.swing() * 100) + '%'; el.swingReset.hidden = st().swing == null; }
   function refreshSettings() {
     if (!el.style) return;
     el.style.value = st().style;
     el.styleNote.textContent = B.STYLES[st().style].note + (B.STYLES[st().style].bpb === 3 ? '（3拍子：1小節＝3拍で読みます）' : '');
-    el.swing.value = Math.round(App.swing() * 100);
-    updateSwingLabel();
+    el.feel.refresh();
     el.countIn.set(st().countIn);
     el.keyCycle.set(st().keyCycle);
     el.click.input.checked = !!st().click;

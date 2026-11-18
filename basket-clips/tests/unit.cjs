@@ -189,6 +189,59 @@ const back = S2.load(key);
 ok(back && back.result.shots.length === 1 && back.edits.off.x && back.teams[0].name === '致遠館', '保存して読み戻せる');
 ok(S2.fresh().teams[0].colorName === '青', '次の動画でも、前回の色から始まる');
 ok(S2.load('nothing') === null, '保存していない動画は null');
+{
+  const BS4 = load(['core.js', 'clips.js', 'store.js'], { localStorage: fakeLS });
+  const st4 = BS4.store.fresh();
+  st4.name = '練習試合.mp4';
+  st4.notes = [{ id: 'n1', t: 12, text: 'ナイス', stamps: [], tags: ['パス'] }];
+  BS4.store.save('k4', st4);
+  ok(BS4.store.book().k4 && BS4.store.book().k4.name === '練習試合.mp4' && BS4.store.book().k4.notes.length === 1 && BS4.store.load('k4').notes.length === 1, 'コメント帳：保存すると、動画のファイル名と一緒にコメントがたまる（動画にも戻る）');
+  st4.notes = [];
+  BS4.store.save('k4', st4);
+  ok(!BS4.store.book().k4, 'コメントを全部消すと、コメント帳からも消える');
+}
+
+section('💬 コメント・スタンプ（notes.js）');
+{
+  const BN = load(['core.js', 'notes.js']);
+  const N = BN.notes;
+  ok(JSON.stringify(N.parseTags('ヘルプが遅い #ヘルプ ＃ボックスアウト。#ヘルプ')) === '["ヘルプ","ボックスアウト"]', '文の中の「#ことば」「＃ことば」がタグになる（同じものは1つ）');
+  const a = N.clean({ id: 'n1', t: 30.123, text: '  ヘルプが遅い #ヘルプ', stamps: ['👍', 'x', '❓'], tags: ['#リバウンド', 'ヘルプ'] });
+  ok(a && a.t === 30.12 && a.dur === 5 && a.stamps.join('') === '👍❓' && a.tags.join() === 'リバウンド,ヘルプ', 'そろえる：時刻・出す長さ 5 秒（ふつう）・知らないスタンプは捨てる・タグ（文の中のものも）', a);
+  ok(N.clean({ t: 3, text: '  ' }) === null && N.clean({ t: -1, text: 'a' }) === null && N.clean({ t: 3, stamps: ['👍'] }).text === '' && N.clean({ t: 1, text: 'a', dur: 99 }).dur === 30, 'コメントもスタンプもないもの・時刻のおかしいものは捨てる（スタンプだけはよい）・長さは 30 秒まで');
+  const list = N.cleanAll([{ id: 'n2', t: 50, text: 'ナイス', dur: 3 }, a, null, { t: 'x' }]);
+  ok(list.length === 2 && list[0].id === 'n1', '時刻の順にならべる');
+  ok(N.activeAt(list, 30.12).length === 1 && N.activeAt(list, 35.11).length === 1 && N.activeAt(list, 35.2).length === 0 && N.activeAt(list, 52.9).length === 1 && N.activeAt(list, 29).length === 0, 'その時刻から dur 秒だけ出す（30.12〜35.12・50〜53）');
+  ok(N.nextId(list) === 'n3' && N.nextId([]) === 'n1', '次の番号');
+  const book = { v1: { name: '練習試合.mp4', at: 100, notes: [a] }, v2: { name: '公式戦.mov', at: 200, notes: [{ id: 'n1', t: 10, text: 'ボックスアウト！', tags: ['リバウンド'] }, { id: 'n2', t: 20, stamps: ['❓'] }] } };
+  ok(N.search(book, 'へるぷ').map((r) => r.key + r.id).join() === 'v1n1', 'さがす：ひらがなでカタカナも（「へるぷ」→「ヘルプ」）');
+  ok(N.search(book, '', 'リバウンド').map((r) => r.key + r.id).join() === 'v2n1,v1n1', 'タグでさがす（新しい動画から）');
+  ok(N.search(book, 'しつもん').map((r) => r.key + r.id).join() === 'v2n2,v1n1' && N.search(book, '').length === 3, 'スタンプの呼び名でも（「しつもん」→ ❓）・ことばがなければ全部');
+  ok(JSON.stringify(N.tagCounts(book).slice(0, 2)) === '[{"tag":"リバウンド","n":2},{"tag":"ヘルプ","n":1}]', 'コメント帳のタグと数（多い順）', N.tagCounts(book));
+  ok(N.youtubeUrl('ヘルプ') === 'https://www.youtube.com/results?search_query=' + encodeURIComponent('バスケ ヘルプ') && N.growUrl('ヘルプ') === 'https://dora9991.github.io/math-dialogue/basket-coach/#q/' + encodeURIComponent('ヘルプ'), '調べるリンク：YouTube の検索（「バスケ ヘルプ」）・バスケ・グロウのずかん（#q/ヘルプ）');
+  ok(N.toText(list, (t) => '0:' + Math.floor(t)) === '0:30 👍❓ ヘルプが遅い #ヘルプ  #リバウンド #ヘルプ\n0:50 ナイス', '文字で書き出す（時刻・スタンプ・文・タグ）', N.toText(list, (t) => '0:' + Math.floor(t)));
+  const segs = N.segments([{ id: 'a', t: 10, text: 'x' }, { id: 'b', t: 14, text: 'y', dur: 3 }, { id: 'c', t: 40, text: 'z' }], 42);
+  ok(segs.length === 2 && segs[0].t0 === 7 && segs[0].t1 === 18 && segs[0].ids.join() === 'a,b' && segs[1].t0 === 37 && segs[1].t1 === 42, 'コメントの場面：3 秒前から出し終わって 1 秒後まで・重なるものは1つ・動画の終わりまで', segs);
+  // 描く（Canvas の代わりに、呼ばれたことを覚えておく）
+  const calls = [];
+  const ctx = { save() {}, restore() {}, beginPath() {}, moveTo() {}, arcTo() {}, closePath() {}, fill() {}, fillRect(x, y, w, h) { calls.push(['rect', this.fillStyle, Math.round(x), Math.round(w)]); },
+    fillText(t) { calls.push(['text', t, this.font]); }, measureText(t) { return { width: Array.from(t).length * 20 }; } };
+  ok(N.draw(ctx, 1280, 720, list, 31) === 1 && calls.some((c) => c[0] === 'text' && c[1] === 'ヘルプが遅い #ヘルプ') && calls.some((c) => c[0] === 'text' && c[1] === '👍 ❓') && calls.some((c) => c[0] === 'text' && c[1].includes('#リバウンド')) && calls.some((c) => c[0] === 'rect' && c[1] === '#facc15'),
+    '描く：コメントの文・スタンプ・タグ・黄色の印（出ている時刻）', calls);
+  const stampFont = (c) => (c.find((x) => x[0] === 'text' && /[👍👏❓]/u.test(x[1])) || [])[2] || '';
+  ok(stampFont(calls).startsWith('112px'), 'スタンプは大きく（1280×720 で 112px。前の版の約 2 倍）', stampFont(calls));
+  calls.length = 0;
+  N.draw(ctx, 1280, 720, list, 51.5);
+  ok(stampFont(calls) === '' && calls.some((c) => c[1] === 'ナイス'), '（文だけのコメントには、スタンプを描かない）');
+  calls.length = 0;
+  N.draw(ctx, 1280, 720, N.cleanAll([{ id: 'n9', t: 10, stamps: ['👏'] }]), 11);
+  ok(stampFont(calls).startsWith('150px') && !calls.some((c) => c[0] === 'rect'), 'スタンプだけのときは、もっと大きく（150px・吹き出しなし）', calls);
+  calls.length = 0;
+  N.draw(ctx, 640, 360, N.cleanAll([{ id: 'n9', t: 10, stamps: ['👏'] }]), 11);
+  ok(stampFont(calls).startsWith('75px'), '動画の大きさに合わせる（640×360 なら半分の 75px）', stampFont(calls));
+  calls.length = 0;
+  ok(N.draw(ctx, 1280, 720, list, 40) === 0 && calls.length === 0, '出ていない時刻には、何も描かない');
+}
 
 section('ゴールの自動検出（リング＋ネットを探す）');
 {
@@ -266,6 +319,19 @@ section('「バスケ タップ記録」の記録（読み込み・時刻あわ�
   ok(TL.eventLabel(log, log.events.find((e) => e.t === 5)) === '#7 たけし 2P成功' && TL.eventLabel(log, log.events.find((e) => e.t === 78), true) === '致遠館 リバウンド', '呼び名：「#7 たけし 2P成功」「致遠館 リバウンド」');
   const stored = TL.parse(JSON.parse(JSON.stringify(game)));      // 記録アプリがブラウザに保存している形（書き出す前）でも読める
   ok(TL.plays(stored).length === 10 && stored.events.find((e) => e.t === 78).period === 2, 'ブラウザに保存された形（同じ端末から読み込むとき）も読める');
+  ok(log.mode === '' && log.src === null && Array.isArray(log.notes) && log.notes.length === 0, 'ふつうの記録：mode なし・コメントなし');
+  {
+    // 撮った動画を見ながら記録した試合（t は動画の時刻・コメント入り）
+    const BSN = load(['core.js', 'clips.js', 'mp4.js', 'taplog.js', 'notes.js'], { escape, decodeURIComponent });
+    const rv = JSON.parse(JSON.stringify(BT.exportData(game)));
+    Object.assign(rv, { mode: 'video', src: { name: 'IMG_0001.MOV', duration: 2700.5 }, notes: [{ id: 'n1', t: 30, text: 'ヘルプ #ヘルプ', stamps: ['👍', 'xx'] }, { id: 'n2', t: 10, text: '' }] });
+    rv.videos = [{ vid: 'file1', n: 1, startedAt: rv.startedAt, duration: 2700.5, name: 'IMG_0001.MOV', file: true }];
+    const lr = BSN.taplog.parse(rv);
+    ok(lr.mode === 'video' && lr.src.name === 'IMG_0001.MOV' && lr.videos[0].file === true, '動画を見ながら記録した試合：mode・src・videos の file を読む', { mode: lr.mode, src: lr.src, v: lr.videos });
+    ok(lr.notes.length === 1 && lr.notes[0].stamps.join('') === '👍' && lr.notes[0].tags.join() === 'ヘルプ', 'コメント：notes.js の形にそろえる（知らないスタンプ・空のコメントは捨てる）', lr.notes);
+    const va = BSN.taplog.videoAnchors(lr, lr.videos[0]);
+    ok(va.length === 1 && va[0].t === 0 && va[0].v === 0 && BSN.taplog.matchVideo(lr, 'img_0001.mov', 10) === lr.videos[0], 'その動画なら、記録の時刻 ＝ 動画の時刻（ファイル名で見分ける）', va);
+  }
   let err = null;
   try { TL.parse({ format: 'basket-tap', teams: [], events: [{ t: 0, type: 'period', period: 1 }] }); } catch (e) { err = e.message; }
   ok(err && /プレーの記録がありません/.test(err), 'プレーのない記録は、分かる言葉で断る', err);
@@ -293,6 +359,22 @@ section('「バスケ タップ記録」の記録（読み込み・時刻あわ�
     ok(old.events[0].team === 0 && old.events[1].team === 1, 'チームのない得点は、自分のチームの得点にする（得点はチームなしにできない）');
   }
 
+  // 撮影しながら記録した動画（記録の videos）：録画を始めた時刻から、ぴったり合わせる
+  {
+    const gv = JSON.parse(JSON.stringify(game));
+    gv.videos = [{ vid: 'va', n: 1, startedAt: game.startedAt - 2150, duration: 600, name: 'バスケ記録_2026-10-19_1530_致遠館vs城南_動画1.mp4' },
+      { vid: 'vb', n: 2, startedAt: game.startedAt + 6530, duration: 300.4, name: 'バスケ記録_2026-10-19_1530_致遠館vs城南_動画2.mp4' }];
+    const lv = TL.parse(JSON.stringify(BT.exportData(gv)));
+    ok(lv.videos.length === 2 && lv.videos[1].startedAt === game.startedAt + 6530, '記録の videos（動画のファイル名・録画を始めた時刻・長さ）を読み込む');
+    const a1 = TL.videoAnchors(lv, lv.videos[0]);
+    ok(a1 && a1[0].t === 0 && a1[0].v === 2.15 && TL.toVideo(5, a1) === 7.15, '動画1（スタートの 2.15 秒前から録画）：記録の 0:00 ＝ 動画の 2.15 秒', a1);
+    const a2 = TL.videoAnchors(lv, lv.videos[1]);
+    ok(a2 && a2[0].t === 6.5 && Math.abs(TL.toVideo(20, a2) - 13.47) < 1e-9, '動画2（スタートの 6.53 秒後から）：記録の 20 秒 ＝ 動画の 13.47 秒', a2);
+    ok(TL.matchVideo(lv, 'バスケ記録_2026-10-19_1530_致遠館vs城南_動画2.mp4', 0) === lv.videos[1], '開いた動画を、ファイル名で見つける');
+    ok(TL.matchVideo(lv, 'IMG_0123.MOV', 600.8) === lv.videos[0], 'ファイル名が変わっていても、長さ（ほぼ同じ・1本だけ）で見つける');
+    ok(TL.matchVideo(lv, 'IMG_0123.MOV', 450) === null && TL.matchVideo(log, 'x.mp4', 600) === null, '長さも名前も合わなければ、見つけない（videos のない記録も）');
+  }
+
   // 時刻あわせ
   ok(TL.toVideo(10, []) === null, '合わせる前は、動画の時刻は決まらない');
   let A = TL.setAnchor([], 0, 12, true);
@@ -303,6 +385,13 @@ section('「バスケ タップ記録」の記録（読み込み・時刻あわ�
   ok(TL.toVideo(78, A2) === 89.5 && TL.toVideo(90, A2) === 80, '合わせる点を足すと、その点より後ろの記録は、その点のずれ');
   const A3 = TL.setAnchor(A2, 95, 86, false);          // 95 秒の記録に効いている点（80 秒の点）だけ直す
   ok(A3.length === 2 && TL.toVideo(95, A3) === 86 && TL.toVideo(5, A3) === 16.5, '「⌖」：その記録に効いている点だけを直す（ほかの点はそのまま）', A3);
+  ok(TL.anchorIndex([], 5) === -1 && TL.anchorIndex(A3, 5) === 0 && TL.anchorIndex(A3, 94.9) === 0 && TL.anchorIndex(A3, 95) === 1 && TL.anchorIndex(A3, 300) === 1 && TL.anchorIndex([{ t: 10, v: 20 }], 3) === 0,
+    'その記録に効いている点の番号（最初の点より前の記録は、最初の点）');
+  const A4 = TL.shiftAt(A3, 100, 1.5);
+  ok(A4.length === 2 && TL.toVideo(100, A4) === 92.5 && TL.toVideo(5, A4) === 16.5, '「↔ 指でずらす」：見本の場面の区間（95 秒の点から後ろ）だけ 1.5 秒ずらす（ほかの区間はそのまま）', A4);
+  const A5 = TL.shiftAt(A3, 5, -0.3);
+  ok(TL.toVideo(5, A5) === 16.2 && TL.toVideo(100, A5) === 91, '前の区間だけを前へ 0.3 秒', A5);
+  ok(JSON.stringify(TL.shiftAt(A, 50, -0.3)) === JSON.stringify(TL.shift(A, -0.3)) && TL.shiftAt([], 3, 1).length === 0, '点が1つなら、全部をずらすのと同じ（点がなければ何もしない）');
 
   // 場面と絞り込み
   const S12 = TL.setAnchor([], 0, 12, true);
@@ -328,6 +417,40 @@ section('「バスケ タップ記録」の記録（読み込み・時刻あわ�
   const chain = TL.reel([0, 5, 10, 15, 20, 25].map((t, i) => ({ id: 'c' + i, t0: t, t1: t + 8, on: true })), 24);
   ok(chain.length === 2 && chain[0].t1 - chain[0].t0 <= 24 && chain[1].t0 === chain[0].t1, '続けてつなぐのは 24 秒まで（そのあとは、重なった分を削って次の場面に）', chain.map((x) => [x.t0, x.t1]));
   ok(TL.reel([{ id: 'a', t0: 0, t1: 8, on: true }, { id: 'b', t0: 2, t1: 9, on: false }]).length === 1, '外した場面は入れない');
+  // プレーごとの1場面の長さ（by）
+  ok(TL.WIN.lead === 10 && TL.WIN.lag === 2 && TL.WIN_BY.reb.lead === 5 && TL.WIN_BY.mark.lead === 5, 'はじめの長さ：ふつう 前 10・後 2、リバウンドと★ あとで見る は前 5');
+  const wb = { lead: 10, lag: 2, by: { reb: { lead: 5, lag: 2 }, mark: { lead: 5, lag: 1 } } };
+  ok(JSON.stringify(TL.winFor(wb, 'reb')) === '{"lead":5,"lag":2}' && JSON.stringify(TL.winFor(wb, 'score')) === '{"lead":10,"lag":2}' && JSON.stringify(TL.winFor(null, 'mark')) === JSON.stringify(TL.WIN) && JSON.stringify(TL.winFor({ lead: 6, lag: 2 }, 'reb')) === '{"lead":6,"lag":2}',
+    'プレーごとの長さ（リバウンドは前 5・得点はふつうの前 10。by がなければ全部ふつう）');
+  const cb = TL.clips(log, S12, {}, wb, 120).clips;
+  const reb1 = cb.find((c) => c.grp === 'reb'), sc1 = cb.find((c) => c.t === 5), mk = cb.find((c) => c.grp === 'mark');
+  ok(sc1.at - sc1.t0 === 10 && sc1.t0 === 7 && reb1.at - reb1.t0 === 5 && mk.t1 - mk.at === 1 && mk.at - mk.t0 === 5, '場面の長さが、プレーごとに変わる（得点 前 10・リバウンド 前 5・★ 前 5 後 1）', [sc1, reb1, mk].map((c) => [c.label, c.t0, c.at, c.t1]));
+  // 自分で足した場面（動画の秒で持つ。時刻あわせを変えても動かない）
+  const adds = [{ id: 'u1', at: 50.5, type: 'stl', team: 0, no: '7', memo: 'いいディフェンス' }, { id: 'u2', at: 70, type: 'fg2', team: null }, { id: 'u3', at: 200, type: 'mark' }, { id: 'u4', at: 30, type: 'zzz' }, null, { at: 5 }];
+  const ra = TL.clips(log, S12, {}, wb, 120, {}, adds);
+  const u1 = ra.clips.find((c) => c.id === 'u1'), u2 = ra.clips.find((c) => c.id === 'u2'), u4 = ra.clips.find((c) => c.id === 'u4');
+  ok(u1 && u1.user && u1.t === null && u1.at === 50.5 && u1.label === '#7 たけし スティール：いいディフェンス' && u1.t0 === 40.5 && u1.t1 === 52.5, '自分で足した場面：動画の秒・呼び名（#7 たけし スティール：メモ）・前 10 秒（ふつう）', u1);
+  ok(u2.team === 0 && u4.type === 'mark' && u4.at - u4.t0 === 5 && ra.outside === 2 && !ra.clips.some((c) => c.id === 'u3'), '得点はチームなしにしない（自分）・知らない種類は ★（前 5 秒）・動画の外（200 秒）は入れない', [u2.team, u4.type, ra.outside]);
+  ok(ra.clips.length === 12 && ra.clips.every((c, i) => i === 0 || ra.clips[i - 1].at <= c.at), '記録の場面と一緒に、動画の時刻の順に並ぶ（9＋3。形の合わないものは捨てる）');
+  const shifted = TL.clips(log, TL.shift(S12, 3), {}, wb, 120, {}, adds);
+  ok(shifted.clips.find((c) => c.id === 'u1').at === 50.5 && shifted.clips.find((c) => c.t === 5).at === 20, '時刻あわせをずらしても、自分で足した場面は動かない（記録の場面だけ動く）');
+  ok(TL.clips(log, S12, { teams: [false, true] }, wb, 120, {}, adds).clips.every((c) => c.team !== 0) && TL.clips(log, S12, { players: ['0:7'] }, wb, 120, {}, adds).clips.some((c) => c.id === 'u1'), '絞り込み（チーム・選手）も効く');
+  const ca = TL.counts(log, {}, adds);
+  ok(ca.grp.stl === 1 && ca.grp.mark === 3 && ca.grp.score === 6 && ca.players['0:7'] === 4, '絞り込みの数にも入る', ca);
+  {
+    // 保存してあった長さ（前の版）をそろえる
+    const memL = {};
+    const lsL = { getItem: (k) => (k in memL ? memL[k] : null), setItem: (k, v) => { memL[k] = String(v); }, removeItem: (k) => { delete memL[k]; } };
+    const SS = load(['core.js', 'clips.js', 'taplog.js', 'store.js'], { localStorage: lsL, escape, decodeURIComponent }).store;
+    ok(JSON.stringify(SS.fixLogWin({ lead: 6, lag: 2 })) === JSON.stringify(SS.logWinDefault()) && SS.logWinDefault().lead === 10, '前の版のはじめのまま（前 6・後 2）なら、新しいはじめの長さ（前 10・リバウンドと★は前 5）に');
+    const kept = SS.fixLogWin({ lead: 8, lag: 3 });
+    ok(kept.lead === 8 && kept.lag === 3 && kept.by.reb.lead === 5, '前の版で変えていた長さ（前 8・後 3）は「ふつう」に残し、プレーごとのはじめを足す', kept);
+    const k2 = SS.fixLogWin({ lead: 7, lag: 1, by: { reb: { lead: 4, lag: 1 }, bad: null } });
+    ok(k2.lead === 7 && k2.by.reb.lead === 4 && !('bad' in k2.by) && !k2.by.mark, 'プレーごとの長さを変えてあれば、そのまま（形の合わないものは捨てる）', k2);
+    memL['bclip:prefs'] = JSON.stringify({ logWin: { lead: 6, lag: 2 } });
+    const fr = SS.fresh();
+    ok(fr.logWin.lead === 10 && fr.logWin.by.mark.lead === 5, '保存してあった前の版の設定（前 6・後 2）で次の動画を開くと、新しいはじめの長さ', fr.logWin);
+  }
 
   // 自動で探した得点と照らし合わせる（人のタップは 0.3〜2 秒遅れる。見落とし・まちがいもある）
   const made = TL.plays(log).filter((e) => TL.TYPES[e.type].made).map((e) => e.t);       // 5, 33, 61, 90, 130

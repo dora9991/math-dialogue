@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>負の数と比例</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 比例と反比例 第3時：x が負の数のときも、比例といえるだろうか（ikkan の lesson_hirei_03 と同じ流れ）。
+   水そうの水位が、基準の線を通るときを 0分とする。x が負の数（通る前）のときは、水位も基準の線より下（負の数）。
+   表を左（負の数）へのばして、x が 2倍・3倍で y も 2倍・3倍、y÷x がいつも同じになるのを、矢印と行で見せる。例題は水位が下がる場合（y＝−4x）。
+   数値は ikkan のまま（毎分 3 cm、例題 毎分 4 cm 下がる、考えよう ア〜ウ、チャレンジ x が 3 から 7 で y が 20 へる）。表・答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, OUT = 'rgba(20,40,30,.92)';
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = CH.fr(s[k]); }); if (s.notes) s.notes = s.notes.map(CH.fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = CH.fr(b.t); }); }); return st; }
+  function nf(v) { return S(Math.round(v * 100) / 100); }
+
+  /* ---- 数と検算 ---- */
+  var XS = [-3, -2, -1, 0, 1, 2, 3], Y3 = XS.map(function (x) { return 3 * x; }), Y4 = XS.map(function (x) { return -4 * x; });
+  CH.check(Y3.join() === '-9,-6,-3,0,3,6,9', '今日の問いの表');
+  CH.check(Y3[1] === 2 * Y3[2] && Y3[0] === 3 * Y3[2], 'x が −1 → −2 → −3 で y も 2倍・3倍');
+  CH.check(XS.every(function (x, i) { return x === 0 || Y3[i] / x === 3; }), 'y÷x はいつも 3');
+  CH.check(Y4.join() === '12,8,4,0,-4,-8,-12' && XS.every(function (x, i) { return x === 0 || Y4[i] / x === -4; }), '例題（y＝−4x）');
+  var FA = [function (x) { return 2 * x; }, function (x) { return -2 * x; }, function (x) { return x + 3; }];
+  CH.check([-2, -1, 1, 2].every(function (x) { return FA[0](x) / x === 2 && FA[1](x) / x === -2; }) && FA[2](2) / 2 !== FA[2](1) / 1, '考えよう（ここで確かめるだけ）');
+  var CA = -20 / (7 - 3);
+  CH.check(CA === -5 && CA * 7 - CA * 3 === -20 && CA * -2 === 10, 'チャレンジ（a＝−5、y＝10）');
+
+  /* ---- 字のならび（式を大きく） ---- */
+  function toks(D, cx, y, list, size) {
+    var g = D.ctx, ws = [], w = 0; g.save(); g.font = '600 ' + size + 'px ' + FONT;
+    list.forEach(function (t) { var ww = g.measureText(t.t).width + size * .08; ws.push(ww); w += ww; }); g.restore();
+    var x = cx - w / 2, out = [];
+    list.forEach(function (t, i) { CH.text(D, x + ws[i] / 2, y, t.t, { size: size, col: t.col, a: t.a }); out.push({ x0: x, x1: x + ws[i], cx: x + ws[i] / 2 }); x += ws[i]; });
+    return out;
+  }
+
+  /* ---- 水そう（基準の線つき）。lv：基準の線からの水位（cm）。o：dir（1 上がる・−1 下がる）、info ---- */
+  function tank(D, R, lv, o) {
+    o = o || {}; var s = CH.fs(D), lo = -14, hi = 14, th = Math.min(R.h - s * 1.2, R.w * .7), tw = Math.min(R.w * .3, th * .95), cx = R.cx + R.w * .06;
+    var x0 = cx - tw / 2, x1 = cx + tw / 2, yb = R.y1 - s * .3, Y = function (v) { return yb - th * (v - lo) / (hi - lo); };
+    CH.fillRect(D, x0, Y(lv), x1, yb, { fill: 'rgba(154,216,255,.32)' });
+    CH.line(D, x0, Y(lv), x1, Y(lv), { col: C.blue, w: 2.6 });
+    CH.poly(D, [[x0, Y(hi)], [x0, yb], [x1, yb], [x1, Y(hi)]], { close: false, stroke: C.chalk, sw: 2.6 });
+    CH.line(D, x0 - s * 1.2, Y(0), x1 + s * .6, Y(0), { col: C.yel, w: 2, dash: [7, 6] });
+    CH.text(D, x0 - s * 1.3, Y(0), '基準の線', { col: C.yel, size: s * .75, align: 'right' });
+    var sx = x1 + s * .9; CH.line(D, sx, Y(-12), sx, Y(12), { w: 1.6 });
+    for (var v = -12; v <= 12; v += 2) { var big = v % 4 === 0; CH.line(D, sx - (big ? 6 : 3), Y(v), sx + (big ? 6 : 3), Y(v), { w: 1.4 }); if (big) CH.text(D, sx + s * .55, Y(v), S(v), { size: s * .7, num: true, align: 'left' }); }
+    CH.text(D, sx + s * .3, Y(12) - s * 1, '（cm）', { size: s * .7, col: 'rgba(242,240,230,.8)' });
+    if (o.dir) { var ay = Y(lv) - s * (o.dir > 0 ? .4 : -.4); CH.arrow(D, cx, ay, cx, ay - o.dir * s * 1.6, { col: C.blue, w: 2.4, head: 9 }); }
+    if (o.info) o.info.forEach(function (t, i) { CH.text(D, x0 - s * 1, Y(0) + s * (1.8 + i * 1.4), t[0], { col: t[1], size: CH.fitSize(D, t[0], x0 - R.x0 - s * 1.2, s * .95), align: 'right' }); });
+    return Y;
+  }
+  function lay(D) { var R = CH.box(D, { l: .04, r: .04, t: .03, b: .04 }); return { T: CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .58), B: CH.rect(R.x0, R.y0 + R.h * .62, R.x1, R.y1), R: R }; }
+  /* 表：x と y（ほかの行も）。cols の i 番目のセル */
+  function table(D, R, rows, o) {
+    o = o || {};
+    return CH.table(D, R, ['x（分）'].concat(XS.map(S)), rows, { fw: .2, size: CH.fs(D, .85), rh: CH.fs(D) * 2.2, show: o.show, hl: o.hl });
+  }
+  function arc(D, x0, x1, y, up, col, a, txt, hk) {
+    var s = CH.fs(D), g = D.ctx, h = s * 1.3 * (up ? -1 : 1) * (hk || 1);
+    g.save(); g.globalAlpha = D.ga * a; g.strokeStyle = col; g.lineWidth = 2.4; g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo((x0 + x1) / 2, y + h, x1, y); g.stroke(); g.restore();
+    CH.arrow(D, x1 + (x1 > x0 ? -4 : 4), y + h * .22, x1, y, { col: col, a: a, head: 8, w: 2.4 });
+    CH.text(D, (x0 + x1) / 2, y + h * .5 + (up ? -1 : 1) * s * .7, txt, { col: col, size: s * .85, a: a, outline: OUT });
+  }
+
+  K3.run({
+    no: '第3時', title: 'x が負の数のときも、比例といえるだろうか', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '◀ 第2時' }, { href: '04.html', label: '第4時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '水位が毎分 3 cm 上がる', q: '水そうに、水位が毎分 3 cm ずつ上がるように水を入れ続ける。水面が基準の線を通るときを 0分とし、x 分後の水位を基準の線から y cm とする。x が負の数のときも、y は x に比例するといえるだろうか。',
+        notes: ['① 自分の考え（3分）　表を見て、気づいたきまりを書こう。', '② ペアの考え（3分）', 'x＝−2 は「基準の線を通る 2分前」。スライダーで時間を変えられます。'],
+        sliders: [{ key: 'x', label: 'x（分）', min: -3, max: 3, step: 1, val: -3, fmt: function (v) { return S(v) + ' 分'; } }],
+        draw: function (D) {
+          var L = lay(D), x = D.V.x;
+          tank(D, L.T, 3 * x, { dir: 1, info: [['x＝' + S(x) + ' 分', C.chalk], ['y＝' + S(3 * x) + ' cm', C.blue]] });
+          table(D, L.B, [['y（cm）'].concat(Y3.map(S))], { hl: function (r, c) { return c > 0 && XS[c - 1] === x ? C.yel : null; } });
+        } },
+      { tag: '今日の問い', q: 'x が −1 から −2、−3 と、2倍、3倍になると、y はどうなる？', a: 'y も 2倍、3倍になる', sub: 'y は −3 から −6、−9。x が正の数のとき（1 → 2 → 3）と同じ', dur: 4,
+        b: { t: 'x が −1 → −2 → −3（2倍・3倍）のとき、y も −3 → −6 → −9（<b>2倍・3倍</b>）', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D);
+          tank(D, L.T, -9 + 0 * t, { info: [['x＝−3 分', C.chalk], ['y＝−9 cm', C.blue]] });
+          var T = table(D, CH.rect(L.B.x0, L.B.y0 + s * 1.2, L.B.x1, L.B.y1 - s * 1.2), [['y（cm）'].concat(Y3.map(S))], { hl: function (r, c) { return c >= 1 && c <= 3 && D.ph ? (r === 0 ? C.blue : C.pink) : null; } });
+          if (D.ph) {
+            var a1 = CH.smooth(.05, .3, t), a2 = CH.smooth(.3, .55, t), a3 = CH.smooth(.55, .8, t), a4 = CH.smooth(.75, 1, t);
+            arc(D, T.cell(0, 3).cx, T.cell(0, 2).cx, T.cell(0, 3).y0, true, C.blue, a1, '×2'); arc(D, T.cell(0, 3).cx, T.cell(0, 1).cx, T.cell(0, 3).y0, true, C.blue, a2, '×3', 2.3);
+            arc(D, T.cell(1, 3).cx, T.cell(1, 2).cx, T.cell(1, 3).y1, false, C.pink, a3, '×2'); arc(D, T.cell(1, 3).cx, T.cell(1, 1).cx, T.cell(1, 3).y1, false, C.pink, a4, '×3', 2.3);
+          }
+        } },
+      { tag: '今日の問い', q: 'y÷x の値は？ y を x の式で表すと？', a: 'いつも 3。y＝3x', sub: 'x が負の数のときも、比例といえる（x＝0 のときは、y÷x を考えない）', dur: 4,
+        b: { t: 'y÷x は いつも <b>3</b> → <b>y＝3x</b>。x が負の数のときも <b>比例</b>', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0;
+          tank(D, L.T, 0, { dir: 1, info: [['x＝0 分', C.chalk], ['y＝0 cm', C.blue]] });
+          table(D, L.B, [['y（cm）'].concat(Y3.map(S)), ['y÷x'].concat(XS.map(function (x, i) { return x === 0 ? '—' : S(Y3[i] / x); }))],
+            { show: function (r, c) { return r === 2 && c > 0 ? (D.ph ? CH.smooth(.05 + (c - 1) * .11, .14 + (c - 1) * .11, t) : 0) : 1; }, hl: function (r, c) { return r === 2 && c > 0 && D.ph && t > .85 && XS[c - 1] !== 0 ? C.yel : null; } });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'y＝ax（a は 0 でない定数）と表されるとき、y は x に何する？ a を何という？', a: '比例する。a は比例定数', sub: 'y＝3x の比例定数は 3。x が 0 でないとき、y÷x はいつも a', dur: 4,
+        b: [{ t: 'y＝ax（a は 0 でない定数）のとき、y は x に <b>比例</b> する', col: C.green }, { t: 'a を <b>比例定数</b> という（x が 0 でないとき y÷x＝a）', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .1, b: .12 }), s = CH.fs(D), t = D.ph ? D.t : 0, big = Math.min(s * 2.6, R.w / 7), y1 = R.y0 + R.h * .25, y2 = R.y0 + R.h * .7;
+          var A = toks(D, R.cx, y1, [{ t: 'y' }, { t: '＝' }, { t: 'a', col: C.green }, { t: 'x' }], big);
+          CH.text(D, R.cx, y1 + big * .95, 'a は 0 でない定数（決まった数）', { size: CH.fitSize(D, 'a は 0 でない定数（決まった数）', R.w, s * .9), col: 'rgba(242,240,230,.8)' });
+          if (t > 0) {
+            var a = CH.smooth(.15, .5, t), B = toks(D, R.cx, y2, [{ t: 'y', a: a }, { t: '＝', a: a }, { t: '3', col: C.green, a: a }, { t: 'x', a: a }], big);
+            CH.arrow(D, A[2].cx, y1 + big * 1.4, B[2].cx, y2 - big * .7, { col: C.green, a: a, w: 2.4 });
+            CH.text(D, B[2].cx + big * .9, y2 + big * .9, '比例定数 3', { col: C.green, size: s * 1.05, a: CH.smooth(.5, .8, t) });
+          }
+        } },
+      { tag: '例題', bh: '例題　水位が毎分 4 cm 下がる', q: '水をぬいて、水位が毎分 4 cm ずつ下がる場合を調べよう。表を完成させて、y を x の式で表し、比例といえるか考えよう。', a: 'y＝−4x。比例といえる（比例定数 −4）', sub: 'y は 12、8、4、0、−4、−8、−12。y÷x はいつも −4。比例定数が負の数でも比例', dur: 7,
+        b: { t: '12・8・4・0・−4・−8・−12　<b>y＝−4x</b>（比例定数 <b>−4</b>）　比例定数が負の数でも比例', col: C.pink },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, xr = D.ph ? -3 + 6 * CH.smooth(.02, .7, t) : -3, k = Math.floor(xr + 3 + 1e-9);
+          tank(D, L.T, -4 * xr, { dir: -1, info: [['x＝' + nf(xr) + ' 分', C.chalk], ['y＝' + nf(-4 * xr) + ' cm', C.blue]] });
+          table(D, L.B, [['y（cm）'].concat(Y4.map(S)), ['y÷x'].concat(XS.map(function (x, i) { return x === 0 ? '—' : S(Y4[i] / x); }))],
+            { show: function (r, c) { if (r === 0 || c === 0) return 1; if (!D.ph) return 0; return r === 1 ? (c - 1 <= k ? 1 : 0) : CH.smooth(.72 + (c - 1) * .035, .76 + (c - 1) * .035, t); },
+              hl: function (r, c) { return D.ph && r === 1 && c - 1 === k && t < .72 ? C.pink : null; } });
+        } },
+      { tag: '考えよう', bh: '考えよう', q: 'ア y＝2x　イ y＝−2x　ウ y＝x＋3 の x と y の関係を、表にして調べよう。比例といえるのは、どれだろう。',
+        notes: ['x が 2倍、3倍のときの y や、y÷x を調べよう。', '比例といえるものと、その理由を書こう。', 'スライダーで、x を進められます。'],
+        sliders: [{ key: 'x', label: 'x', min: -2, max: 2, step: 1, val: -2, fmt: function (v) { return S(v); } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .06, b: .06 }), x = D.V.x, s = CH.fs(D), X5 = [-2, -1, 0, 1, 2], rs = CH.rows(R, 2, .08);
+          CH.table(D, rs[0], ['x'].concat(X5.map(S)), [['ア y＝2x'].concat(X5.map(function (v) { return S(FA[0](v)); })), ['イ y＝−2x'].concat(X5.map(function (v) { return S(FA[1](v)); })), ['ウ y＝x＋3'].concat(X5.map(function (v) { return S(FA[2](v)); }))],
+            { fw: .26, size: CH.fs(D, .85), rh: s * 2.2, show: function (r, c) { return r > 0 && c > 0 && X5[c - 1] > x ? 0 : 1; }, hl: function (r, c) { return c > 0 && X5[c - 1] === x ? C.yel : null; } });
+          var p = '(' + S(x) + ')', lines = [['ア　2×' + p + '＝' + S(FA[0](x)), C.yel], ['イ　−2×' + p + '＝' + S(FA[1](x)), C.pink], ['ウ　' + p + '＋3＝' + S(FA[2](x)), C.blue]];
+          CH.text(D, rs[1].x0 + s, rs[1].y0 + s * .6, 'x＝' + S(x) + ' のとき', { align: 'left', size: s, col: C.chalk });
+          lines.forEach(function (l, i) { CH.text(D, rs[1].x0 + s * 2, rs[1].y0 + s * (2.2 + i * 1.6), l[0], { align: 'left', size: s * 1.05, col: l[1] }); });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'y は x に比例している。x の値が 3 から 7 まで増えると、y の値は 20 減る。比例定数を求めよう。また、x が −2 のときの y の値を求めよう。',
+        a: '比例定数 −5。x＝−2 のとき y＝10', sub: 'x が 4 増えると、y が 20 減るから 4a＝−20、a＝−5。y＝−5×(−2)＝10', dur: 7,
+        b: { t: 'x が <b>4</b> 増えて y が <b>20</b> 減る → 4a＝−20 → <b>a＝−5</b>　x＝−2 のとき <b>y＝10</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .1, b: .12 }), t = D.ph ? D.t : 0, s = CH.fs(D), CX = [3, 7, -2];
+          var T = CH.table(D, CH.rect(R.x0, R.y0 + s * 2.6, R.x1, R.y0 + s * 2.6 + s * 5), ['x'].concat(CX.map(S)), [['y'].concat(CX.map(function (x, i) { return t > (i < 2 ? .45 + i * .1 : .8) ? S(CA * x) : '？'; }))],
+            { fw: .2, size: CH.fs(D, 1), rh: s * 2.5, hl: function (r, c) { return r === 1 && c === 3 && t > .8 ? C.orange : null; } });
+          arc(D, T.cell(0, 1).cx, T.cell(0, 2).cx, T.cell(0, 1).y0, true, C.blue, 1, '＋4');
+          arc(D, T.cell(1, 1).cx, T.cell(1, 2).cx, T.cell(1, 1).y1, false, C.pink, 1, '20 減る（−20）');
+          var y0 = T.y1 + s * 4.4;
+          if (t > .1) CH.text(D, R.cx, y0, '4×a＝−20　→　a＝−5', { col: C.yel, size: s * 1.2, a: CH.smooth(.1, .3, t) });
+          if (t > .45) CH.text(D, R.cx, y0 + s * 2, 'y＝−5x（3 → −15、7 → −35）', { col: C.chalk, size: CH.fitSize(D, 'y＝−5x（3 → −15、7 → −35）', R.w, s * 1.05), a: CH.smooth(.45, .6, t) });
+          if (t > .8) CH.text(D, R.cx, y0 + s * 4, 'x＝−2 → y＝−5×(−2)＝10', { col: C.orange, size: CH.fitSize(D, 'x＝−2 → y＝−5×(−2)＝10', R.w, s * 1.2), a: CH.smooth(.8, .95, t) });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

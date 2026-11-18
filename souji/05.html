@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>相似の証明</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 相似な図形 第5時：2つの三角形が相似であることを、証明しよう（ikkan の lesson_souji_05 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。証明の行は GE.proof が座標で確かめる（GE.verify：等しい角・比・相似）。
+   「△ABC∽△ACD」の行で、三角形が裏返り・拡大・縮小しながら、もう一方に重なる。
+   考えようは、AB∥CD の図で、△OAB と △ODC の角を1つずつ選んで大きさをはかる道具（どの組を使うかは、生徒が考える）。 */
+(function () {
+  var C = CH.C, R = Math.PI / 180, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .05, r: .05, t: .08, b: .1 }); }
+  function ext(F, Q) { return Object.assign({}, F, { P: Object.assign({}, F.P, Q), X: function (p) { return F.X(typeof p === 'string' && Q[p] ? Q[p] : p); } }); }
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), w = tw(D, s, size); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({ outline: OUT }, o, { size: size })); }
+  /* 図の四角（fig）と、字を書く四角（side）。横長なら右、縦長なら下 */
+  function lay(D, k) {
+    var B = CH.box(D, { l: .03, r: .03, t: .05, b: .05 });
+    if (B.w > B.h * 1.2 && B.w > 520) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + 10, B.y0 + B.h * .08, B.x1, B.y1), wide: true }; }
+    var h = B.h * .3; return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + 8, B.y1 - h + 6, B.x1, B.y1), wide: false };
+  }
+  /* 字の行（四角の幅に入るように、字を小さくする） */
+  function rows(D, Rr, list, o) {
+    o = o || {}; list = list.filter(Boolean); if (!list.length) return;
+    var nc = Rr.w > Rr.h * 2.2 && list.length > 3 ? 2 : 1, per = Math.ceil(list.length / nc), cw = Rr.w / nc;   /* 下の帯では 2列 */
+    var s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * 1.6));
+    list.forEach(function (r, i) {
+      var c = Math.floor(i / per), j = i % per, w = tw(D, r.t, s), sz = w > cw - 8 ? s * (cw - 8) / w : s;
+      CH.text(D, Rr.x0 + c * cw, Rr.y0 + s * .8 + j * s * 1.6, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left', outline: OUT });
+    });
+  }
+  function f1(x) { return String(Math.round(x * 10) / 10); }
+  function f2(x) { return String(Math.round(x * 100) / 100); }
+  function about(x) { return GE.near(x, Math.round(x), 1e-9) ? String(Math.round(x)) : '約' + f1(x); }
+  /* 辺 s の外がわ（ref から遠い向き）に、長さの字 */
+  function sideLab(F, s, txt, o) {
+    o = o || {}; var a = F.X(s[0]), b = F.X(s[1]), m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, n = [-(b[1] - a[1]) / L, (b[0] - a[0]) / L];
+    var rf = F.X(o.ref || F.c); if ((m[0] - rf[0]) * n[0] + (m[1] - rf[1]) * n[1] < 0) n = [-n[0], -n[1]];
+    var sz = o.size || F.s * .8, w = tw(F.D, txt, sz), off = sz * (o.k || .45) + Math.abs(n[0]) * w / 2 + Math.abs(n[1]) * sz * .5;
+    CH.text(F.D, m[0] + n[0] * off, m[1] + n[1] * off, txt, { col: o.col || C.chalk, size: sz, a: o.a, outline: OUT });
+  }
+  /* 角の印と字（字は二等分線の上の、2辺にふれないところ） */
+  function mark(F, s, col, o) {
+    o = o || {}; var r = o.r || F.s * 1.05;
+    GE.arc(F, s, { col: col, fill: o.fill == null ? .3 : o.fill, a: o.a, r: r, n: o.n });
+    var t = o.t === false ? null : (o.t || Math.round(GE.ang(F.P, s)) + '°'); if (!t) return;
+    var A = F.X(s[0]), V = F.X(s[1]), B = F.X(s[2]), a1 = Math.atan2(A[1] - V[1], A[0] - V[0]), d = Math.atan2(B[1] - V[1], B[0] - V[0]) - a1;
+    while (d > Math.PI) d -= 2 * Math.PI; while (d <= -Math.PI) d += 2 * Math.PI;
+    var sz = o.size || F.s * .78, w = tw(F.D, t, sz), m = a1 + d / 2, need = (Math.max(w, sz) / 2 + 3) / Math.sin(Math.abs(d) / 2), dd = CH.clamp(Math.max(r + sz * .9, need), 0, o.max || F.s * 4.2);
+    CH.text(F.D, V[0] + Math.cos(m) * dd, V[1] + Math.sin(m) * dd, t, { col: col, size: sz, a: o.a, outline: OUT });
+  }
+  /* 点の並び（座標）の角：頂点 v、両どなり a・b */
+  function markP(F, a, v, b, col, o) { mark(ext(F, { X: a, V: v, Y: b }), 'XVY', col, o); }
+  /* 三角形：B が原点、C が右（BC＝bc）、AB＝ab、CA＝ca */
+  function tri(ab, bc, ca) { var x = (ab * ab - ca * ca + bc * bc) / (2 * bc); return { A: [x, Math.sqrt(ab * ab - x * x)], B: [0, 0], C: [bc, 0] }; }
+  /* 図形を s 倍して rot 度回し、名前を from → to に */
+  function xf(P, from, to, o) { var out = {}, r = (o.rot || 0) * R; from.split('').forEach(function (n, i) { var x = P[n][0] * o.s, y = P[n][1] * o.s; out[to[i]] = [x * Math.cos(r) - y * Math.sin(r), x * Math.sin(r) + y * Math.cos(r)]; }); return out; }
+  function bb(P) { var b = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity }; Object.keys(P).forEach(function (k) { var p = P[k]; b.x0 = Math.min(b.x0, p[0]); b.x1 = Math.max(b.x1, p[0]); b.y0 = Math.min(b.y0, p[1]); b.y1 = Math.max(b.y1, p[1]); }); return b; }
+  function shift(P, d) { var out = {}; Object.keys(P).forEach(function (k) { out[k] = [P[k][0] + d[0], P[k][1] + d[1]]; }); return out; }
+  /* P2 を P1 の右（wide）か下に、すきま gap をあけて置く */
+  function beside(P1, P2, wide, gap) { var a = bb(P1), b = bb(P2), d = wide ? [a.x1 + gap - b.x0, a.y0 - b.y0] : [(a.x0 + a.x1) / 2 - (b.x0 + b.x1) / 2, a.y0 - gap - b.y1]; return Object.assign({}, P1, shift(P2, d)); }
+  /* いくつかの置き方のうち、いちばん大きく描けるもの */
+  function fitBest(D, Rr, list, o) { var best = null; list.forEach(function (P) { var F = GE.fit(D, Rr, P, o); if (!best || F.u > best.u * 1.02) best = F; }); return best; }
+  function cen(P, ns) { var c = [0, 0]; ns.split('').forEach(function (n) { c[0] += P[n][0] / ns.length; c[1] += P[n][1] / ns.length; }); return c; }
+  function lens(Q) { return Q.map(function (p, i) { var q = Q[(i + 1) % Q.length]; return Math.hypot(q[0] - p[0], q[1] - p[1]); }); }
+  function angs(Q) { return Q.map(function (p, i) { return GE.ang({ X: Q[(i + Q.length - 1) % Q.length], V: p, Y: Q[(i + 1) % Q.length] }, 'XVY'); }); }
+  /* 多角形 s1 を、相似な多角形 s2 の上へ k（0〜1）だけ動かした点（回す・ずらす・大きさを変える。裏返しはしない） */
+  function movePoly(P, s1, s2, k) {
+    var p = s1.split('').map(function (n) { return P[n]; }), q = s2.split('').map(function (n) { return P[n]; }), av = function (a) { return a.reduce(function (m, x) { return [m[0] + x[0] / a.length, m[1] + x[1] / a.length]; }, [0, 0]); };
+    var cp = av(p), cq = av(q), th = Math.atan2(q[1][1] - q[0][1], q[1][0] - q[0][0]) - Math.atan2(p[1][1] - p[0][1], p[1][0] - p[0][0]);
+    while (th > Math.PI) th -= 2 * Math.PI; while (th <= -Math.PI) th += 2 * Math.PI;
+    var sc = Math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1]) / Math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1]), e = CH.ease(k), tr = GE.lerpP(cp, cq, e), z = 1 + (sc - 1) * e;
+    return p.map(function (x) { var y = GE.rot(x, cp, th * e * 180 / Math.PI); return [(y[0] - cp[0]) * z + tr[0], (y[1] - cp[1]) * z + tr[1]]; });
+  }
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  /* 点の名前：図形 ns の中心から外向きに（o.dir で向きを決めることもできる） */
+  function labs(F, ns, o) {
+    o = o || {}; var c = F.X(cen(F.P, ns)), map = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0], ne: [.75, -.75], nw: [-.75, -.75], se: [.75, .75], sw: [-.75, .75] };
+    ns.split('').forEach(function (n) { var p = F.X(n), v = o.dir && o.dir[n] ? map[o.dir[n]] : [p[0] - c[0], p[1] - c[1]], L = Math.hypot(v[0], v[1]) || 1, r = F.s * .95; CH.text(F.D, p[0] + v[0] / L * r, p[1] + v[1] / L * r, n, { size: F.s, col: (o.col && o.col[n]) || C.chalk, a: o.a, w: 600 }); });
+  }
+  var PBOX = { l: .06, r: .06, t: .1, b: .12 };   /* GE.proof と同じ四角 */
+
+  /* ---- 今日の問い：AB＝9、AC＝6、BC＝8 の △ABC。D は AB 上で AD＝4（AC×AC＝AB×AD なので ∠ACD＝∠ABC） ---- */
+  var P1 = tri(9, 8, 6); P1.D = GE.lerpP(P1.A, P1.B, 4 / 9);
+  CH.check(GE.verify(P1, 'AB＝9、AC＝6、BC＝8、AD＝4') && GE.verify(P1, '∠ACD＝∠ABC'), '今日の問いの図（∠ACD＝∠ABC）');
+  var FIG1 = { segs: ['AB', 'BC', 'CA', 'CD'], angs: [['ABC', 1], ['ACD', 1]], dots: ['D'], dir: { A: 'n', B: 'sw', C: 'se', D: 'nw' } };
+  var def1 = { id: '第5時 今日の問い', lv: 1, ttl: '△ABC∽△ACD の証明', P: P1, fig: FIG1,
+    q: '点 D は辺 AB 上にあり、∠ACD＝∠ABC である。△ABC∽△ACD であることを証明しよう。',
+    hyp: '∠ACD＝∠ABC', goal: '△ABC∽△ACD', tri: ['ABC', 'ACD'],
+    L: [{ t: '△ABC と △ACD で' },
+      { t: '∠BAC＝∠CAD', r: '共通な角', n: 1 },
+      { t: '∠ABC＝∠ACD', r: '仮定', n: 2 },
+      { t: '①②より、2組の角が、それぞれ等しいので', c: 'AA' },
+      { t: '△ABC∽△ACD' }],
+    point: { a: '等しい角を2組さがす。共通な角は、図に印がなくても使える', sub: '相似条件 ③（2組の角）は、辺の長さがわからなくても使える' } };
+  var S1 = GE.proof(def1, { tag: '今日の問い', box: PBOX });
+
+  /* ---- 例題：AB∥CD で、AD と BC が O で交わる（AB＝4、CD＝6） ---- */
+  function xpts(p, q, h, k) { return { A: [-p, h], B: [q, h], C: [-k * q, -k * h], D: [k * p, -k * h], O: [0, 0] }; }
+  var P2 = xpts(1.5, 2.5, 2, 1.5);
+  var defE = { id: '第5時 例題', lv: 2, ttl: '例題　△OAB∽△ODC の証明', P: P2,
+    fig: { segs: ['AB', 'CD', 'AD', 'BC'], pars: [['AB', 1], ['CD', 1]], dots: ['O'], dir: { A: 'nw', B: 'ne', C: 'sw', D: 'se', O: 'e' } },
+    q: 'AB∥CD で、線分 AD と BC は点 O で交わっている。△OAB∽△ODC であることを証明しよう。',
+    hyp: 'AB∥CD', goal: '△OAB∽△ODC', tri: ['OAB', 'ODC'],
+    L: [{ t: '△OAB と △ODC で' },
+      { t: '∠OAB＝∠ODC', r: 'AB∥CD の錯角', n: 1, hint: '平行な線がある。等しい角は？ 根拠も。' },
+      { t: '∠OBA＝∠OCD', r: 'AB∥CD の錯角', n: 2, hint: 'もう1組、等しい角は？ 根拠も。' },
+      { t: '①②より、2組の角が、それぞれ等しいので', c: 'AA' },
+      { t: '△OAB∽△ODC' }] };
+  CH.check(GE.verify(P2, 'AB＝4、CD＝6、OA：OD＝2：3'), '例題の図（AB＝4、CD＝6）');
+  var SE = GE.proof(defE, { tag: '例題', box: PBOX });
+  SE[0].b = SE[0].b.concat([SE[1].b]); SE.splice(1, 1);   /* 方針のステップ（どの三角形？）は、結論と同じなので はぶく */
+  /* 考えよう：OD：OA を変えても、AB∥CD なら △OAB∽△ODC */
+  [.7, 1, 1.5, 2.2].forEach(function (k) { CH.check(GE.verify(xpts(1.5, 2.5, 2, k), 'AB∥CD、∠AOB＝∠DOC、∠OAB＝∠ODC、△OAB∽△ODC'), '考えよう（k＝' + k + '）'); });
+  var ANG1 = ['', 'AOB', 'OAB', 'OBA'], ANG2 = ['', 'DOC', 'ODC', 'OCD'];
+
+  /* ---- チャレンジ：▱ABCD、BE：EC＝1：3、F は AE と BD の交点。BD＝20 になる大きさで作る ---- */
+  var P8 = (function () { var P = { A: [1, 3], B: [0, 0], C: [8, 0], D: [9, 3] }, k = 20 / Math.hypot(9, 3); Object.keys(P).forEach(function (n) { P[n] = [P[n][0] * k, P[n][1] * k]; }); P.E = GE.lerpP(P.B, P.C, 1 / 4); P.F = GE.meet(P.A, P.E, P.B, P.D); return P; })();
+  CH.check(GE.verify(P8, 'BE：EC＝1：3') && GE.verify(P8, 'AD∥BC') && GE.verify(P8, 'BD＝20') && GE.verify(P8, 'AB＝DC'), 'チャレンジの図（▱ABCD、BD＝20）');
+  var defC = { id: '第5時 チャレンジ', lv: 2, ttl: 'チャレンジ　△AFD∽△EFB と BF', P: P8,
+    fig: { segs: ['AB', 'BC', 'CD', 'DA', 'AE', 'BD'], pars: [['AD', 1], ['BC', 1]], dots: ['E', 'F'], dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne', E: 's', F: 'n' } },
+    q: '▱ABCD の辺 BC 上に、BE：EC＝1：3 となる点 E をとり、AE と対角線 BD の交点を F とする。① △AFD∽△EFB であることを証明しよう。② BD＝20cm のとき、BF の長さを求めよう。',
+    hyp: '▱ABCD、BE：EC＝1：3', goal: '△AFD∽△EFB', tri: ['AFD', 'EFB'],
+    notes: ['ヒント：平行四辺形では、AD と BC は、どんな関係かな。'],
+    L: [{ t: '△AFD と △EFB で' },
+      { t: '∠FAD＝∠FEB', r: 'AD∥BC の錯角', n: 1 },
+      { t: '∠FDA＝∠FBE', r: 'AD∥BC の錯角', n: 2 },
+      { t: '①②より、2組の角が、それぞれ等しいので', c: 'AA' },
+      { t: '△AFD∽△EFB' },
+      { t: 'BF：FD＝EB：AD＝1：4', q: '② BF：FD は、どの辺の比と等しい？', a: 'BF：FD＝EB：AD＝1：4', sub: '相似な図形の対応する辺の比は等しい。BE：EC＝1：3 だから EB：AD＝1：4（AD＝BC）', ask: false },
+      { t: 'BF：BD＝1：5、BF＝4', q: '② BD＝20cm のとき、BF の長さは？', a: 'BF＝4cm', sub: 'BF：FD＝1：4 だから BF は BD の 1/5。20×1/5＝4', ask: false }] };
+  var SC = GE.proof(defC, { tag: 'チャレンジ', box: PBOX });
+  SC[0].b = SC[0].b.concat([SC[1].b]); SC.splice(1, 1);
+
+  /* ことば：証明の書き方の3つの段 */
+  var FLOW = [{ h: '① 比べる2つの三角形を示す', l: ['△ABC と △ACD で'] }, { h: '② 等しい角（辺の比）を、根拠をつけて書く', l: ['∠BAC＝∠CAD（共通な角）…①', '∠ABC＝∠ACD（仮定）…②'] }, { h: '③ 使った相似条件と、結論を書く', l: ['①②より、2組の角が、それぞれ等しいので', '△ABC∽△ACD'] }];
+
+  var steps = [
+    { tag: '今日の問い', bh: '△ABC と、辺 AB 上の点 D', q: '点 D は辺 AB 上にあり、∠ACD＝∠ABC である。△ABC と △ACD は相似といえるだろうか。いえるなら、どんな順で説明すればよいだろう。',
+      notes: ['① 自分の考え（3分）　相似といえるわけを、順に書こう。', '② ペアの考え（3分）　自分とちがう書き方・順番は？'],
+      b: [{ t: '【仮定】∠ACD＝∠ABC', col: C.blue }, { t: '【結論】△ABC∽△ACD', col: C.blue }],
+      draw: function (D) { var F = GE.fit(D, box(D, PBOX), P1, {}); GE.figure(F, FIG1); } },
+    { tag: '今日の問い', q: '△ABC と △ACD は、相似といえる？ 等しい角は、何組見つかる？', a: 'いえる。等しい角が2組（∠A は共通、∠ABC＝∠ACD）', sub: '2組の角が、それぞれ等しいので相似（相似条件 ③）。これを、証明の形で書いていこう', dur: 5,
+      b: { t: '△ABC と △ACD で' },
+      draw: function (D) {
+        var F = GE.fit(D, box(D, PBOX), P1, {}), t = D.ph ? D.t : 0;
+        if (D.ph) { GE.poly(F, 'ABC', { col: C.blue, fa: .25 * CH.smooth(0, .15, t) * (1 - .5 * CH.smooth(.3, .4, t)), stroke: false }); GE.poly(F, 'ACD', { col: C.orange, fa: .3 * CH.smooth(.3, .45, t), stroke: false }); }
+        GE.figure(F, FIG1);
+        if (!D.ph) return;
+        GE.arc(F, 'CAB', { col: C.pink, fill: .5, r: F.s * 1.6, a: CH.smooth(.55, .7, t) });
+        GE.arc(F, 'ABC', { col: C.yel, fill: .5, r: F.s * 1.6, a: CH.smooth(.75, .9, t) }); GE.arc(F, 'ACD', { col: C.yel, fill: .5, r: F.s * 1.6, a: CH.smooth(.75, .9, t) });
+        say(D, F.R.cx, F.R.y1 + F.s * 1.2, t < .5 ? '△ABC と △ACD' : t < .75 ? '∠A は共通' : '∠ABC＝∠ACD（仮定）', { col: t < .5 ? C.chalk : t < .75 ? C.pink : C.yel, maxW: F.R.w, size: F.s });
+      } }
+  ].concat(S1.slice(2)).concat([
+    { tag: 'ことば', bh: 'ことば', q: '相似の証明は、どんな順に書けばよい？', a: '① 比べる2つの三角形を示す　② 等しい角や辺の比を、根拠をつけて書く　③ 使った相似条件と、結論を書く', sub: '等しい角の根拠：共通な角・対頂角・平行線の錯角（同位角）・仮定', dur: 5,
+      b: [{ t: '証明の順：① 比べる2つの<b>三角形</b>を示す → ② 等しい角や辺の比を<b>根拠</b>をつけて書く → ③ <b>相似条件</b>と結論', col: C.green }, { t: '等しい角の根拠：<b>共通</b>な角・<b>対頂角</b>・平行線の<b>錯角</b>（同位角）・仮定', col: C.green }],
+      draw: function (D) {
+        var Bx = box(D, { l: .05, r: .05, t: .05, b: .05 }), t = D.ph ? D.t : 0, n = 5 + 2, s = Math.min(CH.fs(D, .95), Bx.h / (n * 2.1)), y = Bx.y0, gap = s * .9;
+        FLOW.forEach(function (f, i) {
+          var a = D.ph ? CH.smooth(.05 + i * .28, .2 + i * .28, t) : 1, h = s * (1.9 + f.l.length * 1.5);
+          CH.fillRect(D, Bx.x0, y, Bx.x1, y + h, { fill: 'rgba(242,240,230,.05)', stroke: D.ph && a > .5 ? C.yel : 'rgba(242,240,230,.4)', sw: 1.6, a: 1 });
+          say(D, Bx.x0 + s * .6, y + s * 1, D.ph ? f.h : f.h.slice(0, 1) + ' ？', { size: s, col: C.yel, align: 'left', maxW: Bx.w - s, a: a });
+          f.l.forEach(function (l, j) { say(D, Bx.x0 + s * 1.4, y + s * (2.5 + j * 1.5), l, { size: s * .92, align: 'left', maxW: Bx.w - s * 2, col: j === f.l.length - 1 && i === 2 ? C.yel : C.chalk }); });
+          y += h + gap;
+          if (i < 2) CH.arrow(D, Bx.cx, y - gap + 2, Bx.cx, y - 2, { col: 'rgba(242,240,230,.6)', head: 7 });
+        });
+      } }
+  ]).concat(SE).concat([
+    { tag: '考えよう', q: '例題では、錯角を2組使って △OAB∽△ODC を証明した。使う角を変えても、証明できるだろうか。ほかの証明を考えよう。',
+      notes: ['△OAB の角と △ODC の角を1つずつ選んで、大きさをくらべよう。', 'スライダーで、△ODC の大きさを変えたり、くらべる角を選んだりできます。'],
+      sliders: [{ key: 'k', label: '△ODC の大きさ', min: .8, max: 2.2, step: .1, val: 1.5, fmt: function (x) { return 'OD＝' + f1(x) + '×OA'; } },
+        { key: 'p', label: '△OAB の角', min: 0, max: 3, step: 1, val: 0, fmt: function (x) { return x ? '∠' + ANG1[x] : 'なし'; } },
+        { key: 'q', label: '△ODC の角', min: 0, max: 3, step: 1, val: 0, fmt: function (x) { return x ? '∠' + ANG2[x] : 'なし'; } }],
+      draw: function (D) {
+        var L = lay(D, .3), P = xpts(1.5, 2.5, 2, D.V.k), F = ext(GE.fit(D, L.fig, { p: [-6, -4.9], q: [3.8, 2.6] }, { pad: .06 }), P);
+        GE.poly(F, 'OAB', { col: C.blue, fa: .16, stroke: false }); GE.poly(F, 'ODC', { col: C.orange, fa: .16, stroke: false });
+        GE.figure(F, { segs: ['AB', 'CD', 'AD', 'BC'], pars: [['AB', 1], ['CD', 1]], dots: ['O'], labels: ['A', 'B', 'C', 'D', 'O'], dir: { A: 'nw', B: 'ne', C: 'sw', D: 'se', O: 'e' } });
+        var list = [];
+        if (D.V.p) { mark(F, ANG1[D.V.p], C.yel, { t: false, fill: .5, r: F.s * 1.3 }); list.push({ t: '∠' + ANG1[D.V.p] + '＝' + Math.round(GE.ang(P, ANG1[D.V.p])) + '°', col: C.yel }); }
+        if (D.V.q) { mark(F, ANG2[D.V.q], C.pink, { t: false, fill: .5, r: F.s * 1.3 }); list.push({ t: '∠' + ANG2[D.V.q] + '＝' + Math.round(GE.ang(P, ANG2[D.V.q])) + '°', col: C.pink }); }
+        rows(D, L.side, list.length ? list : [{ t: 'くらべる角を選ぼう', col: 'rgba(242,240,230,.7)' }]);
+      } }
+  ]).concat(SC);
+
+  K3.run({
+    no: '第5時', title: '2つの三角形が相似であることを、証明しよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '04.html', label: '◀ 第4時' }, { href: '06.html', label: '第6時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

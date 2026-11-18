@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>公開側の見本（編集ツールで公開した内容が入る）</title>
+<link rel="stylesheet" href="css/site-sample.css">
+<style>
+  body{margin:0;background:var(--porcelain);color:var(--ink);line-height:1.9;font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif}
+  main{max-width:880px;margin:0 auto;padding:16px 16px 64px}
+  h1{font-size:1.3rem;color:var(--gosu-deep)}
+  h2{font-size:1.2rem;color:var(--gosu-deep);margin:2rem 0 .6rem}
+  .note{color:var(--muted);font-size:.9rem}
+</style>
+</head>
+<body>
+<main>
+  <h1>公開側の見本</h1>
+  <p class="note">このページは、編集ツールで「公開する」を押した内容を、サイトの決まった場所に流し込む見本です。まだ公開していない項目や、読み込めなかったときは、下の「元の内容」がそのまま表示されます。</p>
+
+  <h2>お知らせ</h2>
+  <ul class="news" data-content="news">
+    <li><time>（元の内容）</time><p>まだ公開されていません。</p></li>
+  </ul>
+
+  <h2>大会概要</h2>
+  <dl class="spec" data-content="overview">
+    <div><dt>（元の内容）</dt><dd><span class="tbd">調整中</span></dd></div>
+  </dl>
+
+  <h2>プログラム</h2>
+  <ol class="days" data-content="program">
+    <li class="day"><h3>（元の内容）</h3><p class="sub">まだ公開されていません。</p></li>
+  </ol>
+</main>
+
+<script src="config.js"></script>
+<script src="js/schema.js"></script>
+<script src="js/site-content.js"></script>
+<script>SiteContent.apply(window.CONF_EDITOR_CONFIG);</script>
+</body>
+</html>

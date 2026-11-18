@@ -1,0 +1,17 @@
+{
+  "name": "サッカー タップ記録",
+  "short_name": "サッカー記録",
+  "description": "サッカーの試合を見ながらタップで記録。ゴールキック・フリーキック・コーナーキック・シュート・あとでチェック。撮影して場面を見返す",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0e15",
+  "theme_color": "#0a0e15",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

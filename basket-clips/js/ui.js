@@ -39,9 +39,10 @@
 
   let modalClose = null;
   function modal(opts) {
+    if (modalClose) modalClose();      // 開いている小窓を閉じてから（その小窓の後かたづけ onClose も呼ぶ）
     const m = $('#modal');
     m.innerHTML = '';
-    const card = h('div', { class: 'modal-card', role: 'dialog', 'aria-modal': 'true' });
+    const card = h('div', { class: 'modal-card' + (opts.cls ? ' ' + opts.cls : ''), role: 'dialog', 'aria-modal': 'true' });
     const close = () => { m.hidden = true; m.innerHTML = ''; modalClose = null; if (opts.onClose) opts.onClose(); };
     card.appendChild(h('header', null, h('b', null, opts.title || ''), h('button', { class: 'x', 'aria-label': '閉じる', onclick: close }, '×')));
     const body = h('div', { class: 'modal-body' });
