@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>制動きょりを予測する</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 関数 y＝ax² 第10時：車が止まるまでのきょりを、y＝ax² とみなして予測しよう（ikkan の lesson_kansu_10 と同じ流れ）。
+   道の図に、制動きょりを 8m のブロックで。時速 80km では、2倍の 16m ではなく 4ブロック（32m）。グラフでは、比例の直線と放物線がわかれる。
+   点 (40, 8) に、放物線 y＝ax² が開き方を変えながら近づいて重なる（a＝1/200）。例題は表と、40.5m から時速を読む。
+   考えようは、空走きょり＋制動きょりを、速さのスライダーで道の図とグラフに（何倍かは書かない）。
+   数値は ikkan と同じ（ikkan で自作したもの）（時速 40km で 8m、空走きょり 40km で 10m、チャレンジ 63m → 時速 90km）。答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, OUT = 'rgba(20,40,30,.92)';
+  /* ---- 分数入りの字（[2/3] をたての分数に）。canvas 用（measure で幅だけ）と、右の板書（HTML）用 ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    if (o.measure) return w;
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+  function sg(v) { return (v >= 0 ? '＋' : '') + S(v); }
+  /* 座標平面。o：x・y（範囲）、gx・gy（方眼）、lx・ly（目もりの字の間かく）、asp（横÷縦の上限）、ux・uy（単位） */
+  function plane(D, R, o) {
+    var s = CH.fs(D, .72), xr = o.x, yr = o.y, gx = o.gx || 1, gy = o.gy || 1, lx = o.lx || gx, ly = o.ly || gy, g = D.ctx, i, v;
+    var Rp = CH.rect(R.x0 + s * (o.pl == null ? 2.4 : o.pl), R.y0 + s * 1.9, R.x1 - s * 2.1, R.y1 - s * (o.ux && yr[0] >= 0 ? 2.8 : 1.6));
+    if (o.asp && Rp.w > Rp.h * o.asp) { v = Rp.h * o.asp; Rp = CH.rect(Rp.cx - v / 2, Rp.y0, Rp.cx + v / 2, Rp.y1); }
+    var X = function (x) { return Rp.x0 + (x - xr[0]) / (xr[1] - xr[0]) * Rp.w; }, Y = function (y) { return Rp.y1 - (y - yr[0]) / (yr[1] - yr[0]) * Rp.h; };
+    g.save(); g.globalAlpha = D.ga; g.strokeStyle = 'rgba(242,240,230,.12)'; g.lineWidth = 1; g.beginPath();
+    for (i = Math.ceil(xr[0] / gx - 1e-9); i * gx <= xr[1] + 1e-9; i++) { g.moveTo(X(i * gx), Rp.y0); g.lineTo(X(i * gx), Rp.y1); }
+    for (i = Math.ceil(yr[0] / gy - 1e-9); i * gy <= yr[1] + 1e-9; i++) { g.moveTo(Rp.x0, Y(i * gy)); g.lineTo(Rp.x1, Y(i * gy)); }
+    g.stroke(); g.restore();
+    var Pl = CH.plane(D, Rp, { x: xr, y: yr, fit: false, grid: false, nums: false });
+    var ox = CH.clamp(0, xr[0], xr[1]), oy = CH.clamp(0, yr[0], yr[1]);
+    for (i = Math.ceil(xr[0] / lx - 1e-9); i * lx <= xr[1] + 1e-9; i++) { v = i * lx; if (!i) continue; CH.line(D, X(v), Y(oy) - 4, X(v), Y(oy) + 4, { w: 1.4 }); CH.text(D, X(v), Y(oy) + s, S(v), { size: s, num: true }); }
+    for (i = Math.ceil(yr[0] / ly - 1e-9); i * ly <= yr[1] + 1e-9; i++) { v = i * ly; if (!i) continue; CH.line(D, X(ox) - 4, Y(v), X(ox) + 4, Y(v), { w: 1.4 }); CH.text(D, X(ox) - s * .6, Y(v), S(v), { size: s, num: true, align: 'right' }); }
+    if (o.ux) CH.text(D, Rp.x1 + s * .3, Y(oy) + s * 2.1, o.ux, { size: s, align: 'right', col: 'rgba(242,240,230,.75)' });
+    if (o.uy) CH.text(D, X(ox) + s * 1.7, Rp.y0 - s * .9, o.uy, { size: s, align: 'left', col: 'rgba(242,240,230,.75)' });
+    return Pl;
+  }
+  function lab(D, Pl, x, y, txt, col, o) { o = o || {}; return TX(D, Pl.X(x) + (o.dx || 0), Pl.Y(y) + (o.dy || 0), txt, { col: col, size: o.size || CH.fs(D, .85), align: o.align || 'left', outline: OUT, a: o.a }); }
+  function glow(D, Pl, x, y, col, a) { var r = CH.fs(D, .3); CH.circle(D, Pl.X(x), Pl.Y(y), r * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
+  /* 字の行（左そろえ）。四角 R の幅に入らないときは、ぜんぶ同じだけ小さく */
+  function lines(D, R, L, size) {
+    var s = size || CH.fs(D, .95), wm = 1, gap = 1.75;
+    L.forEach(function (l) { if (l) wm = Math.max(wm, TX(D, 0, 0, l.t, { size: s, measure: true })); });
+    s *= Math.min(1, R.w / wm, R.h / (L.length * gap * s));
+    L.forEach(function (l, i) { if (l && l.a !== 0) TX(D, R.x0, R.y0 + s * (.95 + i * gap), l.t, { size: s, col: l.col || C.chalk, a: l.a, align: 'left' }); });
+  }
+  /* 字の行（上）と、座標平面の四角（下） */
+  function strip(D, n) {
+    var R = CH.box(D, { l: .02, r: .02, t: .01, b: .02 }), s = CH.fs(D, .95), h = n * 1.75 * s;
+    return { T: CH.rect(R.x0 + R.w * .04, R.y0, R.x1 - R.w * .02, R.y0 + h), P: CH.rect(R.x0, R.y0 + h, R.x1, R.y1) };
+  }
+  /* 2点を結ぶ直線（のばした線はうすく）と、増加量の三角形 */
+  function sec(D, Pl, f, p, q, col, o) {
+    o = o || {}; var m = (f(q) - f(p)) / (q - p), a = o.a == null ? 1 : o.a;
+    if (o.ext !== false) CH.lin(D, Pl, m, f(p) - m * p, { col: col, w: 1.6, a: a * .5, dash: [7, 7] });
+    CH.pseg(D, Pl, [p, f(p)], [q, f(q)], { col: col, w: 3.2, a: a, glow: true });
+    CH.pt(D, Pl, p, f(p), { col: col, a: a, r: CH.fs(D, .27) }); CH.pt(D, Pl, q, f(q), { col: col, a: a, r: CH.fs(D, .27) });
+  }
+  function tri(D, Pl, f, p, q, col, o) {
+    o = o || {}; var fp = f(p), fq = f(q), s = CH.fs(D, o.k || .8), a = o.a, up = fq >= fp;
+    CH.pseg(D, Pl, [p, fp], [q, fp], { col: col, w: 2.2, dash: true, a: a });
+    CH.pseg(D, Pl, [q, fp], [q, fq], { col: col, w: 2.2, dash: true, a: a });
+    if (o.lx !== false) CH.text(D, Pl.X((p + q) / 2), Pl.Y(fp) + (up ? s * .9 : -s * .9), o.lx || sg(q - p), { col: col, size: s, a: a, outline: OUT });
+    if (o.ly !== false) CH.text(D, Pl.X(q) + (o.left ? -s * .45 : s * .45), Pl.Y((fp + fq) / 2), o.ly || sg(fq - fp), { col: col, size: s, a: a, align: o.left ? 'right' : 'left', outline: OUT });
+  }
+  /* x 軸の上の帯（x の増加量）と、点からおろした点線 */
+  function band(D, Pl, p, q, a) { CH.pseg(D, Pl, [p, 0], [q, 0], { col: C.yel, w: 7, a: (a == null ? 1 : a) * .55 }); }
+  /* 表の下の矢印（セルの中心から中心へ） */
+  function hop(D, x0, x1, y, col, txt, a, sz) {
+    var g = D.ctx, s = sz || CH.fs(D), h = s * 1.05, d = Math.abs(x1 - x0);
+    g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.strokeStyle = col; g.lineWidth = 2.2; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo((x0 + x1) / 2, y + h * 1.6, x1, y); g.stroke(); g.restore();
+    var ang = Math.atan2(-h * 1.6, (x1 - x0) / 2), hd = Math.min(9, d * .25);
+    CH.arrow(D, x1 - Math.cos(ang) * hd * 1.2, y - Math.sin(ang) * hd * 1.2, x1, y, { col: col, a: a, head: hd, w: 2.2 });
+    CH.text(D, (x0 + x1) / 2, y + h * 1.2, txt, { col: col, size: s * .9, a: a, outline: OUT });
+  }
+
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  /* ---- 数（ikkan と同じ）と検算 ---- */
+  var A = 8 / (40 * 40), F = function (x) { return A * x * x; }, K = 10 / 40, Q = function (x) { return K * x; }, TOT = function (x) { return K * x + A * x * x; }, SP = [20, 40, 60, 80, 100];
+  CH.check(CH.near(A, 1 / 200) && SP.map(function (x) { return Math.round(F(x) * 1e6) / 1e6; }).join() === '2,8,18,32,50', '例題の表（a＝1/200）');
+  CH.check(CH.near(F(80), 4 * 8) && !CH.near(F(80), 2 * 8) && CH.near(F(80), 32), '今日の問い（80km で 32m、4倍）');
+  CH.check(CH.near(Math.sqrt(40.5 * 200), 90) && CH.near(F(90), 40.5), '例題（2）（40.5m → 時速 90km）');
+  CH.check(CH.near(Q(40), 10) && CH.near(Q(80), 20) && CH.near(TOT(40), 18) && CH.near(TOT(80), 52), '考えよう（ここで確かめるだけ）');
+  (function () { var d = 50 * 50 + 4 * 12600, x = (-50 + Math.sqrt(d)) / 2, y = (-50 - Math.sqrt(d)) / 2; CH.check(CH.near(x, 90) && CH.near(y, -140) && CH.near(TOT(90), 63) && CH.near(Q(90), 22.5) && CH.near(F(90), 40.5), 'チャレンジ（時速 90km）'); })();
+
+  /* 車（前が x、下が y、長さ w） */
+  function car(D, x, y, w, col, a) {
+    CH.fillRect(D, x - w, y - w * .44, x, y - w * .16, { fill: hexA(col, .4), stroke: col, sw: 1.6, a: a });
+    CH.poly(D, [[x - w * .8, y - w * .44], [x - w * .64, y - w * .68], [x - w * .3, y - w * .68], [x - w * .16, y - w * .44]], { fill: hexA(col, .25), stroke: col, sw: 1.6, a: a });
+    [.76, .26].forEach(function (k) { CH.circle(D, x - w * k, y - w * .13, w * .12, { fill: '#1f3a2c', stroke: col, sw: 1.6, a: a }); });
+  }
+  /* 道の図。rows：[{ sp（時速）, segs: [{ m0, m1, col, a, txt, dash }], q（字） }]、o.max（目もりの最大 m） */
+  function road(D, R, rows, o) {
+    o = o || {}; var s = CH.fs(D, .8), n = rows.length, rh = R.h / n, lw = s * 5.6, cw = Math.min(s * 2.8, rh * .9), x0 = R.x0 + lw + cw + s * .2, M = o.max || 40, sc = (R.x1 - s * 1.6 - x0) / M;
+    rows.forEach(function (r, i) {
+      var y = R.y0 + rh * (i + .62);
+      CH.text(D, R.x0, y - cw * .3, '時速 ' + r.sp + 'km', { size: s, align: 'left', col: r.col || C.chalk });
+      CH.line(D, R.x0 + lw - s * .3, y, R.x1, y, { w: 2, col: 'rgba(242,240,230,.6)' });
+      for (var m = 0; m <= M + 1e-9; m += 10) { CH.line(D, x0 + m * sc, y, x0 + m * sc, y + 5, { w: 1.2, col: 'rgba(242,240,230,.6)' }); if (i === n - 1 && !(m % (M > 60 ? 20 : 10))) CH.text(D, x0 + m * sc, y + s * .95, String(m), { size: s * .78, num: true, col: 'rgba(242,240,230,.75)' }); }
+      if (i === n - 1) CH.text(D, R.x1, y + s * 2.1, '（m）', { size: s * .78, align: 'right', col: 'rgba(242,240,230,.7)' });
+      car(D, x0, y, cw, C.blue);
+      (r.segs || []).forEach(function (g) {
+        if (g.a === 0) return; var xa = x0 + g.m0 * sc, xb = x0 + g.m1 * sc;
+        if (!g.nobox) CH.fillRect(D, xa, y - s * .62, xb, y - s * .08, { fill: hexA(g.col, .32), stroke: g.col, sw: 1.8, a: g.a, dash: g.dash });
+        if (g.txt) CH.text(D, g.tx != null ? x0 + g.tx * sc : (xa + xb) / 2, y - s * 1.25, g.txt, { col: g.col, size: s * .9, a: g.a, outline: OUT, align: g.al || 'center' });
+      });
+      if (r.q) CH.text(D, x0 + s * .8, y - s * .9, r.q, { col: C.yel, size: s, align: 'left' });
+    });
+  }
+  /* 道の図（上）と座標平面（下） */
+  function lay(D, n, k) {
+    var R = CH.box(D, { l: .02, r: .03, t: .01, b: .02 }), h = R.h * (k || .36);
+    return { K: CH.rect(R.x0 + R.w * .02, R.y0, R.x1, R.y0 + h), P: CH.rect(R.x0, R.y0 + h, R.x1, R.y1) };
+  }
+  function pl(D, R, o) { return plane(D, R, Object.assign({ x: [0, 115], y: [0, 56], gx: 10, lx: 20, gy: 5, ly: 10, pl: 2.8, ux: '時速（km）', uy: '（m）' }, o || {})); }
+  function blocks(n, col, a, from) { var out = []; for (var i = from || 0; i < n; i++) out.push({ m0: i * 8, m1: i * 8 + 8, col: col, a: a, txt: '' }); return out; }
+
+  K3.run({
+    no: '第10時', title: '車が止まるまでのきょりを、y＝ax² とみなして予測しよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '09.html', label: '◀ 第9時' }, { href: '11.html', label: '第11時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '制動きょり（時速 40km で 8m）', q: 'ブレーキがきき始めてから止まるまでに進むきょりを「制動きょり」という。ある自動車は、時速 40km で走っているとき、制動きょりが 8m だった。時速 80km で走っていたら、制動きょりは何 m になると予想するか。',
+        notes: ['① 自分の予想（3分）　予想する長さと、そのわけを書こう。', '② ペアの予想（3分）　自分とちがう予想とわけを聞いて、書こう。'],
+        draw: function (D) {
+          var L = lay(D); road(D, L.K, [{ sp: 40, segs: [{ m0: 0, m1: 8, col: C.orange, txt: '8m' }] }, { sp: 80, q: '？m' }], { max: 40 });
+          var Pl = pl(D, L.P); CH.pt(D, Pl, 40, 8, { col: C.orange, r: CH.fs(D, .32), lab: '(40, 8)', dir: 'nw' });
+        } },
+      { tag: '今日の問い', q: '制動きょりが、速さの 2乗に比例するとしたら、時速 80km の制動きょりは何 m？', a: '32m（2倍の 16m ではない）',
+        sub: '速さが 2倍（40→80）になると、制動きょりは 2²＝4倍。8×4＝32。グラフでは、比例の直線ではなく、放物線の上の点', dur: 8,
+        b: { t: '速さ 2倍 → 制動きょり 2²＝<b>4倍</b>（8m → <b>32m</b>）。2倍の 16m ではない', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, a1 = CH.smooth(.05, .2, t), a2 = CH.smooth(.45, .6, t);
+          var segs = blocks(2, C.pink, a1 * (1 - .65 * a2)).concat(blocks(4, C.yel, a2));
+          road(D, L.K, [{ sp: 40, segs: [{ m0: 0, m1: 8, col: C.orange, txt: '8m' }] }, { sp: 80, segs: segs.concat([{ m0: 0, m1: 16, col: C.pink, a: a1 * (1 - a2), txt: '2倍なら 16m？', nobox: true }, { m0: 0, m1: 32, col: C.yel, a: CH.smooth(.75, .9, t), txt: '8m × 4 ＝ 32m', nobox: true }]) }], { max: 40 });
+          var Pl = pl(D, L.P);
+          CH.pt(D, Pl, 40, 8, { col: C.orange, r: CH.fs(D, .32), lab: '(40, 8)', dir: 'nw' });
+          if (t > .05) { CH.lin(D, Pl, .2, 0, { col: C.pink, w: 2, dash: true, x0: 0, x1: 110, a: a1 * .8 }); CH.pt(D, Pl, 80, 16, { col: C.pink, r: CH.fs(D, .3), lab: '比例なら (80, 16)', dir: 'se', a: a1 }); }
+          if (t > .45) { CH.fn(D, Pl, F, { col: C.yel, w: 3, x0: 0, x1: 106, t: CH.smooth(.45, .75, t) }); CH.pt(D, Pl, 80, 32, { col: C.yel, r: CH.fs(D, .34), lab: '(80, 32)', dir: 'nw', a: CH.smooth(.7, .85, t) }); if (t > .7) glow(D, Pl, 80, 32, C.yel, CH.smooth(.7, .85, t)); }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '制動きょりが、速さの 2乗に比例すると考えて、y＝ax² の式で表す。このように考えることを、何という？ 1組の値から求める a を何という？', a: '2乗に比例するとみなす・比例定数',
+        sub: '時速 40km で 8m → 8＝a×40²、a＝[8/1600]＝[1/200]。式を使うと、ためしていない速さの制動きょりも予測できる', dur: 6,
+        b: [{ t: '2乗に比例すると<b>みなす</b> → y＝ax² で表して考える', col: C.green }, { t: '1組の値から<b>比例定数</b> a を求める　8＝a×40² → a＝[1/200]', col: C.green }, { t: '式を使って、ためしていない値を<b>予測</b>する', col: C.green }],
+        draw: function (D) {
+          var L = strip(D, 2), t = D.ph ? D.t : 0, Pl = pl(D, L.P);
+          CH.pt(D, Pl, 40, 8, { col: C.orange, r: CH.fs(D, .34), lab: '(40, 8)', dir: 'nw' });
+          if (D.ph) {
+            var k = CH.ease(CH.smooth(.05, .65, t)), a = Math.exp(CH.lerp(Math.log(1 / 25), Math.log(A), k));
+            CH.fn(D, Pl, function (x) { return a * x * x; }, { col: k > .999 ? C.yel : C.pink, w: 3 });
+            if (t > .66) { glow(D, Pl, 40, 8, C.yel); lab(D, Pl, 86, 50, 'y＝[1/200]x²', C.yel, { align: 'right', a: CH.smooth(.66, .8, t) }); }
+          }
+          lines(D, L.T, [{ t: '時速 40km で 8m → 8＝a×40²', col: C.orange, a: D.ph ? CH.smooth(.1, .25, t) : 0 }, { t: 'a＝[8/1600]＝[1/200]　→　y＝[1/200]x²', col: C.yel, a: CH.smooth(.66, .8, t) }]);
+        } },
+      { tag: '例題', bh: '例題　y＝[1/200]x² で予測する', q: '（1）y＝[1/200]x² として、時速 20・60・80・100km の制動きょりを求め、表を完成させよう。', a: '2m・18m・32m・50m',
+        sub: '[1/200]×20²＝2、[1/200]×60²＝18、[1/200]×80²＝32、[1/200]×100²＝50。時速 80km は 32m（予想の 16m より ずっと長い）', dur: 6,
+        b: { t: '（1）時速 20・40・60・80・100km → 2・8・18・<b>32</b>・<b>50</b>m', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .02, r: .03, t: .01, b: .02 }), s = CH.fs(D, .9), t = D.ph ? D.t : 0, Rt = CH.rect(R.x0 + R.w * .04, R.y0 + s * .2, R.x1 - R.w * .02, R.y0 + s * .2 + s * 3.2);
+          function k(i) { return i === 1 ? 1 : CH.smooth(.05 + i * .15, .2 + i * .15, t); }
+          CH.table(D, Rt, ['時速 x（km）'].concat(SP.map(String)), [['制動きょり y（m）'].concat(SP.map(F).map(String))], { fw: .3, size: s, rh: s * 1.6, top: true, show: function (r, c) { return r === 1 && c > 0 ? (D.ph ? k(c - 1) : (c === 2 ? 1 : 0)) : 1; }, hl: function (r, c) { return D.ph && c === 4 && t > .55 ? C.yel : null; } });
+          var Pl = pl(D, CH.rect(R.x0, Rt.y1 + s * .2, R.x1, R.y1));
+          if (D.ph) CH.fn(D, Pl, F, { col: C.orange, w: 2.6, x0: 0, x1: 106, a: .55 });
+          SP.forEach(function (x, i) { var e = D.ph ? k(i) : (i === 1 ? 1 : 0); if (e <= 0) return; CH.pt(D, Pl, x, F(x), { col: i === 3 ? C.yel : C.orange, r: CH.fs(D, .3), a: e, lab: '(' + x + ', ' + F(x) + ')', dir: 'nw' }); });
+          if (t > .6) { CH.pt(D, Pl, 80, 16, { col: C.pink, r: CH.fs(D, .26), open: true, lab: '予想 16m？', dir: 'se', a: CH.smooth(.6, .75, t) }); glow(D, Pl, 80, 32, C.yel, CH.smooth(.6, .75, t)); }
+        } },
+      { tag: '例題', q: '（2）制動きょりが 40.5m のとき、時速は何 km か。', a: '時速 90km', sub: '40.5＝[1/200]x²、x²＝8100、x＞0 だから x＝90。グラフでは、y＝40.5 の高さから放物線へ、そこから x 軸へ', dur: 6,
+        b: { t: '（2）40.5＝[1/200]x² → x²＝8100 → x＞0 だから <b>時速 90km</b>', col: C.pink },
+        draw: function (D) {
+          var L = strip(D, 2), t = D.ph ? D.t : 0, Pl = pl(D, L.P);
+          CH.fn(D, Pl, F, { col: C.orange, w: 3, x0: 0, x1: 106 }); lab(D, Pl, 86, 50, 'y＝[1/200]x²', C.orange, { align: 'right' });
+          var e1 = CH.smooth(.05, .4, t), e2 = CH.smooth(.45, .7, t);
+          CH.pseg(D, Pl, [0, 40.5], [D.ph ? 90 * e1 : 0, 40.5], { col: C.yel, w: 2.4, dash: true }); CH.text(D, Pl.X(0) + CH.fs(D, .4), Pl.Y(40.5) - CH.fs(D, .7), '40.5m', { col: C.yel, size: CH.fs(D, .8), align: 'left', outline: OUT });
+          if (t > .45) CH.pseg(D, Pl, [90, 40.5], [90, 40.5 * (1 - e2)], { col: C.yel, w: 2.4, dash: true });
+          if (t > .4) CH.pt(D, Pl, 90, 40.5, { col: C.yel, r: CH.fs(D, .32), a: CH.smooth(.4, .45, t) });
+          if (t > .7) { CH.pt(D, Pl, 90, 0, { col: C.yel, r: CH.fs(D, .32), lab: '90', dir: 'n', a: CH.smooth(.7, .8, t) }); glow(D, Pl, 90, 0, C.yel, CH.smooth(.7, .8, t)); }
+          lines(D, L.T, [{ t: '40.5＝[1/200]x²　→　x²＝8100', col: C.yel, a: CH.smooth(.15, .3, t) }, { t: 'x＞0 だから x＝90　→　時速 90km', col: C.yel, a: CH.smooth(.75, .9, t) }]);
+        } },
+      { tag: '考えよう', bh: '考えよう', q: '危険に気づいてから止まるまでのきょりは、「空走きょり」（ブレーキがきき始めるまでに進むきょり。速さに比例し、時速 40km で 10m）と、制動きょりの和である。スピードが 2倍になると、止まるまでのきょりは何倍になるだろう。',
+        notes: ['時速 40km と 80km の、空走きょり・制動きょり・止まるまでのきょりを表にまとめよう。', 'スピードが 2倍になると、止まるまでのきょりは何倍か、気づいたことを書こう。ほかの速さ（時速 60km など）でも調べよう。', 'スライダーで、時速を変えられます（道の目もりは 10m ごと）。'],
+        sliders: [{ key: 'v', label: '時速', min: 10, max: 120, step: 10, val: 40, fmt: function (v) { return v + 'km'; } }],
+        draw: function (D) {
+          var L = lay(D, 1, .26), v = D.V.v;
+          road(D, L.K, [{ sp: v, segs: [{ m0: 0, m1: Q(v), col: C.blue }, { m0: Q(v), m1: TOT(v), col: C.orange }] }], { max: 110 });
+          var Pl = pl(D, L.P, { x: [0, 125], y: [0, 112], gy: 10, ly: 20 });
+          CH.lin(D, Pl, K, 0, { col: C.blue, w: 2.6 }); CH.fn(D, Pl, F, { col: C.orange, w: 2.6 }); CH.fn(D, Pl, TOT, { col: C.yel, w: 3 });
+          lab(D, Pl, 122, 21, '空走きょり', C.blue, { align: 'right' }); lab(D, Pl, 122, 64, '制動きょり', C.orange, { align: 'right', dy: CH.fs(D, .4) }); lab(D, Pl, 99, 106, '止まるまでのきょり', C.yel, { align: 'right' });
+          CH.pseg(D, Pl, [v, 0], [v, TOT(v)], { col: 'rgba(242,240,230,.6)', dash: true, w: 1.6 });
+          CH.pt(D, Pl, v, Q(v), { col: C.blue, r: CH.fs(D, .26) }); CH.pt(D, Pl, v, F(v), { col: C.orange, r: CH.fs(D, .26) }); CH.pt(D, Pl, v, TOT(v), { col: C.yel, r: CH.fs(D, .3) });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'この自動車で、時速 x km のときの空走きょりは [1/4]x m とみなせる。止まるまでのきょり（空走きょり＋制動きょり）が 63m のとき、時速は何 km か。', a: '時速 90km',
+        sub: '[1/4]x＋[1/200]x²＝63。両辺に 200 をかけて x²＋50x＝12600、x²＋50x−12600＝0、(x−90)(x＋140)＝0。x＞0 だから x＝90（空走 22.5m＋制動 40.5m＝63m）', dur: 8,
+        b: { t: '[1/4]x＋[1/200]x²＝63 → (x−90)(x＋140)＝0 → x＞0 だから <b>時速 90km</b>', col: C.orange },
+        draw: function (D) {
+          var L = strip(D, 3), t = D.ph ? D.t : 0, Pl = pl(D, L.P, { x: [0, 125], y: [0, 112], gy: 10, ly: 20 });
+          CH.fn(D, Pl, TOT, { col: C.yel, w: 3 }); lab(D, Pl, 99, 106, '止まるまでのきょり', C.yel, { align: 'right' });
+          CH.lin(D, Pl, 0, 63, { col: C.pink, w: 2, dash: true, a: D.ph ? 1 : .5 }); CH.text(D, Pl.X(0) + CH.fs(D, .4), Pl.Y(63) - CH.fs(D, .7), '63m', { col: C.pink, size: CH.fs(D, .8), align: 'left', outline: OUT });
+          if (D.ph) {
+            var a1 = CH.smooth(.55, .7, t), a2 = CH.smooth(.7, .85, t);
+            if (t > .55) { CH.pt(D, Pl, 90, 63, { col: C.yel, r: CH.fs(D, .34), a: a1 }); glow(D, Pl, 90, 63, C.yel, a1); }
+            if (t > .7) { var w = CH.fs(D, .5); CH.fillRect(D, Pl.X(90) - w, Pl.Y(22.5), Pl.X(90) + w, Pl.Y(0), { fill: hexA(C.blue, .45), stroke: C.blue, a: a2 }); CH.fillRect(D, Pl.X(90) - w, Pl.Y(63), Pl.X(90) + w, Pl.Y(22.5), { fill: hexA(C.orange, .45), stroke: C.orange, a: a2 });
+              lab(D, Pl, 90, 11, '空走 22.5', C.blue, { dx: w * 1.6, a: a2, size: CH.fs(D, .75) }); lab(D, Pl, 90, 42, '制動 40.5', C.orange, { dx: w * 1.6, a: a2, size: CH.fs(D, .75) }); lab(D, Pl, 90, 0, '90', C.yel, { align: 'center', dy: -CH.fs(D, .8), a: a2 }); }
+          }
+          lines(D, L.T, [{ t: '[1/4]x＋[1/200]x²＝63', col: C.yel, a: D.ph ? CH.smooth(.05, .15, t) : 0 }, { t: 'x²＋50x−12600＝0　→　(x−90)(x＋140)＝0', col: C.yel, a: CH.smooth(.25, .4, t) }, { t: 'x＞0 だから x＝90　→　時速 90km', col: C.orange, a: CH.smooth(.55, .7, t) }]);
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

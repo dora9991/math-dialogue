@@ -10,7 +10,7 @@
   const { M, K, B, G, F, C2, SO, NET } = IK.b;
 
   IK.add('kukan-enzui-hyomenseki', {
-    unit: 'kukan', unitName: '空間図形', no: '', title: '円錐の表面積',
+    unit: 'kukan', unitName: '空間図形', no: '試作（旧形式）', title: '円錐の表面積',
     summary: '展開図をもとに、円錐の表面積の求め方を考える。学習課題＋例題2問。',
     head: '空間図形',
     // 検算に使う式（node tools/verify.cjs が確かめる。PI＝π、near(a, b)＝ほぼ等しい）

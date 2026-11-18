@@ -1,0 +1,6 @@
+{
+  "name": "minibasket",
+  "private": true,
+  "type": "commonjs",
+  "description": "ミニバス スコアシート分析。js/ はブラウザの classic script 兼 Node(CommonJS)。リポジトリ直下の type:module の影響を受けないよう、ここだけ commonjs にしている。"
+}

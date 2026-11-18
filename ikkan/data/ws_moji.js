@@ -4,7 +4,7 @@
   const { M, K, B, G, F, C2, RECT } = IK.b;
 
   IK.add('moji-suryo', {
-    unit: 'moji', unitName: '文字と式', no: '', title: '文字を使った式（数量の表し方・式の値）',
+    unit: 'moji', unitName: '文字と式', no: '試作（旧形式）', title: '文字を使った式（数量の表し方・式の値）',
     summary: '長方形や代金を、文字を使った式で表し、数を代入して式の値を求める。学習課題＋例題2問。',
     head: '文字と式',
     checks: [

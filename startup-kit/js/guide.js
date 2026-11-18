@@ -1,0 +1,85 @@
+/* みせびらき — 迷わないための案内（登録と検索）
+   ・Guide.help(アプリid, {...}) … そのツールの「使い方」（できること・まずはこの3つ・迷いやすいところ・ツアー）
+   ・Guide.tasks([...])           … 「やりたいことから探す」の項目（押すと、その画面へ行って押す場所を光らせる）
+   画面に出す部分（光らせる・パネル・検索窓）は guide-ui.js。ここはデータと検索だけ。
+
+   help の形：
+   { lead: 'ひとことで',
+     can:   ['できること', …],                       // 3〜5
+     first: [{ text: 'まずやること', task: 'タスクid' }], // 3つ。task は省略可
+     faq:   [{ q: '迷いやすいところ', a: '答え' }],    // 3〜5
+     tour:  [{ target: 'CSSセレクタ', title, body,    // 3〜6。画面の要素を順に光らせる
+               targetPhone?: 'スマホでのセレクタ', skipOnPhone?: true, params?: {Kit.go に渡す} }],
+     related: ['つながるアプリid', …] }
+   task の形：
+   { id, title: 'やりたいこと（〜する）', words: '言いかえ・検索語（空白区切り）', app, params?, target?, targetPhone?, tip: '光らせたときの一言',
+     hidden?: true（検索には出さない。入口のページなどから呼ぶだけ）, when?: () => boolean（いまの状態で意味があるときだけ出す）,
+     run?: () => {}（光らせる代わりに動かす） }
+   「よく使うこと」は Guide.pinned([id, …]) で決める。 */
+(function () {
+  'use strict';
+  const helps = new Map();
+  const tasks = new Map();
+
+  // 検索用に、全角半角・カタカナひらがな・大文字小文字をそろえる
+  function norm(s) {
+    return String(s || '').normalize('NFKC').toLowerCase()
+      .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
+      .replace(/[\s・、。,.!?！？「」『』（）()［］\[\]〜~ー－\-_/／:：]+/g, '');
+  }
+
+  // ふだんの言い方 → ツールの中の言葉（ひらがな・カタカナ・漢字の違いを越えるための小さな辞書）
+  const ALIAS = {
+    'おかね': '売上 請求 入金 料金 利益 お金 値段', 'かね': '売上 請求 入金 料金 お金', 'もうけ': '利益 黒字 売上', 'うりあげ': '売上', 'しゅうにゅう': '収入 売上',
+    'きゃく': 'お客 顧客 問い合わせ ペルソナ', 'おきゃく': 'お客 顧客 問い合わせ ペルソナ', 'こきゃく': '顧客 問い合わせ', 'よやく': '予約', 'よてい': '予定',
+    'いんすた': 'instagram インスタ', 'ついったー': 'x', 'twitter': 'x', 'えっくす': 'x', 'らいん': 'line', 'ゆーちゅーぶ': 'youtube',
+    'ほーむぺーじ': 'ホームページ サイト', 'hp': 'ホームページ', 'さいと': 'ホームページ サイト', 'うぇぶ': 'ホームページ web',
+    'どうが': '動画', 'むーびー': '動画', 'えいぞう': '動画', 'ちらし': 'チラシ qr', 'めいし': '名刺 qr', 'めーる': 'メール',
+    'ぜいきん': 'インボイス 源泉 確定申告 消費税', 'ぜい': 'インボイス 源泉 消費税', 'かくていしんこく': '確定申告', 'かいぎょう': '開業', 'ふくぎょう': '副業 兼業', 'けんぎょう': '兼業 副業',
+    'けいかく': '計画', 'しょるい': '書類 見積 請求', 'みつもり': '見積', 'せいきゅう': '請求', 'りょうしゅう': '領収', 'すまほ': 'スマホ', 'でーた': 'データ バックアップ', 'ほぞん': '保存 バックアップ 書き出し',
+  };
+  const expand = (w) => { const a = ALIAS[w]; return a ? [w].concat(a.split(' ').map(norm)) : [w]; };
+
+  // いまの状態で意味のある項目か（例：サンプルを片付けたあとの「サンプルを片付ける」は出さない）
+  const applies = (t) => { try { return !t.when || !!t.when(); } catch (e) { return true; } };
+  let pins = [];
+
+  window.Guide = {
+    norm,
+    applies,
+    // 検索の「よく使うこと」に出す項目（順番どおり）
+    pinned(ids) { if (ids) pins = ids.slice(); return pins.map((id) => tasks.get(id)).filter((t) => t && applies(t)); },
+    help(id, def) { helps.set(id, Object.assign({ can: [], first: [], faq: [], tour: [], related: [] }, def)); },
+    getHelp(id) { return helps.get(id) || null; },
+    allHelp() { return [...helps.entries()]; },
+    tasks(list) { for (const t of [].concat(list || [])) { if (!t || !t.id || !t.app) throw new Error('Guide.tasks: id と app が必要です'); tasks.set(t.id, t); } },
+    getTask(id) { return tasks.get(id) || null; },
+    allTasks() { return [...tasks.values()]; },
+
+    // 「やりたいこと」を探す。言葉ごとに分けて、どれもが含まれるものを、タイトルに近い順に
+    search(q, limit = 8) {
+      const raw = String(q || '').trim();
+      if (!raw) return [];
+      const words = raw.split(/[\s　]+/).map(norm).filter(Boolean).map(expand);
+      const all = [], some = [];
+      for (const t of tasks.values()) {
+        if (t.hidden || !applies(t)) continue;
+        const def = window.Kit && Kit.appDef ? Kit.appDef(t.app) : null;
+        const title = norm(t.title), hay = title + ' ' + norm(t.words) + ' ' + norm(def ? def.title : '');
+        let score = 0, hit = 0;
+        for (const alts of words) {
+          const w = alts.find((x) => x && hay.includes(x));
+          if (!w) continue;
+          hit++;
+          score += title.startsWith(w) ? 6 : title.includes(w) ? 4 : 1;
+        }
+        const item = { t, hit, score: score + (pins.includes(t.id) ? 1 : 0) };
+        if (hit === words.length) all.push(item); else if (hit) some.push(item);
+      }
+      // ぜんぶの言葉に合うものを先に。なければ、いくつかに合うものを（合った数の多い順）
+      const list = all.length ? all : some;
+      list.sort((a, b) => b.hit - a.hit || b.score - a.score || a.t.title.length - b.t.title.length);
+      return list.slice(0, limit).map((x) => x.t);
+    },
+  };
+})();

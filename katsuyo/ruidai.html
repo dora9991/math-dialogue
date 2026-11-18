@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>データの活用 類題5題</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="js/chart.js"></script>
+<script>
+/* データの活用　学力推移調査型の類題（5題）。
+   よく出る5つの型（ヒストグラムの読み取り／代表値の選び方／人数のちがう集団の比較／目的に応じた判断／確率）を、
+   場面と数値をすべて自作して作り直した。答えはページの中で計算し直して確かめている（CH.check）。 */
+(function () {
+  var C = CH.C;
+  /* 類題1　ハンドボール投げ（40人） */
+  var E1 = [8, 12, 16, 20, 24, 28, 32], H1 = [3, 7, 12, 10, 6, 2], CH1 = CH.cum(H1);
+  CH.check(CH.sum(H1) === 40 && (H1[3] + H1[4] + H1[5]) / 40 === .45 && CH1[1] < 20 && CH1[2] >= 21, '類題1');
+  /* 類題2　1か月に読んだ本（10人） */
+  var B2 = [1, 2, 2, 2, 3, 4, 5, 6, 7, 28], B2b = [1, 2, 2, 2, 3, 4, 5, 6, 7, 8];
+  CH.check(CH.mean(B2) === 6 && CH.median(B2) === 3.5 && CH.mode(B2) === 2 && CH.mean(B2b) === 4 && CH.median(B2b) === 3.5 && B2.filter(function (x) { return x < 6; }).length === 7, '類題2');
+  /* 類題3　睡眠時間（1年 120人・2年 150人） */
+  var E3 = [5, 6, 7, 8, 9, 10], G1 = [6, 30, 48, 30, 6], G2 = [12, 42, 60, 30, 6];
+  var R1 = G1.map(function (x) { return CH.f2(x / 120); }), CR2 = CH.cum(G2).map(function (x) { return CH.f2(x / 150); });
+  CH.check(CH.sum(G1) === 120 && CH.sum(G2) === 150 && R1[2] === '0.40' && CR2[1] === '0.36' && G1[3] + G1[4] === 36 && G2[3] + G2[4] === 36 && 36 / 120 === .3 && 36 / 150 === .24, '類題3');
+  /* 類題4　50m走（Aさん・Bさん 20回ずつ） */
+  var E4 = [6.8, 7.0, 7.2, 7.4, 7.6, 7.8, 8.0], A4 = [3, 5, 3, 4, 3, 2], B4 = [0, 2, 12, 5, 1, 0], V4 = [6.9, 7.1, 7.3, 7.5, 7.7, 7.9];
+  function m4(a) { return a.reduce(function (s, x, i) { return s + x * V4[i]; }, 0) / 20; }
+  CH.check(CH.near(m4(A4), 7.35) && CH.near(m4(B4), 7.35) && (A4[0] + A4[1]) / 20 === .4 && (B4[0] + B4[1]) / 20 === .1 && (A4[0] + A4[1] + A4[2]) / 20 === .55 && (B4[0] + B4[1] + B4[2]) / 20 === .7, '類題4');
+  /* 類題5　画びょう */
+  var N5 = [100, 200, 500, 1000, 1500, 2000], U5 = [45, 84, 207, 398, 603, 802], R5 = N5.map(function (n, i) { return CH.f2(U5[i] / n); });
+  var TEN = ['DUDDUDDUDD', 'UUDDUDUDDU', 'DUDUDDUDDU', 'DDUDDDDUDD', 'UDUUDUDUUD'], TU = TEN.map(function (s) { return s.split('U').length - 1; });
+  CH.check(R5.join() === '0.45,0.42,0.41,0.40,0.40,0.40' && CH.near(5000 * .4, 2000) && TU.join() === '3,5,4,2,6', '類題5');
+
+  function hist(D, R, E, H, o) {
+    o = o || {}; var Ax = CH.axes(D, R, { x: [E[0], E[E.length - 1]], y: [0, o.ymax || 14], xt: E, yt: o.yt || [0, 2, 4, 6, 8, 10, 12, 14], xl: o.xl, yl: o.yl || '（人）', xf: o.xf });
+    CH.bars(D, Ax, E, H, { col: o.col || C.blue, labels: true, hl: o.hl, alpha: o.alpha });
+    return Ax;
+  }
+  function pin(D, x, y, r, up, a) {
+    if (up) { CH.circle(D, x, y + r * .25, r * .75, { fill: 'rgba(255,226,122,.3)', stroke: C.yel, sw: 2, a: a }); CH.line(D, x, y + r * .25, x, y - r, { col: C.yel, w: 2.2, a: a }); }
+    else { CH.circle(D, x, y - r * .25, r * .75, { fill: 'rgba(242,240,230,.1)', stroke: 'rgba(242,240,230,.55)', sw: 2, a: a }); CH.line(D, x, y - r * .25, x + r * .7, y + r * .8, { col: 'rgba(242,240,230,.55)', w: 2.2, a: a }); }
+  }
+  function marker(D, X, v, y0, y1, txt, col, a, al) {
+    CH.line(D, X(v), y0, X(v), y1, { col: col, dash: true, w: 2.4, a: a });
+    CH.text(D, X(v) + (al === 'right' ? -6 : 6), y1, txt, { col: col, align: al || 'left', a: a });
+  }
+  function legend(D, X, R, j, txt, col, a, dot) {
+    var x = X(15), y = R.y0 + R.h * .2 + j * CH.fs(D) * 1.6;
+    if (dot) CH.circle(D, x + 12, y, CH.fs(D, .4), { fill: col, a: a }); else CH.line(D, x, y, x + 24, y, { col: col, dash: true, w: 2.4, a: a });
+    CH.text(D, x + 34, y, txt, { col: col, align: 'left', a: a });
+  }
+  var T1 = function (D) { return CH.box(D, { l: .12, r: .06, t: .12, b: .16 }); };
+
+  K3.run({
+    no: '類題', title: '学力推移調査型の類題　データの活用（5題）', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '11.html', label: '◀ 第11時' }],
+    steps: [
+      /* ---------------- 類題1 ---------------- */
+      { tag: '類題1', bh: '類題1　ハンドボール投げ（ヒストグラム）', q: '次のヒストグラムは、ある中学校の 2年生 40人の、ハンドボール投げの記録をまとめたものである。たとえば 8〜12 の階級は、8m以上 12m未満を表す。',
+        notes: ['(1) 階級の幅は何mか。', '(2) 最頻値を求めなさい。', '(3) 20m以上の人の相対度数を求めなさい。', '(4) 19m 投げた Aさんは「ぼくの記録は、中央値より大きい」と言った。正しいといえるか。わけも書きなさい。'],
+        draw: function (D) { hist(D, T1(D), E1, H1, { xl: '（m）' }); } },
+      { tag: '類題1', q: '(1) 階級の幅は？　(2) 最頻値は？', a: '(1) 4m　(2) 18m', sub: '(2) 度数がいちばん多いのは 16〜20m の階級（12人）。その階級値 (16＋20)÷2＝18', dur: 3,
+        b: { t: '(1) <b>4m</b>　(2) 度数 12 の階級 16〜20m の階級値 → <b>18m</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Ax = hist(D, T1(D), E1, H1, { xl: '（m）', hl: function (i) { return t >= .5 && i === 2 ? C.yel : null; } });
+          if (t > 0 && t < .5) { var a = CH.smooth(0, .15, t), y = Ax.Y(13.4); CH.arrow(D, Ax.X(16), y, Ax.X(20), y, { col: C.pink, a: a, w: 2.4 }); CH.arrow(D, Ax.X(20), y, Ax.X(16), y, { col: C.pink, a: a, w: 2.4 }); CH.text(D, Ax.X(18), y - Ax.s * 1.1, '20 − 16 ＝ 4m', { col: C.pink, a: a }); }
+          if (t >= .5) CH.text(D, Ax.X(18), Ax.Y(12) - Ax.s * 2.3, '最頻値 18m', { col: C.yel, a: CH.smooth(.5, .65, t), size: Ax.s * 1.2 });
+        } },
+      { tag: '類題1', q: '(3) 20m以上の人の相対度数は？', a: '0.45', sub: '20〜24・24〜28・28〜32 の度数をたす　10＋6＋2＝18人、18÷40＝0.45', dur: 2.5,
+        b: { t: '(3) 10＋6＋2＝18人　18÷40＝<b>0.45</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Ax = hist(D, T1(D), E1, H1, { xl: '（m）', hl: function (i) { return t > 0 && i >= 3 ? C.orange : null; }, alpha: function (i) { return t > 0 && i < 3 ? .3 : 1; } });
+          if (t > .3) CH.text(D, Ax.X(27), Ax.Y(12.5), '18人 ÷ 40人 ＝ 0.45', { col: C.orange, a: CH.smooth(.3, .6, t), size: Ax.s * 1.2 });
+        } },
+      { tag: '類題1', q: '(4) 19m の Aさん「ぼくの記録は、中央値より大きい」。正しいといえる？', a: 'いえない（決められない）', sub: '中央値は 20番目と 21番目の平均。小さいほうから 10人目までが 16m未満、22人目までが 20m未満 → 中央値も 16〜20m の階級。同じ階級の中での大小は、ヒストグラムからはわからない', dur: 4,
+        b: { t: '(4) 中央値も Aさんも <b>16〜20m</b> の階級 → 大きいとは <b>いえない</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Ax = hist(D, T1(D), E1, H1, { xl: '（m）', ymax: 16, yt: [0, 2, 4, 6, 8, 10, 12, 14, 16], hl: function (i) { return t > .4 && i === 2 ? C.pink : null; } }), X0 = Ax.X(27.6), L = Ax.s * 1.45;
+          if (t > 0) { CH1.forEach(function (c, i) { CH.text(D, Ax.X((E1[i] + E1[i + 1]) / 2), Ax.Y(H1[i]) + Ax.s * (H1[i] > 2 ? 1 : -1.9), c + '人', { col: C.green, a: CH.smooth(i * .05, i * .05 + .1, t), size: Ax.s * .9, num: true, outline: 'rgba(20,30,24,.85)' }); }); CH.text(D, X0, Ax.Y(15.4), '小さいほうからの人数', { col: C.green, a: CH.smooth(0, .1, t), size: Ax.s }); }
+          if (t > .4) { var a1 = CH.smooth(.4, .55, t); CH.text(D, X0, Ax.Y(15.4) + L, '中央値は 20・21番目', { col: C.pink, a: a1, size: Ax.s }); CH.text(D, X0, Ax.Y(15.4) + L * 2, '→ 16〜20m の階級', { col: C.pink, a: a1, size: Ax.s }); }
+          if (t > .65) { var a = CH.smooth(.65, .8, t); CH.line(D, Ax.X(19), Ax.Y(14.8), Ax.X(19), Ax.R.y1, { col: C.blue, w: 2.6, a: a }); CH.text(D, Ax.X(19), Ax.Y(15.4), 'Aさん 19m', { col: C.blue, a: a, size: Ax.s }); CH.text(D, X0, Ax.Y(15.4) + L * 3, '同じ階級の中の大小は', { col: C.chalk, a: a, size: Ax.s }); CH.text(D, X0, Ax.Y(15.4) + L * 4, 'わからない', { col: C.chalk, a: a, size: Ax.s }); }
+        } },
+      /* ---------------- 類題2 ---------------- */
+      { tag: '類題2', bh: '類題2　読んだ本の冊数（代表値）', q: 'ある班の 10人が、1か月に読んだ本の冊数を調べた。　1・2・2・2・3・4・5・6・7・28（冊）',
+        notes: ['(1) 平均値・中央値・最頻値を求めなさい。', '(2) 28冊は、8冊の書きまちがいだった。正しく直すと、平均値と中央値は どう変わるか。', '(3) 直す前のデータで、「この班の人が ふだん読む冊数」を表すには、平均値と中央値の どちらがふさわしいか。わけも書きなさい。'],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .08, t: .1, b: .14 }), s = CH.fs(D), yl = R.y0 + R.h * .72, X = CH.numline(D, CH.rect(R.x0, yl - 10, R.x1, yl), 0, 30, 1, { lab: 5, unit: '（冊）' });
+          CH.dots(D, X, yl, B2, { r: s * .5, col: function (i, v) { return v === 28 ? C.orange : C.blue; } });
+        } },
+      { tag: '類題2', q: '(1) 平均値・中央値・最頻値は？', a: '平均値 6.0冊、中央値 3.5冊、最頻値 2冊', sub: '合計 60÷10＝6.0　5・6番目の平均 (3＋4)÷2＝3.5　2冊が 3人', dur: 4,
+        b: { t: '(1) 平均値 <b>6.0</b>・中央値 <b>3.5</b>・最頻値 <b>2</b>（冊）', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .08, t: .1, b: .14 }), s = CH.fs(D), t = D.ph ? D.t : 0, yl = R.y0 + R.h * .72, X = CH.numline(D, CH.rect(R.x0, yl - 10, R.x1, yl), 0, 30, 1, { lab: 5, unit: '（冊）' });
+          CH.dots(D, X, yl, B2, { r: s * .5, col: function (i, v) { return t > .65 && v === 2 ? C.green : v === 28 ? C.orange : C.blue; } });
+          if (t > .05) { var a1 = CH.smooth(.05, .25, t); CH.line(D, X(6), yl, X(6), R.y0 + R.h * .2, { col: C.yel, dash: true, w: 2.4, a: a1 }); legend(D, X, R, 0, '平均値 6.0冊', C.yel, a1); }
+          if (t > .35) { var a2 = CH.smooth(.35, .55, t); CH.line(D, X(3.5), yl, X(3.5), R.y0 + R.h * .2, { col: C.pink, dash: true, w: 2.4, a: a2 }); legend(D, X, R, 1, '中央値 3.5冊', C.pink, a2); }
+          if (t > .65) legend(D, X, R, 2, '最頻値 2冊（3人）', C.green, CH.smooth(.65, .8, t), true);
+        } },
+      { tag: '類題2', q: '(2) 28冊 → 8冊 に直すと、平均値と中央値は？', a: '平均値は 4.0冊に小さくなる。中央値は 3.5冊で変わらない', sub: '合計が 20へって 40 → 40÷10＝4.0。いちばん大きい値が変わっても、5・6番目（3 と 4）は変わらない', dur: 4,
+        b: { t: '(2) 平均値 6.0 → <b>4.0</b>　中央値 <b>3.5 のまま</b>', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .08, t: .1, b: .14 }), s = CH.fs(D), t = D.ph ? D.t : 0, k = CH.ease(CH.smooth(.1, .6, t)), yl = R.y0 + R.h * .72, X = CH.numline(D, CH.rect(R.x0, yl - 10, R.x1, yl), 0, 30, 1, { lab: 5, unit: '（冊）' });
+          var vals = B2.slice(0, 9); CH.dots(D, X, yl, vals, { r: s * .5, col: function () { return C.blue; } });
+          var v = CH.lerp(28, 8, k); CH.circle(D, X(v), yl - s * .5 * 1.25, s * .5, { fill: 'rgba(255,186,120,.9)', stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
+          if (t > .1 && t < .7) CH.arrow(D, X(28), yl - s * 2.2, X(9), yl - s * 2.2, { col: C.orange, a: 1 - CH.smooth(.5, .7, t), w: 2 });
+          var mv = CH.lerp(6, 4, k); CH.line(D, X(mv), yl, X(mv), R.y0 + R.h * .2, { col: C.yel, dash: true, w: 2.4 }); legend(D, X, R, 0, '平均値 6.0 → ' + mv.toFixed(1) + '冊', C.yel, 1);
+          CH.line(D, X(3.5), yl, X(3.5), R.y0 + R.h * .2, { col: C.pink, dash: true, w: 2.4 }); legend(D, X, R, 1, '中央値 3.5冊（そのまま）', C.pink, 1);
+        } },
+      { tag: '類題2', q: '(3) 直す前のデータで、ふだん読む冊数を表すのは、平均値と中央値の どちら？', a: '中央値', sub: '28冊という かけはなれた値に、平均値は引っぱられて大きくなる（10人中 7人が平均値 6.0冊より少ない）。中央値は、その影響を受けにくい', dur: 3,
+        b: { t: '(3) <b>中央値</b>　かけはなれた値 28 に 平均値は引っぱられる（7人が 6.0 未満）', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .08, t: .1, b: .14 }), s = CH.fs(D), t = D.ph ? D.t : 0, yl = R.y0 + R.h * .72, X = CH.numline(D, CH.rect(R.x0, yl - 10, R.x1, yl), 0, 30, 1, { lab: 5, unit: '（冊）' });
+          CH.dots(D, X, yl, B2, { r: s * .5, col: function (i, v) { return t > .3 && v < 6 ? C.pink : v === 28 ? C.orange : C.blue; } });
+          marker(D, X, 6, yl, R.y0 + R.h * .2, '平均値 6.0', C.yel, 1);
+          if (t > .3) CH.text(D, X(3), yl - s * 5.4, '6.0 より少ない 7人', { col: C.pink, a: CH.smooth(.3, .5, t) });
+          if (t > .6) CH.text(D, X(24), R.y0 + R.h * .4, '28 に 引っぱられる', { col: C.orange, a: CH.smooth(.6, .8, t) });
+        } },
+      /* ---------------- 類題3 ---------------- */
+      { tag: '類題3', bh: '類題3　睡眠時間（人数のちがう集団）', q: '次の表は、1年生 120人と 2年生 150人の、ふだんの睡眠時間をまとめたものである。たとえば 5〜6 は、5時間以上 6時間未満を表す。',
+        notes: ['(1) 表の ア にあてはまる数を求めなさい。', '(2) 表の イ にあてはまる数を求めなさい。', '(3) ゆうとさんは「8時間以上の人は、どちらの学年も 36人で同じだから、8時間以上ねている人の割合も同じ」と考えた。正しいか。わけも書きなさい。'],
+        draw: function (D) { table3(D, -1); } },
+      { tag: '類題3', q: '(1) ア（1年生の 7〜8時間の相対度数）は？', a: '0.40', sub: '48 ÷ 120 ＝ 0.40', dur: 1.5,
+        b: { t: '(1) ア … 48 ÷ 120 ＝ <b>0.40</b>', col: C.yel },
+        draw: function (D) { table3(D, 0); } },
+      { tag: '類題3', q: '(2) イ（2年生の 6〜7時間の累積相対度数）は？', a: '0.36', sub: '7時間未満の人数 12＋42＝54人、54 ÷ 150 ＝ 0.36', dur: 1.5,
+        b: { t: '(2) イ … (12＋42) ÷ 150 ＝ <b>0.36</b>', col: C.yel },
+        draw: function (D) { table3(D, 1); } },
+      { tag: '類題3', q: '(3) 「8時間以上は どちらも 36人だから、割合も同じ」は正しい？', a: '正しくない', sub: '全体の人数がちがうので、割合（相対度数）でくらべる。1年 36÷120＝0.30、2年 36÷150＝0.24 で、1年生のほうが大きい', dur: 4,
+        b: { t: '(3) <b>正しくない</b>　1年 36÷120＝0.30、2年 36÷150＝0.24', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .22, r: .06, t: .16, b: .2 }), s = CH.fs(D), t = D.ph ? D.t : 0, h = Math.min(R.h * .14, 52), k = CH.smooth(.15, .6, t);
+          [[120, '1年生 120人', C.blue, '36 ÷ 120 ＝ 0.30'], [150, '2年生 150人', C.orange, '36 ÷ 150 ＝ 0.24']].forEach(function (g, j) {
+            var y = R.y0 + j * h * 2.6, w = CH.lerp(R.w * g[0] / 150, R.w, k);
+            CH.text(D, R.x0 - s * .5, y + h / 2, g[1], { align: 'right', col: g[2], size: s * .9 });
+            CH.tape(D, R.x0, y, w, h, [{ v: 36, col: C.yel, txt: '36人' }, { v: g[0] - 36, col: g[2], txt: '', a: .45 }], g[0]);
+            if (t > .65) CH.text(D, R.x0 + R.w / 2, y + h * 1.6, g[3], { col: C.yel, a: CH.smooth(.65, .85, t) });
+          });
+          CH.text(D, R.x0 + R.w / 2, R.y0 + h * 6, k < .5 ? '人数でならべると…' : '全体を同じ長さにそろえると', { col: 'rgba(242,240,230,.8)', size: s * .9 });
+        } },
+      /* ---------------- 類題4 ---------------- */
+      { tag: '類題4', bh: '類題4　50m走の選手えらび（目的に応じた判断）', q: '学級対抗リレーの選手に、Aさんと Bさんのどちらかを選ぶ。次のヒストグラムは、2人が 50m走を 20回ずつ走った記録である。たとえば 6.8〜7.0 は、6.8秒以上 7.0秒未満を表す。',
+        notes: ['(1) 2人の記録の平均値を、階級値を使って求めなさい。', '(2) 「7.2秒未満で走れば 1位になれそう」なとき、どちらを選ぶか。相対度数を使って答えなさい。', '(3) 「7.4秒未満で走れば 決勝に進める」なとき、Bさんを選ぶわけを、データの特徴をもとに説明しなさい。'],
+        draw: function (D) { two4(D); } },
+      { tag: '類題4', q: '(1) 2人の平均値は？（階級値を使う）', a: 'どちらも 7.35秒', sub: 'A (6.9×3＋7.1×5＋7.3×3＋7.5×4＋7.7×3＋7.9×2)÷20＝147÷20＝7.35、B も 147÷20＝7.35', dur: 2.5,
+        b: { t: '(1) 平均値は <b>どちらも 7.35秒</b>（平均値ではきめられない）', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0; two4(D, { mean: t > 0 ? CH.smooth(0, .4, t) : 0 }); } },
+      { tag: '類題4', q: '(2) 7.2秒未満で 1位になれそう。どちらを選ぶ？', a: 'Aさん', sub: '7.2秒未満の相対度数　A (3＋5)÷20＝0.40、B 2÷20＝0.10', dur: 2.5,
+        b: { t: '(2) 7.2秒未満　A <b>0.40</b>、B 0.10 → <b>Aさん</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0; two4(D, { k: t > 0 ? 2 : 0, lab: t > .3 ? ['7.2秒未満 8回 → 0.40', '7.2秒未満 2回 → 0.10'] : null, la: CH.smooth(.3, .6, t) }); } },
+      { tag: '類題4', q: '(3) 7.4秒未満で決勝に進める。Bさんを選ぶわけは？', a: '7.4秒未満の相対度数が Bさんのほうが大きいから', sub: '7.4秒未満　A (3＋5＋3)÷20＝0.55、B (2＋12)÷20＝0.70。B は記録のちらばりが小さく、安定している。目的がちがえば、選ぶ人もちがってよい', dur: 2.5,
+        b: { t: '(3) 7.4秒未満　A 0.55、B <b>0.70</b> → Bさん（目的で判断が変わる）', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0; two4(D, { k: t > 0 ? 3 : 0, lab: t > .3 ? ['7.4秒未満 11回 → 0.55', '7.4秒未満 14回 → 0.70'] : null, la: CH.smooth(.3, .6, t) }); } },
+      /* ---------------- 類題5 ---------------- */
+      { tag: '類題5', bh: '類題5　画びょうの実験（確率）', q: '画びょうを投げて、上向きになった回数を調べた。次の表とグラフは、その結果である。',
+        notes: ['(1) 表の ア にあてはまる数を、小数第2位まで求めなさい。', '(2) 上向きになる確率は、およそいくつと考えられるか。', '(3) 5000回投げると、上向きは およそ何回と考えられるか。', '(4) 「上向きになる確率が 0.4 だから、10回投げると、かならず 4回上向きになる」は正しいか。わけも書きなさい。'],
+        draw: function (D) { pin5(D, -1); } },
+      { tag: '類題5', q: '(1) ア（500回のときの相対度数）は？', a: '0.41', sub: '207 ÷ 500 ＝ 0.414 → 小数第2位まで 0.41', dur: 2,
+        b: { t: '(1) ア … 207 ÷ 500 ＝ 0.414 → <b>0.41</b>', col: C.yel },
+        draw: function (D) { pin5(D, 0); } },
+      { tag: '類題5', q: '(2) 上向きになる確率は？　(3) 5000回では およそ何回？', a: '(2) およそ 0.40　(3) およそ 2000回', sub: '回数がふえると、相対度数は 0.40 の近くで落ち着く。5000 × 0.40 ＝ 2000', dur: 2.5,
+        b: { t: '(2) およそ <b>0.40</b>　(3) 5000 × 0.40 ＝ <b>2000回</b>', col: C.yel },
+        draw: function (D) { pin5(D, 1); } },
+      { tag: '類題5', q: '(4) 「確率 0.4 だから、10回投げると かならず 4回上向き」は正しい？', a: '正しくない', sub: '確率 0.4 は、多数回投げたときに 上向きの割合が 0.4 に近づく、という意味。10回くらいでは、4回になるとは かぎらない', dur: 3,
+        b: { t: '(4) <b>正しくない</b>　確率は 多数回で近づく値。10回で 4回とは かぎらない', col: C.yel },
+        draw: function (D) {
+          var R = CH.box(D, { l: .14, r: .14, t: .12, b: .16 }), s = CH.fs(D), t = D.ph ? D.t : 0, rh = R.h * .8 / 5, cw = Math.min(R.w * .7 / 10, rh), r = cw * .34;
+          CH.text(D, R.cx, R.y0 - s * .3, '10回ずつ、5回ためした例', { col: 'rgba(242,240,230,.8)', size: s * .9 });
+          TEN.forEach(function (sq, j) {
+            var y = R.y0 + rh * (j + .9), a = 1;
+            for (var i = 0; i < 10; i++) pin(D, R.cx + (i - 5) * cw, y, r, sq[i] === 'U', a);
+            CH.text(D, R.cx + cw * 5.6, y, '上向き ' + TU[j] + '回', { col: TU[j] === 4 ? C.green : C.yel, align: 'left', a: a, size: s * .95 });
+          });
+          if (t > .75) CH.text(D, R.cx, R.y1 + s * .6, '5回あわせると 50回中 20回 → 0.40', { col: C.green, a: CH.smooth(.75, .9, t) });
+        } }
+    ]
+  });
+
+  function table3(D, k) {
+    var R = CH.box(D, { l: .03, r: .03, t: .14, b: .2 });
+    var rows = [['1年 度数（人）'].concat(G1, 120), ['1年 相対度数'].concat(R1.map(function (x, i) { return i === 2 ? (k >= 0 ? x : 'ア') : x; }), '1.00'),
+      ['2年 度数（人）'].concat(G2, 150), ['2年 累積相対度数'].concat(CR2.map(function (x, i) { return i === 1 ? (k >= 1 ? x : 'イ') : x; }), '')];
+    CH.table(D, R, ['睡眠時間（時間）', '5〜6', '6〜7', '7〜8', '8〜9', '9〜10', '合計'], rows, { fw: .26, hl: function (r, c) { return (k === 0 && ((r === 2 && c === 3) || (r === 1 && c === 3))) || (k === 1 && ((r === 4 && c === 2) || (r === 3 && (c === 1 || c === 2)))) ? C.yel : (r === 2 && c === 3) || (r === 4 && c === 2) ? C.pink : null; } });
+  }
+  function two4(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .1, t: .14, b: .16 }), rs = CH.split(D, R, 2, .14);
+    [[A4, 'Aさん', C.blue], [B4, 'Bさん', C.orange]].forEach(function (g, j) {
+      var Ax = hist(D, rs[j], E4, g[0], { col: g[2], xf: function (v) { return v.toFixed(1); }, xl: '（秒）', yl: '（回）', alpha: o.k ? function (i) { return i < o.k ? 1 : .25; } : null });
+      CH.text(D, rs[j].cx, rs[j].y0 + Ax.s * .2, g[1], { col: g[2] });
+      if (o.mean) { var a = o.mean, x = Ax.X(7.35); CH.poly(D, [[x, Ax.R.y1 + 2], [x - 8, Ax.R.y1 + 16], [x + 8, Ax.R.y1 + 16]], { fill: C.yel, a: a }); CH.line(D, x, Ax.R.y1, x, Ax.Y(10), { col: C.yel, dash: true, a: a }); CH.text(D, x + 6, Ax.Y(9.6), '平均値 7.35', { col: C.yel, a: a, size: Ax.s, align: 'left', outline: 'rgba(20,30,24,.85)' }); }
+      if (o.lab) CH.text(D, rs[j].cx, rs[j].y0 + Ax.s * 1.7, o.lab[j], { col: C.yel, a: o.la, size: Ax.s * 1.05 });
+    });
+  }
+  function pin5(D, k) {
+    var R = CH.box(D, { l: .04, r: .04, t: .04, b: .14 }), t = D.ph ? D.t : 0;
+    CH.table(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .3), ['投げた回数'].concat(N5), [['上向きの回数'].concat(U5), ['相対度数'].concat(R5.map(function (x, i) { return i === 2 && k < 0 ? 'ア' : x; }))], { fw: .2, top: true, hl: function (r, c) { return k === 0 && r === 2 && c === 3 ? C.yel : null; } });
+    var G = CH.rect(R.x0 + R.w * .1, R.y0 + R.h * .44, R.x1 - R.w * .04, R.y1);
+    var Ax = CH.axes(D, G, { x: [0, 2000], y: [.35, .5], xt: [0, 500, 1000, 1500, 2000], yt: [.35, .4, .45, .5], yf: function (v) { return v.toFixed(2); }, xl: '（回）', yl: '相対度数', cut: true });
+    var pts = N5.map(function (n, i) { return [n, U5[i] / n]; });
+    if (k < 0) pts = pts.filter(function (p, i) { return i !== 2; });
+    CH.path(D, Ax, pts, { col: C.yel, r: 5 });
+    if (k === 0 && t > .3) { CH.circle(D, Ax.X(500), Ax.Y(.414), 8, { stroke: C.pink, sw: 2.4, a: CH.smooth(.3, .5, t) }); }
+    if (k === 1) { var a = CH.smooth(0, .4, t); CH.line(D, Ax.X(0), Ax.Y(.4), Ax.X(2000), Ax.Y(.4), { col: C.green, dash: true, a: a }); CH.text(D, Ax.X(1980), Ax.Y(.4) + Ax.s * 1.2, 'およそ 0.40', { col: C.green, a: a, align: 'right' }); }
+  }
+})();
+</script>
+</body>
+</html>

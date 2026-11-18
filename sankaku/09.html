@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>平行四辺形の性質で証明</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三角形と四角形 第9時：平行四辺形の性質を使って、線分が等しいことを証明しよう（ikkan の lesson_sankaku_09 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。証明の行は GE.proof が座標で確かめ、直線の向きを変えたときも CH.check で確かめる。
+   対角線の交点 O を通る直線の向きを変えても、O は PQ の中点（O のまわりに 180° 回すと、P が Q に重なる）。 */
+(function () {
+  var C = CH.C, R = Math.PI / 180;
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .06, r: .06, t: .1, b: .12 }); }
+  function ext(F, Q) { return Object.assign({}, F, { P: Object.assign({}, F.P, Q), X: function (p) { return F.X(typeof p === 'string' && Q[p] ? Q[p] : p); } }); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), g = D.ctx; g.save(); g.font = '600 ' + size + 'px "Klee One",sans-serif'; var w = g.measureText(s).width; g.restore(); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({}, o, { size: size })); }
+  var DIR = { A: 'nw', B: 'sw', C: 'se', D: 'ne', O: 'e', P: 'n', Q: 's', E: 's' };
+
+  /* ---- 今日の問い・例題：▱ABCD と、O を通る直線 PQ（P は AD 上、Q は BC 上） ---- */
+  var PA = { A: [1.2, 3], B: [0, 0], C: [5, 0], D: [6.2, 3] }; PA.O = GE.mid(PA.A, PA.C);
+  function withPQ(f) { var P = Object.assign({}, PA); P.P = GE.lerpP(PA.A, PA.D, f); P.Q = GE.sub(GE.add(PA.O, PA.O), P.P); return P; }
+  var P9 = withPQ(1 / 5);   /* ア：P(2.2, 3)、Q(4, 0) */
+  [.1, .2, .5, .75, .9].forEach(function (f) { var P = withPQ(f); CH.check(GE.verify(P, 'OP＝OQ') && GE.verify(P, '∠AOP＝∠COQ') && Math.abs(P.Q[1]) < 1e-9 && P.Q[0] > 0 && P.Q[0] < 5, '直線の向きを変えても OP＝OQ（P は AD の ' + f + '）'); });
+  CH.check(GE.near(P9.P[0], 2.2) && GE.near(P9.Q[0], 4) && GE.verify(P9, 'AO＝CO') && GE.verify(P9, 'BO＝DO'), '今日の問いの図（ア）');
+  function fig(D, P, o) {
+    o = o || {}; var F = ext(GE.fit(D, box(D, o.box), PA, { pad: .12 }), P);
+    if (o.tri) { GE.poly(F, 'AOP', { col: C.blue, fa: .22 * o.tri, stroke: false }); GE.poly(F, 'COQ', { col: C.orange, fa: .22 * o.tri, stroke: false }); }
+    GE.figure(F, { segs: ['AB', 'BC', 'CD', 'DA', 'AC', 'BD', 'PQ'], dots: ['O'], labels: ['A', 'B', 'C', 'D', 'O', 'P', 'Q'], dir: DIR });
+    return F;
+  }
+
+  var defE = {
+    id: '第9時 例題', lv: 2, ttl: '例題　OP＝OQ の証明', q: '▱ABCD の対角線の交点 O を通る直線が、辺 AD、BC と交わる点を P、Q とする。OP＝OQ を証明しよう。', P: P9,
+    fig: { segs: ['AB', 'BC', 'CD', 'DA', 'AC', 'BD', 'PQ'], dots: ['O'], dir: DIR },
+    hyp: '▱ABCD、直線 PQ は対角線の交点 O を通る', goal: 'OP＝OQ', tri: ['AOP', 'COQ'],
+    notes: ['書き方のくふう：結論から考えて、合同を示す三角形を決めよう。'],
+    L: [{ t: '△AOP と △COQ で' },
+      { t: 'AO＝CO', r: '平行四辺形の対角線は、それぞれの中点で交わる', n: 1 },
+      { t: '∠AOP＝∠COQ', r: '対頂角は等しい', n: 2 },
+      { t: '∠OAP＝∠OCQ', r: 'AD∥BC の錯角', n: 3 },
+      { t: '①②③より、1組の辺とその両端の角が、それぞれ等しいので', c: 'ASA' },
+      { t: '△AOP≡△COQ' },
+      { t: 'OP＝OQ', r: '合同な図形の対応する辺は等しい', ask: 'r' }]
+  };
+
+  /* ---- チャレンジ：辺 BC 上に AB＝AE となる点 E → △ABC≡△EAD ---- */
+  var PC = { A: [1.2, 3], B: [0, 0], C: [5, 0], D: [6.2, 3], E: [2.4, 0] };
+  CH.check(GE.verify(PC, 'AB＝AE') && GE.verify(PC, '∠ABC＝∠AEB＝∠EAD') && GE.verify(PC, 'AC＝ED'), 'チャレンジの図（AB＝AE）');
+  var defC = {
+    id: '第9時 チャレンジ', lv: 2, ttl: 'チャレンジ　△ABC≡△EAD の証明',
+    q: '▱ABCD の辺 BC 上に、AB＝AE となる点 E をとる。このとき、△ABC≡△EAD であることを証明しよう。', P: PC,
+    fig: { segs: ['AB', 'BC', 'CD', 'DA', 'AE'], dash: ['AC', 'ED'], ticks: [['AB', 1], ['AE', 1]], dir: DIR },
+    hyp: '▱ABCD、AB＝AE', goal: '△ABC≡△EAD', tri: ['ABC', 'EAD'],
+    notes: ['ヒント：仮定 AB＝AE から、△ABE は、どんな三角形といえるかな。'],
+    plan: { q: '等しい角を見つけるために、まず、どの三角形に目をつけるとよい？', a: '△ABE（AB＝AE の二等辺三角形）' },
+    L: [{ t: '△ABC と △EAD で' },
+      { t: 'AB＝EA', r: '仮定', n: 1 },
+      { t: 'BC＝AD', r: '平行四辺形の対辺は等しい', n: 2 },
+      { t: '∠ABC＝∠AEB', r: '二等辺三角形 ABE の底角', hint: '∠ABC と等しい角を、△ABE の中から見つけよう。' },
+      { t: '∠AEB＝∠EAD', r: 'AD∥BC の錯角', hint: '∠AEB と等しい角を、△EAD の中から見つけよう。' },
+      { t: '∠ABC＝∠EAD', n: 3, q: 'だから、∠ABC と等しい △EAD の角は？', a: '∠ABC＝∠EAD' },
+      { t: '①②③より、2組の辺とその間の角が、それぞれ等しいので', c: 'SAS' },
+      { t: '△ABC≡△EAD' }]
+  };
+
+  var steps = [
+    { tag: '今日の問い', bh: '▱ABCD と、O を通る直線 PQ', q: '▱ABCD の対角線の交点 O を通る直線が、辺 AD、BC と交わる点を P、Q とする。直線の向きを変えても、OP と OQ には、どんな関係がありそうだろう。',
+      notes: ['① 自分の考え（3分）　気づいたことと、そのわけを書こう。', '② ペアの考え（3分）　自分とちがう見方や、ほかの三角形は？'],
+      draw: function (D) { fig(D, P9); } },
+    { tag: '今日の問い', q: 'OP と OQ には、どんな関係がありそう？', a: 'OP＝OQ（O は PQ の中点）', sub: '直線の向きを変えても、いつも OP＝OQ。△AOP と △COQ が合同になりそう（O のまわりに 180° 回すと重なる）', dur: 4,
+      notes: ['スライダーで、直線 PQ の向きを変えられます。'],
+      sliders: [{ key: 'f', label: 'P の位置', min: .06, max: .94, step: .02, val: .2, fmt: function (x) { return Math.round(x * 100) + '%'; } }],
+      b: { t: '直線の向きを変えても　OP＝OQ（O は PQ の中点）', col: C.yel },
+      draw: function (D) {
+        var t = D.ph ? D.t : 1, v = D.V.f, u = CH.clamp(t / .7, 0, 1) * 3, f = !D.ph || u >= 3 ? v : u < 1 ? CH.lerp(v, .9, CH.ease(u)) : u < 2 ? CH.lerp(.9, .1, CH.ease(u - 1)) : CH.lerp(.1, v, CH.ease(u - 2));
+        var P = withPQ(Math.max(.06, Math.min(.94, f))), F = fig(D, P, { tri: D.ph ? CH.smooth(.7, .9, t) : 0 });
+        if (!D.ph) return;
+        GE.seg(F, 'OP', { col: C.yel, w: 4.5, glow: true }); GE.seg(F, 'OQ', { col: C.yel, w: 4.5, glow: true }); GE.tick(F, 'OP', 1, { col: C.yel }); GE.tick(F, 'OQ', 1, { col: C.yel });
+        if (t > .7) { var k = CH.ease(CH.smooth(.72, 1, t)), q = ['A', 'O', 'P'].map(function (n) { return GE.rot(P[n], P.O, 180 * k); }); GE.polyP(F, q, { col: C.yel, fa: .25, a: t < 1 ? 1 : 0 }); }
+      } },
+    { tag: 'ことば', bh: 'ことば', q: '平行四辺形の定義は？ これまでにわかった性質を3つ言おう。', a: '対辺・対角は等しい。対角線は、それぞれの中点で交わる', sub: '定義 … 2組の対辺が、それぞれ平行な四角形。定義と性質は、証明の根拠に使える', dur: 3,
+      b: [{ t: '定義 … 2組の対辺が、それぞれ <b>平行</b> な四角形', col: C.green }, { t: '性質① 2組の <b>対辺</b> は、それぞれ等しい　② 2組の <b>対角</b> は、それぞれ等しい', col: C.green }, { t: '性質③ <b>対角線</b> は、それぞれの中点で交わる', col: C.green }],
+      draw: function (D) {
+        var F = ext(GE.fit(D, box(D), PA, { pad: .12 }), {}), t = D.ph ? D.t : 0, k = function (x) { return D.ph ? CH.smooth(x, x + .15, t) : 0; };
+        GE.poly(F, 'ABCD', { col: C.blue, fa: .1 }); GE.labels(F, ['A', 'B', 'C', 'D'], { dir: DIR });
+        [['AB', 1], ['DC', 1], ['AD', 2], ['BC', 2]].forEach(function (p) { GE.par(F, p[0], p[1], { shift: 1.4 }); });
+        [['AB', 1], ['DC', 1], ['AD', 2], ['BC', 2]].forEach(function (p) { GE.tick(F, p[0], p[1], { col: C.yel, a: k(.05), w: 2.8 }); });
+        GE.arc(F, 'DAB', { col: C.pink, a: k(.35) }); GE.arc(F, 'BCD', { col: C.pink, a: k(.35) }); GE.arc(F, 'ABC', { col: C.pink, n: 2, a: k(.35) }); GE.arc(F, 'CDA', { col: C.pink, n: 2, a: k(.35) });
+        GE.seg(F, 'AO', { col: C.blue, w: 3.5, a: k(.65) }); GE.seg(F, 'OC', { col: C.blue, w: 3.5, a: k(.65) }); GE.seg(F, 'BO', { col: C.orange, w: 3.5, a: k(.65) }); GE.seg(F, 'OD', { col: C.orange, w: 3.5, a: k(.65) }); GE.dot(F, 'O', { a: k(.65) });
+        if (D.ph) say(D, F.R.cx, F.R.y1 + F.s * .2, ['① 対辺', '② 対角', '③ 対角線'][t < .35 ? 0 : t < .65 ? 1 : 2], { col: [C.yel, C.pink, C.blue][t < .35 ? 0 : t < .65 ? 1 : 2], size: F.s });
+      } }
+  ].concat(GE.proof(defE, { tag: '例題' })).concat([
+    { tag: '考えよう', q: '▱ABCD の対角線 AC、BD の交点を O とする。AO＝CO、BO＝DO であることを、三角形の合同を使って証明できるだろうか。',
+      notes: ['どの三角形に目をつけるとよいだろう。等しいものと、その理由は？', '使えるのは、定義（2組の対辺が平行）と、性質①（対辺は等しい）。', 'スライダーで、形を変えたり、目をつける三角形を変えたりできます。'],
+      sliders: [{ key: 'b', label: '∠B', min: 50, max: 130, step: 2, val: 68, fmt: function (x) { return x + '°'; } }, { key: 'k', label: '目をつける三角形', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? '△AOD と △COB' : '△AOB と △COD'; } }],
+      draw: function (D) {
+        var ab = Math.hypot(1.2, 3), A = [ab * Math.cos(D.V.b * R), ab * Math.sin(D.V.b * R)], P = { A: A, B: [0, 0], C: [5, 0], D: [A[0] + 5, A[1]] }; P.O = GE.mid(P.A, P.C);
+        var F = ext(GE.fit(D, box(D, { l: .06, r: .06, t: .08, b: .1 }), { p: [-2.2, -.3], q: [7.4, 3.6] }, { pad: .06 }), P), tr = D.V.k ? ['AOD', 'COB'] : ['AOB', 'COD'];
+        GE.poly(F, tr[0], { col: C.blue, fa: .25, stroke: false }); GE.poly(F, tr[1], { col: C.orange, fa: .25, stroke: false });
+        GE.figure(F, { segs: ['AB', 'BC', 'CD', 'DA', 'AC', 'BD'], pars: [['AB', 1], ['DC', 1], ['AD', 2], ['BC', 2]], dots: ['O'], labels: ['A', 'B', 'C', 'D', 'O'], dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne', O: 'n' } });
+      } }
+  ]).concat(GE.proof(defC, { tag: 'チャレンジ' }));
+
+  K3.run({
+    no: '第9時', title: '平行四辺形の性質を使って、線分が等しいことを証明しよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '08.html', label: '◀ 第8時' }, { href: '10.html', label: '第10時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

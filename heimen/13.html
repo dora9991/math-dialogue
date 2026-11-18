@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>おうぎ形の中心角</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 平面図形 第13時：弧の長さや面積から、中心角を求めよう（ikkan の lesson_heimen_13 と同じ流れ）。
+   今日の問いは、半径 10cm・弧 4π cm のおうぎ形。答えでは、円周 20π が 4π ずつ 5つに分かれ、中心角は 360°÷5＝72°。
+   ことばは、中心角・弧の長さ・面積の 3本の数直線（比例。同じ割合だけ進む）。例題は 面積 10π → 25π の [2/5] → 144°（表を1列ずつ）。
+   例題2 は まわりの長さ 4π＋12 から半径 2つ分をのぞいて 120°。考えようは、半径と中心角を変えると弧の長さが出る道具（答えは出さない）。
+   チャレンジは 弧 4π・面積 12π：おうぎ形を細かく切って並べかえると、たて r・よこ 2π → r＝6、120°。
+   数値は ikkan のまま（自作）。中心角は、もとの弧・面積に もどして確かめている（CH.check）。 */
+(function () {
+  /* ---- 平面図形の図の道具（このページの中だけで使う。heimen/09〜15 の各ページに同じものが入っている） ---- */
+  var C = CH.C, RAD = Math.PI / 180, OUT = 'rgba(20,40,30,.9)', FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  var NUMF = '"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif', PI = Math.PI;
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function dg(x) { var r = Math.round(x * 100) / 100; return (Math.abs(r - Math.round(r)) < .005 ? String(Math.round(r)) : String(r)) + '°'; }
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = a % b; a = b; b = t; } return a || 1; }
+  /* π の係数の字：pi(6) → '6π'、pi(1) → 'π'、pi(9, 2) → '[9/2]π'（[ ] は たての分数になる） */
+  function pi(n, d) { d = d || 1; var g = gcd(n, d); n /= g; d /= g; if (d === 1) return n === 1 ? 'π' : n + 'π'; return '[' + n + '/' + d + ']π'; }
+  /* 図の四角（fig）と、字を書く四角（side）。よこ長なら右、たて長なら下（o.hk：下の帯の高さの割合） */
+  function lay(D, k, o) {
+    o = o || {}; var B = CH.box(D, { l: .03, r: .03, t: o.t == null ? .04 : o.t, b: .04 });
+    if (!o.vert && B.w > B.h * 1.25 && B.w > 560) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .06, B.x1, B.y1), wide: true }; }
+    var h = B.h * (o.hk || .27); return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .03, B.y1 - h + 4, B.x1, B.y1), wide: false };
+  }
+  /* ---- 分数をふくむ字（図の中）：'360°×[1/5]＝72°' の [1/5] を、たての分数（CH.frac）にする ---- */
+  var FR = /(\[[^\/\]]+\/[^\]]+\])/;
+  function frW(D, n, d, size) { var g = D.ctx; g.save(); g.font = '700 ' + size * .8 + 'px ' + NUMF; var w = Math.max(g.measureText(n).width, g.measureText(d).width) + size * .2; g.restore(); return w; }
+  function ftW(D, s, size) {
+    var w = 0; String(s).split(FR).forEach(function (seg) { var m = /^\[([^\/\]]+)\/([^\]]+)\]$/.exec(seg); if (m) w += frW(D, m[1], m[2], size) + size * .26; else if (seg) w += tw(D, seg, size); }); return w;
+  }
+  function hasFr(s) { return FR.test(String(s)); }
+  /* x は左はし（o.align 'center' で まん中）。o：size、col、a、outline */
+  function ftxt(D, x, y, s, o) {
+    o = o || {}; var size = o.size || CH.fs(D), w = ftW(D, s, size), xx = o.align === 'center' ? x - w / 2 : o.align === 'right' ? x - w : x;
+    String(s).split(FR).forEach(function (seg) {
+      var m = /^\[([^\/\]]+)\/([^\]]+)\]$/.exec(seg);
+      if (m) { var fw = frW(D, m[1], m[2], size); CH.frac(D, xx + size * .13 + fw / 2, y, m[1], m[2], { size: size, col: o.col, a: o.a }); xx += fw + size * .26; }
+      else if (seg) { CH.text(D, xx, y, seg, { size: size, col: o.col, a: o.a, align: 'left', outline: o.outline }); xx += tw(D, seg, size); }
+    });
+    return w;
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする）。rows：[{ t, col, a }]。分数の行は、行の間を広くとる */
+  function say(D, Rr, rows, o) {
+    o = o || {}; rows = rows.filter(Boolean); if (!rows.length) return;
+    var nc = Rr.w > Rr.h * 2.5 && rows.length > 3 ? 2 : 1, per = Math.ceil(rows.length / nc), cw = Rr.w / nc, fr = rows.some(function (r) { return hasFr(r.t); });
+    var gap = fr ? 2.05 : 1.6, s = Math.min(o.size || CH.fs(D, .92), Rr.h / (per * gap + .3));
+    rows.forEach(function (r, i) {
+      var w = ftW(D, r.t, s), sz = w > cw - 8 ? s * (cw - 8) / w : s, c = Math.floor(i / per), j = i % per;
+      ftxt(D, Rr.x0 + c * cw, Rr.y0 + s * (fr ? 1.05 : .8) + j * s * gap, r.t, { col: r.col || C.chalk, a: r.a, size: sz });
+    });
+  }
+  /* 図の上の1行（はばに入らなければ、字を小さくする） */
+  function top(D, s, col, a, row) {
+    var B = CH.box(D, { t: 0, l: .02, r: .02 }), f0 = CH.fs(D, 1.02), fs = Math.min(f0, f0 * B.w / Math.max(1, ftW(D, s, f0)));
+    ftxt(D, B.cx, B.y0 + f0 * (.75 + (row || 0) * 1.5), s, { col: col || C.yel, a: a, size: fs, outline: OUT, align: 'center' });
+  }
+  /* 点の名前：{ A: 向き（度） }。o.name で字をかえる */
+  function nm(F, m, o) {
+    o = o || {}; Object.keys(m).forEach(function (k) {
+      if (m[k] == null || !F.P[k]) return; var p = F.X(k), r = F.s * (o.k || .95);
+      CH.text(F.D, p[0] + Math.cos(m[k] * RAD) * r, p[1] - Math.sin(m[k] * RAD) * r, (o.name && o.name[k]) || k, { size: F.s * (o.size || 1), col: (o.col && o.col[k]) || o.c || C.chalk, a: o.a, outline: OUT });
+    });
+  }
+  function dots(F, ks, o) { o = o || {}; (Array.isArray(ks) ? ks : ks.split('')).forEach(function (k) { if (typeof k !== 'string' || F.P[k]) GE.dot(F, k, o); }); }
+  /* 字（座標 p から、向き deg に k（字の大きさの倍）だけはなれたところ）。分数もかける */
+  function lab(F, p, deg, k, t, o) {
+    o = o || {}; var q = F.X(p);
+    ftxt(F.D, q[0] + Math.cos(deg * RAD) * F.s * k, q[1] - Math.sin(deg * RAD) * F.s * k, t, { col: o.col || C.chalk, size: F.s * (o.size || .85), a: o.a, outline: OUT, align: 'center' });
+  }
+  /* 線分 pq の横に字（side：1 で pq の左がわ、−1 で右がわ。k は はなれぐあい） */
+  function slab(F, p, q, t, side, o) {
+    o = o || {}; var d = Math.atan2(q[1] - p[1], q[0] - p[0]) / RAD + 90 * (side || 1);
+    lab(F, GE.mid(p, q), d, o.k || .9, t, o);
+  }
+  /* 図の四角の中だけに描く */
+  function clip(F, fn) { var g = F.D.ctx, r = F.R; g.save(); g.beginPath(); g.rect(r.x0, r.y0, r.w, r.h); g.clip(); fn(); g.restore(); }
+  /* 直線（四角のはしまで） */
+  function full(F, a, b, o) { clip(F, function () { GE.line(F, [a, b], o || {}); }); }
+  /* 座標だけで、四角に入れる（bounds：[[x0, y0], [x1, y1]]） */
+  function fitB(D, R, P, bounds, pad) { return GE.fit(D, R, P, { keys: [], bounds: bounds, pad: pad == null ? .06 : pad }); }
+  /* 中心 c・半径 r（座標の長さ）の円の、a0 → a1（反時計まわり、度）の弧 */
+  function arcAt(F, c, r, a0, a1, o) {
+    o = o || {}; if (a1 < a0) { var z = a0; a0 = a1; a1 = z; } var g = F.D.ctx, p = F.X(c);
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2.2; g.lineCap = 'round';
+    if (o.glow) { g.shadowColor = o.col || C.chalk; g.shadowBlur = 8; }
+    if (o.dash) g.setLineDash(o.dash === true ? [8, 7] : o.dash); g.beginPath(); g.arc(p[0], p[1], r * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  /* コンパスで弧をかく：a0 → a1 を k（0〜1）だけ。かいている途中は、コンパスの2本の足も見せる（第1〜8時と同じ見せ方） */
+  function comp(F, c, r, a0, a1, k, o) {
+    o = o || {}; if (k <= 0) return; var a = a0 + (a1 - a0) * Math.min(1, k), col = o.col || C.blue;
+    arcAt(F, c, r, a0, a, { col: col, w: o.w || 2.2, a: o.a });
+    if (k < 1 && !o.noLeg) {
+      var p = F.X(GE.polar(c, r, a)), q = F.X(c), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], d = [p[0] - q[0], p[1] - q[1]], L = Math.hypot(d[0], d[1]) || 1, n = [d[1] / L, -d[0] / L];
+      if (n[1] > 0) n = [-n[0], -n[1]];
+      var hh = [m[0] + n[0] * Math.min(L * .55, F.s * 5), m[1] + n[1] * Math.min(L * .55, F.s * 5)];
+      CH.line(F.D, q[0], q[1], hh[0], hh[1], { col: 'rgba(242,240,230,.75)', w: 2.6 }); CH.line(F.D, hh[0], hh[1], p[0], p[1], { col: 'rgba(242,240,230,.75)', w: 2.6 });
+      CH.circle(F.D, hh[0], hh[1], F.s * .22, { fill: 'rgba(242,240,230,.85)' }); CH.circle(F.D, p[0], p[1], F.s * .17, { fill: col });
+    }
+  }
+  /* 点 c から見た点 p の向き（度） */
+  function dirOf(c, p) { return Math.atan2(p[1] - c[1], p[0] - c[0]) / RAD; }
+  /* 2つの円の交点（side：1 で c1→c2 の左がわ、−1 で右がわ） */
+  function cc(c1, r1, c2, r2, side) {
+    var d = Math.hypot(c2[0] - c1[0], c2[1] - c1[1]), a = (r1 * r1 - r2 * r2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, r1 * r1 - a * a)), u = [(c2[0] - c1[0]) / d, (c2[1] - c1[1]) / d];
+    return [c1[0] + u[0] * a - side * u[1] * h, c1[1] + u[1] * a + side * u[0] * h];
+  }
+  /* 交点をさす弧：中心 c、半径 r で、点 p のまわり ±w 度 を、コンパスでかく */
+  function compAt(F, c, r, p, w, k, o) { var d = dirOf(c, p); comp(F, c, r, d - w, d + w, k, o); }
+  /* 角のしるし（GE.arc）と字。字は二等分線の上の、2辺にふれないところに置く。o.t：字（false で書かない） */
+  function mark(F, s, col, o) {
+    o = o || {}; var r = o.r || F.s * 1.05;
+    GE.arc(F, s, { col: col, fill: o.fill == null ? .3 : o.fill, a: o.a, r: r, n: o.n, tick: o.tick });
+    var A0 = F.X(s[0]), V = F.X(s[1]), B0 = F.X(s[2]), a1 = Math.atan2(A0[1] - V[1], A0[0] - V[0]), d = Math.atan2(B0[1] - V[1], B0[0] - V[0]) - a1;
+    while (d > Math.PI) d -= 2 * Math.PI; while (d <= -Math.PI) d += 2 * Math.PI;
+    var P = F.P, pp = function (z) { return typeof z === 'string' ? P[z] : z; };
+    var t = o.t === false ? null : (o.t || dg(GE.ang({ a: pp(s[0]), v: pp(s[1]), b: pp(s[2]) }, 'avb'))); if (!t) return;
+    var sz = F.s * (o.size || .82), w = ftW(F.D, t, sz);
+    var m = a1 + d / 2, need = (Math.max(w, sz) / 2 + 3) / Math.sin(Math.abs(d) / 2), dd = CH.clamp(Math.max(r + sz * .9, need), 0, o.max || F.s * 4.2);
+    ftxt(F.D, V[0] + Math.cos(m) * dd, V[1] + Math.sin(m) * dd, t, { col: col, size: sz, a: o.a, outline: OUT, align: 'center' });
+  }
+  /* 向きで描く角のしるし（数学の向きで d1° → d2° 反時計まわり。180° 以上も）と字 */
+  function markDir(F, v, d1, d2, col, o) {
+    o = o || {}; var r = o.r || F.s * 1.05;
+    GE.arcDir(F, v, d1, d2, { col: col, fill: o.fill == null ? .3 : o.fill, a: o.a, r: r, n: o.n });
+    if (o.t === false) return; var t = o.t || dg(d2 - d1), sz = F.s * (o.size || .82), q = F.X(v), m = (o.at == null ? (d1 + d2) / 2 : o.at) * RAD, dd = o.k ? F.s * o.k : r + sz * 1.1;
+    ftxt(F.D, q[0] + Math.cos(m) * dd, q[1] - Math.sin(m) * dd, t, { col: col, size: sz, a: o.a, outline: OUT, align: 'center' });
+  }
+  /* おうぎ形（中心 c、半径 r、a0 → a1 反時計まわり、度）。o：col、fa（ぬりの濃さ）、stroke（false でふちなし）、w、a、glow */
+  function sector(F, c, r, a0, a1, o) {
+    o = o || {}; if (Math.abs(a1 - a0) < 1e-9) return; var g = F.D.ctx, p = F.X(c), R = r * F.u, col = o.col || C.yel, full = Math.abs(a1 - a0) > 359.999;
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.beginPath();
+    if (!full) g.moveTo(p[0], p[1]);
+    g.arc(p[0], p[1], R, -a0 * RAD, -a1 * RAD, true); g.closePath();
+    if (o.fa !== 0) { g.fillStyle = o.fill || hexA(col, o.fa == null ? .3 : o.fa); g.fill(); }
+    if (o.stroke !== false) { g.strokeStyle = o.sc || col; g.lineWidth = o.w || 2.4; g.lineJoin = 'round'; if (o.dash) g.setLineDash([8, 7]); if (o.glow) { g.shadowColor = o.sc || col; g.shadowBlur = 8; } g.stroke(); }
+    g.restore();
+  }
+  /* ふちが線分と弧の図形。subs：[[['M', p], ['L', p], ['A', 中心, 半径, a0, a1]（a1>a0 は反時計まわり）, …], …]。o.even：重なりをぬかない */
+  function shape(F, subs, o) {
+    o = o || {}; var g = F.D.ctx; g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.beginPath();
+    subs.forEach(function (sp) {
+      sp.forEach(function (cmd, i) {
+        if (cmd[0] === 'A') { var p = F.X(cmd[1]); if (i === 0) { var s0 = F.X(GE.polar(cmd[1], cmd[2], cmd[3])); g.moveTo(s0[0], s0[1]); } g.arc(p[0], p[1], cmd[2] * F.u, -cmd[3] * RAD, -cmd[4] * RAD, cmd[4] > cmd[3]); }
+        else { var q = F.X(cmd[1]); if (cmd[0] === 'M') g.moveTo(q[0], q[1]); else g.lineTo(q[0], q[1]); }
+      });
+      if (!o.open) g.closePath();
+    });
+    if (o.fill !== false && !o.open) { g.fillStyle = o.fill || hexA(o.col || C.blue, o.fa == null ? .3 : o.fa); g.fill(o.even ? 'evenodd' : 'nonzero'); }
+    if (o.stroke) { g.strokeStyle = o.stroke; g.lineWidth = o.w || 2.4; g.lineJoin = 'round'; g.lineCap = 'round'; if (o.dash) g.setLineDash(o.dash === true ? [8, 7] : o.dash); if (o.glow) { g.shadowColor = o.stroke; g.shadowBlur = 8; } g.stroke(); }
+    g.restore();
+  }
+  /* 点の列を動かす */
+  function mvS(subs, v) { return subs.map(function (sp) { return sp.map(function (c) { var q = c.slice(); q[1] = [c[1][0] + v[0], c[1][1] + v[1]]; return q; }); }); }
+  /* 弧の上の点の列（a0 → a1、n 等分） */
+  function arcPts(c, r, a0, a1, n) { var o = []; for (var i = 0; i <= n; i++) o.push(GE.polar(c, r, a0 + (a1 - a0) * i / n)); return o; }
+  function polyline(F, ps, o) { o = o || {}; if (ps.length < 2) return; CH.poly(F.D, ps.map(function (p) { return F.X(p); }), { stroke: o.col || C.yel, sw: o.w || 3, a: o.a, close: false }); }
+  function lerpPts(a, b, k) { return a.map(function (p, i) { return GE.lerpP(p, b[i], k); }); }
+  /* 点の列を、長さの割合 k（0〜1）のところまで */
+  function cutPts(ps, k) {
+    var L = [0]; for (var i = 1; i < ps.length; i++) L.push(L[i - 1] + Math.hypot(ps[i][0] - ps[i - 1][0], ps[i][1] - ps[i - 1][1]));
+    var goal = L[L.length - 1] * CH.clamp(k, 0, 1), out = [ps[0]];
+    for (var j = 1; j < ps.length; j++) { if (L[j] <= goal) out.push(ps[j]); else { var f = (goal - L[j - 1]) / (L[j] - L[j - 1] || 1); out.push(GE.lerpP(ps[j - 1], ps[j], f)); break; } }
+    return out;
+  }
+  /* 線分 ab をまっすぐに置いた、長さの印（両はしの短い線と、まん中の字） */
+  function dimLine(F, a, b, t, o) {
+    o = o || {}; var col = o.col || C.chalk, d = [b[0] - a[0], b[1] - a[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L], h = (o.h || .3) * F.s / F.u;
+    GE.seg(F, [a, b], { col: col, w: 1.6, a: o.a });
+    [a, b].forEach(function (p) { GE.seg(F, [[p[0] - n[0] * h, p[1] - n[1] * h], [p[0] + n[0] * h, p[1] + n[1] * h]], { col: col, w: 1.6, a: o.a }); });
+    if (t) lab(F, GE.mid(a, b), Math.atan2(n[1], n[0]) / RAD + (o.side === -1 ? 180 : 0), o.k || .8, t, { col: col, a: o.a, size: o.size });
+  }
+  /* 円の上の方眼（1目もり＝1） */
+  function grid(F, x0, y0, x1, y1, o) {
+    o = o || {}; for (var x = Math.ceil(x0); x <= x1 + 1e-9; x++) GE.seg(F, [[x, y0], [x, y1]], { col: 'rgba(242,240,230,.13)', w: 1, a: o.a });
+    for (var y = Math.ceil(y0); y <= y1 + 1e-9; y++) GE.seg(F, [[x0, y], [x1, y]], { col: 'rgba(242,240,230,.13)', w: 1, a: o.a });
+  }
+  /* おうぎ形を n こに細かく切って、たがいちがいに並べかえる（k：0 で もとのおうぎ形、1 で 平行四辺形に近い形）。
+     もとのおうぎ形は 中心 c、半径 r、a0 → a0＋a。並べた形は、左下が base の点 */
+  function cutPieces(c, r, a0, a, n, base, k) {
+    var w = a / n, s = 2 * r * Math.sin(w / 2 * RAD), out = [], hgt = r * Math.cos(w / 2 * RAD);
+    for (var i = 0; i < n; i++) {
+      var b0 = a0 + (i + .5) * w, up = i % 2 === 0, ax = base[0] + s / 2 + i * s / 2, apex = up ? [ax, base[1] + hgt] : [ax, base[1]], b1 = up ? -90 : 90;
+      var dd = b1 - b0; while (dd > 180) dd -= 360; while (dd < -180) dd += 360;
+      var e = CH.ease(CH.clamp(k * 1.15 - i / n * .15, 0, 1));
+      out.push({ c: GE.lerpP(c, apex, e), b: b0 + dd * e, w: w, up: up });
+    }
+    return { pcs: out, width: s / 2 * (n + 1), h: hgt };
+  }
+  function drawPieces(F, pcs, r, o) {
+    o = o || {}; pcs.forEach(function (p, i) { sector(F, p.c, r, p.b - p.w / 2, p.b + p.w / 2, { col: i % 2 ? (o.c2 || C.blue) : (o.c1 || C.yel), fa: o.fa == null ? .35 : o.fa, w: 1.6, a: o.a }); });
+  }
+  /* π をふくむ式の検算：係数どうしをくらべる（「答えがちがう」をコンソールに） */
+  function chk(a, b, what) { return CH.check(Math.abs(a - b) < 1e-9, what); }
+  /* 問い・答え・板書の字の [1/2] を、たての分数にする */
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = CH.fr(s[k]); }); if (s.notes) s.notes = s.notes.map(CH.fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = CH.fr(b.t); }); }); return st; }
+  var O = [0, 0];
+  /* ---- 数と検算（求めた中心角から、弧・面積をもどす） ---- */
+  CH.check(360 * 4 / (2 * 10) === 72 && 2 * 10 * 72 / 360 === 4, '今日の問い：72°');
+  CH.check(10 / 25 === 2 / 5 && 360 * 2 / 5 === 144 && 5 * 5 * 144 / 360 === 10, '例題：144°');
+  CH.check(6 * 2 === 12, '例題2：半径 2つ分 12'); CH.check(360 * 4 / 12 === 120 && 2 * 6 * 120 / 360 === 4, '例題2：120°');
+  CH.check(2 * 12 / 4 === 6 && 360 * 4 / (2 * 6) === 120 && 6 * 6 * 120 / 360 === 12 && .5 * 4 * 6 === 12, 'チャレンジ：r＝6、120°');
+  CH.check([[90, 3, 6], [60, 3, 9], [120, 4, 6], [45, 2, 8]].every(function (z) { return 2 * z[2] * z[0] / 360 === z[1]; }), '考えよう（ここで確かめるだけ）');
+
+  /* ---- 今日の問い：半径 10cm、弧 4π cm（中心角 72°） ---- */
+  function fig1(D, t, ans) {
+    var L = lay(D, .4), F = fitB(D, L.fig, { O: O }, [[-10.6, -10.6], [10.6, 11.6]]);
+    if (!ans) {
+      GE.circ(F, O, 10, { col: 'rgba(242,240,230,.25)', w: 1.4 });
+      sector(F, O, 10, 54, 126, { col: C.blue, fa: .28, w: 2.4 }); arcAt(F, O, 10, 54, 126, { col: C.yel, w: 5 });
+      lab(F, GE.polar(O, 10, 90), 90, 1, '4π cm', { col: C.yel, size: .95 }); markDir(F, O, 54, 126, C.pink, { r: F.s * 1.2, t: '？°' }); slab(F, O, GE.polar(O, 10, 126), '10cm', 1); GE.dot(F, O);
+      return L;
+    }
+    var k1 = CH.smooth(0, .25, t), k2 = CH.smooth(.3, .58, t), k3 = CH.smooth(.62, .8, t), k4 = CH.smooth(.82, .96, t), cols = [C.yel, C.blue, C.pink, C.green, C.orange];
+    GE.circ(F, O, 10, { col: 'rgba(242,240,230,.4)', w: 1.4 });
+    if (k2 <= 0) arcAt(F, O, 10, 54, 54 + 360 * k1, { col: C.yel, w: 5 });
+    if (k1 >= 1 && k2 < .3) lab(F, GE.polar(O, 10, 270), 270, 1, '円周 20π', { col: C.yel, size: .95, a: 1 - CH.smooth(.1, .3, k2) });
+    for (var i = 0; i < 5; i++) {
+      var g = CH.clamp(k2 * 5 - i, 0, 1); if (g <= 0) continue; var a0 = 54 + i * 72;
+      arcAt(F, O, 10, a0, a0 + 72, { col: cols[i], w: 5 }); GE.seg(F, [O, GE.polar(O, 10, a0)], { col: 'rgba(242,240,230,.5)', w: 1.4, dash: [6, 6], a: g });
+      lab(F, GE.polar(O, 10, a0 + 36), a0 + 36, 1, '4π', { col: cols[i], a: g, size: .9 });
+    }
+    if (k3 > 0) sector(F, O, 10, 54, 126, { col: C.yel, fa: .3 * k3, stroke: false });
+    if (k4 > 0) markDir(F, O, 54, 126, C.pink, { r: F.s * 1.2, t: '72°', a: k4 });
+    GE.dot(F, O);
+    return L;
+  }
+
+  /* ---- ことば：中心角・弧の長さ・面積の 3本の数直線 ---- */
+  function lines3(D, t, ans) {
+    var B = CH.box(D, { l: .05, r: .05, t: .1, b: .06 }), s = Math.min(CH.fs(D, .9), B.w / 16), lw = Math.min(B.w * .24, s * 5), x0 = B.x0 + lw, x1 = B.x1 - s * .6;
+    var rows = [{ n: '中心角', r: '360°', m: 'a°', col: C.pink }, { n: '弧の長さ', r: '2πr（円周）', m: 'ℓ', col: C.yel }, { n: '面積', r: 'πr²（円）', m: 'S', col: C.blue }];
+    var f = !ans ? 0 : t < .3 ? .2 * CH.ease(t / .3) : t < .42 ? .2 : t < .66 ? .2 + .25 * CH.ease((t - .42) / .24) : t < .72 ? .45 : .45 - .15 * CH.ease(CH.clamp((t - .72) / .16, 0, 1));
+    var X = function (k) { return x0 + (x1 - x0) * k; };
+    rows.forEach(function (r, i) {
+      var y = B.y0 + B.h * (.16 + i * .25);
+      ftxt(D, B.x0, y, r.n, { size: s, col: r.col });
+      CH.line(D, x0, y, x1, y, { w: 2.2 }); [0, 1].forEach(function (k) { CH.line(D, X(k), y - 7, X(k), y + 7, { w: 2 }); });
+      CH.text(D, x0, y + s * 1.1, '0', { size: s * .85, num: true });
+      CH.text(D, x1, y - s * 1.05, r.r, { size: CH.fitSize(D, r.r, (x1 - x0) * .45, s * .85), align: 'right', col: r.col });
+      if (f > 0) { CH.line(D, x0, y, X(f), y, { col: r.col, w: 6 }); CH.text(D, X(f), y + s * 1.15, r.m, { size: s, col: r.col, outline: OUT }); }
+    });
+    if (f > 0) CH.line(D, X(f), B.y0 + B.h * .08, X(f), B.y0 + B.h * .7, { col: 'rgba(242,240,230,.7)', w: 1.6, dash: [6, 6] });
+    if (ans && t > .86) ftxt(D, B.cx, B.y0 + B.h * .86, '[ℓ/2πr]＝[S/πr²]＝[a/360]　→　a＝360×割合', { size: Math.min(s, CH.fs(D, .9) * B.w / Math.max(1, ftW(D, '[ℓ/2πr]＝[S/πr²]＝[a/360]　→　a＝360×割合', CH.fs(D, .9)))), col: C.orange, a: CH.smooth(.86, .95, t), align: 'center' });
+  }
+
+  /* ---- 例題：半径 5cm、面積 10π（表） ---- */
+  function table(D, t, ans) {
+    var B = CH.box(D, { l: .04, r: .04, t: .03, b: .04 }), topR = CH.rect(B.x0, B.y0, B.x1, B.y0 + B.h * .56), bot = CH.rect(B.x0 + B.w * .04, B.y0 + B.h * .61, B.x1 - B.w * .04, B.y1);
+    var k = ans ? Math.min(3, 1 + Math.floor(t * 3.05)) : 0, F = fitB(D, topR, { O: O }, [[-5.3, -5.3], [5.3, 5.3]]), cols = [C.yel, C.pink];
+    GE.circ(F, O, 5, { col: 'rgba(242,240,230,.7)' });
+    if (k === 1) { sector(F, O, 5, 0, 360, { col: C.blue, fa: .3, stroke: false }); lab(F, O, 90, 1.2, '25π', { col: C.blue, size: 1 }); }
+    if (k >= 2) for (var i = 0; i < 5; i++) { GE.seg(F, [O, GE.polar(O, 5, i * 72)], { col: 'rgba(242,240,230,.5)', w: 1.4, dash: [6, 6] }); if (i < 2) sector(F, O, 5, i * 72, i * 72 + 72, { col: cols[i], fa: .35, w: 2 }); lab(F, GE.polar(O, 3.3, i * 72 + 36), 0, 0, '5π', { col: i < 2 ? cols[i] : 'rgba(242,240,230,.7)', size: .85 }); }
+    if (k === 3) markDir(F, O, 0, 144, C.orange, { r: F.s * 1.1, t: '144°', k: 2.1, at: 72 });
+    if (k === 0) { sector(F, O, 5, 0, 144, { col: C.yel, fa: .25, w: 2 }); lab(F, GE.polar(O, 3, 72), 0, 0, '10π', { col: C.yel, size: .95 }); markDir(F, O, 0, 144, C.pink, { r: F.s * 1.1, t: '？°' }); }
+    GE.dot(F, O);
+    function sh(c) { return ans && c <= k; }
+    var T = CH.table(D, bot, ['', '① 円の面積', '② 割合', '③ 中心角'], [['式', 'π×5²', '10π÷25π', '360°×②'], ['答え', sh(1) ? '25π cm²' : '？', sh(2) ? '' : '？', sh(3) ? '144°' : '？']], { fw: .16, hl: function (r, c) { return r === 2 && c === k ? C.yel : null; } });
+    if (sh(2)) { var q = T.cell(2, 2); CH.frac(D, q.cx, q.cy, 2, 5, { size: Math.min(CH.fs(D, .85), q.h * .5), col: k === 2 ? C.yel : C.chalk }); }
+  }
+
+  /* ---- チャレンジ：弧 4π、面積 12π（r＝6、120°）。切って並べかえると、たて r・よこ 2π ---- */
+  var CN = 10, CA0 = 30;
+
+  K3.run({
+    no: '第13時', title: '弧の長さや面積から、中心角を求めよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '12.html', label: '◀ 第12時' }, { href: '14.html', label: '第14時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '弧の長さから中心角を求める', q: '半径 10cm、弧の長さ 4π cm のおうぎ形がある。中心角は何度だろう。求め方を、いくつか考えよう。',
+        notes: ['① 自分の考え（3分）　求め方を書こう。', '② ペアの考え（3分）　自分とちがう求め方を。'],
+        draw: function (D) { var L = fig1(D, 0, false); say(D, L.side, [{ t: '半径 10cm' }, { t: '弧の長さ 4π cm', col: C.yel }, { t: '中心角 … ？', col: C.pink }]); } },
+      { tag: '今日の問い', q: '中心角は何度？', a: '72°', sub: '円周は 2π×10＝20π。弧 4π は 円周の [4π/20π]＝[1/5]。中心角は 360°×[1/5]＝72°（方程式 2π×10×[a/360]＝4π でも）', dur: 8,
+        b: { t: '円周 20π の [4π/20π]＝[1/5] → 中心角 360°×[1/5]＝<b>72°</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = fig1(D, t, D.ph === 1);
+          if (D.ph) say(D, L.side, [{ t: '円周 2π×10＝20π', col: C.yel, a: CH.smooth(.15, .25, t) }, t > .3 ? { t: '4π は 20π の [4π/20π]＝[1/5]', col: C.blue, a: CH.smooth(.45, .58, t) } : null, t > .8 ? { t: '中心角 360°×[1/5]＝72°', col: C.pink, a: CH.smooth(.82, .96, t) } : null]);
+          else say(D, L.side, [{ t: '半径 10cm' }, { t: '弧の長さ 4π cm', col: C.yel }]);
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '弧の長さや面積から 中心角を求めるには、何を考える？', a: '同じ半径の円の、周（面積）の 何分のいくつ（割合）か → 中心角＝360°×割合', sub: '弧の長さも面積も、中心角に比例する。弧の長さ＝円周×[a/360]、面積＝円の面積×[a/360]', dur: 8,
+        b: [{ t: '弧の長さも面積も、<b>中心角に比例</b>する', col: C.green }, { t: '弧 ＝ <b>円周</b>×[a/360]、面積 ＝ <b>円の面積</b>×[a/360]', col: C.green }, { t: '中心角 a ＝ 360° × <b>割合</b>（弧÷円周、面積÷円の面積）', col: C.green }],
+        draw: function (D) { lines3(D, D.ph ? D.t : 0, D.ph === 1); } },
+      { tag: '例題', bh: '例題　面積から中心角を求める', q: '半径 5cm、面積 10π cm² のおうぎ形の中心角を、表の順に求めよう。', a: '① 25π cm²　② [2/5]　③ 144°', sub: '10π÷25π＝[2/5]（円を 5つに分けた 2つ分）。360°×[2/5]＝144°', dur: 6,
+        b: { t: '円の面積 25π → 割合 [10π/25π]＝[2/5] → 中心角 360°×[2/5]＝<b>144°</b>', col: C.pink },
+        draw: function (D) { table(D, D.ph ? D.t : 0, D.ph === 1); } },
+      { tag: '例題', bh: '例題2　まわりの長さから', q: '半径 6cm、まわりの長さが 4π＋12（cm）のおうぎ形の、中心角を求めよう。', a: '120°', sub: '半径 2つ分 12 をのぞくと、弧は 4π。円周 12π の [4π/12π]＝[1/3] → 360°×[1/3]＝120°', dur: 8,
+        b: { t: '弧 ＝ (4π＋12)−12 ＝ 4π → [4π/12π]＝[1/3] → <b>120°</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = lay(D, .42), F = fitB(D, L.fig, { O: O }, [[-6.6, -6.6], [6.6, 7.6]]), k1 = D.ph ? CH.smooth(0, .3, t) : 0, k2 = D.ph ? CH.smooth(.35, .65, t) : 0, k3 = D.ph ? CH.smooth(.7, .95, t) : 0;
+          if (k2 > 0) { GE.circ(F, O, 6, { col: 'rgba(242,240,230,.5)', w: 1.6, a: k2 }); [30, 150, 270].forEach(function (d) { GE.seg(F, [O, GE.polar(O, 6, d)], { col: 'rgba(242,240,230,.45)', w: 1.4, dash: [6, 6], a: k2 }); }); lab(F, GE.polar(O, 6, 270), 270, 1, '円周 12π', { col: C.yel, a: k2, size: .9 }); }
+          sector(F, O, 6, 30, 150, { col: C.blue, fa: .1 + .25 * k3, stroke: false });
+          [30, 150].forEach(function (d) { GE.seg(F, [O, GE.polar(O, 6, d)], { col: k1 > 0 ? C.pink : C.chalk, w: 3, a: 1 - .6 * k1 }); });
+          arcAt(F, O, 6, 30, 150, { col: C.yel, w: 5 }); lab(F, GE.polar(O, 6, 90), 90, 1, '4π', { col: C.yel, size: .95, a: D.ph ? k1 : 0 });
+          if (k1 > 0) { slab(F, O, GE.polar(O, 6, 150), '6', 1, { col: C.pink, a: k1 }); slab(F, O, GE.polar(O, 6, 30), '6', -1, { col: C.pink, a: k1 }); }
+          else slab(F, O, GE.polar(O, 6, 150), '6cm', 1);
+          markDir(F, O, 30, 150, C.pink, { r: F.s * 1.2, t: k3 > .5 ? '120°' : '？°' }); GE.dot(F, O);
+          say(D, L.side, [{ t: 'まわりの長さ 4π＋12（cm）' }, D.ph ? { t: '半径 2つ分 6×2＝12', col: C.pink, a: k1 } : null, D.ph && t > .2 ? { t: '弧 (4π＋12)−12＝4π', col: C.yel, a: CH.smooth(.2, .3, t) } : null,
+            D.ph && t > .45 ? { t: '[4π/12π]＝[1/3]', col: C.blue, a: CH.smooth(.45, .6, t) } : null, D.ph && t > .7 ? { t: '360°×[1/3]＝120°', col: C.pink, a: k3 } : null]);
+        } },
+      { tag: '考えよう', q: '中心角が 90°、弧の長さが 3π cm のおうぎ形がある。半径を求める方法を考えよう。弧の長さ・半径・中心角のうち、2つがわかれば、残りの1つは 求められるだろうか。',
+        notes: ['半径を求める式と、気づいたことを書こう。数を変えて確かめよう。', 'スライダーで、半径と中心角を変えられます。弧の長さが、π を使った字で出ます。'],
+        sliders: [{ key: 'r', label: '半径', min: 1, max: 10, step: 1, val: 4, fmt: function (x) { return x + 'cm'; } }, { key: 'a', label: '中心角', min: 15, max: 360, step: 15, val: 90, fmt: function (x) { return x + '°'; } }],
+        draw: function (D) {
+          var r = D.V.r, a = D.V.a, L = lay(D, .32), xs = [0], ys = [0];
+          arcPts(O, 10, 0, a, 48).forEach(function (p) { xs.push(p[0]); ys.push(p[1]); });
+          var F = fitB(D, L.fig, { O: O }, [[Math.min.apply(null, xs) - 1, Math.min.apply(null, ys) - 1.4], [Math.max.apply(null, xs) + 1, Math.max.apply(null, ys) + 1]], .03);
+          sector(F, O, r, 0, a, { col: C.blue, fa: .28, w: 2.4 }); arcAt(F, O, r, 0, a, { col: C.yel, w: 5 });
+          markDir(F, O, 0, a, C.pink, { r: Math.min(F.s * 1.1, r * F.u * .5), t: a + '°', at: a >= 300 ? 200 : null }); lab(F, [r / 2, 0], 270, .8, r + 'cm', { size: .85 }); GE.dot(F, O);
+          say(D, L.side, [{ t: '半径 ' + r + 'cm' }, { t: '中心角 ' + a + '°', col: C.pink }, { t: '弧の長さ ' + pi(2 * r * a, 360) + ' cm', col: C.yel }]);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '弧の長さが 4π cm、面積が 12π cm² のおうぎ形がある。半径と中心角を求めよう。',
+        notes: ['ヒント① 第12時の考えよう：おうぎ形を細かく切って並べかえると、どんな形になったかな。', 'ヒント② 弧の長さも面積も、円の何分のいくつ（割合）かな。2つの割合は等しい。'],
+        a: '半径 6cm、中心角 120°', sub: '並べかえると、たて r・よこ 2π（弧の半分）の形 → 面積 2π×r＝12π より r＝6。中心角 360°×[4π/12π]＝120°（割合 [4π/2πr]＝[12π/πr²] からも r＝6）', dur: 10,
+        b: { t: '12π＝[1/2]×4π×r → r＝<b>6</b>（cm）、中心角 360°×[4π/12π]＝<b>120°</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = lay(D, .4), r = 6, a = 120, a0 = CA0, k = D.ph ? CH.smooth(.04, .38, t) * (1 - CH.smooth(.62, .76, t)) : 0;
+          var xs = [0], ys = [0]; arcPts(O, r, a0, a0 + a, 48).forEach(function (p) { xs.push(p[0]); ys.push(p[1]); });
+          var probe = cutPieces(O, r, a0, a, CN, [0, 0], 0), w = probe.width, h = probe.h, cy = (Math.min.apply(null, ys) + Math.max.apply(null, ys)) / 2, base = [-w / 2, cy - h / 2];
+          var F = fitB(D, L.fig, { O: O }, [[Math.min(Math.min.apply(null, xs), -w / 2) - 1.4, Math.min(Math.min.apply(null, ys), base[1]) - 1.2], [Math.max(Math.max.apply(null, xs), w / 2) + 1.2, Math.max(Math.max.apply(null, ys), base[1] + h) + 1]], .03);
+          if (k > 0) drawPieces(F, cutPieces(O, r, a0, a, CN, base, k).pcs, r);
+          else { sector(F, O, r, a0, a0 + a, { col: C.blue, fa: .28, w: 2.4 }); arcAt(F, O, r, a0, a0 + a, { col: C.yel, w: 5 }); lab(F, GE.polar(O, r, a0 + a / 2), a0 + a / 2, 1, '4π', { col: C.yel, size: .95 }); lab(F, GE.polar(O, r * .55, a0 + a / 2), 0, 0, '12π', { col: C.blue, size: .95 }); GE.dot(F, O); }
+          if (k > .97) { var g = CH.smooth(.38, .46, t); dimLine(F, [base[0], base[1] - .7], [base[0] + w, base[1] - .7], '2π（弧の半分）', { side: -1, col: C.yel, a: g }); dimLine(F, [base[0] - .7, base[1]], [base[0] - .7, base[1] + h], 'r', { col: C.pink, a: g }); }
+          if (D.ph && t > .76) { var g2 = CH.smooth(.76, .9, t); markDir(F, O, a0, a0 + a, C.pink, { r: F.s * 1.2, t: '120°', a: g2 }); slab(F, O, GE.polar(O, r, a0), '6cm', -1, { a: g2, col: C.orange }); }
+          say(D, L.side, [{ t: '弧 4π cm、面積 12π cm²' }, D.ph && t > .4 ? { t: '面積＝2π×r（たて r、よこ 2π）', col: C.yel, a: CH.smooth(.4, .5, t) } : null, D.ph && t > .5 ? { t: '12π＝2π×r → r＝6（cm）', col: C.orange, a: CH.smooth(.5, .6, t) } : null,
+            D.ph && t > .8 ? { t: '360°×[4π/12π]＝120°', col: C.pink, a: CH.smooth(.8, .92, t) } : null]);
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

@@ -92,16 +92,76 @@
       "port": 8784
     },
     {
+      "name": "conference-editor",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8797", "--directory", "conference-editor"],
+      "port": 8797
+    },
+    {
+      "name": "startup-kit",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8786", "--directory", "startup-kit"],
+      "port": 8786
+    },
+    {
       "name": "home",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8785", "--directory", "home"],
       "port": 8785
     },
     {
+      "name": "minibasket",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8786", "--directory", "minibasket"],
+      "port": 8786
+    },
+    {
+      "name": "hibi",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["hibi/tools/serve.cjs", "--port=8793"],
+      "port": 8793
+    },
+    {
+      "name": "adlib",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8788", "--directory", "adlib"],
+      "port": 8788
+    },
+    {
+      "name": "basket-clips",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["basket-clips/tests/server.cjs", "5192"],
+      "port": 5192
+    },
+    {
+      "name": "tangocho",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8794", "--directory", "tangocho"],
+      "port": 8794
+    },
+    {
+      "name": "contents",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8795", "--directory", "contents"],
+      "port": 8795
+    },
+    {
+      "name": "basket-tap",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["basket-tap/tests/server.cjs", "5193"],
+      "port": 5193
+    },
+    {
+      "name": "kyomu",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8796", "--directory", "kyomu"],
+      "port": 8796
+    },
+    {
       "name": "portal",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8793"],
-      "port": 8793
+      "runtimeArgs": ["-m", "http.server", "8798"],
+      "port": 8798
     }
   ]
 }

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>データの活用のまとめ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="js/chart.js"></script>
+<script>
+/* データの活用 第11時（まとめ）：学んだことを、整理して確かめよう（ikkan の lesson_data_new_11 と同じ流れ）。
+   考えよう（ア〜エ）の「いえる・いえない」は、どこにも書かない。データはすべて自作。 */
+(function () {
+  var C = CH.C, E = [0, 30, 60, 90, 120, 150], S = [3, 6, 12, 7, 2], CS = CH.cum(S);
+  var REL = S.map(function (x) { return CH.f2(x / 30); }), CREL = CS.map(function (x) { return CH.f2(x / 30); });
+  CH.check(REL.join() === '0.10,0.20,0.40,0.23,0.07' && CS.join() === '3,9,21,28,30' && CREL.join() === '0.10,0.30,0.70,0.93,1.00', '家庭学習の表');
+  CH.check(CS[1] < 15 && CS[2] >= 16, '中央値の階級');
+  var TH = [14, 17, 17, 20, 22, 25, 28, 41];
+  CH.check(CH.mean(TH) === 23 && CH.median(TH) === 21 && CH.mode(TH) === 17 && TH[7] - TH[0] === 27, '例題');
+  CH.check(40 * 18 === 720 && 35 * 12 === 420 && 1140 / 30 === 38 && 18 * (40 - 38) === 12 * (38 - 35), 'チャレンジ');
+  var SAY = [
+    ['ア', 'A班の平均点は 62点、B班の平均点は 58点だった。だから、A班の人は、全員、B班の人より点数が高い。'],
+    ['イ', '部活に入っている人は、A組（25人）が 15人、B組（40人）が 22人だった。だから、B組のほうが、入っている人の割合が高い。'],
+    ['ウ', '当たる確率が 0.3 のくじを、10回引く。だから、かならず 3回当たる。'],
+    ['エ', 'キャップを 1000回投げたら、上向きの相対度数が 0.61 の近くで落ち着いた。だから、上向きの確率は、およそ 0.61 と考えてよい。']
+  ];
+
+  /* 字数 n ごとに折り返す（数字のまとまりは切らない。、。）は行の頭にしない） */
+  function wrap(txt, n) {
+    var out = [], line = '', a = txt.match(/[0-9A-Za-z.]+[組班人回点]?|./g);
+    a.forEach(function (tk, i) { var nx = a[i + 1]; if (line.length + tk.length > n && line && '、。）」'.indexOf(tk) < 0) { out.push(line); line = ''; } line += tk; if (!nx) out.push(line); });
+    return out;
+  }
+  function box2(D, x, y, w, h, t1, t2, col, a) {
+    CH.card(D, x, y, w, h, '', { col: col, a: a, fill: 'rgba(20,30,24,.55)' });
+    CH.text(D, x, y - (t2 ? h * .2 : 0), t1, { col: col, a: a, size: Math.min(h * .3, CH.fs(D, .95)) });
+    if (t2) CH.text(D, x, y + h * .22, t2, { a: a, size: Math.min(h * .24, w / (t2.length + 1.5), CH.fs(D, .78)) });
+  }
+  function hist(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .12, r: .06, t: .12, b: .16 });
+    var Ax = CH.axes(D, R, { x: [0, 150], y: [0, 14], xt: E, yt: [0, 2, 4, 6, 8, 10, 12, 14], xl: '（分）', yl: '（人）' });
+    CH.bars(D, Ax, E, S, { col: C.blue, labels: true, hl: o.hl, alpha: o.alpha });
+    return Ax;
+  }
+
+  K3.run({
+    no: '第11時', title: '「データの活用」で学んだことを、整理して確かめよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '10.html', label: '◀ 第10時' }, { href: 'ruidai.html', label: '類題 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '30人の家庭学習の時間', q: '30人の、1日の家庭学習の時間を、表にまとめた。この表から、どんなことがわかるだろう。できるだけ多く見つけよう。',
+        notes: ['① 自分の考え（3分）　表のどこを見たかも。', '② ペアの考え（3分）'],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .1, b: .16 });
+          CH.table(D, R, ['時間（分）', '0〜30', '30〜60', '60〜90', '90〜120', '120〜150'], [['度数（人）'].concat(S), ['相対度数'].concat(REL), ['累積度数（人）'].concat(CS), ['累積相対度数'].concat(CREL)], { fw: .24 });
+        } },
+      { tag: '今日の問い', q: '最頻値・60分未満の人の割合・中央値のある階級は？', a: '75分・0.30・60〜90分', sub: '最頻値 … 度数 12 の階級の階級値 75分　60分未満 … 累積相対度数 0.30　中央値 … 15・16番目、累積度数 9 → 21 で 60〜90分', dur: 5,
+        b: { t: '最頻値 <b>75分</b>　60分未満 <b>0.30</b>　中央値の階級 <b>60〜90分</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, ph = t <= 0 ? -1 : t < .34 ? 0 : t < .67 ? 1 : 2;
+          var Ax = hist(D, { hl: function (i) { return ph === 0 && i === 2 ? C.yel : ph === 1 && i < 2 ? C.green : ph === 2 && i === 2 ? C.pink : null; }, alpha: function (i) { return ph === 1 && i >= 2 ? .3 : 1; } });
+          if (ph === 0) { CH.text(D, Ax.X(75), Ax.Y(12) - Ax.s * 2.4, '最頻値 75分', { col: C.yel, size: Ax.s * 1.2, a: CH.smooth(0, .1, t) }); }
+          if (ph === 1) { CH.text(D, Ax.X(30), Ax.Y(10), '3＋6＝9人', { col: C.green, size: Ax.s * 1.15 }); CH.text(D, Ax.X(30), Ax.Y(10) + Ax.s * 1.5, '9 ÷ 30 ＝ 0.30', { col: C.green, size: Ax.s * 1.15 }); }
+          if (ph === 2) { CH.text(D, Ax.X(75), Ax.Y(12) - Ax.s * 2.4, '15・16番目 → 60〜90分', { col: C.pink, size: Ax.s * 1.15 }); CH.text(D, Ax.X(30), Ax.Y(10), '9人まで', { col: 'rgba(242,240,230,.8)', size: Ax.s }); CH.text(D, Ax.X(105), Ax.Y(10), '21人まで', { col: 'rgba(242,240,230,.8)', size: Ax.s }); }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '「データの活用」で学んだことばを整理しよう。データの特徴を1つの値で表す 3つの値と、ちらばりを表す値は？', a: '平均値・中央値・最頻値（代表値）、範囲', sub: '人数がちがう集団は相対度数で、「○未満」の割合は累積相対度数で。多数回の実験で相対度数が近づく値が確率', dur: 4,
+        b: [{ t: '<b>代表値</b> … 平均値・中央値・最頻値　ちらばり … <b>範囲</b>', col: C.green }, { t: '人数がちがう → <b>相対度数</b>、「○未満」→ <b>累積相対度数</b>、起こりやすさ → <b>確率</b>', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .02, r: .02, t: .08, b: .14 }), t = D.ph ? D.t : 0, w = R.w * .37, h = Math.min(R.h * .17, CH.fs(D) * 3.4);
+          var K = [['度数分布表', 'ヒストグラム・度数折れ線', C.blue, 0], ['代表値', D.ph ? '平均値・中央値・最頻値' : '？', C.yel, .1], ['ちらばり', D.ph ? '範囲' : '？', C.green, .3], ['相対度数', '人数がちがうときにくらべる', C.orange, 0], ['累積相対度数', '「○未満」の割合', C.pink, 0], ['確率', '相対度数が近づく値', C.blue, 0]];
+          K.forEach(function (k, i) {
+            var ang = -Math.PI / 2 + i * Math.PI / 3, x = R.cx + Math.cos(ang) * R.w * .34, y = R.cy + Math.sin(ang) * R.h * .36, a = k[3] && D.ph ? CH.smooth(k[3], k[3] + .3, t) : 1;
+            CH.line(D, R.cx, R.cy, x, y, { col: 'rgba(242,240,230,.35)', w: 1.6 });
+            box2(D, x, y, w, h, k[0], k[1], k[2], Math.max(a, .35));
+          });
+          box2(D, R.cx, R.cy, w * .8, h * .8, 'データの活用', '', C.chalk);
+        } },
+      { tag: '例題', bh: '例題　8人のソフトボール投げ', q: '8人のソフトボール投げの記録（m）。14・17・17・20・22・25・28・41　平均値・中央値・最頻値・範囲は？', a: '平均値 23m、中央値 21m、最頻値 17m、範囲 27m', sub: '合計 184÷8＝23　4・5番目の平均 (20＋22)÷2＝21　17 が 2人　41−14＝27', dur: 5,
+        b: { t: '平均値 <b>23</b>・中央値 <b>21</b>・最頻値 <b>17</b>・範囲 <b>27</b>（m）', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .08, t: .1, b: .14 }), s = CH.fs(D), t = D.ph ? D.t : 0, yl = R.y0 + R.h * .78;
+          var X = CH.numline(D, CH.rect(R.x0, yl - 10, R.x1, yl), 10, 45, 1, { lab: 5, unit: '（m）' });
+          CH.dots(D, X, yl, TH, { r: s * .5, col: function (i, v) { return t > .55 && v === 17 ? C.green : C.blue; } });
+          var top = R.y0 + R.h * .36;
+          if (t > .05) { var a = CH.smooth(.05, .25, t); CH.line(D, X(23), yl, X(23), top, { col: C.yel, dash: true, w: 2.4, a: a }); CH.text(D, X(23) + 6, top, '平均値 23', { col: C.yel, align: 'left', a: a }); }
+          if (t > .3) { var a2 = CH.smooth(.3, .5, t); CH.line(D, X(21), yl, X(21), top, { col: C.pink, dash: true, w: 2.4, a: a2 }); CH.text(D, X(21) - 6, top, '中央値 21', { col: C.pink, align: 'right', a: a2 }); }
+          if (t > .55) CH.text(D, X(17), yl - s * 3.4, '最頻値 17', { col: C.green, a: CH.smooth(.55, .7, t) });
+          if (t > .75) { var a4 = CH.smooth(.75, .9, t), y = R.y0 + R.h * .12; CH.arrow(D, X(14), y, X(41), y, { col: C.orange, a: a4, w: 2.4 }); CH.arrow(D, X(41), y, X(14), y, { col: C.orange, a: a4, w: 2.4 }); CH.text(D, X(27.5), y - s, '範囲 41 − 14 ＝ 27', { col: C.orange, a: a4 }); CH.line(D, X(14), y, X(14), yl - s, { col: C.orange, dash: true, a: a4 * .6, w: 1.4 }); CH.line(D, X(41), y, X(41), yl - s, { col: C.orange, dash: true, a: a4 * .6, w: 1.4 }); }
+        } },
+      { tag: '考えよう', q: '次のア〜エの説明は、本当にそういえるだろうか。「いえる」か「いえない」かを選び、わけを書こう。',
+        notes: ['わけは、データの数をつかって書こう。', 'ア〜エを読んで、データをもとに判断・説明するとき、大切にしたいことをまとめよう。', 'スライダーで、1つずつ大きく表示できます。'],
+        sliders: [{ key: 'k', label: '説明', min: 0, max: 4, step: 1, val: 0, fmt: function (x) { return x ? SAY[x - 1][0] : '全部'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .08, b: .14 }), k = D.V.k, s = CH.fs(D), cs = CH.cols(R, 2, .05);
+          var cells = [];
+          [0, 1].forEach(function (r) { var rr = CH.rows(R, 2, .08)[r]; cells.push(CH.rect(cs[0].x0, rr.y0, cs[0].x1, rr.y1), CH.rect(cs[1].x0, rr.y0, cs[1].x1, rr.y1)); });
+          SAY.forEach(function (sy, i) {
+            var Q = k ? (i === k - 1 ? R : null) : cells[i]; if (!Q) return;
+            var big = k > 0, size = big ? s * 1.25 : s * .82, n = Math.max(6, Math.floor((Q.w - size * 3.2) / size)), L = wrap(sy[1], n);
+            CH.fillRect(D, Q.x0, Q.y0, Q.x1, Q.y1, { fill: 'rgba(20,30,24,.45)', stroke: 'rgba(242,240,230,.4)' });
+            CH.text(D, Q.x0 + size * 1.2, Q.y0 + size * 1.3, sy[0], { col: C.yel, size: size * 1.3 });
+            L.forEach(function (ln, j) { CH.text(D, Q.x0 + size * 2.4, Q.y0 + size * (1.3 + j * 1.6), ln, { align: 'left', size: size }); });
+          });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'ある学級の握力の平均値は、男子 18人が 40.0kg、女子 12人が 35.0kg。学級全体（30人）の平均値は？', a: '38.0kg', sub: '男子の合計 40.0×18＝720、女子の合計 35.0×12＝420 → (720＋420)÷30＝38.0。2つの平均値の平均 37.5 ではない', dur: 5,
+        b: { t: '(40.0×18 ＋ 35.0×12) ÷ 30 ＝ 1140 ÷ 30 ＝ <b>38.0kg</b>（37.5 ではない）', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .12, r: .06, t: .12, b: .16 }), t = D.ph ? D.t : 0, k = CH.ease(CH.smooth(.45, .8, t));
+          var Ax = CH.axes(D, R, { x: [0, 30], y: [30, 42], xt: [0, 18, 30], yt: [30, 32, 34, 36, 38, 40, 42], xl: '（人）', yl: '平均値（kg）', cut: true });
+          var hb = CH.lerp(40, 38, k), hg = CH.lerp(35, 38, k);
+          CH.fillRect(D, Ax.X(0), Ax.Y(hb), Ax.X(18), Ax.Y(30), { fill: 'rgba(154,216,255,.3)', stroke: C.blue });
+          CH.fillRect(D, Ax.X(18), Ax.Y(hg), Ax.X(30), Ax.Y(30), { fill: 'rgba(255,186,120,.3)', stroke: C.orange });
+          CH.text(D, Ax.X(9), Ax.Y(31.6), '男子 18人', { col: C.blue }); CH.text(D, Ax.X(24), Ax.Y(31.6), '女子 12人', { col: C.orange });
+          if (k < .05) { CH.text(D, Ax.X(9), Ax.Y(40) - Ax.s * 1.1, '40.0kg', { col: C.blue, num: true }); CH.text(D, Ax.X(24), Ax.Y(35) - Ax.s * 1.1, '35.0kg', { col: C.orange, num: true }); }
+          if (t > .1) { var a = CH.smooth(.1, .3, t); CH.text(D, Ax.X(9), Ax.Y(34), '40.0×18＝720', { col: C.blue, a: a, size: Ax.s * 1.05 }); CH.text(D, Ax.X(24), Ax.Y(33.2), '35.0×12＝420', { col: C.orange, a: a, size: Ax.s * 1.05 }); }
+          if (t > .8) {
+            var a2 = CH.smooth(.8, .95, t);
+            CH.line(D, Ax.X(0), Ax.Y(38), Ax.X(30), Ax.Y(38), { col: C.yel, w: 2.6, a: a2 }); CH.text(D, Ax.X(15), Ax.Y(38) - Ax.s * 1.6, '1140 ÷ 30 ＝ 38.0', { col: C.yel, a: a2, size: Ax.s * 1.2 });
+            CH.line(D, Ax.X(0), Ax.Y(37.5), Ax.X(30), Ax.Y(37.5), { col: C.pink, dash: true, a: a2 }); CH.text(D, Ax.X(29.6), Ax.Y(37.5) + Ax.s * 1, '37.5 ではない', { col: C.pink, a: a2, align: 'right', size: Ax.s });
+          }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

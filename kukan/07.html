@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>立体を切り開く展開図</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+<script src="js/k3.js"></script>
+<script>
+/* 空間図形 第7時：立体を切り開いて、平面の上で考えよう（ikkan の lesson_kukan_new_07 と同じ流れ）。
+   円柱の側面は、手前の線を動かさずに、平らになるまで少しずつ開く（K3.cylNet）。
+   円錐の側面は、手前の母線を動かさずに、母線にそって接する平面まで開く（K3.coneNet）。 */
+(function () {
+  var C = K3.COL, v = K3.v, DEG = v.DEG, K = K3, PI = Math.PI;
+  var CAN = { r: 3, h: 10 }, CN = { r: 3, l: 9 }, CN2 = { r: 3, l: 12 };
+  CN.h = Math.sqrt(CN.l * CN.l - CN.r * CN.r); CN2.h = Math.sqrt(CN2.l * CN2.l - CN2.r * CN2.r);
+  var BX = K.cuboid(3, 2, 6);
+
+  function camOf(m) { var w = v.mul(m, -1); return { th: Math.atan2(w[1], w[0]) / DEG, ps: Math.asin(w[2]) / DEG }; }
+  function ctrOf(meshes) { var P = []; meshes.forEach(function (m) { P = P.concat(m.V); }); return v.centroid(P); }
+  function lerpView(a, b, t) { var o = { th: v.lerp(a.th, b.th, t), ps: v.lerp(a.ps, b.ps, t), fov: v.lerp(a.fov || 30, b.fov || 30, t), target: v.lerp3(a.target, b.target, t) }; if (a.R != null) o.R = v.lerp(a.R, b.R, t); else o.rho = v.lerp(a.rho || 1, b.rho || 1, t); return o; }
+
+  /* 缶（円柱）。t1：側面を開く、t2：ふたと底をたおす */
+  var CANF = K.frame([0, 0, 5], 6.4);
+  function canDraw(D, t1, t2, o) {
+    o = o || {}; var n = K.cylNet(CAN.r, CAN.h, t1, t2);
+    if (o.body !== false) D.mesh(K.cylinder(CAN.r * .995, CAN.h), { col: '#c8ccd0', a: o.bodyA == null ? 1 - v.smooth(.7, 1, t1) : o.bodyA });
+    D.mesh(n.side, { col: C.orange, two: true, edgeCol: 'rgba(32,24,16,.8)' });
+    if (o.caps) { D.mesh(n.top, { col: C.blue, two: true }); D.mesh(n.bot, { col: C.blue, two: true }); }
+    return n;
+  }
+  var CAN_V0 = { th: -62, ps: 18, rho: 1, target: [0, 0, 5] }, CAN_V1 = { th: -90, ps: 0, fov: 6, rho: 1.62, target: [0, -3, 5] };
+  /* 円錐。t1：側面を開く、t2：底面をたおす */
+  function coneView(r, h, o) {
+    var fin = K.coneNet(r, h, 1, 1), c = camOf(fin.m), l = Math.hypot(r, h), ap = [0, 0, h];
+    var tg = o && o.circle ? ap : v.lerp3(ap, ctrOf([fin.side, fin.base]), .8);
+    return { a: { th: -62, ps: 16, R: l * .62, target: [0, 0, h * .42] }, b: { th: c.th, ps: c.ps, fov: 6, R: o && o.circle ? l * 1.12 : l * 1.18, target: tg } };
+  }
+  var CV = coneView(CN.r, CN.h), CV2 = coneView(CN2.r, CN2.h, { circle: true });
+
+  K.run({
+    no: '第7時', title: '立体を切り開いて、平面の上で考えよう',
+    model: CANF, view: CAN_V0,
+    links: [{ href: 'index.html', label: '目次' }, { href: '06.html', label: '◀ 第6時' }, { href: '08.html', label: '第8時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '缶のラベル（半径 3cm・高さ 10cm）',
+        q: '底面の半径 3cm、高さ 10cm の円柱の缶に、すきまなく、重ならないように ラベルをはる。ラベルは、どんな形で、どんな大きさか。',
+        notes: ['① 自分の考え（3分）　形と、縦・横の長さを。', '② ペアの考え（3分）'],
+        draw: function (D) {
+          canDraw(D, 0, 0); D.dim([0, 0, CAN.h], [CAN.r, 0, CAN.h], 'r 3cm', { dy: -.8 }); D.dim([CAN.r, 0, 0], [CAN.r, 0, CAN.h], 'h 10cm', { off: [.8, 0, 0], dx: 1.6 });
+        } },
+
+      { tag: '今日の問い', q: 'ラベルを、切り開くと どんな形？', a: '長方形', sub: '手前の線を動かさずに開くと、平らな長方形になる', dur: 4,
+        view: function (s) { return s.ph ? lerpView(CAN_V0, CAN_V1, v.smooth(.15, .9, s.t)) : CAN_V0; },
+        b: { t: '円柱の側面を切り開く → <b>長方形</b>', col: C.orange },
+        draw: function (D) { canDraw(D, D.ph ? v.ease(v.clamp(D.t / .85, 0, 1)) : 0, 0); } },
+
+      { tag: '今日の問い', q: 'ラベルの 縦と横の長さは？', a: '縦 10cm、横 6π cm', sub: '横は、底面の円周と同じ長さ　2π × 3 ＝ 6π', dur: 3, view: CAN_V1,
+        b: { t: '縦 ＝ 高さ 10cm　横 ＝ 底面の円周 2π×3＝<b>6π cm</b>', col: C.orange },
+        draw: function (D) {
+          canDraw(D, 1, 0, { bodyA: .35 });
+          var w = PI * CAN.r, a = D.ph ? v.smooth(0, .5, D.t) : 0;
+          D.dim([-w, -CAN.r, 0], [w, -CAN.r, 0], D.ph ? '6π cm' : '？', { off: [0, 0, -.9], dy: .9, col: C.yel });
+          D.dim([w, -CAN.r, 0], [w, -CAN.r, CAN.h], '10cm', { off: [.9, 0, 0], dx: 1.5 });
+          if (a > 0) { D.seg([-w, -CAN.r, 0], [w, -CAN.r, 0], { col: C.yel, w: D.lw * 3, a: a, glow: true }); D.circle([0, 0, 0], [1, 0, 0], [0, 1, 0], CAN.r, { stroke: C.yel, sw: D.lw * 3, sa: a }); }
+          if (D.ph && D.t > .5) D.label([0, 0, 0], '底面の円周 ＝ 横', { col: C.yel, dy: 1.6, a: v.smooth(.5, .8, D.t) });
+        } },
+
+      { tag: 'ことば', bh: 'ことば', q: '円柱と円錐を切り開いた図は、どんな形の組み合わせ？', a: '円柱 … 長方形と円 2つ、円錐 … おうぎ形と円',
+        sub: '立体を切り開いた図を <b>展開図</b> という', dur: 5,
+        b: [{ t: '切り開いた図 … <b>展開図</b>', col: C.green }, { t: '円柱の側面 … 長方形（横 ＝ 底面の円周）', col: C.green }, { t: '円錐の側面 … おうぎ形（弧 ＝ 底面の円周、半径 ＝ 母線）', col: C.green }],
+        draw: function (D) {
+          var g = D.grid(2, { cols: [2, 1] }), t = D.ph ? D.t : 0, t1 = v.ease(v.clamp(t / .6, 0, 1)), t2 = v.ease(v.clamp((t - .6) / .35, 0, 1));
+          var p = g.pos[0], c0 = { th: -62 * DEG, ps: 18 * DEG }, c1 = { th: -90 * DEG, ps: 0 };
+          var S = D.sub(p.cx, p.cy, g.size / 2, K.frame(v.lerp3([0, 0, 1.2], [0, -1, 1.2], t1), v.lerp(1.7, 3.6, t)), { th: v.lerp(c0.th, c1.th, v.smooth(0, .7, t)), ps: v.lerp(c0.ps, c1.ps, v.smooth(0, .7, t)), fov: v.lerp(30, 8, t) * DEG });
+          var n = K.cylNet(1, 2.4, t1, t2); S.mesh(K.cylinder(.995, 2.4), { col: '#c8ccd0', a: 1 - v.smooth(.4, .7, t) }); S.mesh(n.side, { col: C.orange, two: true }); S.mesh(n.top, { col: C.blue, two: true }); S.mesh(n.bot, { col: C.blue, two: true });
+          D.text(p.cx, p.ly, '円柱', { size: .9 });
+          var q = g.pos[1], fin = K.coneNet(1, 2.8, 1, 1), cc = camOf(fin.m), cn = K.coneNet(1, 2.8, t1, t2);
+          var S2 = D.sub(q.cx, q.cy, g.size / 2, K.frame(v.lerp3([0, 0, 1.2], ctrOf([fin.side, fin.base]), t1), v.lerp(1.7, 2.9, t)), { th: v.lerp(c0.th, cc.th * DEG, v.smooth(0, .7, t)), ps: v.lerp(c0.ps, cc.ps * DEG, v.smooth(0, .7, t)), fov: v.lerp(30, 8, t) * DEG });
+          S2.mesh(cn.side, { col: C.pink, two: true }); S2.mesh(cn.base, { col: C.blue, two: true });
+          D.text(q.cx, q.ly, '円錐', { size: .9 });
+        } },
+
+      { tag: '例題', bh: '例題　円錐（底面の半径 3cm・母線 9cm）', model: K.frame([0, 0, 4], 7.5), view: function (s) { return s.ph ? lerpView(CV.a, CV.b, v.smooth(.05, .45, s.t)) : CV.a; },
+        q: '底面の半径 3cm、母線 9cm の円錐。展開図の、側面になるおうぎ形の中心角は？', a: '120°',
+        sub: '弧 ＝ 底面の円周 6π。半径 9cm の円周は 18π。360° × 6π ÷ 18π ＝ 120°', dur: 7,
+        banner: function (s) { if (!s.ph) return ''; return s.t < .45 ? '側面を開くと…' : s.t < .72 ? '弧の長さ ＝ 底面の円周 ＝ 6π' : '半径 9cm の円の、6π ÷ 18π ＝ 1/3 → 120°'; },
+        b: [{ t: '弧 ＝ 底面の円周 2π×3＝6π　／　半径 9cm の円周 18π', col: C.pink }, { t: '中心角 ＝ 360° × 6π/18π ＝ <b>120°</b>', col: C.pink }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, t1 = v.ease(v.clamp(t / .42, 0, 1)), n = K.coneNet(CN.r, CN.h, t1, t1 > .99 ? v.smooth(.42, .55, t) : 0);
+          D.mesh(n.side, { col: C.pink, two: true }); D.mesh(n.base, { col: C.blue, two: true });
+          if (t < .1) { D.dim([0, 0, 0], [CN.r, 0, 0], '3cm', { dy: .9 }); D.label(v.lerp3([0, 0, CN.h], [0, -CN.r, 0], .5), '9cm', { dx: -1.2 }); }
+          if (t > .45) {
+            var ap = n.side.V[0], m = n.m, g = v.nrm(v.sub(n.side.V[1], ap)), w = v.cross(m, g), a = v.smooth(.45, .55, t);
+            var e = v.nrm(v.sub(n.side.V[n.side.V.length - 1], ap));
+            var arcP = []; for (var i = 1; i < n.side.V.length; i++) arcP.push(n.side.V[i]);
+            for (var j = 0; j < arcP.length - 1; j++) D.seg(arcP[j], arcP[j + 1], { col: C.yel, w: D.lw * 2.6, a: a });
+            D.circle(n.base.ctr, [1, 0, 0], v.cross(n.base.F[0].n, [1, 0, 0]), CN.r, { stroke: C.yel, sw: D.lw * 2.4, sa: a });
+            if (t > .72) {
+              var b = v.smooth(.72, .85, t);
+              D.circle(ap, g, v.nrm(v.sub(e, v.mul(g, v.dot(e, g)))), CN.l, { stroke: C.chalk, sa: .7 * b, sw: D.lw, dash: true });
+              var u2 = g, v2 = v.nrm(v.sub(e, v.mul(g, v.dot(e, g))));
+              D.arc(ap, u2, v2, 1.6, 0, 120 * DEG, { col: C.yel, a: b, w: 2 });
+              D.label(v.add(ap, v.mul(v.nrm(v.add(g, e)), 2.6)), '120°', { col: C.yel, a: b });
+            }
+          }
+        } },
+
+      { tag: '考えよう', bh: '考えよう', model: K.frame([1.5, 1, 3.6], 5.2), view: { th: -58, ps: 20, rho: .82 },
+        q: 'AB＝3cm、AD＝2cm、AE＝6cm の直方体で、A から G まで、表面にそって ひもをかける。もっとも短いかけ方は、どうすれば見つけられるだろう。',
+        notes: ['展開図をかいて、A から G までの ひもの通り道をかこう。いくつかのかけ方を くらべよう。', 'もっとも短いかけ方と、そう考えた理由を説明しよう。', 'スライダーで、ひもの通る点と、面のひらき方を変えられます。'],
+        sliders: [
+          { key: 'rt', label: '通る辺', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? '辺 EF' : '辺 BF'; } },
+          { key: 'p', label: '通る点 P', min: 0, max: 1, val: .2, fmt: function () { return ''; } },
+          { key: 'u', label: '面をひらく', min: 0, max: 1, val: 0, fmt: function () { return ''; } }
+        ],
+        draw: function (D) {
+          var M = BX, P = M.P, rt = D.V.rt, u = D.V.u, ang = u * PI / 2, Pp, face, hingeA, hingeU, Gp;
+          if (!rt) { Pp = [3, 0, D.V.p * 6]; face = ['B', 'C', 'G', 'F']; hingeA = P.B; hingeU = [0, 0, 1]; }
+          else { Pp = [D.V.p * 3, 0, 6]; face = ['E', 'F', 'G', 'H']; hingeA = P.E; hingeU = [1, 0, 0]; }
+          var rot = function (q) { var s = rt ? 1 : -1; return v.add(hingeA, v.rotAxis(v.sub(q, hingeA), hingeU, s * ang)); };
+          D.box(M, { faces: { ABFE: { col: C.blue, a: .22 } }, dim: .7 });
+          D.poly(face.map(function (k) { return rot(P[k]); }), { col: C.lav, a: .3, stroke: C.lav, sa: .9, sw: D.lw * 1.4 });
+          Gp = rot(P.G);
+          D.seg(P.A, Pp, { col: C.yel, w: D.lw * 2.8, glow: true }); D.seg(Pp, Gp, { col: C.yel, w: D.lw * 2.8, glow: true });
+          D.dot(Pp, { col: C.yel }); D.label(Pp, 'P', { dx: .8, dy: -.4, col: C.yel });
+          if (u > .02) D.label(Gp, 'G', { dx: .7, col: C.lav });
+          var L = v.len(v.sub(Pp, P.A)) + v.len(v.sub(P.G, Pp));
+          D.text(D.W / 2, D.info.top + 30, 'ひもの長さ　' + L.toFixed(2) + ' cm', { col: C.yel, size: 1.05 });
+        } },
+
+      { tag: 'チャレンジ', bh: 'チャレンジ　円錐（底面の半径 3cm・母線 12cm）', model: K.frame([0, 0, 5], 10), view: function (s) { return s.ph ? lerpView(CV2.a, CV2.b, v.smooth(.05, .5, s.t)) : CV2.a; },
+        q: '底面の半径 3cm、母線 12cm の円錐の、側面のおうぎ形の ① 弧の長さ ② 中心角 ③ 面積 は？',
+        a: '① 6π cm ② 90° ③ 36π cm²', sub: '弧は、半径 12cm の円周 24π の 6π/24π ＝ 1/4。面積も 1/4　π × 12² × 1/4 ＝ 36π', dur: 6,
+        b: { t: '① 弧 6π　② 360°×6π/24π＝<b>90°</b>　③ π×12²×1/4＝<b>36π</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, t1 = v.ease(v.clamp(t / .45, 0, 1)), n = K.coneNet(CN2.r, CN2.h, t1, 0);
+          D.mesh(n.side, { col: C.orange, two: true }); if (t1 < .99) D.mesh(n.base, { col: C.blue, two: true, a: 1 - t1 });
+          if (t > .55) {
+            var b = v.smooth(.55, .75, t), ap = n.side.V[0], g = v.nrm(v.sub(n.side.V[1], ap)), e = v.nrm(v.sub(n.side.V[n.side.V.length - 1], ap)), w = v.nrm(v.sub(e, v.mul(g, v.dot(e, g))));
+            D.circle(ap, g, w, CN2.l, { stroke: C.chalk, sa: .7 * b, sw: D.lw, dash: true });
+            D.seg(ap, v.add(ap, v.mul(v.mul(g, -1), CN2.l)), { col: C.chalk, a: .5 * b, dash: true }); D.seg(ap, v.add(ap, v.mul(v.mul(w, -1), CN2.l)), { col: C.chalk, a: .5 * b, dash: true });
+            D.arc(ap, g, w, 1.8, 0, 90 * DEG, { col: C.yel, a: b, w: 2 }); D.label(v.add(ap, v.mul(v.nrm(v.add(g, e)), 3)), '90°', { col: C.yel, a: b });
+            D.label(v.add(ap, v.mul(v.nrm(v.add(g, e)), 7)), '円の 1/4', { col: C.yel, a: b });
+          }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

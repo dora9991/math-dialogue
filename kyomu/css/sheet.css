@@ -1,0 +1,213 @@
+/* Excel の週行事シートと同じ見た目（画面・印刷とも） */
+:root {
+  --gothic: 'ＭＳ Ｐゴシック', 'MS PGothic', 'IPAPGothic', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+  --mincho: 'ＭＳ Ｐ明朝', 'MS PMincho', 'IPAPMincho', 'IPAMincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  --thin: 1px solid #000;
+  --hair: 0.5px solid #000;
+}
+
+/* A4 縦の紙。余白は Excel と同じ（左 1.6cm・右 0.5cm・上 1.4cm・下 0.6cm） */
+.page {
+  width: 210mm;
+  height: 297mm;
+  padding: 14mm 5mm 6mm 16mm;
+  box-sizing: border-box;
+  background: #fff;
+  color: #000;
+  position: relative;
+  overflow: hidden;
+}
+.page.land {
+  width: 297mm;
+  height: 210mm;
+  padding: 10mm 10mm 8mm 10mm;
+}
+.page.a4p-std {
+  padding: 12mm 12mm 10mm 12mm;
+}
+.fitbox {
+  transform-origin: 0 0;
+}
+
+table.xs {
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: var(--gothic);
+  font-size: 10pt;
+  color: #000;
+  background: #fff;
+}
+table.xs td {
+  padding: 0 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 1.05;
+  font-weight: normal;
+}
+.xs .fit {
+  display: inline-block;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+/* 罫線：T＝細線、h＝極細線 */
+.xs .lT { border-left: var(--thin); }
+.xs .rT { border-right: var(--thin); }
+.xs .tT { border-top: var(--thin); }
+.xs .bT { border-bottom: var(--thin); }
+.xs .lh { border-left: var(--hair); }
+.xs .rh { border-right: var(--hair); }
+.xs .th { border-top: var(--hair); }
+.xs .bh { border-bottom: var(--hair); }
+
+/* 見出し */
+.xs tr.ttl td {
+  font-weight: bold;
+  font-size: 12pt;
+  vertical-align: middle;
+}
+.xs .t-dai { text-align: right; padding-right: 2px; }
+.xs .t-main { overflow: visible; position: relative; }
+.xs .t-no { display: inline-block; width: 26px; text-align: center; }
+.xs .t-txt { white-space: pre; }
+.xs .t-label { font-size: 12pt; }
+.xs .t-stamp {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 14px 1px 10px;
+  border: 2px solid #000;
+  font-weight: normal;
+  font-size: 11pt;
+  background: #fff;
+  vertical-align: middle;
+}
+.xs tr.ttl td.t-school {
+  text-align: right;
+  font-weight: normal;
+  font-size: 11pt;
+  border-bottom: var(--thin);
+  overflow: visible;
+}
+.xs tr.ttl td.t-date {
+  text-align: right;
+  font-weight: normal;
+  font-size: 9pt;
+  vertical-align: bottom;
+}
+.xs .hc {
+  text-align: center;
+  font-size: 10pt;
+}
+.xs tr.hd td:first-child { font-size: 11pt; }
+
+/* 日付（太字 12pt を縦に） */
+.xs td.dt {
+  text-align: center;
+  font-weight: bold;
+  font-size: 12pt;
+}
+/* 行事・出張等（左寄せ 10pt） */
+.xs td.ev,
+.xs td.st {
+  text-align: left;
+  font-size: 10pt;
+  padding-left: 2px;
+}
+/* 校時 */
+.xs td.sl {
+  text-align: center;
+  font-size: 10pt;
+}
+/* クラス名の小さな行 */
+.xs td.ch {
+  text-align: center;
+  font-size: 10pt;
+  font-family: var(--mincho);
+  padding: 0;
+}
+.xs td.ch .fit { font-size: 7pt; }
+.xs td.ch.g-green { background: #e2efda; }
+.xs td.ch.g-yellow { background: #fff2cc; }
+/* 授業のコマ（明朝 10pt・中央） */
+.xs td.c {
+  text-align: center;
+  font-family: var(--mincho);
+  font-size: 10pt;
+  padding: 0;
+}
+.xs td.gap { border: none; }
+
+/* 変えたコマの色（Excel で手で塗っていた色） */
+.xs td.mk-y { background: #ffff00; font-weight: bold; }
+.xs td.mk-o { background: #ffc000; }
+.xs td.mk-b { background: #b4c6e7; font-weight: bold; }
+.xs td.mk-g { background: #e2efda; }
+.xs td.mk-p { background: #f8cbad; }
+
+@media print {
+  .xs td.mk-y, .xs td.mk-o, .xs td.mk-b, .xs td.mk-g, .xs td.mk-p, .xs td.ch {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* 図形（確定版の四角・お知らせの吹き出し） */
+.sheetwrap { position: relative; }
+.sheetwrap .bx {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 3px 6px;
+  overflow: hidden;
+  font-family: var(--gothic);
+  line-height: 1.25;
+  white-space: normal;
+  word-break: break-all;
+}
+.sheetwrap .bx.round { border-radius: 9px; }
+@media print {
+  .sheetwrap .bx { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+.sheetwrap .bx { pointer-events: none; }
+.xs td.b { font-weight: bold; }
+.xs td.red { color: #ff0000; }
+/* 校時の数字の色 */
+.xs td.sk-y { background: #ffff00; }
+.xs td.sk-o { background: #ffc000; }
+.xs td.sk-b { background: #b4c6e7; }
+.xs td.sk-g { background: #e2efda; }
+.xs td.sk-p { background: #f8cbad; }
+@media print { .xs td[class*='sk-'] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+@media print { .xs td.c[style], .xs td.sl[style] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+.xs td.big { font-size: 12pt; }
+
+/* 月行事・年間行事・時数などの印刷用 */
+.print-doc { width: 186mm; font-family: var(--gothic); color: #000; }
+.page.land .print-doc { width: 277mm; }
+.print-doc h2 { font-size: 15pt; margin: 0 0 4mm; }
+.print-doc h3 { font-size: 12pt; margin: 4mm 0 2mm; }
+.print-doc table { border-collapse: collapse; width: 100%; font-size: 9.5pt; }
+.print-doc th, .print-doc td { border: 0.75pt solid #000; padding: 1px 4px; vertical-align: top; }
+.print-doc th { background: #eee; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.print-doc .evi { display: inline; margin-right: 6px; }
+.print-doc .evi .tg { font-size: 8pt; color: #333; }
+.print-doc .evi.fill::before { content: ''; }
+.print-doc tr.sun td, .print-doc tr.hol td, .print-doc td.sun, .print-doc td.hol { background: #fbe4e2; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.print-doc tr.sat td, .print-doc td.sat { background: #e6eef8; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.print-doc td.d { text-align: right; width: 8mm; font-weight: bold; }
+.print-doc td.w, .print-doc td.wkn { text-align: center; width: 9mm; }
+.print-doc table.yr td { height: 4.7mm; font-size: 7pt; white-space: nowrap; overflow: hidden; padding: 0 2px; }
+.print-doc table.yr td.dn { width: 6mm; text-align: center; font-weight: bold; }
+
+/* 画面で見るとき：Excel の画面と同じように、細線（昼休み・学年・日の区切り、外枠）をはっきり黒く、
+   極細線（コマとコマのあいだ）はうすい灰色に。線の位置は印刷と同じ。印刷は上の太さのまま */
+#app .xs {
+  --thin: 2px solid #000;
+  --hair: 1px solid #a6a6a6;
+}
+#app .page {
+  width: max-content;
+  height: auto;
+  min-height: 297mm;
+}

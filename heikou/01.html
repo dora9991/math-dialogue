@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>対頂角・同位角・錯角</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="js/geo.js"></script>
+<script>
+/* 平行と合同 第1時：2直線が交わってできる角には、どんな関係があるだろう（ikkan の lesson_heikou_new_01 と同じ流れ）。
+   図の角度・数値は ikkan のワークシートと同じ（∠a＝50°、8つの角の図、二等分線のチャレンジ）。図は角度から座標を計算して描き、
+   角の大きさ・対頂角／同位角／錯角の位置関係は、座標から測り直して確かめる（GE.verify・CH.check）。 */
+(function () {
+  /* ---- このページの図の道具（角の印を、向きで描く・動かす） ---- */
+  var C = CH.C, RD = Math.PI / 180, OUT = 'rgba(20,40,30,.9)';
+  function nd(a) { return ((a % 360) + 360) % 360; }
+  function dir(p, q) { return Math.atan2(q[1] - p[1], q[0] - p[0]) / RD; }
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  /* 角の印：頂点 V（座標）で、向き a1 から a2 まで左まわり（度）。o：r（px）、col、fill、a、w */
+  function wedge(F, V, a1, a2, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(V), r = o.r || F.s * 1.1, col = o.col || C.chalk, d = nd(a2 - a1);
+    if (o.a === 0) return;
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a);
+    if (o.fill) { g.fillStyle = hexA(col, o.fill === true ? .35 : o.fill); g.beginPath(); g.moveTo(p[0], p[1]); g.arc(p[0], p[1], r, -a1 * RD, -(a1 + d) * RD, true); g.closePath(); g.fill(); }
+    g.strokeStyle = col; g.lineWidth = o.w || 2.4; g.beginPath(); g.arc(p[0], p[1], r, -a1 * RD, -(a1 + d) * RD, true); g.stroke(); g.restore();
+  }
+  /* 字：座標 p から、向き deg に k（字の大きさの倍）だけはなれたところ。t2 があれば2行（上に名前、下に大きさ） */
+  function lab(F, p, deg, k, t, o) {
+    o = o || {}; var q = F.X(p), x = q[0] + Math.cos(deg * RD) * F.s * k, y = q[1] - Math.sin(deg * RD) * F.s * k, s = F.s * (o.size || .95);
+    if (o.t2 != null) { CH.text(F.D, x, y - s * .5, t, { col: o.col, size: s, a: o.a, outline: OUT }); CH.text(F.D, x, y + s * .55, o.t2, { col: o.col2 || o.col, size: s * .9, a: o.a, outline: OUT, num: true }); }
+    else CH.text(F.D, x, y, t, { col: o.col, size: s, a: o.a, outline: OUT, num: o.num });
+  }
+  /* 頂点 V の角（向き a1→a2）を、k だけ動かしたもの。mv：{ to: 点 }（平行移動）か { c: 中心, deg: 回す角 } */
+  function moved(V, a1, a2, mv, k) {
+    if (mv.to) return [GE.lerpP(V, mv.to, k), a1, a2];
+    return [GE.rot(V, mv.c, mv.deg * k), a1 + mv.deg * k, a2 + mv.deg * k];
+  }
+  /* 図の上の1行（はばに入らなければ、字を小さくする） */
+  function top(D, R, s, col, a) {
+    var B = CH.box(D, { t: 0, l: .02, r: .02 }), g = D.ctx, fs = CH.fs(D, 1.05), w;
+    g.save(); g.font = '600 ' + fs + 'px "Klee One", sans-serif'; w = g.measureText(s).width; g.restore();
+    if (w > B.w) fs *= B.w / w;
+    CH.text(D, B.cx, B.y0 + CH.fs(D, 1.05) * .75, s, { col: col || C.yel, a: a, size: fs, outline: OUT });
+  }
+
+  /* ---- 2直線（今日の問い）：ℓ の向き 20°、m の向き 20°＋∠a。部屋 a（ℓ 右 → m 上）・b・c・d ---- */
+  var L0 = 20, AL = { a: 'AOB', b: 'BOC', c: 'COD', d: 'DOA' };
+  function XP(x) { var O = [0, 0]; return { O: O, A: GE.polar(O, 5, L0), B: GE.polar(O, 5, L0 + x), C: GE.polar(O, 5, L0 + 180), D: GE.polar(O, 5, L0 + x + 180) }; }
+  GE.verify(XP(50), '∠a＝50°、∠b＝130°、∠c＝50°、∠d＝130°、∠a＋∠b＝180°、∠b＋∠c＝180°、∠c＋∠d＝180°、∠a＝∠c、∠b＝∠d', AL, '今日の問い');
+  for (var xx = 30; xx <= 150; xx += 5) GE.verify(XP(xx), '∠a＝∠c、∠b＝∠d、∠a＋∠b＝180°', AL, '対頂角（スライダー ' + xx + '°）');
+  CH.check(180 - 50 === 130 && 180 - 130 === 50, '今日の問いの式');
+  /* 4つの部屋の向き [はじめ, おわり]、字の向き */
+  function rooms(x) { return { a: [L0, L0 + x], b: [L0 + x, L0 + 180], c: [L0 + 180, L0 + x + 180], d: [L0 + x + 180, L0 + 360] }; }
+  function fitX(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .04, r: .04, t: o.t == null ? .14 : o.t, b: .06 }), P = { O: [0, 0], u: [-6.2, -5.6], v: [6.2, 5.6] };
+    return GE.fit(D, R, P, { keys: ['u', 'v'], pad: 0 });
+  }
+  function lines2(F, x, o) {
+    o = o || {};
+    GE.seg(F, [GE.polar([0, 0], 5.8, L0 + 180), GE.polar([0, 0], 5.8, L0)], { w: 2.8, col: o.cl });
+    GE.seg(F, [GE.polar([0, 0], 5.8, L0 + x + 180), GE.polar([0, 0], 5.8, L0 + x)], { w: 2.8, col: o.cm });
+    lab(F, GE.polar([0, 0], 5.8, L0), L0, 1, 'ℓ', { size: 1.1 }); lab(F, GE.polar([0, 0], 5.8, L0 + x), L0 + x, 1, 'm', { size: 1.1 });
+    GE.dot(F, [0, 0]);
+  }
+  /* 角の字（val：数を出すか。col：色） */
+  function roomLab(F, x, k, show, col, a) {
+    var r = rooms(x)[k], m = (r[0] + r[1]) / 2, v = (k === 'a' || k === 'c') ? x : 180 - x;
+    lab(F, [0, 0], m, 3.1, k, { t2: show ? v + '°' : null, col: col || C.chalk, a: a });
+  }
+  var COLA = C.yel, COLB = C.pink;
+  function colOf(k) { return k === 'a' || k === 'c' ? COLA : COLB; }
+
+  /* ---- 8つの角の図（ことば・例題・考えよう）：ℓ（上、向き pl）、m（下、向き pm）、n（向き th）。P＝ℓ と n、Q＝m と n ----
+     P のまわり a（右上）b（左上）c（左下）d（右下）、Q のまわり e（右上）f（左上）g（左下）h（右下） */
+  function TRV(th, pl, pm) {
+    var h = 4.6, dn = GE.polar([0, 0], 1, th), P = [0, h], Q = [-dn[0] * h / dn[1], 0];
+    return { P: P, Q: Q, th: th, pl: pl, pm: pm,
+      ang: { a: ['P', pl, th], b: ['P', th, pl + 180], c: ['P', pl + 180, th + 180], d: ['P', th + 180, pl + 360],
+        e: ['Q', pm, th], f: ['Q', th, pm + 180], g: ['Q', pm + 180, th + 180], h: ['Q', th + 180, pm + 360] } };
+  }
+  /* 角 k の大きさと、まん中の向き */
+  function tv(T, k) { var g = T.ang[k]; return nd(g[2] - g[1]); }
+  function tmid(T, k) { var g = T.ang[k]; return g[1] + nd(g[2] - g[1]) / 2; }
+  /* 位置関係（座標から）：同じ頂点で向きが反対 → 対頂角／ちがう頂点で、n の同じ側・同じ上下 → 同位角／ちがう頂点で、n の反対側・どちらも2直線の内側 → 錯角 */
+  function side(T, k) { var m = GE.polar([0, 0], 1, tmid(T, k)), n = GE.polar([0, 0], 1, T.th); return Math.sign(n[0] * m[1] - n[1] * m[0]); }
+  function ud(T, k) { return Math.sign(Math.sin(tmid(T, k) * RD)); }
+  function inner(T, k) { return T.ang[k][0] === 'P' ? ud(T, k) < 0 : ud(T, k) > 0; }
+  function kind(T, x, y) {
+    var sv = T.ang[x][0] === T.ang[y][0];
+    if (sv && Math.abs(nd(tmid(T, x) - tmid(T, y)) - 180) < 1e-9) return '対頂角';
+    if (!sv && side(T, x) === side(T, y) && ud(T, x) === ud(T, y)) return '同位角';
+    if (!sv && side(T, x) === -side(T, y) && inner(T, x) && inner(T, y)) return '錯角';
+    return '';
+  }
+  function pick(T, x, kd) { return 'abcdefgh'.split('').filter(function (y) { return y !== x && kind(T, x, y) === kd; }).join(''); }
+  var TE = TRV(62, 0, -14);
+  CH.check(pick(TE, 'd', '対頂角') === 'b' && pick(TE, 'd', '同位角') === 'h' && pick(TE, 'd', '錯角') === 'f', '例題（∠d の対頂角・同位角・錯角）');
+  CH.check(pick(TE, 'a', '同位角') === 'e' && pick(TE, 'c', '錯角') === 'e' && pick(TE, 'a', '対頂角') === 'c', 'ことば（F の形・Z の形）');
+  CH.check(Math.abs(tv(TE, 'd') - tv(TE, 'h')) > 1 && Math.abs(tv(TE, 'd') - tv(TE, 'f')) > 1, '例題の図は平行でない（同位角・錯角が等しくない）');
+  function fitT(D, T, o) {
+    o = o || {}; var R = o.R || CH.box(D, { l: .04, r: .04, t: o.t == null ? .08 : o.t, b: .06 });
+    var P = { P: T.P, Q: T.Q, u: [Math.min(T.P[0], T.Q[0]) - 5.6, -2.4], v: [Math.max(T.P[0], T.Q[0]) + 5.6, T.P[1] + 2.4] };
+    return GE.fit(D, R, P, { keys: ['u', 'v'], pad: 0 });
+  }
+  function tLines(F, T, o) {
+    o = o || {}; var P = T.P, Q = T.Q, L = 5.2;
+    GE.seg(F, [GE.polar(P, L, T.pl + 180), GE.polar(P, L, T.pl)], { w: 2.6 });
+    GE.seg(F, [GE.polar(Q, L, T.pm + 180), GE.polar(Q, L, T.pm)], { w: 2.6 });
+    GE.seg(F, [GE.polar(Q, 2.2, T.th + 180), GE.polar(P, 2.2, T.th)], { w: 2.6 });
+    lab(F, GE.polar(P, L, T.pl), T.pl, 1, 'ℓ', { size: 1.1 }); lab(F, GE.polar(Q, L, T.pm), T.pm, 1, 'm', { size: 1.1 }); lab(F, GE.polar(P, 2.2, T.th), T.th, 1, 'n', { size: 1.1 });
+  }
+  /* 角の字。ks：字を書く角、o.val：大きさも書く角 {a: true}、o.col：{a: 色} */
+  function tLabs(F, T, ks, o) {
+    o = o || {}; ks.split('').forEach(function (k) {
+      var g = T.ang[k], V = T[g[0]], m = tmid(T, k), w = tv(T, k), r = w < 60 ? 3.3 : 2.4;
+      lab(F, V, m, o.val && o.val[k] ? r + .4 : r, k, { t2: o.val && o.val[k] ? Math.round(w) + '°' : null, col: (o.col && o.col[k]) || C.chalk, a: o.a });
+    });
+  }
+  function tArc(F, T, k, col, o) { o = o || {}; var g = T.ang[k]; wedge(F, T[g[0]], g[1], g[2], { col: col, fill: o.fill == null ? .3 : o.fill, r: o.r || F.s * 1.5, a: o.a }); }
+  /* 形（X・F・Z）を光らせる：線分の列 */
+  function glow(F, segs, col, a) { segs.forEach(function (s) { GE.seg(F, s, { col: col, w: 6, a: a, glow: true }); }); }
+  function shapeX(T, v) { var V = T[v], L = 3.4; return [[GE.polar(V, L, T.th + 180), GE.polar(V, L, T.th)], [GE.polar(V, L, (v === 'P' ? T.pl : T.pm) + 180), GE.polar(V, L, v === 'P' ? T.pl : T.pm)]]; }
+
+  /* ---- チャレンジ：直線 AB・CD が O で交わる。∠AOC＝64°、OE は二等分線、OF は EO の延長 ---- */
+  var BI = (function () { var O = [0, 0], R = 5; return { O: O, A: GE.polar(O, R, 180), B: GE.polar(O, R, 0), C: GE.polar(O, R, 116), D: GE.polar(O, R, 296), E: GE.polar(O, R, 148), F: GE.polar(O, R, 328) }; })();
+  GE.verify(BI, '∠AOC＝64°、∠AOE＝∠EOC＝32°、∠BOF＝∠AOE＝32°、∠EOF＝180°、∠AOB＝180°、∠COD＝180°', null, 'チャレンジ');
+  CH.check(64 / 2 === 32, 'チャレンジの式');
+
+  K3.run({
+    no: '第1時', title: '2直線が交わってできる角には、どんな関係があるだろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '第2時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '2直線が交わってできる角', q: '2直線 ℓ、m が交わっている。∠a＝50° のとき、∠b、∠c、∠d は何度だろう。分度器を使わずに求めて、向かい合う角の関係を見つけよう。',
+        notes: ['① 自分の考え（3分）　求め方と、気づいたことを。', '② ペアの考え（3分）'],
+        draw: function (D) { var F = fitX(D); lines2(F, 50); 'abcd'.split('').forEach(function (k) { roomLab(F, 50, k, k === 'a', k === 'a' ? COLA : C.chalk); }); wedge(F, [0, 0], L0, L0 + 50, { col: COLA, fill: .3, r: F.s * 1.6 }); } },
+      { tag: '今日の問い', q: '∠b、∠c、∠d は、何度？', a: '∠b＝130°、∠c＝50°、∠d＝130°', sub: '一直線の角は 180°。∠b＝180°−50°＝130°、∠c＝180°−130°＝50°、∠d＝180°−50°＝130°', dur: 6,
+        b: { t: '一直線は 180° → ∠b＝180°−50°＝<b>130°</b>、∠c＝<b>50°</b>、∠d＝<b>130°</b>', col: C.yel },
+        draw: function (D) {
+          var F = fitX(D), t = D.ph ? D.t : 0, R = F.R, x = 50, rm = rooms(x);
+          var seq = [['a', 'b', L0, '∠a＋∠b＝180° → ∠b＝180°−50°＝130°'], ['b', 'c', L0 + x, '∠b＋∠c＝180° → ∠c＝180°−130°＝50°'], ['c', 'd', L0 + 180, '∠c＋∠d＝180° → ∠d＝180°−50°＝130°']];
+          var cur = t <= 0 ? -1 : Math.min(2, Math.floor(t * 3)), kk = t * 3 - cur;
+          lines2(F, x);
+          if (cur >= 0 && t < 1) {
+            var sq = seq[cur], al = CH.smooth(0, .15, kk) * (cur === 2 || kk < .92 ? 1 : 1 - CH.smooth(.92, 1, kk));
+            wedge(F, [0, 0], rm[sq[0]][0], rm[sq[0]][1], { col: colOf(sq[0]), fill: .35, r: F.s * 1.6, a: al });
+            wedge(F, [0, 0], rm[sq[1]][0], rm[sq[1]][1], { col: colOf(sq[1]), fill: .35, r: F.s * 1.6, a: al * CH.smooth(.15, .3, kk) });
+            wedge(F, [0, 0], sq[2], sq[2] + 180, { col: C.green, r: F.s * 5.4, w: 3, a: al * CH.smooth(.3, .45, kk) });
+            lab(F, [0, 0], sq[2] + 90, 6.3, '180°', { col: C.green, a: al * CH.smooth(.3, .45, kk), size: 1 });
+            top(D, R, sq[3], C.yel, CH.smooth(.35, .55, kk));
+          }
+          var shown = { a: true, b: t >= 1 / 3 * .62, c: t >= 1 / 3 * 1.62, d: t >= 1 / 3 * 2.62 };
+          'abcd'.split('').forEach(function (k) { roomLab(F, x, k, shown[k], shown[k] ? colOf(k) : C.chalk); });
+          if (t >= 1) top(D, R, '∠a＝50°　∠b＝130°　∠c＝50°　∠d＝130°', C.yel);
+        } },
+      { tag: '今日の問い', q: '向かい合う角には、どんな関係がある？ わけも説明しよう。', a: '向かい合う角は 等しい（∠a＝∠c、∠b＝∠d）', sub: '∠a＋∠b＝180°、∠c＋∠b＝180° だから、∠a も ∠c も「180°−∠b」で等しい', dur: 4.5,
+        notes: ['スライダーで、直線 m を回せます。どんな角度でも、向かい合う角は等しいかな。'],
+        sliders: [{ key: 'x', label: '∠a の大きさ', min: 30, max: 150, step: 1, val: 50, fmt: function (v) { return v + '°'; } }],
+        b: { t: '向かい合う角は <b>等しい</b>（∠a＝∠c、∠b＝∠d）　わけ：∠a も ∠c も 180°−∠b', col: C.yel },
+        draw: function (D) {
+          var F = fitX(D), x = D.V.x, rm = rooms(x), t = D.ph ? D.t : 0;
+          lines2(F, x);
+          ['a', 'c', 'b', 'd'].forEach(function (k) { wedge(F, [0, 0], rm[k][0], rm[k][1], { col: colOf(k), fill: .25, r: F.s * (k === 'a' || k === 'c' ? 1.5 : 1.15), a: D.ph ? 1 : .8 }); });
+          'abcd'.split('').forEach(function (k) { roomLab(F, x, k, true, colOf(k)); });
+          if (D.ph && t < 1) {
+            var k1 = CH.ease(CH.smooth(.05, .45, t)), k2 = CH.ease(CH.smooth(.5, .9, t));
+            if (t < .5) { var m1 = moved([0, 0], rm.a[0], rm.a[1], { c: [0, 0], deg: 180 }, k1); wedge(F, m1[0], m1[1], m1[2], { col: COLA, fill: .55, r: F.s * 1.5, w: 3 }); }
+            else { var m2 = moved([0, 0], rm.b[0], rm.b[1], { c: [0, 0], deg: 180 }, k2); wedge(F, m2[0], m2[1], m2[2], { col: COLB, fill: .55, r: F.s * 1.15, w: 3 }); }
+          }
+          if (D.ph) top(D, F.R, '∠a＝∠c＝' + x + '°　　∠b＝∠d＝' + (180 - x) + '°', C.yel, CH.smooth(.85, 1, t));
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '2直線が交わってできる、向かい合う角を何という？', a: '対頂角', sub: '対頂角は 等しい（X の形）', dur: 2.5,
+        b: { t: '<b>対頂角</b> … 2直線が交わってできる、向かい合う角。対頂角は <b>等しい</b>', col: C.green },
+        draw: function (D) {
+          var F = fitX(D), t = D.ph ? D.t : 0, rm = rooms(50);
+          if (t > 0) glow(F, [[GE.polar([0, 0], 5.8, L0 + 180), GE.polar([0, 0], 5.8, L0)], [GE.polar([0, 0], 5.8, L0 + 230), GE.polar([0, 0], 5.8, L0 + 50)]], C.green, CH.smooth(0, .3, t) * .6);
+          lines2(F, 50);
+          wedge(F, [0, 0], rm.a[0], rm.a[1], { col: COLA, fill: .4, r: F.s * 1.6 }); wedge(F, [0, 0], rm.c[0], rm.c[1], { col: COLA, fill: .4, r: F.s * 1.6, a: D.ph ? CH.smooth(.3, .6, t) : 0 });
+          roomLab(F, 50, 'a', false, COLA); roomLab(F, 50, 'c', false, D.ph ? COLA : C.chalk); roomLab(F, 50, 'b', false); roomLab(F, 50, 'd', false);
+          if (D.ph) top(D, F.R, '∠a と ∠c は 対頂角（向かい合う角）', C.green, CH.smooth(.6, .9, t));
+        } },
+      { tag: 'ことば', q: '2直線 ℓ、m に 直線 n が交わる。同じ位置にある角（∠a と ∠e）、2直線の内側で ななめ向かいにある角（∠c と ∠e）を、何という？', a: '同位角・錯角', sub: '同位角は F の形、錯角は Z の形で見つける', dur: 5,
+        b: [{ t: '<b>同位角</b> … 同じ位置にある角（F の形）', col: C.green }, { t: '<b>錯角</b> … 2直線の内側で、ななめ向かいにある角（Z の形）', col: C.green }],
+        draw: function (D) {
+          var T = TE, F = fitT(D, T, { t: .15 }), t = D.ph ? D.t : 0, P = T.P, Q = T.Q, a1 = D.ph ? CH.smooth(.02, .2, t) * (1 - CH.smooth(.46, .54, t)) : 0, a2 = D.ph ? CH.smooth(.55, .72, t) : 0;
+          if (a1 > 0) glow(F, [[GE.polar(Q, 2.2, T.th + 180), GE.polar(P, 2.2, T.th)], [P, GE.polar(P, 4, T.pl)], [Q, GE.polar(Q, 4, T.pm)]], C.yel, a1 * .55);
+          if (a2 > 0) glow(F, [[GE.polar(P, 4, T.pl + 180), P], [P, Q], [Q, GE.polar(Q, 4, T.pm)]], C.pink, a2 * .55);
+          tLines(F, T);
+          if (!D.ph) { tArc(F, T, 'a', C.yel); tArc(F, T, 'e', C.yel); tArc(F, T, 'c', C.pink); }
+          else { tArc(F, T, 'a', C.yel, { a: Math.max(a1, .25) }); tArc(F, T, 'e', a2 > a1 ? C.pink : C.yel, { a: Math.max(a1, a2, .25) }); tArc(F, T, 'c', C.pink, { a: Math.max(a2, .25) }); }
+          tLabs(F, T, 'abcdefgh', { col: { a: C.yel, e: a2 > a1 ? C.pink : C.yel, c: C.pink } });
+          if (D.ph) { top(D, F.R, a2 > a1 ? '錯角（Z の形）：∠c と ∠e' : '同位角（F の形）：∠a と ∠e', a2 > a1 ? C.pink : C.yel, Math.max(a1, a2)); }
+        } },
+      { tag: '例題', bh: '例題　∠d の 対頂角・同位角・錯角', q: '∠d について、（1）対頂角　（2）同位角　（3）錯角 を答えよう。', a: '（1）∠b　（2）∠h　（3）∠f', sub: 'X の形・F の形・Z の形で見分ける', dur: 6,
+        b: { t: '∠d の 対頂角 <b>∠b</b>、同位角 <b>∠h</b>、錯角 <b>∠f</b>', col: C.pink },
+        draw: function (D) {
+          var T = TE, F = fitT(D, T, { t: .15 }), t = D.ph ? D.t : 0, P = T.P, Q = T.Q, ph = t <= 0 ? -1 : Math.min(2, Math.floor(t * 3)), kk = t * 3 - ph;
+          var sh = [[shapeX(T, 'P'), 'b', '対頂角（X の形）：∠b', C.green], [[[GE.polar(Q, 2.2, T.th + 180), GE.polar(P, 2.2, T.th)], [P, GE.polar(P, 4, T.pl)], [Q, GE.polar(Q, 4, T.pm)]], 'h', '同位角（F の形）：∠h', C.yel],
+            [[[GE.polar(P, 4, T.pl), P], [P, Q], [Q, GE.polar(Q, 4, T.pm + 180)]], 'f', '錯角（Z の形）：∠f', C.pink]];
+          if (ph >= 0) glow(F, sh[ph][0], sh[ph][3], CH.smooth(0, .2, kk) * (ph === 2 ? 1 : 1 - CH.smooth(.85, 1, kk)) * .55);
+          tLines(F, T);
+          tArc(F, T, 'd', C.orange, { fill: .45 });
+          var col = { d: C.orange };
+          sh.forEach(function (x, i) { if (i < ph || (i === ph && kk > .3)) { tArc(F, T, x[1], x[3], { a: i === ph ? CH.smooth(.3, .45, kk) : .9 }); col[x[1]] = x[3]; } });
+          tLabs(F, T, 'abcdefgh', { col: col });
+          if (ph >= 0) top(D, F.R, sh[ph][2], sh[ph][3], CH.smooth(.3, .45, kk));
+        } },
+      { tag: '考えよう', q: '同位角や錯角は、いつも等しいといえるだろうか。', notes: ['スライダーで、直線 m・n の傾きを変えて、∠a と ∠e（同位角）、∠c と ∠e（錯角）の大きさを くらべよう。', '等しくなるのは、2直線 ℓ、m が どんなときだろう。予想しよう。'],
+        sliders: [{ key: 'pm', label: 'm の傾き', min: -25, max: 25, step: 1, val: -14, fmt: function (v) { return CH.mnum(v) + '°'; } }, { key: 'th', label: 'n の傾き', min: 45, max: 135, step: 1, val: 62, fmt: function (v) { return v + '°'; } }],
+        draw: function (D) {
+          var T = TRV(D.V.th, 0, D.V.pm), F = fitT(D, T, { t: .04 });
+          tLines(F, T); tArc(F, T, 'a', C.yel); tArc(F, T, 'e', C.blue); tArc(F, T, 'c', C.pink);
+          tLabs(F, T, 'ace', { val: { a: 1, c: 1, e: 1 }, col: { a: C.yel, e: C.blue, c: C.pink } });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '直線 AB と CD は 点 O で交わっている。∠AOC＝64° で、OE は ∠AOC の二等分線、OF は EO をのばした半直線。∠BOF の大きさは？ 理由も。', a: '32°',
+        sub: '∠AOE＝64°÷2＝32°。∠BOF は ∠AOE の対頂角だから 32°', dur: 4.5, notes: ['ヒント① ∠BOF と大きさが等しい角は、図のなかにないかな。', 'ヒント② ∠AOE は、∠AOC を どう分けた角かな。'],
+        b: { t: '∠AOE＝64°÷2＝32°、∠BOF は ∠AOE の対頂角 → <b>32°</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .14, b: .06 }), F = GE.fit(D, R, BI, { keys: ['A', 'B', 'C', 'D', 'E', 'F'], pad: .1 }), t = D.ph ? D.t : 0, O = BI.O;
+          [['A', 'B'], ['C', 'D'], ['E', 'F']].forEach(function (s) { GE.seg(F, s, { w: 2.6 }); });
+          wedge(F, O, 116, 180, { col: C.blue, r: F.s * 4.2, w: 2.4 }); lab(F, O, 135, 5.1, '64°', { col: C.blue, size: .95 });
+          wedge(F, O, 148, 180, { col: C.yel, r: F.s * 1.9, fill: D.ph ? .35 : 0 }); wedge(F, O, 116, 148, { col: C.yel, r: F.s * 1.9 });
+          GE.tick(F, [GE.polar(O, 2.2, 158), GE.polar(O, 2.2, 170)], 1, { col: C.yel }); GE.tick(F, [GE.polar(O, 2.2, 126), GE.polar(O, 2.2, 138)], 1, { col: C.yel });
+          if (D.ph) lab(F, O, 164, 3.1, '32°', { col: C.yel, a: CH.smooth(.05, .25, t), size: .9 });
+          wedge(F, O, 328, 360, { col: C.pink, r: F.s * 1.9, fill: .3 }); lab(F, O, 344, 3.0, D.ph && t > .8 ? '32°' : '?', { col: C.pink, size: .9 });
+          if (D.ph && t > .3 && t < 1) { var m = moved(O, 148, 180, { c: O, deg: 180 }, CH.ease(CH.smooth(.3, .8, t))); wedge(F, m[0], m[1], m[2], { col: C.yel, r: F.s * 1.9, fill: .5, w: 3 }); }
+          GE.dot(F, O); GE.labels(F, ['A', 'B', 'C', 'D', 'E', 'F'], { dir: { A: 'w', B: 'e', C: 'nw', D: 'se', E: 'nw', F: 'se' } });
+          lab(F, O, 270, 1.1, 'O', { size: 1 });
+          if (D.ph) top(D, R, '∠BOF は ∠AOE の 対頂角', C.pink, CH.smooth(.6, .85, t));
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

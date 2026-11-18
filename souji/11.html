@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>中点連結定理で証明する</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 相似な図形 第11時：中点連結定理を使って、図形の性質を証明しよう（ikkan の lesson_souji_11 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。証明の行（PQ∥AC、PQ＝1/2AC など）は GE.proof が座標で確かめ、長さは GE.verify・CH.check で計算し直す。
+   四角形 ABCD の 4辺の中点を結ぶと平行四辺形。対角線 AC をひくと、△ABC と △ACD に中点連結定理が使える。D を動かしても、いつも平行四辺形。 */
+(function () {
+  var C = CH.C, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  /* ---- このページの道具 ---- */
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), w = tw(D, s, size); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({ outline: OUT }, o, { size: size })); }
+  /* 図の四角（fig）と、字の四角（side）。よこ長ならみぎ、たて長なら下 */
+  function lay(D, k, kh) {
+    var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
+    if (B.w > B.h * 1.15 && B.w > 560) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .1, B.x1, B.y1 - B.h * .05), wide: true }; }
+    var h = B.h * (kh || .3); return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .04, B.y1 - h + 6, B.x1 - B.w * .02, B.y1), wide: false };
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする）。list：[{ t, col, a }] */
+  function rows(D, R, list, o) {
+    o = o || {}; list = list.filter(Boolean); if (!list.length) return;
+    var nc = R.w > R.h * 2.2 && list.length > 3 ? 2 : 1, per = Math.ceil(list.length / nc), cw = R.w / nc;   // 下の帯では 2列
+    var s = Math.min(o.size || CH.fs(D, .92), R.h / (per * 1.55));
+    list.forEach(function (r, i) {
+      if (r.a === 0) return; var c = Math.floor(i / per), j = i % per, w = tw(D, r.t, s), sz = w > cw - 8 ? s * (cw - 8) / w : s;
+      CH.text(D, R.x0 + c * cw, R.y0 + s * .8 + j * s * 1.55, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left', outline: OUT });
+    });
+  }
+  /* 辺 ab のそばの字（ref から遠ざかる向き。ref がなければ図の中心から）。pos：a からの位置（0〜1） */
+  function len(F, a, b, t, o) {
+    o = o || {}; var p = F.X(a), q = F.X(b), u = o.pos == null ? .5 : o.pos, m = [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u];
+    var d = [q[0] - p[0], q[1] - p[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L], r = F.X(o.ref || F.c);
+    if ((m[0] - r[0]) * n[0] + (m[1] - r[1]) * n[1] < 0) n = [-n[0], -n[1]];
+    var sz = F.s * (o.size || .85), w = tw(F.D, t, sz), k = (o.k || .45) * F.s + Math.abs(n[0]) * w / 2 + Math.abs(n[1]) * sz / 2;
+    CH.text(F.D, m[0] + n[0] * k, m[1] + n[1] * k, t, { col: o.col || C.chalk, size: sz, a: o.a, outline: OUT });
+  }
+  /* 寸法線：線分 ab にそって、外がわへ k ずらした線（両はしに短い線）と字 */
+  function dim(F, a, b, o) {
+    o = o || {}; var p = F.X(a), q = F.X(b), d = [q[0] - p[0], q[1] - p[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L], r = F.X(o.ref || F.c), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    if ((m[0] - r[0]) * n[0] + (m[1] - r[1]) * n[1] < 0) n = [-n[0], -n[1]];
+    var k = (o.k || 1) * F.s, h = F.s * .32, P0 = [p[0] + n[0] * k, p[1] + n[1] * k], Q0 = [q[0] + n[0] * k, q[1] + n[1] * k];
+    CH.line(F.D, P0[0], P0[1], Q0[0], Q0[1], { col: o.col, w: 3, a: o.a, glow: true });
+    [P0, Q0].forEach(function (z) { CH.line(F.D, z[0] - n[0] * h, z[1] - n[1] * h, z[0] + n[0] * h, z[1] + n[1] * h, { col: o.col, w: 2.4, a: o.a }); });
+    if (o.t) { var sz = F.s * .85, w = tw(F.D, o.t, sz), kk = k + F.s * .4 + Math.abs(n[0]) * w / 2 + Math.abs(n[1]) * sz / 2; CH.text(F.D, m[0] + n[0] * kk, m[1] + n[1] * kk, o.t, { col: o.col, size: sz, a: o.a, outline: OUT }); }
+  }
+  function glow(F, ss, col, a) { if (a > 0) ss.split(' ').forEach(function (s) { GE.seg(F, s, { col: col, w: 5, glow: true, a: a }); }); }
+  function tri(ab, ac, bc) { var x = (ab * ab - ac * ac + bc * bc) / (2 * bc); return { A: [x, Math.sqrt(ab * ab - x * x)], B: [0, 0], C: [bc, 0] }; }
+  function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+  function ratio(a, b) { var g = gcd(a, b); return a / g + '：' + b / g; }
+  function nf(x) { return String(Math.round(x * 10) / 10); }
+  function withMid(Q) { return Object.assign({}, Q, { P: GE.mid(Q.A, Q.B), Q: GE.mid(Q.B, Q.C), R: GE.mid(Q.C, Q.D), S: GE.mid(Q.D, Q.A) }); }
+  var TK4 = [['AP', 1], ['PB', 1], ['BQ', 2], ['QC', 2], ['CR', 3], ['RD', 3], ['DS', 4], ['SA', 4]], DIRQ = { A: 'nw', B: 'sw', C: 'se', D: 'ne', P: 'w', Q: 's', R: 'e', S: 'n' };
+
+  /* ---- 今日の問い：四角形 ABCD（どの辺も平行でない）と、各辺の中点 P、Q、R、S ---- */
+  var A0 = { A: [0.4, 3.6], B: [0, 0], C: [4.8, 0.7] }, D0 = [3.9, 3.1];
+  function quad(dx, dy) { return withMid({ A: A0.A, B: A0.B, C: A0.C, D: [D0[0] + dx, D0[1] + dy] }); }
+  var PW = quad(0, 0);
+  [[0, 0], [1.2, 1], [-1.4, -.8], [.8, -1.6], [-2, .6]].forEach(function (d) { GE.verify(quad(d[0], d[1]), 'PQ∥AC、PQ＝1/2AC、SR∥AC、SR＝1/2AC、PQ∥SR、PQ＝SR、QR∥PS、QR＝PS', null, '今日の問い（D をずらした形 ' + d + '）'); });
+  var FIG = { segs: ['AB', 'BC', 'CD', 'DA', 'PQ', 'QR', 'RS', 'SP'], dash: ['AC'], ticks: TK4, dots: ['P', 'Q', 'R', 'S'], dir: DIRQ };
+  function box1(D) { return CH.box(D, { l: .06, r: .06, t: .1, b: .12 }); }
+  var def1 = {
+    id: '第11時 今日の問い', lv: 2, ttl: '四角形 PQRS が平行四辺形になることの証明', P: PW, fig: FIG,
+    q: '四角形 ABCD の辺 AB、BC、CD、DA の中点を P、Q、R、S とする。四角形 PQRS は平行四辺形であることを証明しよう。',
+    hyp: 'P、Q、R、S は AB、BC、CD、DA の中点', goal: '四角形 PQRS は平行四辺形',
+    L: [{ t: 'PQ∥AC、PQ＝1/2AC', r: '△ABC で、中点連結定理', n: 1, hint: '△ABC に目をつけると、PQ と AC には、どんな関係がある？ 根拠も。' },
+      { t: 'SR∥AC、SR＝1/2AC', r: '△ACD で、中点連結定理', n: 2, hint: '△ACD に目をつけると、SR と AC には？ 根拠も。' },
+      { t: 'PQ∥SR、PQ＝SR', r: '①②より', hint: '①、②から、PQ と SR には、どんな関係がいえる？' },
+      { t: '1組の対辺が平行で、その長さが等しいので', q: '四角形が平行四辺形になるための条件の、どれが使える？', a: '1組の対辺が平行で、その長さが等しい' },
+      { t: '四角形 PQRS は平行四辺形', q: 'だから、四角形 PQRS は？', a: '平行四辺形' }],
+    point: { a: '対角線をひいて三角形をつくると、中点連結定理が使える', sub: '対角線 BD をひいても証明できる（PS∥BD、QR∥BD）' }
+  };
+  var PS = GE.proof(def1, { tag: '今日の問い' }).slice(1);
+  /* 証明の行に、目をつける三角形の色をそえる（①は △ABC、②は △ACD、③からあとは四角形 PQRS） */
+  PS.forEach(function (st, i) {
+    var tr = i === 0 ? ['ABC', C.blue] : i === 1 ? ['ACD', C.orange] : i >= 3 ? ['PQRS', C.yel] : null, d0 = st.draw;
+    if (!tr) return;
+    st.draw = function (D) { var F = GE.fit(D, box1(D), PW); GE.poly(F, tr[0], { col: tr[1], fa: .18, stroke: false, a: D.ph || i === 0 || i === 1 ? 1 : .5 }); d0(D); };
+  });
+
+  /* ---- 例題：AD∥BC の台形（AD＝6、BC＝14）。M は AB の中点、MN∥BC。P は AC 上 ---- */
+  function trap(ad, bc, h, off) { var T = { A: [off, h], B: [0, 0], C: [bc, 0], D: [off + ad, h] }; T.M = GE.mid(T.A, T.B); T.N = GE.mid(T.D, T.C); T.P = GE.mid(T.A, T.C); return T; }
+  var PT = trap(6, 14, 5, 3);
+  GE.verify(PT, 'AD∥BC、AM＝MB、MP∥BC、AP＝PC、PN∥AD、DN＝NC、MP＝1/2BC、PN＝1/2AD、MP＝7、PN＝3、MN＝10、MN＝MP＋PN', null, '例題の台形');
+  CH.check(14 / 2 + 6 / 2 === 10, '例題（MN＝7＋3＝10）');
+
+  /* ---- 考えよう：長方形（5×3）とひし形（対角線 6 と 4）の中点 ---- */
+  var SH = [withMid({ A: [0, 3], B: [0, 0], C: [5, 0], D: [5, 3] }), withMid({ A: [0, 2], B: [3, 0], C: [6, 2], D: [3, 4] })];
+  CH.check(GE.verify(SH[0], 'PQ＝QR＝RS＝SP、PQ∥SR') && GE.verify(SH[1], 'PQ⊥QR、PQ∥SR、PQ＝SR'), '考えよう（長方形 → ひし形、ひし形 → 長方形。ここで確かめるだけ）');
+
+  /* ---- チャレンジ：A(6, 9)・B(0, 0)・C(18, 0)、AC＝15。D は BC の中点、E は AD の中点、F は BE と AC の交点 ---- */
+  var P8 = { A: [6, 9], B: [0, 0], C: [18, 0] }; P8.D = GE.mid(P8.B, P8.C); P8.E = GE.mid(P8.A, P8.D); P8.F = GE.meet(P8.B, P8.E, P8.A, P8.C); P8.G = GE.meet(P8.D, GE.add(P8.D, GE.sub(P8.F, P8.B)), P8.A, P8.C);
+  GE.verify(P8, 'AC＝15、BD＝DC、AE＝ED、BF∥DG、AF＝FG＝GC、AF＝5', null, 'チャレンジ');
+
+  var steps = [
+    { tag: '今日の問い', bh: '四角形 ABCD と、4辺の中点', q: '四角形 ABCD の4辺の中点を P、Q、R、S とする。四角形 PQRS は平行四辺形になる。そのわけを、中点連結定理を使って考えよう。',
+      notes: ['① 自分の考え（3分）　図に線を1本かき入れて、証明を考えよう。', '② ペアの考え（3分）　自分とちがう線のひき方は？', 'スライダーで、頂点 D を動かせます。'],
+      sliders: [{ key: 'x', label: 'D を左右に', min: -2, max: 1.2, step: .1, val: 0, fmt: function (v) { return CH.mnum(Math.round(v * 10) / 10); } },
+        { key: 'y', label: 'D を上下に', min: -1.6, max: 1, step: .1, val: 0, fmt: function (v) { return CH.mnum(Math.round(v * 10) / 10); } }],
+      b: [{ t: '【仮定】P、Q、R、S は AB、BC、CD、DA の中点', col: C.blue }, { t: '【結論】四角形 PQRS は平行四辺形', col: C.blue }],
+      draw: function (D) {
+        var P = quad(D.V.x, D.V.y), F = GE.fit(D, CH.box(D, { l: .06, r: .06, t: .08, b: .08 }), P, { keys: ['A', 'B', 'C'], bounds: [[D0[0] - 2, D0[1] - 1.6], [D0[0] + 1.2, D0[1] + 1]], pad: .1 });
+        GE.poly(F, 'PQRS', { col: C.yel, fa: .15, sw: 2.6 });
+        GE.figure(F, { segs: ['AB', 'BC', 'CD', 'DA'], ticks: TK4, dots: ['P', 'Q', 'R', 'S'], dir: DIRQ });
+        GE.par(F, 'PQ', 1, { col: C.yel }); GE.par(F, 'SR', 1, { col: C.yel }); GE.par(F, 'QR', 2, { col: C.yel }); GE.par(F, 'PS', 2, { col: C.yel });
+      } },
+    { tag: '今日の問い', q: 'どんな線を1本ひくと、中点連結定理が使えるだろう？', a: '対角線 AC', sub: '△ABC と △ACD ができる。どちらにも、2辺の中点を結ぶ線分（PQ と SR）がある', dur: 4.5,
+      b: { t: '補助線 … 対角線 AC（△ABC と △ACD に分ける）', col: C.green },
+      draw: function (D) {
+        var F = GE.fit(D, box1(D), PW), t = D.ph ? D.t : 0, k1 = CH.smooth(.04, .3, t), k2 = CH.smooth(.36, .62, t), k3 = CH.smooth(.68, .94, t);
+        if (k2) GE.poly(F, 'ABC', { col: C.blue, fa: .22 * k2, stroke: false });
+        if (k3) GE.poly(F, 'ACD', { col: C.orange, fa: .22 * k3, stroke: false });
+        GE.figure(F, { segs: ['AB', 'BC', 'CD', 'DA', 'PQ', 'QR', 'RS', 'SP'], ticks: TK4, dots: ['P', 'Q', 'R', 'S'], dir: DIRQ });
+        if (k1) GE.seg(F, ['A', GE.lerpP(PW.A, PW.C, k1)], { col: C.yel, w: 3, dash: [8, 6] });
+        glow(F, 'PQ', C.blue, k2); glow(F, 'SR', C.orange, k3);
+      } }
+  ].concat(PS).concat([
+    { tag: 'ことば', bh: 'ことば', q: '四角形の問題で、中点連結定理を使うには、どうすればよい？ また、PQRS が平行四辺形といえた条件は？',
+      a: '対角線をひいて、三角形をつくる。1組の対辺が平行で、その長さが等しい', sub: '対角線 BD をひいても、△ABD と △CBD で、PS∥BD、QR∥BD、PS＝QR＝1/2BD がいえる', dur: 4,
+      b: [{ t: '四角形は <b>対角線</b> をひくと、三角形に分けられる → 中点連結定理が使える', col: C.green }, { t: '<b>1組の対辺が平行で、その長さが等しい</b> 四角形は、平行四辺形', col: C.green }],
+      draw: function (D) {
+        var F = GE.fit(D, box1(D), PW), t = D.ph ? D.t : 0, k1 = CH.smooth(.05, .4, t), k2 = CH.smooth(.5, .9, t);
+        if (D.ph) { GE.poly(F, 'ABD', { col: C.blue, fa: .2 * k1, stroke: false }); GE.poly(F, 'CBD', { col: C.orange, fa: .2 * k1, stroke: false }); }
+        GE.figure(F, { segs: ['AB', 'BC', 'CD', 'DA', 'PQ', 'QR', 'RS', 'SP'], dash: D.ph ? ['BD'] : ['AC'], ticks: TK4, dots: ['P', 'Q', 'R', 'S'], dir: DIRQ });
+        glow(F, 'PS', C.blue, k1); glow(F, 'QR', C.orange, k1);
+        GE.par(F, 'PS', 2, { col: C.yel, a: k2 }); GE.par(F, 'QR', 2, { col: C.yel, a: k2 }); GE.tick(F, 'PS', 1, { col: C.yel, a: k2 }); GE.tick(F, 'QR', 1, { col: C.yel, a: k2 });
+      } },
+    { tag: '例題', bh: '例題　台形の中点', q: 'AD∥BC の台形 ABCD で、M は AB の中点である。M を通り BC に平行な直線が、AC、CD と交わる点を P、N とする。AD＝6cm、BC＝14cm のとき、MP、PN、MN の長さを求めよう。',
+      a: 'MP＝7cm、PN＝3cm、MN＝10cm', sub: '△ABC で、M は AB の中点、MP∥BC だから P は AC の中点、MP＝1/2BC＝7。△CDA で、P、N は CA、CD の中点だから PN＝1/2AD＝3', dur: 6,
+      b: { t: 'MP＝1/2BC＝<b>7cm</b>　PN＝1/2AD＝<b>3cm</b>　MN＝7＋3＝<b>10cm</b>', col: C.pink },
+      draw: function (D) {
+        var L = lay(D, .34, .26), F = GE.fit(D, L.fig, PT, { pad: .1 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.03, .25, t), k2 = CH.smooth(.3, .45, t), k3 = CH.smooth(.5, .72, t), k4 = CH.smooth(.76, .9, t), k5 = CH.smooth(.92, 1, t);
+        if (D.ph) { GE.poly(F, 'ABC', { col: C.blue, fa: .2 * k1 * (1 - k3), stroke: false }); GE.poly(F, 'CDA', { col: C.orange, fa: .2 * k3, stroke: false }); }
+        GE.figure(F, { segs: ['AB', 'BC', 'CD', 'DA', 'AC', 'MN'], ticks: [['AM', 1], ['MB', 1]], dots: ['M', 'N', 'P'], dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne', M: 'w', N: 'e', P: 's' } });
+        GE.par(F, 'MP', 1, { col: C.chalk }); GE.par(F, 'BC', 1, { col: C.chalk }); GE.par(F, 'AD', 1, { col: C.chalk });
+        len(F, 'A', 'D', '6cm'); len(F, 'B', 'C', '14cm');
+        if (D.ph) {
+          GE.tick(F, 'AP', 2, { col: C.blue, a: k2 }); GE.tick(F, 'PC', 2, { col: C.blue, a: k2 }); glow(F, 'MP', C.blue, k2); glow(F, 'BC', C.blue, k2 * (1 - k3));
+          len(F, 'M', 'P', '7cm', { col: C.blue, a: k2, ref: 'A', pos: .32 });
+          GE.tick(F, 'DN', 3, { col: C.orange, a: k4 }); GE.tick(F, 'NC', 3, { col: C.orange, a: k4 }); glow(F, 'PN', C.orange, k4); glow(F, 'AD', C.orange, k4);
+          len(F, 'P', 'N', '3cm', { col: C.orange, a: k4, ref: 'C', pos: .3 });
+        }
+        rows(D, L.side, D.ph ? [{ t: '△ABC で、P は AC の中点', col: C.blue, a: k2 }, { t: 'MP＝1/2BC＝7', col: C.blue, a: k2 }, { t: '△CDA で、N は CD の中点', col: C.orange, a: k4 }, { t: 'PN＝1/2AD＝3', col: C.orange, a: k4 }, { t: 'MN＝7＋3＝10（cm）', col: C.pink, a: k5 }]
+          : [{ t: 'AD∥BC、MN∥BC' }, { t: 'AD＝6cm　BC＝14cm' }, { t: 'MP、PN、MN は？', col: C.pink }]);
+      } },
+    { tag: '考えよう', q: '四角形 ABCD の辺の中点 P、Q、R、S を順に結ぶ。ABCD が、ア 長方形、イ ひし形 のとき、四角形 PQRS は、それぞれどんな四角形になるだろう。対角線に目をつけて、説明しよう。',
+      notes: ['PQ、QR の長さは、どの対角線の長さと関係があるかな。', '長方形・ひし形の対角線には、どんな性質があったかな。', 'スライダーで、四角形を変えたり、対角線を出したりできます。'],
+      sliders: [{ key: 'k', label: '四角形 ABCD', min: 0, max: 1, step: 1, val: 0, fmt: function (v) { return v ? 'イ ひし形' : 'ア 長方形'; } },
+        { key: 'd', label: '対角線', min: 0, max: 1, step: 1, val: 0, fmt: function (v) { return v ? 'ひく' : 'ひかない'; } }],
+      draw: function (D) {
+        var P = SH[D.V.k], F = GE.fit(D, CH.box(D, { l: .06, r: .06, t: .08, b: .08 }), P, { pad: .14 });
+        GE.poly(F, 'PQRS', { col: C.yel, fa: .18, sw: 2.6 });
+        GE.figure(F, { segs: ['AB', 'BC', 'CD', 'DA'], dash: D.V.d ? ['AC', 'BD'] : [], dots: ['P', 'Q', 'R', 'S'], dir: D.V.k ? { A: 'w', B: 's', C: 'e', D: 'n', P: 'sw', Q: 'se', R: 'ne', S: 'nw' } : { A: 'nw', B: 'sw', C: 'se', D: 'ne', P: 'w', Q: 's', R: 'e', S: 'n' } });
+        if (D.V.k) GE.tick(F, 'AB', 1); else { GE.right(F, 'ABC'); }
+        if (D.V.k) { GE.tick(F, 'BC', 1); GE.tick(F, 'CD', 1); GE.tick(F, 'DA', 1); } else { GE.right(F, 'BCD'); GE.right(F, 'CDA'); GE.right(F, 'DAB'); }
+      } },
+    { tag: 'チャレンジ', bh: 'チャレンジ', q: '△ABC の辺 BC の中点を D、線分 AD の中点を E とする。直線 BE と辺 AC の交点を F とする。AC＝15cm のとき、AF の長さを求めよう。',
+      notes: ['ヒント① D を通って、BF に平行な直線をひくと、どうなるかな。', 'ヒント② E、D は、それぞれ何の中点かな。'],
+      a: 'AF＝5cm', sub: 'D を通り BF に平行な直線と AC の交点を G とする。△ADG で、E は AD の中点、EF∥DG だから AF＝FG。△CBF で、D は BC の中点、DG∥BF だから FG＝GC。AF＝FG＝GC、AF＝15÷3＝5', dur: 7,
+      b: { t: '補助線 DG∥BF → AF＝FG（△ADG）、FG＝GC（△CBF） → AF＝15÷3＝<b>5cm</b>', col: C.orange },
+      draw: function (D) {
+        var L = lay(D, .36, .28), F = GE.fit(D, L.fig, P8, { pad: .1 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.03, .2, t), k2 = CH.smooth(.25, .5, t), k3 = CH.smooth(.55, .8, t), k4 = CH.smooth(.85, .97, t);
+        if (D.ph) { GE.poly(F, 'ADG', { col: C.blue, fa: .2 * k2 * (1 - k3 * .7), stroke: false }); GE.poly(F, 'CBF', { col: C.orange, fa: .2 * k3, stroke: false }); }
+        GE.figure(F, { segs: ['AB', 'BC', 'CA', 'AD', 'BF'], ticks: [['BD', 1], ['DC', 1], ['AE', 2], ['ED', 2]], dots: ['D', 'E', 'F'], labels: ['A', 'B', 'C', 'D', 'E', 'F'], dir: { A: 'n', B: 'sw', C: 'se', D: 's', E: 'w', F: 'ne' } });
+        if (D.ph) {
+          if (k1) { GE.seg(F, ['D', GE.lerpP(P8.D, P8.G, k1)], { col: C.yel, w: 3, dash: [8, 6] }); GE.dot(F, 'G', { col: C.yel, a: k1 }); GE.labels(F, ['G'], { dir: { G: 'ne' }, col: { G: C.yel }, a: k1 }); }
+          GE.par(F, 'EF', 1, { col: C.yel, a: k1 }); GE.par(F, 'DG', 1, { col: C.yel, a: k1 });
+          glow(F, 'AF FG', C.blue, k2 * (1 - k3 * .5)); GE.tick(F, 'AF', 3, { col: C.pink, a: k2 }); GE.tick(F, 'FG', 3, { col: C.pink, a: k2 });
+          glow(F, 'GC', C.orange, k3); GE.tick(F, 'GC', 3, { col: C.pink, a: k3 });
+          len(F, 'A', 'F', '5cm', { col: C.pink, a: k4, ref: 'B' });
+        }
+        rows(D, L.side, D.ph ? [{ t: 'AC＝15cm' }, { t: 'D を通り BF に平行な線 DG', col: C.yel, a: k1 }, { t: '△ADG で　AF＝FG', col: C.blue, a: k2 }, { t: '△CBF で　FG＝GC', col: C.orange, a: k3 }, { t: 'AF＝15÷3＝5（cm）', col: C.pink, a: k4 }]
+          : [{ t: 'BD＝DC、AE＝ED' }, { t: 'AC＝15cm' }, { t: 'AF＝？', col: C.pink }]);
+      } }
+  ]);
+
+  K3.run({
+    no: '第11時', title: '中点連結定理を使って、図形の性質を証明しよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '10.html', label: '◀ 第10時' }, { href: '12.html', label: '第12時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

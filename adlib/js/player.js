@@ -1,0 +1,282 @@
+/* アドリブ・ラボ：再生（スケジューラ）。拍の上の音符 → AudioContext の時刻に直して、少し先まで予約していく。
+   ・ノリ（フィール）：8分シャッフル＝8分音符の裏拍を後ろにずらす（スウィング）／16分シャッフル＝16分音符の裏をずらす。
+     3連符の位置はそのまま。強さは、前半の長さの割合（0.5 ＝ ずらさない、0.667 ＝ 3連符のハネ、0.75 ＝ 付点8分＋16分）
+   ・ループ：何コーラスでも／無限／範囲（小節 a〜b）のくり返し
+   ・テンポ・ノリは演奏中に変えられる
+   ・書き出し：OfflineAudioContext に同じ予約をして WAV にする
+   plan（再生の設計図）：
+     { bpb, chorusBeats, chorus(k) → { comp:[{t,dur,midi,vel}], bass:[…], drums:[{t,kind,vel}], solo:[{t,dur,midi,vel,tie,stac}] },
+       tempo(), feel() → { div: 2（8分）| 4（16分）, r }（演奏中に読みなおす。swing() → r だけでもよい＝8分シャッフル）, metronome }
+     t はコーラスの頭からの拍 */
+(function () {
+  'use strict';
+  const root = typeof window !== 'undefined' ? window : globalThis;
+  const AL = (root.AL = root.AL || {});
+  const Au = (AL.Au = AL.Au || {});
+
+  /* ---------------- スウィングの時間のゆがみ ---------------- */
+  const isTriplet = f => { const x = f * 3; return Math.abs(x - Math.round(x)) < 1e-3 && Math.round(x) % 3 !== 0; };
+  // 拍 b（音符の位置）→ スウィング後の拍。整数の拍は動かない
+  function swingMap(b, r) {
+    const fl = Math.floor(b + 1e-9), f = b - fl;
+    if (f < 1e-6 || Math.abs(r - 0.5) < 1e-4 || isTriplet(f)) return b;
+    return f < 0.5 ? fl + f * 2 * r : fl + r + (f - 0.5) * 2 * (1 - r);
+  }
+  function unswing(sb, r) {
+    const fl = Math.floor(sb + 1e-9), g = sb - fl;
+    if (Math.abs(r - 0.5) < 1e-4) return sb;
+    return g < r ? fl + g / (2 * r) : fl + 0.5 + (g - r) / (2 * (1 - r));
+  }
+
+  /* ---------------- ノリ（フィール）：8分シャッフルと16分シャッフル ---------------- */
+  // feel：{ div: 2 | 4, r }。div 2 ＝ 8分音符の裏をずらす、div 4 ＝ 16分音符の裏をずらす（8分音符は動かない）
+  const STRAIGHT = { div: 2, r: 0.5 };
+  const isEven = feel => !feel || Math.abs(feel.r - 0.5) < 1e-4;
+  function feelMap(b, feel) {
+    if (isEven(feel)) return b;
+    return feel.div === 4 ? swingMap(b * 2, feel.r) / 2 : swingMap(b, feel.r);
+  }
+  function feelUnmap(sb, feel) {
+    if (isEven(feel)) return sb;
+    return feel.div === 4 ? unswing(sb * 2, feel.r) / 2 : unswing(sb, feel.r);
+  }
+  // plan から今のノリを読む（古い形 swing() だけの plan は、8分シャッフルとして読む）
+  const feelOf = plan => (plan.feel ? plan.feel() : { div: 2, r: plan.swing ? plan.swing() : 0.5 });
+
+  // ソロの音に、拍ごとの弾き方の印（8分シャッフルのときに使う）をつける：
+  //   's' … 16分音符のある拍（1/4 の位置、または 1/2 と 3/4 の両方に音がある）。ずらさず、等間隔で鳴らす（16分のランが不ぞろいに聞こえるため）
+  //   'd' … 付点8分＋16分だけの拍（3/4 の位置に音があり、1/4・1/2 にはない）。16分を、シャッフルの裏拍の位置で鳴らす
+  //         （スウィングの譜面で、付点8分＋16分を「ハネた8分」として弾くのと同じ。3:1 のまま鳴らすと、そこだけ硬く聞こえる）
+  //   'n' … そのほか。8分の裏拍をずらす
+  // sm ＝ 音の始まりの拍の印、em ＝ 音の終わりの位置がある拍の印。straight は sm === 's'（前の名前のまま残す）
+  function markFeel(evs) {
+    const at = {};
+    evs.forEach(e => {
+      const fl = Math.floor(e.t + 1e-6), q4 = (e.t - fl) * 4, q = Math.round(q4);
+      if (Math.abs(q4 - q) < 0.08 && q >= 1 && q <= 3) at[fl] = (at[fl] || 0) | (1 << q);
+    });
+    const modeOf = b => { const m = at[b] || 0; return (m & 2) ? 's' : (m & 8) ? ((m & 4) ? 's' : 'd') : 'n'; };
+    evs.forEach(e => {
+      const end = e.t + e.dur;
+      e.sm = modeOf(Math.floor(e.t + 1e-6));
+      e.em = Math.abs(end - Math.round(end)) < 1e-6 ? 'n' : modeOf(Math.floor(end + 1e-6));
+      e.straight = e.sm === 's';
+    });
+    return evs;
+  }
+  const markStraight = markFeel;
+  // ソロの音の位置 b（拍）→ ノリを入れた拍。mode は markFeel の印（'n'・'s'・'d'）
+  function feelPos(b, feel, mode) {
+    if (isEven(feel) || feel.div === 4 || !mode || mode === 'n') return feelMap(b, feel);
+    if (mode === 's') return b;
+    const fl = Math.floor(b + 1e-9);
+    return Math.abs(b - fl - 0.75) < 0.02 ? fl + feel.r : swingMap(b, feel.r);
+  }
+
+  // タイで結ばれた音をつなげる
+  function mergeTies(evs) {
+    const out = [];
+    for (let i = 0; i < evs.length; i++) {
+      const e = Object.assign({}, evs[i]);
+      let j = i;
+      while (evs[j].tie && j + 1 < evs.length && evs[j + 1].midi === e.midi) { e.dur = evs[j + 1].t + evs[j + 1].dur - e.t; j++; }
+      i = j;
+      out.push(e);
+    }
+    return out;
+  }
+
+  // 音符1つを鳴らす（部品ごとの長さの調整つき）
+  function playNote(E, part, evt, tStart, tEnd) {
+    let dur = tEnd - tStart;
+    if (part === 'solo') {
+      dur *= evt.stac ? 0.45 : (evt.dur <= 0.5 ? 0.86 : 0.93);
+      dur = Math.max(0.06, dur);
+    }
+    E.play(part, tStart, evt.midi, dur, evt.vel);
+  }
+
+  // 予約の時計：ふつうの setInterval に加えて、ワーカーの中の setInterval でも tick を呼ぶ。
+  // ブラウザが後ろに隠れる（Kontakt の画面を前に出す、など）と、ページの setInterval は1秒に1回まで遅くされ、
+  // 音を出していないページ（全部のパートを MIDI で送っているとき）は、5分ほどでさらに遅くされる。ワーカーの時計は遅くされない。
+  // tick は何回呼んでもよい（予約ずみのところは、もう一度は予約しない）
+  function startTicker(fn, ms) {
+    const id = setInterval(fn, ms);
+    let w = null;
+    try {
+      if (typeof Worker !== 'undefined' && typeof Blob !== 'undefined' && typeof URL !== 'undefined' && URL.createObjectURL) {
+        const url = URL.createObjectURL(new Blob(['setInterval(function () { postMessage(0); }, ' + ms + ');'], { type: 'text/javascript' }));
+        w = new Worker(url);
+        w.onmessage = () => fn(true);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch (e) { w = null; }   // ワーカーを作れない（file:// で開いたときの一部のブラウザなど）：ふつうの時計だけ
+    return { stop() { clearInterval(id); if (w) w.terminate(); } };
+  }
+
+  class Player {
+    constructor(engine) { this.E = engine; this.ctx = engine.ctx; this.running = false; this.timer = null; this.listeners = {}; }
+    on(name, fn) { this.listeners[name] = fn; return this; }
+    emit(name, a) { if (this.listeners[name]) this.listeners[name](a); }
+
+    // opts：{ fromBar, toBar（範囲くり返し）, startBar（途中の小節から始める。そのあとは頭にもどって、全体か範囲をくり返す）, loops（Infinity も可）, countIn（小節）, solo: true/false }
+    start(plan, opts) {
+      opts = opts || {};
+      this.stop(true);
+      const ctx = this.ctx, E = this.E;
+      this.plan = plan; this.opts = opts;
+      this.bpb = plan.bpb;
+      this.rangeMode = opts.toBar != null && opts.fromBar != null;
+      this.a = this.rangeMode ? opts.fromBar * plan.bpb : (opts.fromBar || 0) * plan.bpb;
+      this.b = this.rangeMode ? opts.toBar * plan.bpb : plan.chorusBeats;
+      this.cycleBeats = this.b - this.a;
+      this.cycle0 = this.rangeMode ? 0 : 0;
+      this.loops = opts.loops == null ? Infinity : opts.loops;
+      this.countIn = (opts.countIn || 0) * plan.bpb;
+      // 途中から始めるときの、最初の音の位置（タイムライン u：範囲の頭が 0）
+      this.skipBefore = 0;
+      if (opts.startBar != null) { const x = opts.startBar * plan.bpb; if (x >= this.a - 1e-9 && x < this.b - 1e-9) this.skipBefore = x - this.a; }
+      this.soloOn = opts.solo !== false;
+      this.soloCache = {};
+      this.cache = {};
+      E.startSession();
+      const feel = feelOf(plan), bpm = plan.tempo();
+      this.spb = 60 / bpm;
+      this.startU = this.skipBefore - this.countIn;
+      this.anchor = { time: ctx.currentTime + 0.15, sbeat: feelMap(this.startU, feel) };
+      this.nextU = this.startU;
+      this.endU = this.loops === Infinity ? Infinity : this.loops * this.cycleBeats;
+      this.running = true;
+      this.finished = false;
+      this.workerAt = -1;
+      this.tick();
+      this.timer = startTicker(fromWorker => { if (fromWorker) this.workerAt = this.ctx.currentTime; this.tick(); }, 40);
+    }
+    stop(silent) {
+      if (this.timer) { this.timer.stop(); this.timer = null; }
+      const was = this.running;
+      this.running = false;
+      this.E.stopSession(0.05);
+      if (was && !silent) this.emit('stop');
+    }
+    setTempo(bpm) {
+      if (!this.running) return;
+      const now = this.ctx.currentTime;
+      this.anchor = { time: now, sbeat: this.anchor.sbeat + (now - this.anchor.time) / this.spb };
+      this.spb = 60 / bpm;
+    }
+    // 音符の位置 u（タイムラインの拍）→ AudioContext の時刻
+    timeOf(u, feel) { return this.timeAt(feelMap(u, feel)); }
+    // ノリを入れたあとの拍 → AudioContext の時刻
+    timeAt(sb) { return this.anchor.time + (sb - this.anchor.sbeat) * this.spb; }
+    // いまの位置（拍）。count-in 中は負
+    position() {
+      if (!this.running) return null;
+      const feel = feelOf(this.plan);
+      const sb = this.anchor.sbeat + (this.ctx.currentTime - this.anchor.time) / this.spb;
+      const u = feelUnmap(sb, feel);
+      if (u < (this.skipBefore || 0) - 1e-9) return { u, countIn: true, ci: Math.max(0, Math.floor(u - this.startU + 1e-9)), beat: 0, bar: 0, cycle: 0, chorus: 0 };
+      const cycle = Math.floor(u / this.cycleBeats), x = this.a + (u - cycle * this.cycleBeats);
+      return { u, cycle, chorus: this.rangeMode ? 0 : this.cycle0 + cycle, beat: x, bar: Math.floor(x / this.bpb + 1e-9), beatInBar: x - Math.floor(x / this.bpb + 1e-9) * this.bpb, countIn: false };
+    }
+    tick() {
+      if (!this.running) return;
+      const ctx = this.ctx, plan = this.plan, feel = feelOf(plan);
+      // 先読み（秒）。ノリを入れると、音が最大 (r − 0.5) 拍ぶん後ろへずれるので、そのぶん先まで読む（遅いテンポ × 強いシャッフルでも、予約が間に合うように）
+      // ページが後ろに隠れたら、遅くされた時計でも間に合うよう先まで読む。ただしワーカーの時計が動いていれば、その必要はない
+      //   （先読みが長いと、止めたあとも MIDI の音がその分だけ鳴ってしまう）
+      const workerAlive = this.workerAt >= 0 && ctx.currentTime - this.workerAt < 0.5;
+      const hidden = typeof document !== 'undefined' && document.hidden && !workerAlive;
+      const look = (hidden ? 2.6 : 0.45) + Math.max(0, feel.r - 0.5) * this.spb;
+      const horizonSb = this.anchor.sbeat + (ctx.currentTime + look - this.anchor.time) / this.spb;
+      let uH = feelUnmap(horizonSb, feel);
+      if (uH > this.endU) uH = this.endU;
+      if (uH > this.nextU) { this.schedule(this.nextU, uH, feel); this.nextU = uH; }
+      if (this.endU !== Infinity && this.nextU >= this.endU && !this.finished) {
+        this.finished = true;
+        const endT = this.timeOf(this.endU, feel) + 1.8 - ctx.currentTime;
+        setTimeout(() => { if (this.running && this.finished) { this.stop(true); this.emit('end'); } }, Math.max(0, endT * 1000));
+      }
+    }
+    chorusEvents(k) {
+      if (!this.cache[k]) this.cache[k] = this.plan.chorus(k);
+      return this.cache[k];
+    }
+    soloEvents(k) {
+      if (!this.soloCache[k]) {
+        const c = this.chorusEvents(k);
+        this.soloCache[k] = c.solo ? markFeel(mergeTies(c.solo)) : [];
+      }
+      return this.soloCache[k];
+    }
+    // u0 以上 u1 未満の音符を予約する（feel は { div, r }。数だけ渡されたら、8分シャッフルの強さとして読む）
+    schedule(u0, u1, feel) {
+      if (typeof feel === 'number') feel = { div: 2, r: feel };
+      const r = feel || STRAIGHT;
+      const E = this.E, plan = this.plan;
+      // count-in とメトロノーム
+      const skip = this.skipBefore || 0;
+      for (let u = Math.ceil(u0 - 1e-9); u < u1 - 1e-9; u++) {
+        if (u < skip) E.click(this.timeOf(u, r), (u - (skip - this.countIn)) % this.bpb === 0);
+        else if (plan.metronome) E.click(this.timeOf(u, r), (u + this.a) % this.bpb === 0);
+      }
+      if (u1 <= skip) return;
+      const lo = Math.max(skip, u0), cStart = Math.floor(lo / this.cycleBeats), cEnd = Math.floor((u1 - 1e-9) / this.cycleBeats);
+      for (let c = cStart; c <= cEnd; c++) {
+        const k = this.rangeMode ? 0 : c;
+        const ch = this.chorusEvents(k), base = c * this.cycleBeats - this.a;
+        const inWin = e => { const u = base + e.t; return u >= lo - 1e-9 && u < u1 - 1e-9 && e.t >= this.a - 1e-9 && e.t < this.b - 1e-9; };
+        for (const part of ['comp', 'bass']) {
+          for (const e of (ch[part] || [])) {
+            if (!inWin(e)) continue;
+            const u = base + e.t, off = (e.off || 0) * this.spb;   // off：ロール・ゆらぎ（拍）。ノリを入れたあとの時刻に足す
+            playNote(E, part, e, this.timeOf(u, r) + off, this.timeOf(u + e.dur, r) + off);
+          }
+        }
+        for (const d of (ch.drums || [])) { if (inWin(d)) E.drum(d.kind, this.timeOf(base + d.t, r), d.vel); }
+        if (this.soloOn) {
+          for (const e of this.soloEvents(k)) {
+            if (!inWin(e)) continue;
+            const u = base + e.t;
+            // base は整数の拍なので、コーラスの中の位置にノリを入れてから足せばよい
+            playNote(E, 'solo', e, this.timeAt(base + feelPos(e.t, r, e.sm)), this.timeAt(base + feelPos(e.t + e.dur, r, e.em)));
+          }
+        }
+      }
+    }
+  }
+
+  /* ---------------- 書き出し（OfflineAudioContext → WAV） ---------------- */
+  // plan と opts（{loops, solo, sampleRate, tail}）から、AudioBuffer をつくる。Engine の設定（楽器・音量）は src から引きつぐ
+  async function renderOffline(plan, srcEngine, opts) {
+    opts = opts || {};
+    const OAC = root.OfflineAudioContext || root.webkitOfflineAudioContext;
+    const sr = opts.sampleRate || 44100, loops = opts.loops || 1;
+    const r = feelOf(plan), spb = 60 / plan.tempo();
+    const totalBeats = loops * plan.chorusBeats;
+    const secs = totalBeats * spb + (opts.tail == null ? 2.2 : opts.tail) + 0.2;
+    const ctx = new OAC(2, Math.ceil(sr * secs), sr);
+    const E = new Au.Engine(ctx);
+    if (srcEngine) { Object.assign(E.mix, srcEngine.mix); Object.assign(E.reverb, srcEngine.reverb); Object.assign(E.muted, srcEngine.muted); Object.assign(E.inst, srcEngine.inst); E.master.gain.value = E.mix.master; }
+    E.startSession();
+    const pl = new Player(E);
+    Object.assign(pl, { plan, bpb: plan.bpb, rangeMode: false, a: 0, b: plan.chorusBeats, cycleBeats: plan.chorusBeats, soloOn: opts.solo !== false, soloCache: {}, cache: {}, spb, countIn: 0 });
+    pl.anchor = { time: 0.05, sbeat: 0 };
+    pl.schedule(0, totalBeats, r);
+    return ctx.startRendering();
+  }
+  function encodeWav(buf) {
+    const nCh = buf.numberOfChannels, len = buf.length, sr = buf.sampleRate;
+    const out = new ArrayBuffer(44 + len * nCh * 2), dv = new DataView(out);
+    const w = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, 'RIFF'); dv.setUint32(4, 36 + len * nCh * 2, true); w(8, 'WAVE'); w(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, nCh, true);
+    dv.setUint32(24, sr, true); dv.setUint32(28, sr * nCh * 2, true); dv.setUint16(32, nCh * 2, true); dv.setUint16(34, 16, true); w(36, 'data'); dv.setUint32(40, len * nCh * 2, true);
+    const chs = []; for (let c = 0; c < nCh; c++) chs.push(buf.getChannelData(c));
+    let o = 44;
+    for (let i = 0; i < len; i++) for (let c = 0; c < nCh; c++) { const s = Math.max(-1, Math.min(1, chs[c][i])); dv.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true); o += 2; }
+    return new Blob([out], { type: 'audio/wav' });
+  }
+
+  Object.assign(Au, { Player, swingMap, unswing, feelMap, feelUnmap, feelPos, markFeel, renderOffline, encodeWav, mergeTies, markStraight });
+  if (typeof module !== 'undefined' && module.exports) module.exports = AL;
+})();

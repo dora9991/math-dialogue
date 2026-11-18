@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>データを根拠に判断する</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="js/chart.js"></script>
+<script>
+/* データの活用 第7時：データを根拠にして判断し、「本当にそういえるか」を確かめよう（ikkan の lesson_data_new_07 と同じ流れ）。 */
+(function () {
+  var C = CH.C, E10 = [0, 10, 20, 30, 40, 50, 60], CA = [2, 5, 6, 4, 2, 1], CB = [0, 2, 15, 3, 0, 0];
+  var RA = [4, 8, 11, 13, 15, 17, 19, 21, 23, 24, 26, 27, 29, 31, 33, 35, 37, 42, 44, 51], RB = [17, 19, 21, 22, 22, 23, 23, 24, 24, 24, 25, 25, 26, 26, 27, 27, 28, 31, 32, 34];
+  CH.check((CA[3] + CA[4] + CA[5]) / 20 === .35 && (CB[3] + CB[4] + CB[5]) / 20 === .15 && (CA[0] + CA[1]) / 20 === .35 && (CB[0] + CB[1]) / 20 === .1, '割合');
+  var E20 = [0, 20, 40, 60, 80, 100], HA = [2, 4, 8, 12, 4], HB = [3, 6, 12, 14, 5];
+  CH.check(HA[3] + HA[4] === 16 && HB[3] + HB[4] === 19 && CH.f2(16 / 30) === '0.53' && 19 / 40 === .475, 'チャレンジ ア・イ');
+  CH.check(CH.cum(HA).join() === '2,6,14,26,30' && CH.cum(HB).join() === '3,9,21,35,40', 'チャレンジ ウ・エ');
+  function two(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .1, t: .12, b: .16 }), rs = CH.split(D, R, 2, .14), out = [];
+    [[CA, '作戦A', C.blue], [CB, '作戦B', C.orange]].forEach(function (g, k) {
+      var Ax = CH.axes(D, rs[k], { x: [0, 60], y: [0, 20], xt: E10, yt: [0, 5, 10, 15, 20], xl: '（回）', yl: '（回数）' });
+      CH.bars(D, Ax, E10, g[0], { col: g[2], labels: true, alpha: o.dim ? function (i) { return o.dim(i) ? .25 : 1; } : null });
+      CH.text(D, rs[k].cx, rs[k].y0 + Ax.s * .3, g[1], { col: g[2] }); out.push(Ax);
+      if (o.lab) CH.text(D, rs[k].cx, rs[k].y0 + Ax.s * 1.8, o.lab[k], { col: C.yel, a: o.la == null ? 1 : o.la });
+    });
+    return out;
+  }
+
+  K3.run({
+    no: '第7時', title: 'データを根拠にして判断し、「本当にそういえるか」を確かめよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '06.html', label: '◀ 第6時' }, { href: '08.html', label: '第8時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '作戦A・Bの結果（20回ずつ）', q: '本番は1回だけ。ア 30回以上跳べば入賞できる。イ 20回未満だと予選で落ちる。ア・イで、それぞれどちらの作戦を選ぶか。',
+        notes: ['① 自分の考え（3分）　根拠となる数をあげて。', '② ペアの考え（3分）'],
+        draw: function (D) { two(D); } },
+      { tag: '今日の問い', q: 'ア（30回以上で入賞）なら、どちらを選ぶ？', a: '作戦A', sub: '30回以上の割合　A 7÷20＝0.35、B 3÷20＝0.15', dur: 2,
+        b: { t: 'ア 30回以上 … A <b>0.35</b>、B 0.15 → <b>作戦A</b>', col: C.yel },
+        draw: function (D) { two(D, { dim: D.ph ? function (i) { return i < 3; } : null, lab: D.ph ? ['30回以上 7回（0.35）', '30回以上 3回（0.15）'] : null, la: D.ph ? CH.smooth(.3, .6, D.t) : 0 }); } },
+      { tag: '今日の問い', q: 'イ（20回未満で予選落ち）なら、どちらを選ぶ？', a: '作戦B', sub: '20回未満の割合　A 7÷20＝0.35、B 2÷20＝0.10。目的がちがえば、結論もちがってよい', dur: 2,
+        b: { t: 'イ 20回未満 … A 0.35、B <b>0.10</b> → <b>作戦B</b>', col: C.yel },
+        draw: function (D) { two(D, { dim: D.ph ? function (i) { return i >= 2; } : null, lab: D.ph ? ['20回未満 7回（0.35）', '20回未満 2回（0.10）'] : null, la: D.ph ? CH.smooth(.3, .6, D.t) : 0 }); } },
+      { tag: 'ことば', bh: 'ことば', q: '判断の理由になる数や事実、データの値の広がりぐあいを、何という？', a: '根拠・ちらばり', sub: '判断の目的がちがえば、結論もちがってよい。人数のちがう集団は、相対度数でくらべる',
+        b: [{ t: '判断の理由になる数や事実 … <b>根拠</b>　広がりぐあい … <b>ちらばり</b>', col: C.green }, { t: '<b>目的</b>がちがえば、結論もちがってよい', col: C.green }],
+        draw: function (D) { two(D); } },
+      { tag: '例題', bh: '例題　意見を点検する', q: '「作戦Aは、平均値が作戦Bより 0.5回大きい。だから、作戦Aのほうがすぐれている。」本当にそういえる？', a: 'そうとは決められない',
+        sub: '平均値の差は 0.5回だけ。範囲は A 47回、B 17回で、A はちらばりが大きい。20回未満の割合は A 0.35、B 0.10', dur: 3,
+        b: { t: '平均値の差 0.5回だけ・範囲 A 47回／B 17回 → 何を大事にするかで 結論は変わる', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .08, t: .1, b: .14 }), rs = CH.rows(R, 2, .25), t = D.ph ? D.t : 0, s = CH.fs(D);
+          [[RA, '作戦A', C.blue, 25.5], [RB, '作戦B', C.orange, 25]].forEach(function (g, k) {
+            var X = CH.numline(D, rs[k], 0, 55, 5, { lab: 10, unit: '（回）' }); CH.dots(D, X, rs[k].y1, g[0], { col: function () { return g[2]; }, r: CH.fs(D, .4) });
+            CH.text(D, rs[k].x0, rs[k].y0, g[1], { col: g[2], align: 'left' });
+            CH.line(D, X(g[3]), rs[k].y1 + 6, X(g[3]), rs[k].y0 + s * 2.8, { col: C.yel, dash: true, w: 2.2 }); CH.text(D, X(g[3]) + 6, rs[k].y0 + s * 3.1, '平均値 ' + g[3], { col: C.yel, align: 'left', size: s * .85 });
+            if (t > .3) { var a = CH.smooth(.3, .6, t), y = rs[k].y0 + s * 1.7; CH.arrow(D, X(g[0][0]), y, X(g[0][19]), y, { col: C.green, a: a, w: 2.4 }); CH.arrow(D, X(g[0][19]), y, X(g[0][0]), y, { col: C.green, a: a, w: 2.4 }); CH.text(D, X((g[0][0] + g[0][19]) / 2), y - s * .8, '範囲 ' + (g[0][19] - g[0][0]), { col: C.green, a: a, size: s * .9 }); }
+          });
+        } },
+      { tag: '考えよう', q: '「作戦Aは、作戦Bより ずっとすぐれている。Aの棒は、Bの棒の 1.5倍の高さだ。」（2つの作戦の平均値のグラフ）本当にそういえるだろうか。',
+        notes: ['② 1組の 10人に聞くと 9人が「やりたい」。だから全校の 90%がやりたい、といえる？', '③ データを使った説明を読むとき、気をつけることを 3つ以上。', 'スライダーで、縦の軸の はじまりの数を変えられます。'],
+        sliders: [{ key: 'y0', label: '縦軸のはじまり', min: 0, max: 24.5, step: .5, val: 24, fmt: function (x) { return x + '回'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .3, r: .3, t: .1, b: .16 }), y0 = D.V.y0, yt = []; for (var y = Math.ceil(y0 * 2) / 2; y <= 26.0001; y += y0 > 20 ? .5 : 5) yt.push(y);
+          var Ax = CH.axes(D, R, { x: [0, 2], y: [y0, 26], xt: [], yt: yt, yl: '平均値（回）', cut: y0 > 0, yf: function (v) { return String(v); } });
+          CH.bars(D, Ax, [0, 1, 2], [25.5, 25], { gap: .4, hl: function (i) { return i ? C.orange : C.blue; } });
+          CH.text(D, Ax.X(.5), Ax.R.y1 + Ax.s, '作戦A', { col: C.blue }); CH.text(D, Ax.X(1.5), Ax.R.y1 + Ax.s, '作戦B', { col: C.orange });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'A組（30人）、B組（40人）の得点のヒストグラム。正しいものは？　ア 60点以上の人数は B組が多い　イ 60点以上の割合は B組が大きい　ウ A組の中央値は 60〜80点の階級　エ B組の中央値は 60〜80点の階級',
+        a: 'ア、ウ', sub: 'イ … A 16÷30＝0.53…、B 19÷40＝0.475 で A組が大きい　エ … B組の中央値は 20・21番目。累積度数 9、21 → 40〜60点', dur: 4,
+        b: { t: '正しい … <b>ア・ウ</b>（イ：割合は A組 0.53 ＞ B組 0.475、エ：B組は 40〜60点）', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, t: .14, b: .16 }), rs = CH.split(D, R, 2, .14), t = D.ph ? D.t : 0;
+          [[HA, 'A組（30人）', C.blue, '16人・0.53', 3], [HB, 'B組（40人）', C.orange, '19人・0.475', 2]].forEach(function (g, k) {
+            var Ax = CH.axes(D, rs[k], { x: [0, 100], y: [0, 16], xt: E20, yt: [0, 4, 8, 12, 16], xl: '（点）', yl: '（人）' });
+            CH.bars(D, Ax, E20, g[0], { col: g[2], labels: true, alpha: function (i) { return t > .1 && t < .55 && i < 3 ? .3 : 1; }, hl: function (i) { return t >= .55 && i === g[4] ? C.yel : null; } });
+            CH.text(D, rs[k].cx, rs[k].y0 + Ax.s * .3, g[1], { col: g[2] });
+            if (t > .1 && t < .55) CH.text(D, rs[k].cx, rs[k].y0 + Ax.s * 1.8, '60点以上 ' + g[3], { col: C.yel });
+            if (t >= .55) CH.text(D, rs[k].cx, rs[k].y0 + Ax.s * 1.8, '中央値の階級', { col: C.yel, a: CH.smooth(.55, .7, t) });
+          });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "hibi",
+  "private": true,
+  "type": "commonjs",
+  "description": "ひびの手帳（自分用のスケジュール・メモ・写真の手帳）。js/ はブラウザの classic script 兼 Node(CommonJS)。リポジトリ直下の type:module の影響を受けないよう、ここだけ commonjs にしている。"
+}

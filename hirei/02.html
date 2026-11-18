@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>変域と不等号</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 比例と反比例 第2時：変数のとる値の範囲を、不等号で表そう（ikkan の lesson_hirei_02 と同じ流れ）。
+   深さ 28 cm の水そうに水を入れると、水位が上がり、数直線の上に x の範囲（0 から 7 まで）がのびる。水そうの目もりには y の範囲。
+   以上・以下（●）と未満・より大きい（○）を、4本の数直線で。例題は3つの範囲。考えようは、−2≦x≦3 で x を動かすと、y＝2x と y＝−2x の点が動く。
+   数値は ikkan のまま（28 cm・毎分 4 cm、例題 (1)〜(3)、考えよう y＝2x・y＝−2x、チャレンジ 15 L・60 L・毎分 5 L）。
+   ことばの 4本の数直線（3 以上 など）は、図のために自作した例。範囲・答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, OUT = 'rgba(20,40,30,.92)', BOARD = '#25503f';
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = CH.fr(s[k]); }); if (s.notes) s.notes = s.notes.map(CH.fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = CH.fr(b.t); }); }); return st; }
+  function nf(v) { return S(Math.round(v * 100) / 100); }
+
+  /* ---- 数と検算 ---- */
+  var DEPTH = 28, RISE = 4, FULL = DEPTH / RISE;
+  CH.check(FULL === 7 && RISE * FULL === DEPTH && RISE * 0 === 0, '今日の問い（7分後にいっぱい、0≦y≦28）');
+  function inR(v, a, b, lo, ro) { return (a == null || (lo ? v > a : v >= a)) && (b == null || (ro ? v < b : v <= b)); }
+  var EXR = [[1, 4, false, false], [-2, 3, true, true], [0, null, false, false]];
+  CH.check(inR(1, 1, 4) && inR(4, 1, 4) && !inR(-2, -2, 3, true, true) && !inR(3, -2, 3, true, true) && inR(2.9, -2, 3, true, true) && inR(0, 0, null) && !inR(-.001, 0, null), '例題（はしの数をふくむか）');
+  var KX = []; for (var i = -4; i <= 6; i++) KX.push(i * .5);
+  CH.check(Math.min.apply(null, KX.map(function (x) { return 2 * x; })) === -4 && Math.max.apply(null, KX.map(function (x) { return -2 * x; })) === 4, '考えよう（ここで確かめるだけ）');
+  var V0 = 15, VMAX = 60, VR = 5, VFULL = (VMAX - V0) / VR;
+  CH.check(VFULL === 9 && V0 + VR * VFULL === VMAX && V0 + VR * 0 === 15, 'チャレンジ（0≦x≦9、15≦y≦60）');
+
+  /* ---- ● ○ と、範囲の太い線 ---- */
+  function endDot(D, x, y, r, open, col, a) { CH.circle(D, x, y, r, open ? { fill: BOARD, stroke: col, sw: 2.6, a: a } : { fill: col, stroke: OUT, sw: 1.2, a: a }); }
+  /* 数直線 X の上（高さ y）に、a から b まで（null は矢じりの方へずっと）。o：lo・ro（○）、e0・e1（はしの位置）、p（のびぐあい）、col、a、vert（たて：X は Y） */
+  function rangeBar(D, X, y, a, b, o) {
+    o = o || {}; var s = CH.fs(D), col = o.col || C.yel, p = o.p == null ? 1 : CH.clamp(o.p, 0, 1), al = o.a, r = o.r || s * .34;
+    if (p <= 0) return;
+    var st = a != null ? X(a) : X(b), en = a != null ? (b != null ? X(b) : o.e1) : o.e0, cur = CH.lerp(st, en, p);
+    function P(u) { return o.vert ? [y, u] : [u, y]; }
+    var A = P(st), B = P(cur);
+    if ((a == null || b == null) && p > .3) CH.arrow(D, A[0], A[1], B[0], B[1], { col: col, w: 5, a: al, head: 13 });
+    else CH.line(D, A[0], A[1], B[0], B[1], { col: col, w: 5, a: al });
+    endDot(D, A[0], A[1], r, a != null ? o.lo : o.ro, col, al);
+    if (a != null && b != null && p >= .999) { var E = P(X(b)); endDot(D, E[0], E[1], r, o.ro, col, al); }
+  }
+
+  /* ---- 水そう（目もりつき）。lv：いまの量、o：max・step・lab・unit、yr [下, 上]・ya（目もりの上の範囲）、info（左の字） ---- */
+  function tank(D, R, lv, o) {
+    var s = CH.fs(D), mx = o.max, th = Math.min(R.h - s * 1.6, R.w * .62), tw = Math.min(R.w * .34, th * 1.05), cx = R.cx + R.w * .06;
+    var x0 = cx - tw / 2, x1 = cx + tw / 2, yb = R.y1 - s * .3, yt = yb - th, Y = function (v) { return yb - th * v / mx; };
+    CH.fillRect(D, x0, Y(lv), x1, yb, { fill: 'rgba(154,216,255,.32)' });
+    if (lv > 0) CH.line(D, x0, Y(lv), x1, Y(lv), { col: C.blue, w: 2.6 });
+    CH.poly(D, [[x0, yt - s * .4], [x0, yb], [x1, yb], [x1, yt - s * .4]], { close: false, stroke: C.chalk, sw: 2.6 });
+    var sx = x1 + s * .9;
+    CH.line(D, sx, yb, sx, Y(mx), { w: 1.6 });
+    for (var v = 0; v <= mx + 1e-9; v += o.step) {
+      var big = Math.abs(v / o.lab - Math.round(v / o.lab)) < 1e-9;
+      CH.line(D, sx - (big ? 6 : 3), Y(v), sx + (big ? 6 : 3), Y(v), { w: 1.4 });
+      if (big) CH.text(D, sx + s * .55, Y(v), String(v), { size: s * .72, num: true, align: 'left' });
+    }
+    CH.text(D, sx + s * .2, Y(mx) - s * 1.05, 'y（' + o.unit + '）', { size: s * .72, col: 'rgba(242,240,230,.8)' });
+    if (o.yr) rangeBar(D, Y, sx, o.yr[0], o.yr[1], { vert: true, col: C.pink, p: o.yp, a: o.ya });
+    if (o.info) o.info.forEach(function (t, i) { CH.text(D, x0 - s * .8, R.y0 + R.h * .35 + i * s * 1.5, t[0], { col: t[1], size: CH.fitSize(D, t[0], x0 - R.x0 - s, s * 1.0), align: 'right' }); });
+    return { Y: Y, x0: x0, x1: x1, yb: yb, sx: sx };
+  }
+  function lay(D) {
+    var R = CH.box(D, { l: .04, r: .04, t: .04, b: .04 }), s = CH.fs(D);
+    return { T: CH.rect(R.x0, R.y0 + s * .8, R.x1, R.y0 + R.h * .66), N: CH.rect(R.x0 + s * .8, R.y0 + R.h * .7, R.x1 - s * 1.8, R.y1 - s * 1.6), R: R };
+  }
+  function xline(D, N, lo, hi) { return CH.numline(D, N, lo, hi, 1, { size: CH.fs(D, .75) }); }
+  function water(D, x) {
+    var L = lay(D), y = RISE * x;
+    tank(D, L.T, y, { max: DEPTH, step: 2, lab: 4, unit: 'cm', info: [['x＝' + nf(x) + ' 分', C.chalk], ['y＝' + nf(y) + ' cm', C.blue]] });
+    var X = xline(D, L.N, -2, 10, '（分）'), s = CH.fs(D);
+    CH.text(D, L.N.x0, L.N.y1 - s * 1.6, 'x（分）', { size: s * .8, align: 'left', col: 'rgba(242,240,230,.8)' });
+    return { L: L, X: X };
+  }
+
+  /* ---- ことば：4本の数直線 ---- */
+  var KINDS = [['3 以上', 'x≧3', 3, null, false], ['3 以下', 'x≦3', null, 3, false], ['3 未満', 'x＜3', null, 3, true], ['3 より大きい', 'x＞3', 3, null, true]];
+  function mini(D, R, k, p, showIneq) {
+    var s = CH.fs(D), K = KINDS[k], N = CH.rect(R.x0 + s * .6, R.y0, R.x1 - s * .6, R.y1 - s * 1.3), X = CH.numline(D, N, 0, 6, 1, { size: s * .7 });
+    CH.text(D, R.x0 + s * .3, R.y0 + s * .5, K[0], { align: 'left', size: s * .9, col: K[4] ? C.blue : C.yel });
+    if (showIneq > 0) CH.text(D, R.x1 - s * .3, R.y0 + s * .5, K[1], { align: 'right', size: s * 1.0, col: C.chalk, a: showIneq });
+    rangeBar(D, X, N.y1, K[2], K[3], { lo: K[4], ro: K[4], e0: X(0) - 8, e1: X(6) + 8, p: p, col: K[4] ? C.blue : C.yel });
+  }
+
+  K3.run({
+    no: '第2時', title: '変数のとる値の範囲を、不等号で表そう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '01.html', label: '◀ 第1時' }, { href: '03.html', label: '第3時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '深さ 28 cm の水そう', q: '深さ 28 cm の空の水そうに、水位が毎分 4 cm ずつ上がるように水を入れる。水を入れはじめてから x 分後の水位を y cm とする。x は、どんな範囲の値をとれるだろう。数直線にかいて表そう。',
+        notes: ['① 自分の考え（3分）　x がとれる範囲を、ことばでも書こう。', '② ペアの考え（3分）', 'スライダーで、水を入れた時間を変えられます。'],
+        sliders: [{ key: 'x', label: 'x（分）', min: 0, max: 7, step: .5, val: 0, fmt: function (v) { return nf(v) + ' 分'; } }],
+        draw: function (D) { var W = water(D, D.V.x); endDot(D, W.X(D.V.x), W.L.N.y1, CH.fs(D, .34), false, C.orange); } },
+      { tag: '今日の問い', q: '水そうがいっぱいになるのは、何分後？ x は、どんな範囲の値をとれる？', a: '7分後。x は 0 から 7 まで', sub: '28÷4＝7。数直線では、0 と 7 に ● をかいて、その間を太い線で結ぶ', dur: 5,
+        b: { t: 'いっぱいになるのは 28÷4＝<b>7</b>（分後）　x は <b>0 から 7 まで</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, x = D.ph ? FULL * CH.smooth(.05, .8, t) : 0, W = water(D, x), s = CH.fs(D);
+          if (D.ph) rangeBar(D, W.X, W.L.N.y1, 0, FULL, { p: x / FULL });
+          if (t > .82) CH.text(D, W.X(3.5), W.L.N.y1 - s * 1.3, '0 分から 7 分まで', { col: C.yel, size: s * .95, a: CH.smooth(.82, 1, t), outline: OUT });
+        } },
+      { tag: '今日の問い', q: 'y（水位）は、どんな範囲の値をとれる？', a: '0 cm から 28 cm まで', sub: 'x＝0 のとき y＝0、x＝7 のとき y＝4×7＝28', dur: 3,
+        b: { t: 'y は <b>0 から 28 まで</b>（x＝7 のとき y＝4×7＝28）', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D);
+          tank(D, L.T, DEPTH, { max: DEPTH, step: 2, lab: 4, unit: 'cm', yr: D.ph ? [0, DEPTH] : null, yp: CH.smooth(.1, .8, t), info: [['x＝7 分', C.chalk], ['y＝28 cm', C.blue]] });
+          var X = xline(D, L.N, -2, 10, '（分）'); rangeBar(D, X, L.N.y1, 0, FULL, {});
+          CH.text(D, L.N.x0, L.N.y1 - s * 1.6, 'x（分）', { size: s * .8, align: 'left', col: 'rgba(242,240,230,.8)' });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '変数のとる値の範囲を何という？ 「0 以上 7 以下」を、不等号でどう表す？', a: '変域。0≦x≦7', sub: 'x の変域は 0≦x≦7、y の変域は 0≦y≦28。以上・以下は、その数をふくむ（●）。未満・より大きいは、ふくまない（○）', dur: 6,
+        b: [{ t: '変数のとる値の範囲 … <b>変域</b>　0 以上 7 以下 → <b>0≦x≦7</b>', col: C.green }, { t: '以上 x≧3・以下 x≦3（3 をふくむ ●）　未満 x＜3・より大きい x＞3（ふくまない ○）', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .04, b: .04 }), t = D.ph ? D.t : 0, s = CH.fs(D), rs = CH.rows(R, 3, .1);
+          var N = CH.rect(rs[0].x0 + s, rs[0].y0 + s * .5, rs[0].x1 - s * 1.8, rs[0].y1 - s * 1.2), X = CH.numline(D, N, -2, 10, 1, { size: s * .72, unit: '（分）' });
+          rangeBar(D, X, N.y1, 0, FULL, {});
+          CH.text(D, X(3.5), N.y1 - s * 1.2, D.ph ? '0≦x≦7' : '0 以上 7 以下', { col: C.yel, size: s * 1.15, outline: OUT, a: D.ph ? CH.smooth(0, .15, t) : 1 });
+          var k = 0;
+          [rs[1], rs[2]].forEach(function (row) { CH.cols(row, 2, .08).forEach(function (P) { var u = CH.smooth(.15 + k * .2, .3 + k * .2, t); mini(D, P, k, D.ph ? u : 0, D.ph ? u : 0); k++; }); });
+        } },
+      { tag: '例題', bh: '例題　範囲を数直線と不等号で', q: '次の範囲を、数直線に表し、不等号を使って表そう。(1) 1 以上 4 以下　(2) −2 より大きく 3 未満　(3) 0 以上',
+        a: '(1) 1≦x≦4　(2) −2＜x＜3　(3) x≧0', sub: '(2) は −2 も 3 もふくまないので、両はしが ○。(3) は 0 から右へ、ずっと続く', dur: 5,
+        b: { t: '(1) <b>1≦x≦4</b>　(2) <b>−2＜x＜3</b>（両はし ○）　(3) <b>x≧0</b>', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .04, b: .04 }), t = D.ph ? D.t : 0, s = CH.fs(D), rs = CH.rows(R, 3, .12);
+          var labs = ['1 以上 4 以下', '−2 より大きく 3 未満', '0 以上'], ineq = ['1≦x≦4', '−2＜x＜3', 'x≧0'];
+          rs.forEach(function (row, k) {
+            var N = CH.rect(row.x0 + s, row.y0, row.x1 - s * 1.2, row.y1 - s * 1.3), X = CH.numline(D, N, -4, 6, 1, { size: s * .72 }), u = D.ph ? CH.smooth(.05 + k * .3, .25 + k * .3, t) : 0, e = EXR[k];
+            CH.text(D, row.x0, row.y0 + s * .3, '(' + (k + 1) + ') ' + labs[k], { align: 'left', size: CH.fitSize(D, '(' + (k + 1) + ') ' + labs[k], row.w * .6, s * .95), col: C.chalk });
+            if (u > 0) CH.text(D, row.x1, row.y0 + s * .3, ineq[k], { align: 'right', size: s * 1.1, col: C.pink, a: CH.smooth(.6, 1, u) });
+            rangeBar(D, X, N.y1, e[0], e[1], { lo: e[2], ro: e[3], e0: X(-4) - 8, e1: X(6) + 8, p: u, col: C.pink });
+          });
+        } },
+      { tag: '考えよう', bh: '考えよう', q: 'x の変域が −2≦x≦3 のとき、y＝2x と y＝−2x の y の変域を、それぞれ求めよう。表をつくって調べよう。',
+        notes: ['x を −2 から 3 まで動かして、y の点がどこからどこまで動くか見よう。', 'y＝2x と y＝−2x で、気づいたことを書こう。', 'スライダーで、x を動かせます。'],
+        sliders: [{ key: 'x', label: 'x', min: -2, max: 3, step: .5, val: -2, fmt: function (v) { return nf(v); } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .04, b: .03 }), x = D.V.x, s = CH.fs(D), rs = CH.rows(R, 4, .06), XS = [-2, -1, 0, 1, 2, 3];
+          CH.table(D, rs[0], ['x'].concat(XS.map(S)), [['y＝2x'].concat(XS.map(function (v) { return S(2 * v); })), ['y＝−2x'].concat(XS.map(function (v) { return S(-2 * v); }))],
+            { fw: .2, size: CH.fs(D, .78), show: function (r, c) { return r > 0 && c > 0 && XS[c - 1] > x + 1e-9 ? 0 : 1; }, hl: function (r, c) { return c > 0 && XS[c - 1] === x ? (r === 2 ? C.pink : C.yel) : null; } });
+          var lines = [['x', -4, 4, x, C.orange, true], ['y＝2x', -8, 8, 2 * x, C.yel], ['y＝−2x', -8, 8, -2 * x, C.pink]];
+          lines.forEach(function (Ln, i) {
+            var row = rs[i + 1], N = CH.rect(row.x0 + s * 4.2, row.y0, row.x1 - s * .6, row.y1 - s * 1.2), X = CH.numline(D, N, Ln[1], Ln[2], 1, { lab: Ln[2] > 4 ? 2 : 1, size: s * .7 });
+            CH.text(D, row.x0, N.y1, Ln[0], { align: 'left', size: CH.fitSize(D, Ln[0], s * 3.8, s * .9), col: Ln[4] });
+            if (Ln[5]) rangeBar(D, X, N.y1, -2, 3, { col: 'rgba(255,192,120,.45)', r: s * .26 });
+            endDot(D, X(Ln[3]), N.y1, s * .34, false, Ln[4]);
+            CH.text(D, X(Ln[3]), N.y1 - s * 1, nf(Ln[3]), { col: Ln[4], size: s * .85, outline: OUT });
+          });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '15 L の水が入っている、60 L 入る水そうに、毎分 5 L ずつ水を入れる。水を入れはじめてから x 分後の水の量を y L とする。y を x の式で表し、x の変域と y の変域を求めよう。',
+        a: 'y＝15＋5x　0≦x≦9　15≦y≦60', sub: 'x＝0 のとき y＝15。いっぱいになるのは (60−15)÷5＝9（分後）', dur: 6,
+        b: { t: 'y＝15＋5x　(60−15)÷5＝9 → <b>0≦x≦9</b>　<b>15≦y≦60</b>', col: C.orange },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D), x = D.ph ? VFULL * CH.smooth(.05, .7, t) : 0, y = V0 + VR * x;
+          tank(D, L.T, y, { max: VMAX, step: 5, lab: 15, unit: 'L', yr: t > .72 ? [V0, VMAX] : null, yp: CH.smooth(.72, .95, t), info: [['x＝' + nf(x) + ' 分', C.chalk], ['y＝' + nf(y) + ' L', C.blue]] });
+          var X = CH.numline(D, L.N, 0, 10, 1, { size: s * .75 });
+          CH.text(D, L.N.x0, L.N.y1 - s * 1.6, 'x（分）', { size: s * .8, align: 'left', col: 'rgba(242,240,230,.8)' });
+          if (D.ph) rangeBar(D, X, L.N.y1, 0, VFULL, { p: x / VFULL, col: C.orange });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

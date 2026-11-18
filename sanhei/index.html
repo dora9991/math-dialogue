@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>三平方の定理の黒板</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+<style>
+/* 目次：黒板に、12時間を並べる */
+html,body{height:auto}
+.app{height:auto;min-height:100%}
+.menu{padding:.4rem 1.4rem 1.4rem;display:flex;flex-direction:column;gap:.9rem}
+.menu p.lead{margin:0;font-family:var(--f-chalk);font-weight:600;color:var(--chalk-2);font-size:1.05rem;line-height:1.6}
+.list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,22rem),1fr));gap:.6rem}
+.list li{display:flex;flex-direction:column;gap:.3rem;padding:.65rem .9rem;border:2px solid var(--chalk-4);border-radius:12px;min-width:0}
+.list li.on{border-color:var(--chalk-3);background:rgba(242,240,230,.05)}
+.list .no{font-family:var(--f-chalk);font-weight:600;font-size:.9rem;color:var(--chalk-2)}
+.list .ttl{font-family:var(--f-chalk);font-weight:600;font-size:1.1rem;line-height:1.45}
+.list li:not(.on) .ttl{color:var(--chalk-2)}
+.list .go{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.15rem}
+.list .soon{font-size:.85rem;color:var(--chalk-3)}
+</style>
+</head>
+<body>
+<div class="app" lang="ja">
+  <div class="board">
+    <header class="bar"><h1><small>中3</small>三平方の定理の黒板（目次）</h1><a class="btn" href="../kokuban/index.html">総目次</a></header>
+    <div class="track" aria-hidden="true"></div>
+    <main class="menu">
+      <p class="lead">電子黒板に映して、図を動かしながら考える授業のページ。12時間ぶん、どの時間からでも開けます。</p>
+      <ul class="list" id="list"></ul>
+    </main>
+  </div>
+</div>
+<script>
+(function () {
+  /* 時間ごとの題名は、ikkan の三平方の定理と同じ */
+  var L = [
+    ['第1時', '直角三角形の3辺の長さには、どんな関係があるだろう', [['01.html', 'ひらく ▶']]],
+    ['第2時', '三平方の定理が、いつでも成り立つわけを説明しよう', [['02.html', 'ひらく ▶']]],
+    ['第3時', '辺の長さを求め、直角三角形かどうかを判断しよう', [['03.html', 'ひらく ▶']]],
+    ['第4時', '三角定規の形の、辺の比を調べよう', [['04.html', 'ひらく ▶']]],
+    ['第5時', '対角線の長さや、三角形の高さを求めよう', [['05.html', 'ひらく ▶']]],
+    ['第6時', '座標平面上の2点の間のきょりを求めよう', [['06.html', 'ひらく ▶']]],
+    ['第7時', '円の弦や接線の長さを求めよう', [['07.html', 'ひらく ▶']]],
+    ['第8時', '直方体の対角線の長さを求めよう', [['08.html', 'ひらく ▶']]],
+    ['第9時', '円錐や角錐の高さを、直角三角形を使って求めよう', [['09.html', 'ひらく ▶']]],
+    ['第10時', '立体の表面を通る、いちばん短い道のりを求めよう', [['10.html', 'ひらく ▶']]],
+    ['第11時', '高いところから、どこまで見えるかを、式で表そう', [['11.html', 'ひらく ▶']]],
+    ['第12時', '「三平方の定理」で学んだことを、整理して確かめよう', [['12.html', 'ひらく ▶']]]
+  ];
+  document.getElementById('list').innerHTML = L.map(function (x) {
+    var on = !!x[2];
+    return '<li' + (on ? ' class="on"' : '') + '><span class="no">' + x[0] + '</span><span class="ttl">' + x[1] + '</span>' +
+      (on ? '<span class="go">' + x[2].map(function (l) { return '<a class="btn primary" href="' + l[0] + '">' + l[1] + '</a>'; }).join('') + '</span>' : '<span class="soon">準備中</span>') + '</li>';
+  }).join('');
+})();
+</script>
+</body>
+</html>

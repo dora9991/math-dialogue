@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>度数分布表に整理する</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="js/chart.js"></script>
+<script>
+/* データの活用 第1時：ばらばらのデータを整理して、傾向を読み取ろう（ikkan の lesson_data_new_01 と同じ流れ）。
+   30人の通学時間のカードが、階級（5分ごと）の上に とんでいって積み上がる。積んだ高さが、度数。 */
+(function () {
+  var C = CH.C, T = [12, 25, 8, 15, 31, 18, 6, 22, 15, 10, 17, 28, 13, 20, 4, 16, 24, 9, 38, 15, 19, 11, 27, 21, 14, 18, 34, 7, 12, 23];
+  var E5 = [0, 5, 10, 15, 20, 25, 30, 35, 40], CNT = CH.bin(T, E5), WIDTHS = [1, 2, 4, 5, 8, 10, 20, 40];
+  CH.check(CNT.join() === '1,4,6,8,5,3,2,1', '度数');
+  CH.check(CNT[4] + CNT[5] + CNT[6] + CNT[7] === 11, '20分以上');
+  var RUN = [3, 8, 14, 10, 5];
+  CH.check(RUN[0] + RUN[1] === 11 && RUN[0] + RUN[1] + RUN[2] === 25 && CH.sum(RUN) === 40, '50m走');
+
+  /* カードの並び（上の表）と、積んだ場所（下の軸）。t：とぶ進み */
+  function layout(D) {
+    var R = CH.box(D, { t: .02, b: .1 }), top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .3), bot = CH.rect(R.x0 + R.w * .04, R.y0 + R.h * .42, R.x1, R.y1);
+    return { R: R, top: top, bot: bot };
+  }
+  function gridPos(L, i) { var c = i % 10, r = Math.floor(i / 10), cw = L.top.w / 10, ch = L.top.h / 3; return [L.top.x0 + (c + .5) * cw, L.top.y0 + (r + .5) * ch]; }
+  function axes(D, L, w, ymax) {
+    var xt = []; for (var x = 0; x <= 40; x += (w < 5 ? 5 : w)) xt.push(x);
+    var yt = []; for (var y = 0; y <= ymax; y += ymax > 12 ? 5 : 2) yt.push(y);
+    return CH.axes(D, L.bot, { x: [0, 40], y: [0, ymax], xt: xt, yt: yt, xl: '（分）', yl: '（人）' });
+  }
+  function scene(D, o) {
+    o = o || {}; var L = layout(D), w = o.w || 5, E = []; for (var x = 0; x <= 40; x += w) E.push(x);
+    var cnt = CH.bin(T, E), ymax = Math.max(9, Math.max.apply(null, cnt) + 1), Ax = axes(D, L, w, ymax), t = o.t == null ? 1 : o.t;
+    var cw = Math.min(L.top.w / 10 * .82, CH.fs(D) * 2.6), chh = L.top.h / 3 * .72;
+    T.forEach(function (x, i) {
+      var s0 = i / T.length * .55, k = CH.ease(CH.clamp((t - s0) / .4, 0, 1));
+      if (k < 1) CH.card(D, gridPos(L, i)[0], gridPos(L, i)[1], cw, chh, x, { col: C.chalk, fill: 'rgba(242,240,230,.08)', a: 1 - k * .75 });
+    });
+    var st = CH.stacks(D, Ax, T, E, {
+      pos: function (i, q) { var s0 = i / T.length * .55, k = CH.ease(CH.clamp((t - s0) / .4, 0, 1)), g = gridPos(L, i); return [CH.lerp(g[0], q.x, k), CH.lerp(g[1], q.y, k) - Math.sin(Math.PI * k) * L.R.h * .06]; },
+      alpha: function (i) { var s0 = i / T.length * .55; return t > s0 ? 1 : 0; },
+      hl: o.hl, col: C.blue
+    });
+    if (t >= 1 && o.counts !== false) cnt.forEach(function (n, b) { if (n) CH.text(D, Ax.X(E[b] + w / 2), Ax.Y(n) - Ax.s * .9, String(n), { size: Ax.s * 1.15, num: true, col: o.cntCol ? o.cntCol(b) : C.yel }); });
+    return { L: L, Ax: Ax, st: st, E: E, cnt: cnt };
+  }
+
+  K3.run({
+    no: '第1時', title: 'ばらばらのデータを整理して、傾向を読み取ろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '第2時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '1年A組30人の通学時間（分）',
+        q: '1年A組30人の、家から学校までの通学時間（分）を調べた。何分くらいの人が多いかを伝えるには、データをどう整理すればよいだろう。',
+        notes: ['① 自分の考え（3分）　どう整理するか。', '② ペアの考え（3分）　自分とちがう整理のしかたは？'],
+        draw: function (D) { var L = layout(D), cw = Math.min(L.top.w / 10 * .82, CH.fs(D) * 2.6); T.forEach(function (x, i) { var p = gridPos(L, i); CH.card(D, p[0], p[1], cw, L.top.h / 3 * .72, x, { col: C.chalk, fill: 'rgba(242,240,230,.08)' }); }); CH.text(D, L.R.cx, L.bot.cy, 'このままでは、傾向がつかみにくい…', { col: 'rgba(242,240,230,.6)' }); } },
+      { tag: '今日の問い', q: '5分ごとに区切って、それぞれの人数を数えると？', a: '15分以上20分未満の人が 8人で、いちばん多い', sub: 'カードを区間ごとに積むと、どのあたりに多いかが見える', dur: 5,
+        b: { t: '5分ごとに区切って、人数を数える → 15〜20分が 8人で いちばん多い', col: C.blue },
+        draw: function (D) { scene(D, { t: D.ph ? D.t : 0, counts: D.ph === 1 }); } },
+      { tag: 'ことば', bh: 'ことば', q: '区切った区間・その幅・入る個数・まとめた表を、それぞれ何という？', a: '階級・階級の幅・度数・度数分布表', sub: '「5〜10」の階級は、5以上 10未満 を表す',
+        b: [{ t: '区切った区間 … <b>階級</b>　その幅 … <b>階級の幅</b>（5分）', col: C.green }, { t: '各階級のデータの個数 … <b>度数</b>　まとめた表 … <b>度数分布表</b>', col: C.green }],
+        draw: function (D) { var S = scene(D, { t: 1 }); var a = S.Ax, y = a.R.y1 + a.s * 2.6; CH.line(D, a.X(5), y, a.X(10), y, { col: C.yel, w: 3 }); CH.text(D, a.X(7.5), y + a.s * 1.1, '階級の幅 5分', { col: C.yel, size: a.s }); } },
+      { tag: 'ことば', q: '10分の人は、どの階級に入る？', a: '10分以上15分未満', sub: '「5〜10」は 5以上10未満。10 は入らない（境目の値に注意）', dur: 2.4,
+        b: { t: '「5〜10」は 5<b>以上</b> 10<b>未満</b>（10分は 10〜15 に入る）', col: C.green },
+        draw: function (D) {
+          var S = scene(D, { t: 1, hl: function (i) { return i === 9 ? C.yel : null; }, counts: false });
+          var a = S.Ax; CH.fillRect(D, a.X(10), a.R.y0, a.X(15), a.R.y1, { fill: 'rgba(255,226,122,.12)', a: D.ph ? CH.smooth(.2, .6, D.t) : 0 });
+          CH.text(D, a.X(12.5), a.R.y0 + a.s, '10以上15未満', { col: C.yel, size: a.s, a: D.ph ? CH.smooth(.3, .7, D.t) : 0 });
+        } },
+      { tag: '例題', bh: '例題　階級の幅 5分の度数分布表', q: '度数が もっとも多い階級は？', a: '15分以上20分未満（8人）', dur: 1.5,
+        b: { t: '0〜5 1・5〜10 4・10〜15 6・15〜20 <b>8</b>・20〜25 5・25〜30 3・30〜35 2・35〜40 1（計 30）', col: C.blue },
+        draw: function (D) { scene(D, { t: 1, hl: function (i) { return D.ph && CH.bin([T[i]], [15, 20])[0] ? C.yel : null; }, cntCol: function (b) { return D.ph && b === 3 ? C.yel : 'rgba(242,240,230,.8)'; } }); } },
+      { tag: '例題', q: '20分以上の人は、何人？', a: '5 ＋ 3 ＋ 2 ＋ 1 ＝ 11（人）', sub: '数え落としがないように、最後に合計が 30 になるか確かめる', dur: 1.5,
+        b: { t: '20分以上 … 5＋3＋2＋1＝<b>11人</b>', col: C.pink },
+        draw: function (D) { scene(D, { t: 1, hl: function (i) { return D.ph && T[i] >= 20 ? C.pink : null; }, cntCol: function (b) { return D.ph && b >= 4 ? C.pink : 'rgba(242,240,230,.8)'; } }); } },
+      { tag: '考えよう', q: '階級の幅を 10分にして、度数分布表に整理しよう。幅が 5分のときとくらべて、わかりやすくなったこと・わかりにくくなったことは何だろう。',
+        notes: ['幅を 1分や 40分にしたら、表はどうなるだろう。', 'スライダーで、階級の幅を変えられます。'],
+        sliders: [{ key: 'w', label: '階級の幅', min: 0, max: 7, step: 1, val: 3, fmt: function (x) { return WIDTHS[x] + '分'; } }],
+        draw: function (D) { scene(D, { t: 1, w: WIDTHS[D.V.w] }); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '40人の 50m走の記録（7.0〜7.5秒 3人、7.5〜8.0秒 8人、8.0〜8.5秒 14人、8.5〜9.0秒 10人、9.0〜9.5秒 5人）。8.3秒の Aさんは、速いほうから何番目から何番目の間にいる？',
+        a: '12番目から 25番目', sub: '8.0秒未満が 3＋8＝11人 → 12番目から。8.5秒未満が 11＋14＝25人 → 25番目まで', dur: 3,
+        b: { t: '8.0秒未満 11人 → 12番目から、8.5秒未満 25人 → <b>25番目まで</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { t: .2, b: .3 }), n = 40, cw = R.w / n, cols = [C.blue, C.green, C.yel, C.orange, C.pink], cls = [];
+          RUN.forEach(function (c, b) { for (var k = 0; k < c; k++) cls.push(b); });
+          var t = D.ph ? D.t : 0;
+          cls.forEach(function (b, i) {
+            var on = t > .2 && i >= 11 && i <= 24, x = R.x0 + (i + .5) * cw;
+            CH.circle(D, x, R.cy, cw * .38, { fill: on ? C.yel : 'rgba(242,240,230,.25)', stroke: cols[b], sw: 2 });
+            if (i % 5 === 4 || i === 0) CH.text(D, x, R.cy + cw * 1.2, String(i + 1), { size: Math.min(CH.fs(D, .7), cw * .8), num: true, col: 'rgba(242,240,230,.6)' });
+          });
+          var x0 = R.x0, labs = ['7.0〜7.5', '7.5〜8.0', '8.0〜8.5', '8.5〜9.0', '9.0〜9.5'];
+          RUN.forEach(function (c, b) { var x1 = x0 + c * cw; CH.line(D, x0 + 2, R.cy - cw * 1.1, x1 - 2, R.cy - cw * 1.1, { col: cols[b], w: 3 }); CH.text(D, (x0 + x1) / 2, R.cy - cw * 1.1 - CH.fs(D, .8), labs[b], { size: Math.min(CH.fs(D, .75), c * cw / 4.2), num: true, col: cols[b] }); x0 = x1; });
+          CH.text(D, R.x0, R.y0 - CH.fs(D), '速い ←', { align: 'left', col: 'rgba(242,240,230,.7)' }); CH.text(D, R.x1, R.y0 - CH.fs(D), '→ おそい', { align: 'right', col: 'rgba(242,240,230,.7)' });
+          if (t > .4) CH.text(D, R.x0 + 18 * cw, R.y1 + CH.fs(D) * 1.2, 'Aさんは、ここ（12〜25番目）のどこか', { col: C.yel, a: CH.smooth(.4, .7, t) });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

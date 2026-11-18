@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>グラフの傾き</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 一次関数 第5時：グラフのかたむきぐあいを、数で表そう（ikkan の lesson_ichiji_new_05 と同じ流れ）。
+   直線の上を「右へ 1、上へ 2」の階段が進んでいく。どこから進んでも同じ。傾きが分数なら、右へ 3 進むと方眼の交点にのる。
+   考えようは、傾き a のスライダーで、(0, 1) を通る直線が回る。
+   数値は ikkan のまま（① y＝2x＋1・② y＝−3x＋2、例題 y＝2/3x−1、考えよう ア〜エ、チャレンジ y＝ax＋2）。点・答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum;
+  /* ---- 分数入りの字（[2/3] をたての分数に）。canvas 用と、右の板書（HTML）用 ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+  var OUT = 'rgba(20,40,30,.92)';
+  function plane(D, P, xr, yr, o) { var s = CH.fs(D, .72); return CH.plane(D, CH.rect(P.x0 + s * .4, P.y0 + s * 1.6, P.x1 - s * 1.8, P.y1 - s * .4), Object.assign({ x: xr, y: yr }, o || {})); }
+  function lab(D, Pl, x, y, txt, col, o) { o = o || {}; TX(D, Pl.X(x) + (o.dx || 0), Pl.Y(y) + (o.dy || 0), txt, { col: col, size: o.size || CH.fs(D, .9), align: o.align || 'left', outline: OUT, a: o.a }); }
+  /* 階段：(x0, y0) から右へ dx、上へ dy。p（0〜1）で、とちゅうまで。lx・ly は字（[2/3] も）、'' で書かない */
+  function stair(D, Pl, x0, y0, dx, dy, o) {
+    o = o || {}; var col = o.col || C.pink, s = CH.fs(D, o.k || .85), a = o.a, p = o.p == null ? 1 : o.p, h = Math.min(1, p * 2), v = CH.clamp(p * 2 - 1, 0, 1);
+    CH.pseg(D, Pl, [x0, y0], [x0 + dx * h, y0], { col: col, w: 2.8, a: a });
+    if (v > 0) CH.pseg(D, Pl, [x0 + dx, y0], [x0 + dx, y0 + dy * v], { col: col, w: 2.8, a: a, arrow: v > .3, head: 8 });
+    if (o.lx !== '' && h > .5) TX(D, Pl.X(x0 + dx / 2), Pl.Y(y0) + (dy >= 0 ? s * .95 : -s * .95), o.lx || ('右へ ' + dx), { col: col, size: s, outline: OUT, a: a });
+    if (o.ly !== '' && v > .5) TX(D, Pl.X(x0 + dx) + s * .4, Pl.Y(y0 + dy * (o.at || .5)), o.ly || ((dy >= 0 ? '上へ ' : '下へ ') + S(Math.abs(dy))), { col: col, size: s, align: 'left', outline: OUT, a: a });
+  }
+  function ftxt(a) { var n = Math.round(a * 6); if (n % 6 === 0) return S(n / 6); var d = 6, g = (function f(x, y) { return y ? f(y, x % y) : x; })(Math.abs(n), d); return (n < 0 ? '−' : '') + '[' + Math.abs(n) / g + '/' + d / g + ']'; }
+
+  /* ---- 数（ikkan と同じ）と検算 ---- */
+  var F1 = function (x) { return 2 * x + 1; }, F2 = function (x) { return -3 * x + 2; };
+  CH.check([-2, -1, 0, 1].every(function (x) { return F1(x + 1) - F1(x) === 2 && F2(x + 1) - F2(x) === -3; }), '今日の問い（右へ 1 で上へ 2・下へ 3）');
+  var E = function (x) { return 2 / 3 * x - 1; };
+  CH.check(CH.near(E(3) - E(0), 2) && CH.near(E(3), 1) && CH.near(E(0), -1) && !CH.near(E(1), Math.round(E(1))), '例題（右へ 3 で上へ 2。方眼の交点）');
+  var AS = [-3, -2, -1, -1 / 2, -1 / 3, 1 / 3, 1 / 2, 1, 2, 3];
+  CH.check([1, 3, 1 / 3, -3].every(function (a) { return AS.some(function (b) { return CH.near(a, b); }); }), '考えようのスライダーに ア〜エ の傾きがある');
+  var CHA = -6 / (4 - 1);
+  CH.check(CHA === -2 && CHA * -2 + 2 === 6, 'チャレンジ');
+
+  function full(D) { return CH.box(D, { l: .1, r: .08, t: .02, b: .03 }); }
+  function two(D, Pl, o) {
+    o = o || {};
+    CH.lin(D, Pl, 2, 1, { col: C.orange, w: 3, a: o.a1 }); CH.lin(D, Pl, -3, 2, { col: C.blue, w: 3, a: o.a2 });
+    lab(D, Pl, 2.7, 6.4, o.full ? '① y＝2x＋1' : '①', C.orange, { dx: CH.fs(D, .3), a: o.a1, align: 'left' });
+    lab(D, Pl, -1.7, 6.4, o.full ? '② y＝−3x＋2' : '②', C.blue, { dx: -CH.fs(D, .3), a: o.a2, align: 'right' });
+  }
+
+  K3.run({
+    no: '第5時', title: 'グラフのかたむきぐあいを、数で表そう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '04.html', label: '◀ 第4時' }, { href: '06.html', label: '第6時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '① y＝2x＋1　② y＝−3x＋2', q: '図は、① y＝2x＋1、② y＝−3x＋2 のグラフである。グラフ上の点から右へ 1 進むと、上または下へ、どれだけ進むだろう。その量は、式のどこに現れているだろう。',
+        notes: ['① 自分の考え（3分）　図に書きこんでもよい。', '② ペアの考え（3分）'],
+        draw: function (D) { var Pl = plane(D, full(D), [-4, 4], [-6, 7]); two(D, Pl, { full: true }); } },
+      { tag: '今日の問い', q: 'グラフ上の点から右へ 1 進むと、上または下へ、どれだけ進む？', a: '① 上へ 2　② 下へ 3', sub: 'どの点から進んでも同じ。進む量は、変化の割合と同じ', dur: 8,
+        b: { t: '右へ 1 進むと … ① <b>上へ 2</b>　② <b>下へ 3</b>（どこから進んでも同じ）', col: C.yel },
+        draw: function (D) {
+          var Pl = plane(D, full(D), [-4, 4], [-6, 7]), t = D.ph ? D.t : 0; two(D, Pl, { full: true });
+          if (!D.ph) return;
+          [-3, -2, -1, 0, 1].forEach(function (x, i) {
+            var st = .02 + i * .09, p = CH.clamp((t - st) / .08, 0, 1); if (p <= 0) return; var last = t < st + .09 || i === 4;
+            stair(D, Pl, x, F1(x), 1, 2, { col: C.orange, p: p, a: last ? 1 : .45, lx: last ? '1' : '', ly: last ? '2' : '', k: 1 });
+          });
+          [1, 0].forEach(function (x, i) {
+            var st = .55 + i * .2, p = CH.clamp((t - st) / .15, 0, 1); if (p <= 0) return; var last = t < st + .2 || i === 1;
+            stair(D, Pl, x, F2(x), 1, -3, { col: C.blue, p: p, a: last ? 1 : .45, lx: last ? '1' : '', ly: last ? '3' : '', k: 1 });
+          });
+        } },
+      { tag: '今日の問い', q: 'その量は、式のどこに現れている？', a: 'x の係数（2 と −3）', sub: '下へ進むときは、負の数で表す。① y＝2x＋1 の 2、② y＝−3x＋2 の −3', dur: 3,
+        b: { t: '進む量は <b>x の係数</b>（① 2、② −3。下へは負の数）', col: C.yel },
+        draw: function (D) {
+          var Pl = plane(D, full(D), [-4, 4], [-6, 7]), t = D.ph ? D.t : 0, s = CH.fs(D); two(D, Pl);
+          stair(D, Pl, 1, 3, 1, 2, { col: C.orange, lx: '1', ly: '＋2', k: 1 }); stair(D, Pl, 0, 2, 1, -3, { col: C.blue, lx: '1', ly: '−3', k: 1 });
+          if (D.ph) {
+            var a = CH.smooth(.1, .5, t), x0 = Pl.R.x0 + s * .4, y0 = Pl.Y(-3.2);
+            CH.fillRect(D, x0 - s * .3, y0 - s * 1.1, x0 + s * 8.4, y0 + s * 2.7, { fill: 'rgba(31,58,44,.9)', stroke: 'rgba(242,240,230,.3)', a: a });
+            CH.text(D, x0, y0, '① y＝', { align: 'left', col: C.orange, a: a, size: s * 1.05 }); var w1 = s * 2.95;
+            CH.text(D, x0 + w1, y0, '2', { align: 'left', col: C.yel, a: a, size: s * 1.3 }); CH.text(D, x0 + w1 + s * .8, y0, 'x＋1', { align: 'left', col: C.orange, a: a, size: s * 1.05 });
+            CH.text(D, x0, y0 + s * 1.6, '② y＝', { align: 'left', col: C.blue, a: a, size: s * 1.05 });
+            CH.text(D, x0 + w1, y0 + s * 1.6, '−3', { align: 'left', col: C.yel, a: a, size: s * 1.3 }); CH.text(D, x0 + w1 + s * 1.5, y0 + s * 1.6, 'x＋2', { align: 'left', col: C.blue, a: a, size: s * 1.05 });
+          }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'y＝ax＋b の a を、グラフの何という？ a が正の数・負の数のとき、グラフは？', a: '傾き。a＞0 なら右上がり、a＜0 なら右下がり', sub: '傾きは、右へ 1 進んだとき上へ進む量。変化の割合と等しい', dur: 3,
+        b: [{ t: 'y＝ax＋b の a を、グラフの <b>傾き</b> という（右へ 1 進んだとき、上へ進む量。変化の割合と等しい）', col: C.green }, { t: 'a＞0 … <b>右上がり</b>　a＜0 … <b>右下がり</b>', col: C.green }],
+        draw: function (D) {
+          var R = full(D), rs = CH.cols(R, 2, .06), t = D.ph ? D.t : 0, s = CH.fs(D);
+          [[2, 1, C.orange, 'a＞0　右上がり', '傾き 2'], [-3, 2, C.blue, 'a＜0　右下がり', '傾き −3']].forEach(function (g, k) {
+            var r = rs[k], Pl = plane(D, CH.rect(r.x0, r.y0 + s * 1.2, r.x1, r.y1), [-3, 3], [-4, 6], { lab: 2 });
+            CH.lin(D, Pl, g[0], g[1], { col: g[2], w: 3 });
+            stair(D, Pl, 0, g[1], 1, g[0], { col: g[2], lx: '1', ly: g[4], k: .8 });
+            CH.text(D, r.cx, r.y0 + s * .5, g[3], { col: t > .2 ? C.green : g[2], size: s * 1.05, a: D.ph ? 1 : .9 });
+          });
+        } },
+      { tag: '例題', bh: '例題　傾き [2/3]', q: '図は、y＝[2/3]x−1 のグラフである。グラフ上の点から右へ 3 進むと、上へいくつ進む？', a: '上へ 2', sub: '[2/3]×3＝2。分母の数だけ右へ、分子の数だけ上へ進むと、方眼の交点から交点へ進めて、読みやすい', dur: 6,
+        b: { t: '傾き [2/3] … <b>右へ 3、上へ 2</b>（[2/3]×3＝2）', col: C.pink },
+        draw: function (D) {
+          var Pl = plane(D, full(D), [-4, 5], [-4, 4]), t = D.ph ? D.t : 0, s = CH.fs(D);
+          CH.lin(D, Pl, 2 / 3, -1, { col: C.lav, w: 3 }); lab(D, Pl, -3.9, -3.6, 'y＝[2/3]x−1', C.lav, { dy: -s * .9 });
+          CH.pt(D, Pl, 0, -1, { col: C.yel, r: CH.fs(D, .3) });
+          if (!D.ph) return;
+          if (t < .45) stair(D, Pl, 0, -1, 1, 2 / 3, { col: C.pink, p: CH.smooth(.02, .3, t), lx: '右へ 1', ly: '上へ [2/3]' });
+          if (t < .45 && t > .3) CH.text(D, Pl.X(1.4), Pl.Y(-2.4), '読みにくい…', { col: C.pink, size: s * .85, a: CH.smooth(.3, .38, t), align: 'left', outline: OUT });
+          if (t >= .45) {
+            stair(D, Pl, 0, -1, 3, 2, { col: C.yel, p: CH.smooth(.45, .8, t), lx: '右へ 3', ly: '上へ 2', at: .78 });
+            if (t > .8) { var a = CH.smooth(.8, .9, t); CH.pt(D, Pl, 3, 1, { col: C.yel, r: CH.fs(D, .34), a: a, lab: '(3, 1)', dir: 'nw' }); }
+          }
+        } },
+      { tag: '考えよう', bh: '考えよう', q: '4つの一次関数 ア y＝x＋1、イ y＝3x＋1、ウ y＝[1/3]x＋1、エ y＝−3x＋1 のグラフをかいて、くらべよう。傾きが変わると、グラフはどのように変わるだろう。',
+        notes: ['気づいたことを書こう。', '傾きを「急」「ゆるやか」「右上がり」「右下がり」ということばで、説明しよう。', 'スライダーで、y＝ax＋1 の傾き a を変えられます。'],
+        sliders: [{ key: 'k', label: '傾き a', min: 0, max: AS.length - 1, step: 1, val: 7, fmt: function (k) { return ['−3', '−2', '−1', '−1/2', '−1/3', '1/3', '1/2', '1', '2', '3'][k]; } }],
+        draw: function (D) {
+          var Pl = plane(D, full(D), [-4, 4], [-4, 6]), a = AS[D.V.k], s = CH.fs(D);
+          CH.lin(D, Pl, a, 1, { col: C.orange, w: 3.2, glow: true });
+          stair(D, Pl, 0, 1, 1, a, { col: C.yel, lx: '右へ 1', ly: (a >= 0 ? '上へ ' : '下へ ') + ftxt(Math.abs(a)), k: .8 });
+          CH.pt(D, Pl, 0, 1, { col: C.orange, r: CH.fs(D, .3) });
+          TX(D, Pl.R.x0 + s * .3, Pl.R.y0 + s * .7, 'y＝' + (a === 1 ? '' : a === -1 ? '−' : ftxt(a)) + 'x＋1', { col: C.orange, size: s * 1.1, align: 'left', outline: OUT });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '一次関数 y＝ax＋2 で、x の値が 1 から 4 まで増加するとき、y の値は 6 減少する。① a の値は？ ② x＝−2 のときの y の値は？', a: '① a＝−2　② y＝6', sub: '① x の増加量は 3、y の増加量は −6 → a＝[−6/3]＝−2　② y＝−2×(−2)＋2＝6', dur: 6,
+        b: { t: '① a＝[−6/3]＝<b>−2</b>　② y＝−2×(−2)＋2＝<b>6</b>', col: C.orange },
+        draw: function (D) {
+          var Pl = plane(D, full(D), [-3, 5], [-7, 7], { lab: D.W > D.H * .9 ? 1 : 2 }), t = D.ph ? D.t : 0, s = CH.fs(D);
+          var a = D.ph ? CH.lerp(1.2, -2, CH.ease(CH.smooth(0, .45, t))) : -.5;
+          CH.lin(D, Pl, a, 2, { col: C.orange, w: 3, glow: D.ph && t > .45 });
+          CH.pt(D, Pl, 0, 2, { col: C.orange, r: CH.fs(D, .3), lab: '(0, 2)', dir: 'ne' });
+          stair(D, Pl, 1, a + 2, 3, 3 * a, { col: C.yel, lx: '右へ 3', ly: D.ph && t > .45 ? '下へ 6' : '?', k: .8 });
+          if (t > .5) TX(D, Pl.X(1.4), Pl.Y(5.6), 'a＝[−6/3]＝−2', { col: C.yel, size: s * 1.1, align: 'left', outline: OUT, a: CH.smooth(.5, .6, t) });
+          if (t > .7) { var b = CH.smooth(.7, .85, t); CH.pseg(D, Pl, [-2, 0], [-2, 6], { col: C.pink, dash: true, w: 2, a: b }); CH.pt(D, Pl, -2, 6, { col: C.pink, r: CH.fs(D, .34), lab: '(−2, 6)', dir: 'e', a: b }); }
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

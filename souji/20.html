@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>相似な図形のまとめ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 相似な図形 第20時：「相似な図形」で学んだことを、整理して確かめよう（ikkan の lesson_souji_20 と同じ流れ）。
+   今日の問い：AB・AC の中点 D、E。中点連結定理 → △ADE∽△ABC（1：2）→ 面積 1：4 → 四角形 DBCE は △ADE の 3倍
+   （BC の中点もとると、△ABC が △ADE と合同な三角形 4こに分かれる。うち 1こは 180° 回す動き）。
+   ことばは、単元の整理図。例題は DE∥BC の x・y と面積の比、例題（2）は相似な円錐の体積（横から見た図）。
+   考えようは、AB を n 等分して BC に平行な線をひく道具だけ。チャレンジは直角三角形の相似の証明と AE の長さ。
+   座標は ikkan と同じ作り方（A(1.8,4)・B(0,0)・C(6,0)、3辺 18・15・12 の三角形、C(0,0)・B(9,0)・A(0,12)…）。
+   長さ・比・角・相似・面積は、座標から計算し直して照らし合わせる（GE.verify・CH.check）。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)';
+  function at(p, q, t) { return GE.lerpP(p, q, t); }
+  function area(P) { var s = 0; for (var i = 0; i < P.length; i++) { var q = P[(i + 1) % P.length]; s += P[i][0] * q[1] - q[0] * P[i][1]; } return Math.abs(s) / 2; }
+  function pts(P, s) { return s.split('').map(function (k) { return P[k]; }); }
+  function cen(P) { var c = [0, 0]; P.forEach(function (p) { c[0] += p[0] / P.length; c[1] += p[1] / P.length; }); return c; }
+  function tx(F, p, s, o) { o = o || {}; var q = F.X(p); CH.text(F.D, q[0] + (o.dx || 0) * F.s, q[1] + (o.dy || 0) * F.s, s, { size: F.s * (o.size || 1), col: o.col, a: o.a, align: o.align, outline: OUT }); }
+  function sideLab(F, p, q, s, nrm, o) { o = o || {}; var m = F.X(GE.mid(p, q)), k = F.s * (o.k || 1.1); CH.text(F.D, m[0] + nrm[0] * k, m[1] - nrm[1] * k, s, { size: F.s * (o.size || .9), col: o.col || C.chalk, a: o.a, outline: OUT }); }
+  /* 3辺の長さから、B(0,0)・C(a,0)・A */
+  function tri3(a, b, c) { var x = (c * c - b * b + a * a) / (2 * a); return { B: [0, 0], C: [a, 0], A: [x, Math.sqrt(c * c - x * x)] }; }
+  /* 形 src を、場所 dst（inv：180° 回す）へ e だけ動かす */
+  function moveTo(src, dst, inv, e) {
+    var c0 = cen(src), c1 = cen(dst), th = inv ? Math.PI * e : 0, co = Math.cos(th), si = Math.sin(th), m = [c0[0] + (c1[0] - c0[0]) * e, c0[1] + (c1[1] - c0[1]) * e];
+    return src.map(function (p) { var x = p[0] - c0[0], y = p[1] - c0[1]; return [m[0] + x * co - y * si, m[1] + x * si + y * co]; });
+  }
+  var DIR = { dir: { A: 'n', B: 'sw', C: 'se', D: 'w', E: 'e', F: 's' } };
+
+  /* ---- 今日の問い：A(1.8,4)・B(0,0)・C(6,0)、D・E は AB・AC の中点（F は BC の中点） ---- */
+  var P0 = { A: [1.8, 4], B: [0, 0], C: [6, 0] }; P0.D = GE.mid(P0.A, P0.B); P0.E = GE.mid(P0.A, P0.C); P0.F = GE.mid(P0.B, P0.C);
+  GE.verify(P0, 'AD＝DB、AE＝EC、DE∥BC、DE＝1/2BC、△ADE∽△ABC', null, '今日の問い');
+  CH.check(CH.near(area(pts(P0, 'ABC')), 4 * area(pts(P0, 'ADE'))) && CH.near(area(pts(P0, 'DBCE')), 3 * area(pts(P0, 'ADE'))) && ['DBF', 'EFC', 'FED'].every(function (s) { return CH.near(area(pts(P0, s)), area(pts(P0, 'ADE'))); }), '今日の問い：3倍');
+  function fig0(D, R) {
+    var F = GE.fit(D, R, P0, { pad: .1, keys: ['A', 'B', 'C', 'D', 'E'] });
+    GE.poly(F, 'ADE', { col: C.blue, fa: .25, stroke: false }); GE.poly(F, 'DBCE', { col: C.orange, fa: .12, stroke: false });
+    GE.poly(F, 'ABC', { fill: false, stroke: C.chalk, sw: 2.6 }); GE.seg(F, 'DE', { w: 2.6 });
+    GE.tick(F, 'AD', 1); GE.tick(F, 'DB', 1); GE.tick(F, 'AE', 2); GE.tick(F, 'EC', 2);
+    GE.labels(F, ['A', 'B', 'C', 'D', 'E'], DIR);
+    return F;
+  }
+
+  /* ---- 例題：AB＝12、AC＝15、BC＝18。AD＝4、AE＝5（DE∥BC）→ EC＝10、DE＝6、面積 1：9 ---- */
+  var P1 = tri3(18, 15, 12); P1.D = at(P1.A, P1.B, 1 / 3); P1.E = at(P1.A, P1.C, 1 / 3);
+  GE.verify(P1, 'AB＝12、AC＝15、BC＝18、AD＝4、DB＝8、AE＝5、EC＝10、DE＝6、DE∥BC、AD：DB＝AE：EC、AD：AB＝DE：BC、△ADE∽△ABC', null, '例題');
+  CH.check(CH.near(area(pts(P1, 'ABC')) / area(pts(P1, 'ADE')), 9) && 4 * 10 === 8 * 5 && 4 * 18 === 12 * 6, '例題：x＝10、y＝6、1：9');
+  function fig1(D, R, o) {
+    o = o || {}; var F = GE.fit(D, R, P1, { pad: .1 });
+    GE.poly(F, 'ADE', { col: C.blue, fa: .2, stroke: false });
+    GE.poly(F, 'ABC', { fill: false, stroke: C.chalk, sw: 2.6 }); GE.seg(F, 'DE', { w: 2.6 }); GE.par(F, 'DE', 1); GE.par(F, 'BC', 1);
+    GE.labels(F, ['A', 'B', 'C', 'D', 'E'], DIR);
+    var nl = [-.9, .45], nr = [.9, .45];
+    sideLab(F, P1.A, P1.D, '4cm', nl); sideLab(F, P1.D, P1.B, '8cm', nl); sideLab(F, P1.A, P1.E, '5cm', nr); sideLab(F, P1.E, P1.C, o.x || 'x', nr, { col: o.x ? C.yel : null });
+    sideLab(F, P1.D, P1.E, o.y || 'y', [0, -1], { col: o.y ? C.yel : null }); sideLab(F, P1.B, P1.C, '18cm', [0, -1]);
+    return F;
+  }
+
+  /* ---- 例題（2）：相似な円錐 P（高さ 6）・Q（高さ 10）。P＝54π → 半径 r＝√27 ---- */
+  var RP = Math.sqrt(3 * 54 / 6), RQ = RP * 10 / 6;
+  CH.check(CH.near(RP * RP * 6 / 3, 54) && CH.near(RQ * RQ * 10 / 3, 250) && CH.near(54 * 125 / 27, 250), '例題（2）：Q＝250π');
+  /* 横から見た円錐（底面はだ円）。c：底面の中心、r、h */
+  function cone2(F, c, r, h, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(c), rx = r * F.u, ry = rx * .28, top = F.X([c[0], c[1] + h]), col = o.col || C.blue, a = F.D.ga * (o.a == null ? 1 : o.a);
+    CH.poly(F.D, [[p[0] - rx, p[1]], top, [p[0] + rx, p[1]]], { fill: 'rgba(' + o.rgb + ',' + (o.fa || .35) + ')', stroke: col, sw: 2.4, a: o.a, close: false });
+    g.save(); g.globalAlpha = a; g.strokeStyle = col; g.lineWidth = 2.4; g.fillStyle = 'rgba(' + o.rgb + ',' + (o.fa || .35) * .8 + ')';
+    g.beginPath(); g.ellipse(p[0], p[1], rx, ry, 0, 0, Math.PI); g.fill(); g.stroke();
+    g.setLineDash([6, 5]); g.beginPath(); g.ellipse(p[0], p[1], rx, ry, 0, Math.PI, Math.PI * 2); g.stroke(); g.restore();
+    if (o.hd !== false) { GE.seg(F, [c, [c[0], c[1] + h]], { dash: [6, 5], w: 1.8, col: C.yel, a: o.a }); }
+  }
+
+  /* ---- 考えよう：AB・AC を n 等分（A(2,6)・B(0,0)・C(6,0)） ---- */
+  var P2 = { A: [2, 6], B: [0, 0], C: [6, 0] };
+  CH.check([3, 4, 5].every(function (n) { var S = function (k) { return area([P2.A, at(P2.A, P2.B, k / n), at(P2.A, P2.C, k / n)]); }, s1 = S(1); for (var i = 1; i <= n; i++) if (!CH.near((S(i) - S(i - 1)) / s1, 2 * i - 1)) return false; return true; }), '考えよう（ここで確かめるだけ）');
+  function gridLines(F, P, n, o) {
+    o = o || {}; var st = { w: 1.3, col: o.col || 'rgba(242,240,230,.55)', a: o.a };
+    for (var k = 1; k < n; k++) { GE.seg(F, [at(P.A, P.B, k / n), at(P.C, P.B, k / n)], st); GE.seg(F, [at(P.A, P.C, k / n), at(P.B, P.C, k / n)], st); if (o.all) GE.seg(F, [at(P.A, P.B, k / n), at(P.A, P.C, k / n)], st); }
+  }
+
+  /* ---- チャレンジ：∠C＝90°、AB＝15、AC＝12、BC＝9。AD＝10、DE⊥AB ---- */
+  var P3 = { C: [0, 0], B: [9, 0], A: [0, 12], D: [0, 2] }; P3.E = GE.foot(P3.D, P3.A, P3.B);
+  GE.verify(P3, 'AB＝15、AC＝12、BC＝9、AD＝10、DE⊥AB、∠BAC＝∠DAE、∠ACB＝∠AED＝90°、△ABC∽△ADE、AB：AD＝AC：AE、AE＝8、DE＝6', null, 'チャレンジ');
+
+  K3.run({
+    no: '第20時', title: '「相似な図形」で学んだことを、整理して確かめよう', flat: true, hint: '', alt: '相似な図形のまとめの図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '19.html', label: '◀ 第19時' }],
+    steps: [
+      { tag: '今日の問い', bh: '△ABC（D、E は AB、AC の中点）', q: '△ABC の辺 AB、AC の中点を D、E とする。四角形 DBCE の面積は、△ADE の面積の何倍だろう。予想して、理由も考えよう。',
+        notes: ['① 自分の考え（3分）　予想と、そう考えた理由を書こう。', '② ペアの考え（3分）　自分とちがう理由を書こう。'],
+        draw: function (D) { var F = fig0(D, CH.box(D, { l: .08, r: .08, t: .1, b: .08 })); tx(F, cen(pts(P0, 'ADE')), '△ADE', { size: .8 }); tx(F, [3.2, .8], '四角形 DBCE', { size: .8 }); } },
+      { tag: '今日の問い', q: '四角形 DBCE は、△ADE の何倍？ そのわけは？', a: '3倍', sub: '中点連結定理 DE∥BC、DE＝1/2 BC → △ADE∽△ABC（相似比 1：2）→ 面積の比 1：4。四角形 DBCE は 4−1＝3', dur: 7,
+        b: { t: '中点連結定理 → △ADE∽△ABC（1：2）→ 面積 1：4 → 四角形 DBCE は <b>3倍</b>', col: C.yel },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .25 ? 'DE∥BC、DE＝BC の半分（中点連結定理）' : s.t < .8 ? '△ADE と合同な三角形が、ぜんぶで 4こ' : '面積の比 1：4 → 四角形 DBCE は 3こ分'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = fig0(D, CH.box(D, { l: .08, r: .08, t: .14, b: .08 })), a1 = CH.smooth(.02, .1, t) * (1 - CH.smooth(.22, .28, t)), src = pts(P0, 'ADE');
+          if (a1 > 0) { GE.seg(F, 'DE', { col: C.yel, w: 5, glow: true, a: a1 }); GE.seg(F, 'BC', { col: C.yel, w: 3, a: a1 }); GE.par(F, 'DE', 1, { col: C.yel, a: a1 }); GE.par(F, 'BC', 1, { col: C.yel, a: a1 }); }
+          [['DBF', false, .28], ['EFC', false, .44], ['FED', true, .6]].forEach(function (q, i) {
+            if (t < q[2]) return; var e = CH.ease(CH.smooth(q[2], q[2] + .16, t));
+            GE.polyP(F, moveTo(src, pts(P0, q[0]), q[1], e), { col: C.yel, fa: e >= 1 ? .22 : .4, sw: 2.4 });
+            if (e >= 1) tx(F, cen(pts(P0, q[0])), String(i + 2), { col: C.yel, size: 1.1 });
+          });
+          if (t > .28) tx(F, cen(src), '1', { col: C.blue, size: 1.1 });
+          if (t > .25) GE.labels(F, ['F'], DIR);
+        } },
+      { tag: 'ことば', bh: 'ことば　単元の整理', q: '「相似な図形」で学んだことを整理しよう。相似条件・平行線と比・中点連結定理・面積と体積の比は？', a: '相似の 4つのまとまり（整理図）',
+        sub: '相似条件は 3つ。DE∥BC → AD：AB＝AE：AC＝DE：BC。中点連結定理 MN∥BC、MN＝1/2 BC。相似比 m：n → 面積 m²：n²、体積 m³：n³', dur: 5,
+        b: [{ t: '<b>相似条件</b>：3組の辺の比／2組の辺の比とその間の角／2組の角', col: C.green }, { t: 'DE∥BC → <b>AD：AB＝AE：AC＝DE：BC</b>（AD：DB＝AE：EC）', col: C.green },
+          { t: '<b>中点連結定理</b>：MN∥BC、MN＝1/2 BC', col: C.green }, { t: '相似比 m：n → 周 m：n、面積 <b>m²：n²</b>、体積 <b>m³：n³</b>', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .03, r: .03, t: .06, b: .04 }), t = D.ph ? D.t : 0, fs = Math.min(CH.fs(D, .9), D.W / 26), wide = D.W > D.H * 1.05;
+          var cw = R.w * (wide ? .42 : .47), chh = R.h * .2, cx = R.cx, cy = R.cy;
+          var nodes = [['相似条件', ['3組の辺の比', '2組の辺の比とその間の角', '2組の角'], -1, -1], ['平行線と比', ['DE∥BC のとき', 'AD：AB＝AE：AC＝DE：BC'], 1, -1], ['中点連結定理', ['MN∥BC', 'MN＝1/2 BC'], -1, 1], ['面積・体積', ['相似比 m：n のとき', '面積 m²：n²、体積 m³：n³'], 1, 1]];
+          chh = Math.min(R.h * .3, fs * 6.2);
+          nodes.forEach(function (n, i) {
+            var x = cx + n[2] * (R.w / 2 - cw / 2), y = cy + n[3] * (R.h / 2 - chh / 2 - R.h * .02), a = D.ph ? CH.smooth(.05 + i * .2, .2 + i * .2, t) : 0, col = [C.blue, C.orange, C.pink, C.yel][i];
+            CH.line(D, cx, cy, x, y, { col: 'rgba(242,240,230,.4)', w: 2 });
+            CH.card(D, x, y, cw, chh, '', { col: col, fill: 'rgba(23,56,41,.95)', sw: 2 });
+            CH.text(D, x, y - chh / 2 + fs * 1.1, n[0], { size: fs * 1.05, col: col });
+            var ls = a > 0 ? n[1] : ['？'], y0 = y - chh / 2 + fs * 2.5 + (3 - ls.length) * fs * .55;
+            ls.forEach(function (l, j) { CH.text(D, x, y0 + j * fs * 1.15, l, { size: CH.fitSize(D, l, cw * .92, fs * .85), a: a > 0 ? a : 1, col: a > 0 ? C.chalk : 'rgba(242,240,230,.5)' }); });
+          });
+          CH.card(D, cx, cy, Math.min(R.w * .22, fs * 6), fs * 2.4, '', { col: C.green, fill: 'rgba(23,56,41,.95)', sw: 2.4 }); CH.text(D, cx, cy, '相似', { size: fs * 1.3, col: C.green });
+        } },
+      { tag: '例題', bh: '例題　DE∥BC の x・y と面積の比', q: '図で、DE∥BC である。x、y の値と、△ADE と △ABC の面積の比を求めよう。',
+        a: 'x＝10、y＝6、面積の比 1：9', sub: 'x … AD：DB＝AE：EC　4：8＝5：x　y … AD：AB＝DE：BC　4：12＝y：18　相似比 1：3 → 面積の比 1：9', dur: 9,
+        b: [{ t: 'x … AD：DB＝AE：EC → 4：8＝5：x → <b>x＝10</b>', col: C.blue }, { t: 'y … AD：AB＝DE：BC → 4：12＝y：18 → <b>y＝6</b>　面積の比 <b>1：9</b>', col: C.blue }],
+        banner: function (s) { if (!s.ph) return ''; return s.t < .36 ? 'x：辺を分けた比 AD：DB＝AE：EC → 4：8＝5：x' : s.t < .78 ? 'y：三角形どうしの比 AD：AB＝DE：BC → 4：12＝y：18' : '相似比 1：3 → 面積の比 1：9'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = fig1(D, CH.box(D, { l: .06, r: .06, t: .14, b: .08 }), { x: t > .3 ? '10cm' : null, y: t > .72 ? '6cm' : null }), a1 = CH.smooth(.04, .12, t) * (1 - CH.smooth(.34, .4, t)), a2 = CH.smooth(.42, .5, t) * (1 - CH.smooth(.76, .8, t));
+          if (a1 > 0) { GE.seg(F, 'AD', { col: C.yel, w: 5, glow: true, a: a1 }); GE.seg(F, 'AE', { col: C.yel, w: 5, glow: true, a: a1 }); GE.seg(F, 'DB', { col: C.pink, w: 5, glow: true, a: a1 }); GE.seg(F, 'EC', { col: C.pink, w: 5, glow: true, a: a1 }); }
+          if (a2 > 0) { GE.polyP(F, GE.moveTri(P1, 'ADE', 'ABC', CH.smooth(.44, .7, t)), { col: C.yel, fa: .2, sw: 3, a: a2 }); }
+          if (t > .8) { var a3 = CH.smooth(.8, .9, t); gridLines(F, P1, 3, { all: true, a: a3, col: 'rgba(255,226,122,.7)' }); }
+        } },
+      { tag: '例題', bh: '例題（2）　相似な円錐の体積', q: '（2）相似な 2つの円錐 P、Q があり、高さは 6cm と 10cm である。P の体積が 54π cm³ のとき、Q の体積は？',
+        a: '250π cm³', sub: '相似比 6：10＝3：5、体積の比 27：125。54π：x＝27：125 → x＝250π', dur: 5,
+        b: { t: '（2）相似比 3：5 → 体積の比 27：125 → Q＝<b>250π cm³</b>', col: C.blue },
+        banner: function (s) { return s.ph ? (s.t < .6 ? 'P を 5/3 倍に拡大すると Q（相似比 3：5）' : '体積の比 3³：5³＝27：125') : ''; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .08, r: .08, t: .14, b: .1 }), F = GE.fit(D, CH.rect(R.x0, R.y0, R.x1, R.y1 - CH.fs(D) * 2.2), { a: [-RP - .5, -2], b: [16 + RQ + .5, 10.6] }, { pad: .02 });
+          cone2(F, [0, 0], RP, 6, { col: C.pink, rgb: '255,157,178' }); cone2(F, [16, 0], RQ, 10, { col: C.blue, rgb: '154,216,255' });
+          if (t > .03 && t < .62) { var e = CH.ease(CH.smooth(.05, .5, t)), k = 1 + 2 / 3 * e; cone2(F, [16 * e, 0], RP * k, 6 * k, { col: C.yel, rgb: '255,226,122', fa: .2, hd: false }); }
+          tx(F, [0, 3], '6cm', { col: C.yel, dx: .3, align: 'left', size: .85 }); tx(F, [16, 5], '10cm', { col: C.yel, dx: .3, align: 'left', size: .85 });
+          var p = F.X([0, 0]), q = F.X([16, 0]);
+          CH.text(D, p[0], p[1] + RP * F.u * .28 + F.s * 1.1, 'P　54π cm³', { size: F.s * .95, col: C.pink }); CH.text(D, q[0], q[1] + RQ * F.u * .28 + F.s * 1.1, 'Q　' + (t > .6 ? '250π cm³' : '？'), { size: F.s * .95, col: t > .6 ? C.yel : C.blue });
+        } },
+      { tag: '考えよう', q: '△ABC の辺 AB、AC を、それぞれ 3等分する点をとり、BC に平行な 2本の線をひいて、3つの部分に分ける。上から順に、3つの部分の面積の比を調べよう。4等分、5等分ではどうなるか、きまりを探そう。',
+        notes: ['3等分・4等分・5等分の「上から順の面積の比」を、表にまとめよう。', '気づいたこと。6等分のときの比を予想して、理由も書こう。', 'スライダーで、等分の数と、マス目（小さい三角形）を変えられます。'],
+        sliders: [{ key: 'n', label: '等分の数', min: 2, max: 6, step: 1, val: 3, fmt: function (x) { return x + '等分'; } },
+          { key: 'g', label: 'マス目', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? 'あり' : 'なし'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .06, b: .04 }), F = GE.fit(D, R, P2, { pad: .08 }), n = D.V.n, cols = [C.blue, C.green, C.orange, C.pink, C.lav, C.yel];
+          for (var k = n; k >= 1; k--) GE.polyP(F, [P2.A, at(P2.A, P2.B, k / n), at(P2.A, P2.C, k / n)], { col: cols[k - 1], fa: .3, stroke: false });
+          if (D.V.g) gridLines(F, P2, n);
+          GE.poly(F, 'ABC', { fill: false, stroke: C.chalk, sw: 2.6 });
+          for (var j = 1; j < n; j++) { GE.seg(F, [at(P2.A, P2.B, j / n), at(P2.A, P2.C, j / n)], { w: 2.6 }); GE.par(F, [at(P2.A, P2.B, j / n), at(P2.A, P2.C, j / n)], 1, { shift: 1.2 }); }
+          GE.par(F, 'BC', 1, { shift: 1.2 });
+          for (var i = 0; i <= n; i++) { GE.dot(F, at(P2.A, P2.B, i / n)); GE.dot(F, at(P2.A, P2.C, i / n)); }
+          GE.labels(F, ['A', 'B', 'C'], { dir: { A: 'n', B: 'sw', C: 'se' } });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ　直角三角形', q: '∠C＝90° の直角三角形 ABC で、AB＝15cm、AC＝12cm、BC＝9cm。辺 AC 上に AD＝10cm となる点 D をとり、D から辺 AB に垂線 DE をひく。① △ABC∽△ADE を証明しよう。② AE の長さは？',
+        a: '② AE＝8cm', sub: '① ∠BAC＝∠DAE（共通な角）、∠ACB＝∠AED＝90°。2組の角が、それぞれ等しいから △ABC∽△ADE　② AB：AD＝AC：AE → 15：10＝12：AE → AE＝8', dur: 8,
+        b: [{ t: '① 共通な角 ∠BAC＝∠DAE、∠ACB＝∠AED＝90° → 2組の角 → △ABC∽△ADE', col: C.orange }, { t: '② AB：AD＝AC：AE → 15：10＝12：AE → <b>AE＝8cm</b>', col: C.orange }],
+        banner: function (s) { if (!s.ph) return ''; return s.t < .4 ? '∠A は共通、∠C と ∠E は 90°' : s.t < .78 ? '△ADE を裏返して拡大すると、△ABC に重なる' : 'AE に対応するのは AC → 15：10＝12：AE'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .06, r: .06, t: .14, b: .06 }), F = GE.fit(D, R, P3, { pad: .1 });
+          GE.poly(F, 'ADE', { col: C.blue, fa: .25, stroke: false }); GE.poly(F, 'ABC', { fill: false, stroke: C.chalk, sw: 2.6 }); GE.seg(F, 'DE', { w: 2.6 });
+          GE.right(F, 'ACB'); GE.right(F, 'AED');
+          var a1 = CH.smooth(.04, .14, t), a2 = CH.smooth(.18, .28, t);
+          if (a1 > 0) GE.arc(F, 'CAB', { col: C.yel, fill: .45, a: a1, r: F.s * 1.6 });
+          if (a2 > 0) { GE.right(F, 'ACB', { col: C.pink, fill: true, a: a2 }); GE.right(F, 'AED', { col: C.pink, fill: true, a: a2 }); }
+          if (t > .4 && t < .8) GE.polyP(F, GE.moveTri(P3, 'ADE', 'ABC', CH.smooth(.42, .76, t)), { col: C.yel, fa: .22, sw: 3 });
+          sideLab(F, P3.A, P3.D, '10cm', [-1, 0], { k: 1.6 }); sideLab(F, P3.C, P3.B, '9cm', [0, -1]); tx(F, at(P3.A, P3.B, .78), '15cm', { dx: .8 * 1.5, dy: -.6 * 1.5, size: .9 });
+          if (t > .78) { var a3 = CH.smooth(.78, .88, t); GE.seg(F, 'AE', { col: C.yel, w: 5, glow: true, a: a3 }); GE.seg(F, 'AC', { col: C.yel, w: 4, a: a3 }); sideLab(F, P3.A, P3.E, 'AE＝8cm', [.8, .6], { col: C.yel, a: a3, k: 2.4 }); }
+          GE.labels(F, ['A', 'B', 'C', 'D', 'E'], { dir: { A: 'n', B: 'se', C: 'sw', D: 'w', E: 'ne' } });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

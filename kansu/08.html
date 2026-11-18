@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>y＝ax² の変化の割合</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 関数 y＝ax² 第8時：変化の割合は、一次関数とどうちがうだろう（ikkan の lesson_kansu_08 と同じ流れ）。
+   表の下に y の増え方（＋1・＋3・＋5・＋7 と ＋2・＋2・…）、グラフには 1 ずつの階段。変化の割合は、放物線の上の 2点を結ぶ直線の傾き。
+   区間をずらすと、一次関数の傾きは同じ、放物線の 2点を結ぶ直線は かたむきが変わる。考えようは、y＝x² と y＝2x² の区間を動かす道具（きまりは書かない）。
+   数値は ikkan と同じ（ikkan で自作したもの）（y＝x² と y＝2x＋1、例題 y＝1/2x²、考えよう、チャレンジ y＝2x² で a から a＋4）。図・表・答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, OUT = 'rgba(20,40,30,.92)';
+  /* ---- 分数入りの字（[2/3] をたての分数に）。canvas 用（measure で幅だけ）と、右の板書（HTML）用 ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    if (o.measure) return w;
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+  function sg(v) { return (v >= 0 ? '＋' : '') + S(v); }
+  /* 座標平面。o：x・y（範囲）、gx・gy（方眼）、lx・ly（目もりの字の間かく）、asp（横÷縦の上限）、ux・uy（単位） */
+  function plane(D, R, o) {
+    var s = CH.fs(D, .72), xr = o.x, yr = o.y, gx = o.gx || 1, gy = o.gy || 1, lx = o.lx || gx, ly = o.ly || gy, g = D.ctx, i, v;
+    var Rp = CH.rect(R.x0 + s * (o.pl == null ? 2.4 : o.pl), R.y0 + s * 1.9, R.x1 - s * 2.1, R.y1 - s * (o.ux && yr[0] >= 0 ? 2.8 : 1.6));
+    if (o.asp && Rp.w > Rp.h * o.asp) { v = Rp.h * o.asp; Rp = CH.rect(Rp.cx - v / 2, Rp.y0, Rp.cx + v / 2, Rp.y1); }
+    var X = function (x) { return Rp.x0 + (x - xr[0]) / (xr[1] - xr[0]) * Rp.w; }, Y = function (y) { return Rp.y1 - (y - yr[0]) / (yr[1] - yr[0]) * Rp.h; };
+    g.save(); g.globalAlpha = D.ga; g.strokeStyle = 'rgba(242,240,230,.12)'; g.lineWidth = 1; g.beginPath();
+    for (i = Math.ceil(xr[0] / gx - 1e-9); i * gx <= xr[1] + 1e-9; i++) { g.moveTo(X(i * gx), Rp.y0); g.lineTo(X(i * gx), Rp.y1); }
+    for (i = Math.ceil(yr[0] / gy - 1e-9); i * gy <= yr[1] + 1e-9; i++) { g.moveTo(Rp.x0, Y(i * gy)); g.lineTo(Rp.x1, Y(i * gy)); }
+    g.stroke(); g.restore();
+    var Pl = CH.plane(D, Rp, { x: xr, y: yr, fit: false, grid: false, nums: false });
+    var ox = CH.clamp(0, xr[0], xr[1]), oy = CH.clamp(0, yr[0], yr[1]);
+    for (i = Math.ceil(xr[0] / lx - 1e-9); i * lx <= xr[1] + 1e-9; i++) { v = i * lx; if (!i) continue; CH.line(D, X(v), Y(oy) - 4, X(v), Y(oy) + 4, { w: 1.4 }); CH.text(D, X(v), Y(oy) + s, S(v), { size: s, num: true }); }
+    for (i = Math.ceil(yr[0] / ly - 1e-9); i * ly <= yr[1] + 1e-9; i++) { v = i * ly; if (!i) continue; CH.line(D, X(ox) - 4, Y(v), X(ox) + 4, Y(v), { w: 1.4 }); CH.text(D, X(ox) - s * .6, Y(v), S(v), { size: s, num: true, align: 'right' }); }
+    if (o.ux) CH.text(D, Rp.x1 + s * .3, Y(oy) + s * 2.1, o.ux, { size: s, align: 'right', col: 'rgba(242,240,230,.75)' });
+    if (o.uy) CH.text(D, X(ox) + s * 1.7, Rp.y0 - s * .9, o.uy, { size: s, align: 'left', col: 'rgba(242,240,230,.75)' });
+    return Pl;
+  }
+  function lab(D, Pl, x, y, txt, col, o) { o = o || {}; return TX(D, Pl.X(x) + (o.dx || 0), Pl.Y(y) + (o.dy || 0), txt, { col: col, size: o.size || CH.fs(D, .85), align: o.align || 'left', outline: OUT, a: o.a }); }
+  function glow(D, Pl, x, y, col, a) { var r = CH.fs(D, .3); CH.circle(D, Pl.X(x), Pl.Y(y), r * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
+  /* 字の行（左そろえ）。四角 R の幅に入らないときは、ぜんぶ同じだけ小さく */
+  function lines(D, R, L, size) {
+    var s = size || CH.fs(D, .95), wm = 1, gap = 1.75;
+    L.forEach(function (l) { if (l) wm = Math.max(wm, TX(D, 0, 0, l.t, { size: s, measure: true })); });
+    s *= Math.min(1, R.w / wm, R.h / (L.length * gap * s));
+    L.forEach(function (l, i) { if (l && l.a !== 0) TX(D, R.x0, R.y0 + s * (.95 + i * gap), l.t, { size: s, col: l.col || C.chalk, a: l.a, align: 'left' }); });
+  }
+  /* 字の行（上）と、座標平面の四角（下） */
+  function strip(D, n) {
+    var R = CH.box(D, { l: .02, r: .02, t: .01, b: .02 }), s = CH.fs(D, .95), h = n * 1.75 * s;
+    return { T: CH.rect(R.x0 + R.w * .04, R.y0, R.x1 - R.w * .02, R.y0 + h), P: CH.rect(R.x0, R.y0 + h, R.x1, R.y1) };
+  }
+  /* 2点を結ぶ直線（のばした線はうすく）と、増加量の三角形 */
+  function sec(D, Pl, f, p, q, col, o) {
+    o = o || {}; var m = (f(q) - f(p)) / (q - p), a = o.a == null ? 1 : o.a;
+    if (o.ext !== false) CH.lin(D, Pl, m, f(p) - m * p, { col: col, w: 1.6, a: a * .5, dash: [7, 7] });
+    CH.pseg(D, Pl, [p, f(p)], [q, f(q)], { col: col, w: 3.2, a: a, glow: true });
+    CH.pt(D, Pl, p, f(p), { col: col, a: a, r: CH.fs(D, .27) }); CH.pt(D, Pl, q, f(q), { col: col, a: a, r: CH.fs(D, .27) });
+  }
+  function tri(D, Pl, f, p, q, col, o) {
+    o = o || {}; var fp = f(p), fq = f(q), s = CH.fs(D, o.k || .8), a = o.a, up = fq >= fp;
+    CH.pseg(D, Pl, [p, fp], [q, fp], { col: col, w: 2.2, dash: true, a: a });
+    CH.pseg(D, Pl, [q, fp], [q, fq], { col: col, w: 2.2, dash: true, a: a });
+    if (o.lx !== false) CH.text(D, Pl.X((p + q) / 2), Pl.Y(fp) + (up ? s * .9 : -s * .9), o.lx || sg(q - p), { col: col, size: s, a: a, outline: OUT });
+    if (o.ly !== false) CH.text(D, Pl.X(q) + (o.left ? -s * .45 : s * .45), Pl.Y((fp + fq) / 2), o.ly || sg(fq - fp), { col: col, size: s, a: a, align: o.left ? 'right' : 'left', outline: OUT });
+  }
+  /* x 軸の上の帯（x の増加量）と、点からおろした点線 */
+  function band(D, Pl, p, q, a) { CH.pseg(D, Pl, [p, 0], [q, 0], { col: C.yel, w: 7, a: (a == null ? 1 : a) * .55 }); }
+  /* 表の下の矢印（セルの中心から中心へ） */
+  function hop(D, x0, x1, y, col, txt, a, sz) {
+    var g = D.ctx, s = sz || CH.fs(D), h = s * 1.05, d = Math.abs(x1 - x0);
+    g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.strokeStyle = col; g.lineWidth = 2.2; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo((x0 + x1) / 2, y + h * 1.6, x1, y); g.stroke(); g.restore();
+    var ang = Math.atan2(-h * 1.6, (x1 - x0) / 2), hd = Math.min(9, d * .25);
+    CH.arrow(D, x1 - Math.cos(ang) * hd * 1.2, y - Math.sin(ang) * hd * 1.2, x1, y, { col: col, a: a, head: hd, w: 2.2 });
+    CH.text(D, (x0 + x1) / 2, y + h * 1.2, txt, { col: col, size: s * .9, a: a, outline: OUT });
+  }
+
+  /* ---- 数（ikkan と同じ）と検算 ---- */
+  var XS = [0, 1, 2, 3, 4], F1 = function (x) { return x * x; }, F2 = function (x) { return 2 * x + 1; }, H = function (x) { return x * x / 2; }, G2 = function (x) { return 2 * x * x; };
+  function RT(f, p, q) { return (f(q) - f(p)) / (q - p); }
+  CH.check(XS.map(F1).join() === '0,1,4,9,16' && XS.map(F2).join() === '1,3,5,7,9', '今日の問いの表');
+  CH.check([0, 1, 2, 3].map(function (x) { return F1(x + 1) - F1(x); }).join() === '1,3,5,7' && [0, 1, 2, 3].every(function (x) { return F2(x + 1) - F2(x) === 2; }), '1 ずつ増えるときの y の増え方');
+  CH.check(RT(F2, 0, 1) === 2 && RT(F2, 0, 3) === 2 && RT(F1, 0, 1) === 1 && RT(F1, 0, 3) === 3, 'ことば（0〜1、0〜3 の変化の割合）');
+  CH.check(H(2) === 2 && H(6) === 18 && H(6) - H(2) === 16 && RT(H, 2, 6) === 4, '例題（1）');
+  CH.check(H(-4) === 8 && H(-2) === 2 && H(-2) - H(-4) === -6 && RT(H, -4, -2) === -3, '例題（2）');
+  CH.check([[1, 2, 3], [1, 3, 4], [2, 4, 6], [3, 5, 8]].every(function (r) { return RT(F1, r[0], r[1]) === r[2] && RT(G2, r[0], r[1]) === 2 * r[2]; }), '考えよう（ここで確かめるだけ）');
+  (function () { var sol = []; for (var a = -10; a <= 10; a += .5) if (CH.near(RT(G2, a, a + 4), 20)) sol.push(a); CH.check(sol.join() === '3' && G2(7) - G2(3) === 80 && 80 / 4 === 20 && [-3, 0, 3].every(function (a) { return CH.near(RT(G2, a, a + 4), 4 * a + 8); }), 'チャレンジ（a＝3）'); })();
+
+  /* 表（上）と座標平面（下） */
+  function tabLay(D) {
+    var R = CH.box(D, { l: .02, r: .02, t: .01, b: .02 }), s = CH.fs(D, .9), rh = s * 1.6;
+    var T = CH.rect(R.x0 + R.w * .04, R.y0 + s * .2, R.x1 - R.w * .04, R.y0 + s * .2 + rh * 5);
+    return { T: T, P: CH.rect(R.x0, T.y1 + s * .2, R.x1, R.y1), s: s, rh: rh };
+  }
+  function table(D, L, o) {
+    o = o || {}; var blank = ['', '', '', '', ''];
+    return CH.table(D, L.T, ['x'].concat(XS.map(S)), [['y＝x²'].concat(XS.map(F1).map(S)), ['増え方'].concat(blank), ['y＝2x＋1'].concat(XS.map(F2).map(S)), ['増え方'].concat(blank)],
+      { fw: .2, size: L.s, rh: L.rh, top: true, hl: o.hl });
+  }
+  function graphs(D, Pl, o) {
+    o = o || {}; var r = CH.fs(D, .22);
+    CH.fn(D, Pl, F1, { col: C.orange, w: 3, a: o.a1 }); CH.lin(D, Pl, 2, 1, { col: C.blue, w: 3, a: o.a2 });
+    if (o.dots !== false) XS.forEach(function (x) { CH.pt(D, Pl, x, F1(x), { col: C.orange, r: r, a: o.a1 }); CH.pt(D, Pl, x, F2(x), { col: C.blue, r: r, a: o.a2 }); });
+    lab(D, Pl, 3.55, 14.6, 'y＝x²', C.orange, { align: 'right', a: o.a1 }); lab(D, Pl, -.5, 4.3, 'y＝2x＋1', C.blue, { a: o.a2 });
+  }
+  function base1(D, L) { return plane(D, L.P, { x: [-.6, 4.6], y: [-1, 17], ly: 2, asp: 1.3 }); }
+
+  K3.run({
+    no: '第8時', title: '変化の割合は、一次関数とどうちがうだろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '07.html', label: '◀ 第7時' }, { href: '09.html', label: '第9時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: 'y＝x² と y＝2x＋1', q: 'y＝x² と一次関数 y＝2x＋1 で、x の値が 1 ずつ増えるとき、y の値は、どれだけ増えるだろう。2つの関数の変わり方のちがいを見つけよう。',
+        notes: ['① 自分の考え（3分）　y の増え方を調べて、気づいたことを書こう。', '② ペアの考え（3分）　自分とちがう見つけ方を書こう。'],
+        draw: function (D) { var L = tabLay(D); table(D, L); graphs(D, base1(D, L)); } },
+      { tag: '今日の問い', q: 'x が 1 増えるごとに、y の値は、どれだけ増える？', a: 'y＝x² … 1、3、5、7 と大きくなる　y＝2x＋1 … いつも 2', sub: '一次関数の増え方は一定。y＝x² は、x が大きくなるほど、y の増え方が大きくなる（グラフは、だんだん急になる）', dur: 8,
+        b: { t: 'x が 1 増えると … y＝x² は ＋1・＋3・＋5・＋7（だんだん大きく）、y＝2x＋1 は いつも ＋2', col: C.yel },
+        draw: function (D) {
+          var L = tabLay(D), t = D.ph ? D.t : 0, T = table(D, L), Pl = base1(D, L);
+          graphs(D, Pl);
+          if (!D.ph) return;
+          [0, 1, 2, 3].forEach(function (i) {
+            var a1 = CH.smooth(.04 + i * .1, .12 + i * .1, t), a2 = CH.smooth(.5 + i * .1, .58 + i * .1, t);
+            if (a1 > 0) { var c0 = T.cell(1, i + 1), c1 = T.cell(1, i + 2); hop(D, c0.cx, c1.cx, c0.y1 + 2, C.orange, sg(F1(i + 1) - F1(i)), a1, L.s * .85); tri(D, Pl, F1, i, i + 1, C.orange, { a: a1, lx: false, k: .75 }); }
+            if (a2 > 0) { var d0 = T.cell(3, i + 1), d1 = T.cell(3, i + 2); hop(D, d0.cx, d1.cx, d0.y1 + 2, C.blue, sg(F2(i + 1) - F2(i)), a2, L.s * .85); tri(D, Pl, F2, i, i + 1, C.blue, { a: a2, lx: false, left: true, k: .75 }); }
+          });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'x の値が増えた量、y の値が増えた量を、それぞれ何という？ (y の増加量)÷(x の増加量) を何という？', a: '増加量・変化の割合',
+        sub: 'グラフでは、2点を結ぶ直線の傾き。y＝2x＋1 はどこでも 2。y＝x² は、0〜1 で 1、0〜3 で 3 と、区間で変わる', dur: 7,
+        b: [{ t: 'x、y の値が増えた量 … x の<b>増加量</b>、y の<b>増加量</b>', col: C.green }, { t: '<b>変化の割合</b>＝[y の増加量/x の増加量]（グラフでは 2点を結ぶ直線の傾き）', col: C.green }, { t: 'y＝ax＋b … いつも a（一定）　y＝ax² … <b>一定でない</b>', col: C.green }],
+        draw: function (D) {
+          var L = strip(D, 3), t = D.ph ? D.t : 0, Pl = plane(D, L.P, { x: [-.6, 4.6], y: [-1, 17], ly: 2, asp: 1.5 });
+          graphs(D, Pl, { dots: false });
+          lines(D, L.T, [{ t: '変化の割合＝[y の増加量/x の増加量]', col: C.green },
+            { t: 'y＝x²　　 0〜1 … 1' + (t > .75 ? '、0〜3 … 3' : ''), col: C.orange, a: CH.smooth(.15, .3, t) },
+            { t: 'y＝2x＋1　0〜1 … 2' + (t > .75 ? '、0〜3 … 2' : ''), col: C.blue, a: CH.smooth(.15, .3, t) }]);
+          if (!D.ph) return;
+          var q = 1 + 2 * CH.ease(CH.smooth(.4, .7, t)), a = CH.smooth(0, .15, t);
+          sec(D, Pl, F2, 0, q, C.blue, { a: a, ext: false }); tri(D, Pl, F2, 0, q, C.blue, { a: a * CH.smooth(.1, .2, t), lx: false, ly: q < 1.05 ? '＋2' : q > 2.95 ? '＋6' : ' ', left: true });
+          sec(D, Pl, F1, 0, q, C.yel, { a: a }); band(D, Pl, 0, q, a); tri(D, Pl, F1, 0, q, C.pink, { a: a * CH.smooth(.1, .2, t), lx: false, ly: q < 1.05 ? '＋1' : q > 2.95 ? '＋9' : ' ' });
+        } },
+      { tag: '例題', bh: '例題　y＝[1/2]x² の変化の割合', q: '（1）y＝[1/2]x² で、x の値が 2 から 6 まで増加するときの、変化の割合を求めよう。', a: '4',
+        sub: 'x＝2 のとき y＝2、x＝6 のとき y＝18。x の増加量 6−2＝4、y の増加量 18−2＝16。[16/4]＝4', dur: 6,
+        b: { t: '（1）2 から 6 … [18−2/6−2]＝[16/4]＝<b>4</b>', col: C.pink },
+        draw: function (D) { ex(D, 2, 6, D.ph ? D.t : 0, D.ph); } },
+      { tag: '例題', q: '（2）y＝[1/2]x² で、x の値が −4 から −2 まで増加するときの、変化の割合を求めよう。', a: '−3',
+        sub: 'x＝−4 のとき y＝8、x＝−2 のとき y＝2。x の増加量 −2−(−4)＝2、y の増加量 2−8＝−6。[−6/2]＝−3（y が減るので負の数）', dur: 6,
+        b: { t: '（2）−4 から −2 … [2−8/−2−(−4)]＝[−6/2]＝<b>−3</b>', col: C.pink },
+        draw: function (D) { ex(D, -4, -2, D.ph ? D.t : 0, D.ph, true); } },
+      { tag: '考えよう', bh: '考えよう', q: 'y＝x² で、x の値が 1 から 2、1 から 3、2 から 4、3 から 5 まで増加するときの、変化の割合を表にまとめよう。どんなきまりがあるだろう。y＝2x² でも調べて、くらべよう。',
+        notes: ['気づいたことを書こう。', 'x が p から q まで増加するとき、変化の割合を p、q で表せるだろうか。', 'スライダーで、x がどこからどこまで増えるかを変えられます（y＝x² と y＝2x² の、2点を結ぶ直線が出ます）。'],
+        sliders: [{ key: 'p', label: 'はじめの x', min: -4, max: 5, step: 1, val: 1, fmt: S }, { key: 'q', label: 'おわりの x', min: -4, max: 5, step: 1, val: 3, fmt: S }],
+        draw: function (D) {
+          var L = strip(D, 3), p = D.V.p, q = D.V.q, m = Math.max(p * p, q * q, 4) * 2, top = m <= 10 ? 10 : m <= 20 ? 20 : m <= 30 ? 30 : 50, gy = top <= 20 ? 1 : 5, ly = top <= 10 ? 2 : top <= 20 ? 4 : 10;
+          var Pl = plane(D, L.P, { x: [-5.5, 5.5], y: [-top * .05, top * 1.04], gy: gy, ly: ly });
+          CH.fn(D, Pl, F1, { col: C.orange, w: 3 }); CH.fn(D, Pl, G2, { col: C.pink, w: 3 });
+          var xo = Math.sqrt(top * .93), xp = Math.sqrt(top * .93 / 2);
+          lab(D, Pl, -xo - .15, top * .93, 'y＝x²', C.orange, { align: 'right' }); lab(D, Pl, xp + .2, top * .93, 'y＝2x²', C.pink);
+          if (q <= p) { lines(D, L.T, [{ t: 'x：' + S(p) + ' → ' + S(q) }, { t: 'おわりの x を、はじめの x より大きくしよう', col: C.pink }, { t: '' }]); return; }
+          sec(D, Pl, F1, p, q, C.orange); sec(D, Pl, G2, p, q, C.pink);
+          band(D, Pl, p, q);
+          lines(D, L.T, [{ t: 'x：' + S(p) + ' → ' + S(q) + '（x の増加量 ' + S(q - p) + '）', col: C.yel },
+            { t: 'y＝x²　 y：' + S(F1(p)) + ' → ' + S(F1(q)) + '　変化の割合 [' + S(F1(q) - F1(p)) + '/' + S(q - p) + ']＝' + S(RT(F1, p, q)), col: C.orange },
+            { t: 'y＝2x²　y：' + S(G2(p)) + ' → ' + S(G2(q)) + '　変化の割合 [' + S(G2(q) - G2(p)) + '/' + S(q - p) + ']＝' + S(RT(G2, p, q)), col: C.pink }]);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'y＝2x² で、x の値が a から a＋4 まで増加するときの変化の割合が 20 である。a の値を求めよう。', a: 'a＝3',
+        sub: 'x の増加量は 4。y の増加量は 2(a＋4)²−2a²＝16a＋32。変化の割合 [16a＋32/4]＝4a＋8＝20 より a＝3（2×7²−2×3²＝80、[80/4]＝20）', dur: 8,
+        b: { t: '[2(a＋4)²−2a²/4]＝4a＋8＝20 → <b>a＝3</b>', col: C.orange },
+        draw: function (D) {
+          var L = strip(D, 3), t = D.ph ? D.t : 0, Pl = plane(D, L.P, { x: [-4.5, 8.5], y: [-6, 104], gy: 10, ly: 20 });
+          CH.fn(D, Pl, G2, { col: C.pink, w: 3 }); lab(D, Pl, -3.2, 60, 'y＝2x²', C.pink);
+          var a = D.ph ? CH.lerp(-3, 3, CH.ease(CH.smooth(.05, .6, t))) : 0, a1 = Math.round(a * 10) / 10;
+          sec(D, Pl, G2, a, a + 4, C.yel);
+          band(D, Pl, a, a + 4); CH.text(D, Pl.X(a + 2), Pl.Y(0) - CH.fs(D, .75), '＋4', { col: C.yel, size: CH.fs(D, .8), outline: OUT });
+          if (t > .62) tri(D, Pl, G2, 3, 7, C.orange, { a: CH.smooth(.62, .72, t), lx: false, left: true });
+          lines(D, L.T, [{ t: D.ph ? 'a＝' + S(a1) + ' のとき、変化の割合 ' + S(Math.round((4 * a1 + 8) * 10) / 10) : 'x：a → a＋4（x の増加量 4）', col: C.yel },
+            { t: 'y の増加量　2(a＋4)²−2a²＝16a＋32', a: CH.smooth(.66, .76, t) },
+            { t: '変化の割合　[16a＋32/4]＝4a＋8＝20 → a＝3', col: C.orange, a: CH.smooth(.8, .9, t) }]);
+        } }
+    ])
+  });
+
+  /* 例題の図：y＝1/2x² の p から q まで */
+  function ex(D, p, q, t, on, old) {
+    var L = strip(D, 3), Pl = plane(D, L.P, { x: [-6.5, 7], y: [-1, 19.5], ly: 2 }), a1 = CH.smooth(0, .2, t), a2 = CH.smooth(.25, .45, t), a3 = CH.smooth(.55, .7, t);
+    CH.fn(D, Pl, H, { col: C.orange, w: 3 }); lab(D, Pl, -6.3, 17.5, 'y＝[1/2]x²', C.orange);
+    if (old) { sec(D, Pl, H, 2, 6, C.yel, { a: .3, ext: false }); }
+    if (!on) { lines(D, L.T, [{ t: 'x：' + S(p) + ' → ' + S(q), col: C.yel }, { t: '' }, { t: '' }]); return; }
+    [p, q].forEach(function (x) { CH.pseg(D, Pl, [x, 0], [x, H(x)], { col: C.blue, dash: true, w: 1.6, a: a1 }); CH.pt(D, Pl, x, H(x), { col: C.yel, r: CH.fs(D, .3), a: a1, lab: '(' + S(x) + ', ' + S(H(x)) + ')', dir: x > 0 ? (x > 4 ? 'w' : 'se') : (x < -3 ? 'sw' : 'se') }); });
+    if (t > .25) tri(D, Pl, H, p, q, C.pink, { a: a2, left: p < 0 });
+    if (t > .55) sec(D, Pl, H, p, q, C.yel, { a: a3 });
+    lines(D, L.T, [{ t: 'x＝' + S(p) + ' のとき y＝' + S(H(p)) + '、x＝' + S(q) + ' のとき y＝' + S(H(q)), col: C.yel, a: a1 },
+      { t: 'x の増加量 ' + S(q - p) + '、y の増加量 ' + S(H(q) - H(p)), col: C.pink, a: a2 },
+      { t: '変化の割合＝[' + S(H(q) - H(p)) + '/' + S(q - p) + ']＝' + S(RT(H, p, q)), col: C.orange, a: a3 }]);
+  }
+})();
+</script>
+</body>
+</html>

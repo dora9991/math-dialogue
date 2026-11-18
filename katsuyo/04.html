@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>相対度数でくらべる</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="js/chart.js"></script>
+<script>
+/* データの活用 第4時：人数のちがう2つの集団を、公平にくらべよう（ikkan の lesson_data_new_04 と同じ流れ）。
+   度数のグラフが、相対度数のグラフに のび縮みする。 */
+(function () {
+  var C = CH.C, E = [0, 2, 4, 6, 8, 10], Y1 = [6, 14, 16, 10, 4], Y2 = [8, 14, 10, 6, 2];
+  var R1 = Y1.map(function (x) { return x / 50; }), R2 = Y2.map(function (x) { return x / 40; });
+  CH.check(CH.f2(R1[2] + R1[3] + R1[4]) === '0.60' && CH.f2(R2[2] + R2[3] + R2[4]) === '0.45', '4冊以上の割合');
+  CH.check(CH.near(0.35 * 40 - 0.15 * 40, 8) && 40 * .15 === 6 && CH.near(40 * .35, 14), 'チャレンジ');
+  /* 2学年をならべた棒（k：0 で度数、1 で相対度数） */
+  function pair(D, k, o) {
+    o = o || {}; var R = CH.box(D, { l: .12, t: .1, b: .16 }), ymax = CH.lerp(18, .4, k), step = k > .5 ? .1 : 4;
+    var yt = []; for (var y = 0; y <= ymax + 1e-9; y += step) yt.push(Math.round(y * 100) / 100);
+    var Ax = CH.axes(D, R, { x: [0, 10], y: [0, ymax], xt: E, yt: yt, xl: '（冊）', yl: k > .5 ? '相対度数' : '（人）', yf: function (v) { return k > .5 ? v.toFixed(1) : String(v); } });
+    var v1 = Y1.map(function (x, i) { return CH.lerp(x, R1[i], k); }), v2 = Y2.map(function (x, i) { return CH.lerp(x, R2[i], k); });
+    var e1 = [], e2 = []; E.slice(0, 5).forEach(function (x) { e1.push(x + .15, x + 1); e2.push(x + 1, x + 1.85); });
+    v1.forEach(function (h, i) { CH.bars(D, Ax, [E[i] + .15, E[i] + 1], [h], { col: C.blue, a: o.dim && o.dim(i) ? .3 : 1, hl: o.hl ? function () { return o.hl(i, 1); } : null, labels: o.labels, fmt: function (x) { return k > .5 ? CH.f2(x) : String(Math.round(x)); } }); });
+    v2.forEach(function (h, i) { CH.bars(D, Ax, [E[i] + 1, E[i] + 1.85], [h], { col: C.orange, a: o.dim && o.dim(i) ? .3 : 1, hl: o.hl ? function () { return o.hl(i, 2); } : null, labels: o.labels, fmt: function (x) { return k > .5 ? CH.f2(x) : String(Math.round(x)); } }); });
+    CH.text(D, R.x1 - R.w * .2, R.y0 + Ax.s, '■ 1年生（50人）', { col: C.blue, size: Ax.s }); CH.text(D, R.x1 - R.w * .2, R.y0 + Ax.s * 2.3, '■ 2年生（40人）', { col: C.orange, size: Ax.s });
+    return Ax;
+  }
+
+  K3.run({
+    no: '第4時', title: '人数のちがう2つの集団を、公平にくらべよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '03.html', label: '◀ 第3時' }, { href: '05.html', label: '第5時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '図書室で借りた本の冊数（1年生50人・2年生40人）', q: '「6冊以上8冊未満」の人は、1年生 10人、2年生 6人だった。「1年生のほうが、よく本を借りている」といえるだろうか。',
+        notes: ['① 自分の考え（3分）　いえるか、いえないか。わけも。', '② ペアの考え（3分）'],
+        draw: function (D) { pair(D, 0, { labels: true, hl: function (i) { return i === 3 ? C.yel : null; } }); } },
+      { tag: '今日の問い', q: '人数がちがうとき、どうくらべる？', a: '全体に対する割合でくらべる', sub: '6〜8冊　1年生 10÷50＝0.20、2年生 6÷40＝0.15', dur: 3,
+        b: { t: '全体の人数がちがう → <b>割合</b>でくらべる（10÷50＝0.20、6÷40＝0.15）', col: C.yel },
+        draw: function (D) { pair(D, D.ph ? CH.ease(D.t) : 0, { labels: !D.ph || D.t >= 1, hl: function (i) { return i === 3 ? C.yel : null; } }); } },
+      { tag: 'ことば', bh: 'ことば', q: '各階級の度数の、全体に対する割合を何という？ すべてたすと？', a: '相対度数。合計は 1', sub: '相対度数 ＝ その階級の度数 ÷ 度数の合計', dur: 3.5,
+        b: [{ t: '<b>相対度数</b> ＝ その階級の度数 ÷ 度数の合計', col: C.green }, { t: '相対度数を すべてたすと <b>1</b>', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .14, t: .08, b: .14 }), Ax = CH.axes(D, R, { x: [0, 12], y: [0, 1], xt: [], yt: [0, .2, .4, .6, .8, 1], yf: function (v) { return v.toFixed(1); }, yl: '相対度数' }), t = D.ph ? D.t : 0, acc = 0;
+          var cols = [C.blue, C.green, C.yel, C.orange, C.pink];
+          R1.forEach(function (r, i) {
+            var k = CH.ease(CH.clamp(t * 1.5 - i * .1, 0, 1)), x0 = CH.lerp(i * 2 + .2, 10.3, k), x1 = x0 + 1.4, y0 = CH.lerp(0, acc, k);
+            CH.fillRect(D, Ax.X(x0), Ax.Y(y0 + r), Ax.X(x1), Ax.Y(y0), { fill: 'rgba(154,216,255,.25)', stroke: cols[i] });
+            CH.text(D, Ax.X(x0 + .7), Ax.Y(y0 + r / 2), CH.f2(r), { size: Ax.s * .9, num: true, col: cols[i] });
+            if (k < .5) CH.text(D, Ax.X(i * 2 + .9), Ax.R.y1 + Ax.s, ['0〜2', '2〜4', '4〜6', '6〜8', '8〜10'][i], { size: Ax.s * .85 });
+            acc += r;
+          });
+          if (t > .9) CH.text(D, Ax.X(11), Ax.Y(1) - Ax.s * 1.2, '合計 1.00', { col: C.yel, a: CH.smooth(.9, 1, t) });
+        } },
+      { tag: '例題', bh: '例題　相対度数でくらべる', q: '4冊以上 借りた人の割合は、どちらの学年が大きい？', a: '1年生（0.60 と 0.45）', sub: '4〜6・6〜8・8〜10 の相対度数をたす　1年 0.32＋0.20＋0.08＝0.60、2年 0.25＋0.15＋0.05＝0.45', dur: 1.5,
+        b: [{ t: '1年生　0.12・0.28・0.32・0.20・0.08', col: C.blue }, { t: '2年生　0.20・0.35・0.25・0.15・0.05', col: C.orange }, { t: '4冊以上 … 1年 <b>0.60</b>、2年 <b>0.45</b> → 1年生のほうが大きい', col: C.yel }],
+        draw: function (D) { pair(D, 1, { labels: true, dim: function (i) { return D.ph && i < 2; } }); } },
+      { tag: '考えよう', q: '相対度数が大きければ、人数も多いといえるだろうか。「全校600人のうちの 0.1」と「学級30人のうちの 0.5」をくらべて、説明しよう。',
+        notes: ['人数（度数）を求めて、気づいたことを。', '相対度数でくらべるのがよいのは、どんなとき？ 度数でくらべるのがよいのは？', 'スライダーで、相対度数の分だけ 色をぬれます。'],
+        sliders: [{ key: 'k', label: '色をぬる', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? 'ぬる' : '—'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .12, b: .1 }), rs = CH.split(D, R, 2, .1);
+          CH.grid(D, CH.rect(rs[0].x0, rs[0].y0 + 30, rs[0].x1, rs[0].y1), 600, { cols: 30, k: .4, on: function (i) { return D.V.k && i < 60 ? C.yel : null; } });
+          CH.grid(D, CH.rect(rs[1].x0 + rs[1].w * .2, rs[1].y0 + 30, rs[1].x1 - rs[1].w * .2, rs[1].y1), 30, { cols: 6, on: function (i) { return D.V.k && i < 15 ? C.pink : null; } });
+          CH.text(D, rs[0].cx, rs[0].y0 + 8, '全校 600人　相対度数 0.1', { size: CH.fs(D, .85), col: C.yel }); CH.text(D, rs[1].cx, rs[1].y0 + 8, '学級 30人　相対度数 0.5', { size: CH.fs(D, .85), col: C.pink });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'ある階級の相対度数は 0.15、となりの階級は 0.35。この2つの階級の度数の差は 8人。度数の合計と、2つの階級の度数は？',
+        a: '合計 40人、度数 6人 と 14人', sub: '相対度数の差 0.20 が 8人 → 0.1 が 4人 → 1（全体）が 40人', dur: 5,
+        b: { t: '0.35N − 0.15N ＝ 8 → 0.2N ＝ 8 → N ＝ <b>40</b>（6人・14人）', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .08, r: .08, t: .14, b: .2 }), h = Math.min(R.h * .16, 54), t = D.ph ? D.t : 0, s = CH.fs(D);
+          CH.tape(D, R.x0, R.y0, R.w, h, [{ v: .15, col: C.blue, txt: '0.15' }, { v: .85, col: '#7d8a84', txt: '', a: .5 }], 1);
+          CH.tape(D, R.x0, R.y0 + h * 1.6, R.w, h, [{ v: .35, col: C.orange, txt: '0.35' }, { v: .65, col: '#7d8a84', txt: '', a: .5 }], 1);
+          if (t > .1) { var a = CH.smooth(.1, .35, t), x0 = R.x0 + R.w * .15, x1 = R.x0 + R.w * .35; CH.fillRect(D, x0, R.y0 + h * 1.6, x1, R.y0 + h * 2.6, { fill: 'rgba(255,226,122,.45)', stroke: C.yel, sw: 3, a: a }); CH.text(D, (x0 + x1) / 2, R.y0 + h * 3.1, '0.20 → 8人', { col: C.yel, a: a }); }
+          if (t > .45) { var a2 = CH.smooth(.45, .75, t); CH.tape(D, R.x0, R.y0 + h * 4, R.w, h, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (i) { return { v: .1, col: C.green, txt: '4' }; }), 1, { a: a2 }); CH.text(D, R.cx, R.y0 + h * 5.6, '0.1 が 4人 → 全体（1）は 40人', { col: C.green, a: a2 }); }
+          if (t > .8) CH.text(D, R.cx, R.y0 + h * 6.6, '40 × 0.15 ＝ 6（人）、40 × 0.35 ＝ 14（人）', { col: C.yel, a: CH.smooth(.8, .95, t), size: s * .95 });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

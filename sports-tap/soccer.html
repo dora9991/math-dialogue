@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>サッカー タップ記録</title>
+<meta name="description" content="サッカーの試合を見ながらタップで記録。ゴールキック・フリーキック（直接・間接・カード）・コーナーキック・シュート・あとでチェック。撮影しながら記録して、場面を前後の秒数を決めて見返す（記録も動画もどこにも送りません）">
+<meta name="theme-color" content="#0a0e15">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="サッカー記録">
+<link rel="manifest" href="soccer/manifest.webmanifest">
+<link rel="apple-touch-icon" href="soccer/icons/apple-touch-icon.png">
+<link rel="icon" href="soccer/icons/icon-192.png" type="image/png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="view"></div>
+<div id="sheet" class="sheet" hidden></div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<!-- サッカー タップ記録：スポーツ タップ記録と同じエンジンで、サッカーだけのアプリ。保存（記録・撮影した動画）は、スポーツ タップ記録とは別 -->
+<script>window.ST = { CONFIG: { app: 'サッカー タップ記録', only: 'soccer', key: 'ssoc', db: 'ssoc-media' } };</script>
+<script src="js/core.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/fmp4.js"></script>
+<script src="js/vstore.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/livecam.js"></script>
+<script src="js/review.js"></script>
+<script src="js/sp/team.js"></script>
+<script src="js/v/team.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

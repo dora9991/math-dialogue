@@ -1,0 +1,106 @@
+/* スポーツ タップ記録 — 水泳の画面（.fam-swim の記録の画面・.swsetup の準備・.swsheet と .swstats の小窓） */
+.fam-swim { --sw: #0e7490; --sw-goal: #15803d; }
+
+/* 上の帯：時計（いまの組のタイム）・組・種目 */
+.fam-swim .swclock { min-width: clamp(132px, 31vmin, 280px); justify-content: center; }
+.fam-swim .swtv { font-size: clamp(28px, 7.4vmin, 60px); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; line-height: 1; }
+.fam-swim .clock.paused .recdot { animation: none; background: var(--line2); }
+.fam-swim .swheat { white-space: nowrap; font-size: clamp(15px, 3.2vmin, 24px); padding: 0 8px; }
+.fam-swim .swev { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; }
+.fam-swim .swev b { font-size: clamp(13px, 2.8vmin, 20px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fam-swim .swev small { font-size: clamp(10.5px, 2vmin, 14px); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* レーンの行 */
+.fam-swim .swcol { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.fam-swim .swlanes { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 5px; padding: 4px 6px; }
+.fam-swim .swrow { flex: 0 0 var(--rh, 64px); min-height: 0; display: flex; align-items: stretch; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.fam-swim .swl { flex: none; width: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 9px; background: var(--sw); color: #fff; line-height: 1; }
+.fam-swim .swl b { font-size: 24px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.fam-swim .swl small { font-size: 9px; font-weight: 700; opacity: 0.85; margin-top: 2px; }
+.fam-swim .swinfo { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; overflow: hidden; }
+.fam-swim .swwho { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+.fam-swim .swnm { font-size: 15px; }
+.fam-swim .swrow.noname .swnm { color: var(--muted); font-weight: 600; }
+.fam-swim .swteam { font-size: 11px; color: var(--muted); margin-left: 4px; }
+.fam-swim .swstat { display: flex; align-items: baseline; gap: 6px; flex-wrap: nowrap; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; line-height: 1.2; }
+.fam-swim .swstat small { color: var(--muted); font-size: 11.5px; }
+.fam-swim .swsplit { font-weight: 800; }
+.fam-swim .swsplit.dim { color: var(--muted); font-weight: 400; }
+.fam-swim .swtime { font-size: 22px; font-weight: 900; color: var(--good); }
+.fam-swim .swrank { font-size: 13px; font-weight: 900; color: #fff; background: var(--accent); border-radius: 999px; padding: 1px 8px; }
+.fam-swim .swrow.first .swrank { background: #ca8a04; }
+.fam-swim .swlaps { overflow: hidden; text-overflow: ellipsis; }
+.fam-swim .swflag { font-weight: 900; color: var(--bad); }
+.fam-swim .swrun { font-weight: 800; color: var(--sw); }
+.fam-swim .swrun.wait { color: var(--muted); font-weight: 700; }
+.fam-swim .swrun.fin { color: var(--good); }
+.fam-swim .swmore { flex: none; width: 34px; padding: 0; border: 1px solid var(--line2); background: var(--panel2); border-radius: 9px; font-size: 20px; font-weight: 900; color: var(--muted); }
+/* タッチのボタン（大きく。最後のタッチ＝ゴールは緑） */
+.fam-swim .swtouch { position: relative; flex: 1.2 1 0; min-width: 0; max-width: 560px; border: 0; border-radius: 12px; background: var(--sw); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; line-height: 1; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25); transition: transform 0.06s, filter 0.06s; }
+.fam-swim .swtouch:active { transform: scale(0.97); filter: brightness(1.2); box-shadow: none; }
+.fam-swim .swbig { font-size: clamp(19px, calc(var(--rh, 64px) * 0.36), 36px); font-weight: 900; letter-spacing: 0.02em; }
+.fam-swim .swsub { font-size: 12px; font-weight: 800; opacity: 0.9; font-variant-numeric: tabular-nums; }
+.fam-swim .swrow.last .swtouch { background: var(--sw-goal); }
+.fam-swim .swrow.done .swtouch { background: var(--panel2); color: var(--good); box-shadow: inset 0 0 0 2px var(--good); }
+.fam-swim .swrow.done { border-color: var(--good); }
+.fam-swim .swrow.first { box-shadow: inset 0 0 0 2px #ca8a04; }
+.fam-swim .swrow.first .swl { background: #ca8a04; }
+.fam-swim .swrow.flag { opacity: 0.62; }
+.fam-swim .swrow.flag .swtouch { background: #64748b; }
+.fam-swim.sw-left .swtouch { order: -1; }
+/* 行が低いとき（小さなスマホ・10 レーン） */
+.fam-swim .swlanes.tight .swrow { padding: 3px; gap: 4px; }
+.fam-swim .swlanes.tight .swl { width: 38px; }
+.fam-swim .swlanes.tight .swl b { font-size: 20px; }
+.fam-swim .swlanes.tight .swl small { display: none; }
+.fam-swim .swlanes.tight .swnm { font-size: 13.5px; }
+.fam-swim .swlanes.tight .swtime { font-size: 18px; }
+.fam-swim .swlanes.tight .swsub { font-size: 10.5px; }
+.fam-swim .swlanes.tight .swmore { width: 28px; }
+/* 行が高いとき（タブレット） */
+.fam-swim .swlanes.roomy .swl { width: 64px; }
+.fam-swim .swlanes.roomy .swl b { font-size: 32px; }
+.fam-swim .swlanes.roomy .swl small { font-size: 11px; }
+.fam-swim .swlanes.roomy .swnm { font-size: 19px; }
+.fam-swim .swlanes.roomy .swteam { font-size: 13px; }
+.fam-swim .swlanes.roomy .swstat { font-size: 16px; }
+.fam-swim .swlanes.roomy .swstat small { font-size: 13px; }
+.fam-swim .swlanes.roomy .swtime { font-size: 30px; }
+.fam-swim .swlanes.roomy .swrank { font-size: 16px; }
+.fam-swim .swlanes.roomy .swmore { width: 46px; font-size: 24px; }
+.fam-swim .swlanes.roomy .swsub { font-size: 14px; }
+
+/* 全員が終わった・次の組を待つ */
+.fam-swim .swbanner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 6px 0; padding: 5px 10px; border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; font-size: 13.5px; font-weight: 800; }
+.fam-swim .swbanner span { flex: 1; min-width: 0; }
+.fam-swim .swwait { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 12px; overflow-y: auto; }
+.fam-swim .swwaitnames { font-size: 13px; color: var(--muted); }
+.fam-swim .swwaitcard .startbig { font-size: 28px; }
+/* 下の帯：次の組へ */
+.fam-swim .gb.swnext { background: var(--accent); min-width: 84px; }
+.fam-swim .gb.swnext.ready { animation: swready 1.4s ease-in-out infinite; }
+@keyframes swready { 50% { box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.35); } }
+@media (prefers-reduced-motion: reduce) { .fam-swim .gb.swnext.ready { animation: none; } }
+
+/* 準備：レーンと名前 */
+.swsetup h2 { margin-bottom: 4px; }
+.swnames { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.swnrow { display: grid; grid-template-columns: 54px minmax(0, 1.3fr) minmax(0, 1fr); gap: 6px; align-items: center; }
+.swnl { font-variant-numeric: tabular-nums; text-align: center; background: #0e7490; color: #fff; border-radius: 8px; padding: 6px 0; font-size: 14px; }
+.swnrow input { min-width: 0; width: 100%; background: var(--panel2); border: 1px solid var(--line2); border-radius: 9px; padding: 8px 10px; font-size: 16px; }
+/* 小窓：次の組・レーンのメニュー */
+.swsheet h4 { margin: 12px 0 4px; font-size: 14px; }
+.swsheet h4:first-child { margin-top: 0; }
+.swsheet .field { margin-bottom: 10px; }
+.swspec .field { margin-bottom: 8px; }
+.swhrow { grid-template-columns: minmax(60px, auto) 1fr !important; }
+/* 結果 */
+.swstats h3 { margin-top: 14px; }
+.swstats .swall { border-top: 2px solid var(--line2); padding-top: 10px; }
+.swtable td.swsp small { display: block; color: var(--muted); font-size: 11px; }
+.swtable tr.win td { background: rgba(250, 204, 21, 0.16); }
+.swtable td.best { font-weight: 900; color: var(--good); }
+.swtable .nm small { color: var(--muted); font-size: 11.5px; }
+.swend { font-size: 18px !important; }
+/* （準備の画面の名前の欄 .nm の display: flex が、表の名前の欄 td.nm にも効いてしまうので、表のマスに戻す） */
+.swtable th.nm, .swtable td.nm { display: table-cell; }
