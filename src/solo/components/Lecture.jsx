@@ -2,6 +2,8 @@
 // Lecture.jsx — 講義（解説）
 //   ・ホー先生の解説がある単元 … スライドを1枚ずつ（話す→板書→ポイント→例題→理解チェック）
 //   ・まだ無い単元 … 要点＋例題（タップで1行ずつ解き方）。ホー先生の解説動画（lectures/videos.js）があれば一緒に出す
+//   ・中学校の単元 … ホー先生とポンタの「会話授業」（lectures/talk.js）が、解説動画のカードに出る。
+//     同じ章のほかの授業・章の応用問題と入試レベルは、「会話授業のつづき」のカードに出す（新しいタブで開く）
 // ============================================================
 import { useMemo, useState } from "react";
 import M from "./M.jsx";
@@ -9,6 +11,7 @@ import { Coach } from "./ui.jsx";
 import { getLecture, TEACHER } from "../lectures/index.js";
 import { genProblem } from "../content/index.js";
 import { getVideos } from "../lectures/videos.js";
+import { getTalk } from "../lectures/talk.js";
 
 function Board({ lines, title }) {
   return (
@@ -147,16 +150,56 @@ function VideoCard({ videos }) {
   );
 }
 
+/** 会話授業のつづき：同じ章のほかの授業・章の応用問題と入試レベル（公開サイトの授業ページを、新しいタブで開く） */
+function TalkLink({ l }) {
+  return (
+    <a className="rec" href={l.url} target="_blank" rel="noopener noreferrer">
+      <span className="badge" style={{ background: "#eef2ff" }}>{l.icon}</span>
+      <span className="grow"><span className="nm">{l.title}</span></span>
+      <span className="go">▸</span>
+    </a>
+  );
+}
+
+function TalkCard({ unitId }) {
+  const talk = useMemo(() => getTalk(unitId), [unitId]);
+  if (!talk || (!talk.more.length && !talk.problems.length)) return null;
+  const apply = talk.problems.filter((p) => p.kind === "応用");
+  const exam = talk.problems.filter((p) => p.kind === "入試");
+  return (
+    <div className="card">
+      <h2>💬 {TEACHER.name}とポンタの会話授業<span className="sub">（つづき）</span></h2>
+      <div className="small muted">黒板の前で、{TEACHER.name}とポンタが掛け合いながら、4択に答えて進む授業です。新しいタブで開きます。</div>
+      {talk.more.length > 0 && (
+        <details className="talk-more">
+          <summary>同じ章のほかの授業（{talk.more.length}本）</summary>
+          <div className="mt8">{talk.more.map((l) => <TalkLink key={l.id} l={l} />)}</div>
+        </details>
+      )}
+      {talk.problems.length > 0 && (
+        <details className="talk-more">
+          <summary>この章の応用問題・入試レベル（{talk.problems.length}本）</summary>
+          <div className="small muted mt8">応用問題 {apply.length}問</div>
+          <div className="talk-pills">{apply.map((p) => <a key={p.id} className="chip" href={p.url} target="_blank" rel="noopener noreferrer">{p.label}</a>)}</div>
+          <div className="small muted mt8">入試レベル {exam.length}問</div>
+          <div className="talk-pills">{exam.map((p) => <a key={p.id} className="chip" href={p.url} target="_blank" rel="noopener noreferrer">{p.label}</a>)}</div>
+        </details>
+      )}
+    </div>
+  );
+}
+
 export default function Lecture({ unit, onStartPractice }) {
   const lecture = getLecture(unit.id);
   const [mode, setMode] = useState(lecture ? "slides" : "summary");
   const example = useMemo(() => genProblem(unit.id, 1), [unit.id]);
   const videos = getVideos(unit.id);
   const vcard = videos.length > 0 && <VideoCard key={unit.id} videos={videos} />;
+  const tcard = <TalkCard unitId={unit.id} />;
 
   // スライドの解説がある単元でも、動画・会話授業は先頭に出す
   if (lecture && mode === "slides") {
-    return <div>{vcard}<SlidePlayer lecture={lecture} onFinish={onStartPractice} /></div>;
+    return <div>{vcard}<SlidePlayer lecture={lecture} onFinish={onStartPractice} />{tcard}</div>;
   }
 
   return (
@@ -174,6 +217,7 @@ export default function Lecture({ unit, onStartPractice }) {
       )}
 
       {vcard}
+      {tcard}
 
       <div className="card">
         <h2>📌 この単元の要点</h2>

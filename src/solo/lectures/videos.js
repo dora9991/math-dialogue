@@ -5,6 +5,7 @@
 //  登録のしかたは3通り。同じ単元に混ぜてもよい（上から順に並ぶ）。
 //
 //  ① 規則で自動：会話授業のURLに規則があるときは、TALK に書くだけ（下）。
+//  （中学校の単元は、lectures/talk.js の登録表から、会話授業が自動でここに入る。TALK は、それ以外の単元に使う）
 //  ② 1本ずつ URL：   "単元ID": [ { title: "タイトル", url: "https://…" } ]
 //  ③ YouTube：       "単元ID": [ { title: "タイトル", yt: "YouTubeの動画ID" } ]
 //      yt は YouTube の URL の v= の後ろ。限定公開でも埋め込める。1単元に複数本あれば配列に並べる。
@@ -12,6 +13,8 @@
 //  url は https:// から始まるものだけ（会話授業サイト＝Cloudflare Pages など）。
 //  単元IDの調べ方は docs/solo-講義データの書き方.md。登録後は `node scripts/solo-verify.mjs` で確認。
 // ============================================================
+
+import { getTalk } from "./talk.js";
 
 // ── ① 会話授業（math-talk.pages.dev）を、URLの規則で単元につなぐ ──────────
 //   units   … 会話授業がある単元（IDの配列、または (単元ID) => true/false の関数）。ここに書いた単元にだけ出る
@@ -48,9 +51,12 @@ export function talkOf(unitId) {
   return isHttps(url) ? { title: TALK.title || "ホー先生の会話授業", url } : null;
 }
 
-/** その単元の動画の一覧：[{ title, url } | { title, yt }]。規則で作ったもの → 1本ずつ登録したもの の順 */
+/** その単元の動画の一覧：[{ title, url } | { title, yt }]。規則で作ったもの → 中学校の会話授業（talk.js） → 1本ずつ登録したもの の順 */
 export const getVideos = (unitId) => {
-  const talk = talkOf(unitId);
+  const rule = talkOf(unitId);
+  const lessons = (getTalk(unitId)?.main || []).map((l) => ({ title: `${l.icon} ${l.title}`, url: l.url }));
   const own = (VIDEOS[unitId] || []).filter((v) => (v.yt && /^[A-Za-z0-9_-]{11}$/.test(v.yt)) || isHttps(v.url));
-  return talk ? [talk, ...own.filter((v) => v.url !== talk.url)] : own;
+  const head = [...(rule ? [rule] : []), ...lessons];
+  const seen = new Set(head.map((v) => v.url));
+  return [...head, ...own.filter((v) => !seen.has(v.url))];
 };

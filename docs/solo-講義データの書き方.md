@@ -69,6 +69,17 @@ export const VIDEOS = {
 
 1本の項目には `url` か `yt` のどちらか1つだけ。登録したら `node scripts/solo-verify.mjs` で、単元IDが実在するか・URLが https か・規則で作ったURLが重なっていないかを確認できる。
 
+## 会話授業（ホー先生とポンタ）を単元に紐づける
+
+中学校の単元（`J1-…` `J2-…` `J3-…`）の「講義」タブに、**ホー先生とポンタの会話授業**（黒板の前で掛け合い、4択に答えながら進む授業）が出る。授業は公開サイト（math-talk）にあり、ここでは「どの単元に、どの授業を出すか」だけ決める。単元の授業は「解説動画」のカード（この画面で見る／別タブ）に入り、同じ章のほかの授業・応用問題・入試レベルは「会話授業（つづき）」のカードに、新しいタブで開くリンクで出る。
+
+- `src/solo/lectures/talk.js` … `UNIT_LESSONS`（単元ID → 授業IDの並び）。授業を足す・動かすときはここを直す。同じ授業を複数の単元に書いてもよい。
+- `src/solo/lectures/talk-data.js` … 授業のIDと題名の一覧（**自動生成**。`python3 scripts/solo-talk-data.py <math-dialogue のルート> src/solo/lectures/talk-data.js`）。元は `hyojun-navi/data/plan1.js`（中1）と `talk-g2/`・`talk-g3/` の `problems/unit-lessons-g*.json`。
+- 単元に書かなかった同じ章の授業は、「会話授業（つづき）」の「同じ章のほかの授業」にまとめて出る。章の応用問題10本・入試レベル3本は「応用問題・入試レベル」に出る（中1の6章 空間図形には無い）。
+- **公開していない学年は何も出ない**。`talk.js` の `PUBLISHED` を、公開できた学年から `true` にする（中3は、公開サイトを作ったら `TALK_SITE.J3` のアドレスを確かめて `true` に）。
+- 授業を開くアドレスは `{サイト}play.html?l={授業ID}`（`talkUrl()`）。
+- 登録後は `node scripts/solo-verify.mjs` で確認（単元ID・授業IDが実在するか、中学の全単元に授業を割り当てているか）。
+
 ## 解説づくりの方針（対話授業と同じ考え方）
 
 1. **核心はすぐ言わない**：まず `check` で予想させる（まちがえてOK）
