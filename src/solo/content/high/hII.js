@@ -57,17 +57,40 @@ function lineTex(a, b, c) {
 const fe = (num, den) => (num < 0 ? `-\\frac{${-num}}{${den}}` : `\\frac{${num}}{${den}}`);
 /** 小さい順に並べた値のリスト "a=1,\ 3" */
 const listTex = (name, vals) => `${name}=${[...vals].sort((x, y) => x - y).join(",\\ ")}`;
+/** 項 s の e 乗 "x^{3}" "(2x)^{3}"（1文字ならかっこなし） */
+const pw = (s, e) => (/^[a-z]$/.test(s) ? (e === 1 ? s : `${s}^{${e}}`) : e === 1 ? `(${s})` : `(${s})^{${e}}`);
+/** 分数 [分子, 分母] の値を小さい順に並べたリスト "k=-2,\ \frac{9}{4}" */
+const listFrac = (name, vals) => `${name}=${[...vals].sort((x, y) => x[0] / x[1] - y[0] / y[1]).map(([n, d]) => fracTex(n, d)).join(",\\ ")}`;
+/** 述語 pred をみたす v の範囲（端点は pts の [分子, 分母] のどれか，開区間の和）の TeX。例 "k<-1,\ 2<k" */
+function ivTex(pred, pts, v = "k") {
+  const P = [];
+  for (const p of pts) if (!P.some((q) => q[0] * p[1] === p[0] * q[1])) P.push(p);
+  P.sort((x, y) => x[0] / x[1] - y[0] / y[1]);
+  const val = (p) => p[0] / p[1];
+  const segs = [];
+  for (let i = 0; i <= P.length; i++) {
+    const lo = i === 0 ? null : P[i - 1], hi = i === P.length ? null : P[i];
+    const m = lo === null ? val(hi) - 1 : hi === null ? val(lo) + 1 : (val(lo) + val(hi)) / 2;
+    if (!pred(m)) continue;
+    const last = segs[segs.length - 1];
+    if (last && lo !== null && last[1] === lo && pred(val(lo))) last[1] = hi;
+    else segs.push([lo, hi]);
+  }
+  const T = (p) => fracTex(p[0], p[1]);
+  return segs.map(([lo, hi]) => (lo === null ? `${v}<${T(hi)}` : hi === null ? `${T(lo)}<${v}` : `${T(lo)}<${v}<${T(hi)}`)).join(",\\ ");
+}
 
 // ============================================================
 // 式と証明
 // ============================================================
 const SHIKI = {
   id: "HII-shiki", grade: "H2", area: "num", name: "式と証明",
-  desc: "二項定理・分数式・恒等式・相加相乗平均",
+  desc: "3次式の展開と因数分解・二項定理・分数式・恒等式・相加相乗平均",
   prereqs: ["HI-tenkai", "HA-baai"],
   ...COURSE,
   points: [
-    "二項定理：$(a+b)^{n}$ の一般項は ${}_{n}\\mathrm{C}_{r}\\,a^{n-r}b^{r}$。特定の項の係数は、指数を比べて $r$ を決める。",
+    "3次式の展開と因数分解：$(a+b)^{3}=a^{3}+3a^{2}b+3ab^{2}+b^{3}$，$a^{3}+b^{3}=(a+b)(a^{2}-ab+b^{2})$，$a^{3}-b^{3}=(a-b)(a^{2}+ab+b^{2})$。",
+    "二項定理：$(a+b)^{n}$ の一般項は ${}_{n}\\mathrm{C}_{r}\\,a^{n-r}b^{r}$。特定の項の係数は，指数を比べて $r$ を決める。",
     "恒等式は「両辺の係数を比べる」か「都合のよい値を代入する」で係数を決める。分数式は因数分解してから約分・通分する。",
     "相加平均と相乗平均：$a>0,\\ b>0$ のとき $a+b\\geqq 2\\sqrt{ab}$（等号は $a=b$）。積が一定のとき和の最小値がわかる。",
   ],
@@ -117,6 +140,62 @@ const SHIKI = {
             `$${ax}>0$，$\\frac{${b}}{x}>0$ だから $${ax}+\\frac{${b}}{x}\\geqq 2\\sqrt{${ax}\\cdot\\frac{${b}}{x}}=2\\sqrt{${a * b}}=${ans}$`,
             `等号は $${ax}=\\frac{${b}}{x}$ すなわち $x=${m}$ のとき成り立つ`,
             `答え：最小値 $${ans}$`,
+          ],
+        };
+      }),
+      t("HII-shiki-1d", (r) => {
+        const a = pick(r, [1, 1, 2, 3]);
+        let b = r(1, 5);
+        if (gcd(a, b) !== 1) b = 1;
+        const s = r(0, 1) ? 1 : -1;
+        const expr = poly([a ** 3, 0, 0, s * b ** 3]);
+        const ans = tex(`(${poly([a, s * b])})(${poly([a * a, -s * a * b, b * b])})`);
+        return {
+          q: `$${expr}$ を因数分解せよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(`(${poly([a, s * b])})(${poly([a * a, s * a * b, b * b])})`),
+            tex(`(${poly([a, -s * b])})(${poly([a * a, s * a * b, b * b])})`),
+            tex(`(${poly([a, s * b])})(${poly([a * a, -2 * s * a * b, b * b])})`),
+          ], (i) => tex(`(${poly([a, s * b])})(${poly([a * a, -s * a * b, b * b + i + 1])})`)),
+          hint: `$${pw(coefVar(a), 3)}$ と $${b}^{3}$ の${s > 0 ? "和" : "差"}と見る。`,
+          steps: [
+            `$${expr}=${pw(coefVar(a), 3)}${s > 0 ? "+" : "-"}${b}^{3}$`,
+            s > 0 ? "$a^{3}+b^{3}=(a+b)(a^{2}-ab+b^{2})$ を使う" : "$a^{3}-b^{3}=(a-b)(a^{2}+ab+b^{2})$ を使う",
+            `答え：${ans}`,
+          ],
+        };
+      }),
+      t("HII-shiki-1e", (r) => {
+        const a = rnz(r, -4, 4), A = Math.abs(a);
+        if (r(0, 2) === 0) {
+          const ok = [1, 0, 0, a ** 3];
+          const ans = tex(poly(ok));
+          return {
+            q: `$(${poly([1, a])})(${poly([1, -a, a * a])})$ を展開せよ。`,
+            ans,
+            choices: choices4(r, ans, [tex(poly([1, 0, 0, -(a ** 3)])), tex(poly([1, 3 * a, 3 * a * a, a ** 3])), tex(poly([1, 0, 0, a]))],
+              (i) => tex(poly([1, 0, 0, a ** 3 + i + 1]))),
+            hint: a > 0 ? "$(a+b)(a^{2}-ab+b^{2})$ の形になっていないか確かめよう。" : "$(a-b)(a^{2}+ab+b^{2})$ の形になっていないか確かめよう。",
+            steps: [
+              a > 0
+                ? `$a=x,\\ b=${A}$ とすると $(a+b)(a^{2}-ab+b^{2})=a^{3}+b^{3}$ の形`
+                : `$a=x,\\ b=${A}$ とすると $(a-b)(a^{2}+ab+b^{2})=a^{3}-b^{3}$ の形`,
+              `答え：$x^{3}${a > 0 ? "+" : "-"}${A}^{3}=${poly(ok)}$`,
+            ],
+          };
+        }
+        const ok = [1, 3 * a, 3 * a * a, a ** 3];
+        const ans = tex(poly(ok));
+        return {
+          q: `$(${poly([1, a])})^{3}$ を展開せよ。`,
+          ans,
+          choices: choices4(r, ans, [tex(poly([1, 0, 0, a ** 3])), tex(poly([1, -3 * a, 3 * a * a, -(a ** 3)])), tex(poly([1, 3 * a, 3 * a, a ** 3]))],
+            (i) => tex(poly([1, 3 * a, 3 * a * a + i + 1, a ** 3]))),
+          hint: "$(a+b)^{3}=a^{3}+3a^{2}b+3ab^{2}+b^{3}$，$(a-b)^{3}=a^{3}-3a^{2}b+3ab^{2}-b^{3}$ を使う。",
+          steps: [
+            `$(${poly([1, a])})^{3}=x^{3}${a > 0 ? "+" : "-"}3\\cdot x^{2}\\cdot ${A}+3\\cdot x\\cdot ${A}^{2}${a > 0 ? "+" : "-"}${A}^{3}$`,
+            `答え：${ans}`,
           ],
         };
       }),
@@ -173,8 +252,80 @@ const SHIKI = {
           hint: "両辺に分母をかけて分母を払い，$x$ に都合のよい値を代入する。",
           steps: [
             `両辺に $${den}$ をかけて $${c}=A${fx(b)}+B${fx(a)}$`,
-            `$x=${a}$ を代入すると $${c}=${a - b}A$，$x=${b}$ を代入すると $${c}=${b - a}B$`,
+            `$x=${a}$ を代入すると $${c}=${coefVar(a - b, "A")}$，$x=${b}$ を代入すると $${c}=${coefVar(b - a, "B")}$`,
             `よって $A=${fracTex(c, a - b)}$，$B=${fracTex(c, b - a)}$`,
+          ],
+        };
+      }),
+      t("HII-shiki-2d", (r) => {
+        const [p, q, s] = sample(r, [2, 3, 4, 5, 6, 7], 3);
+        const LIN = [[1, 1, 1], [1, -1, 1], [1, 2, -1], [2, 1, -1], [1, -2, 1], [2, -1, 1], [1, 1, -2], [3, -1, -1], [1, 2, 3]];
+        const xyz = ([u, v, w]) => `${coefVar(u, "x")}${signedVar(v, "y")}${signedVar(w, "z")}`;
+        const quad = r(0, 2) === 0;
+        let N, D, top, bot;
+        if (quad) {
+          N = p * q + q * s + s * p; D = p * p + q * q + s * s;
+          top = "xy+yz+zx"; bot = "x^{2}+y^{2}+z^{2}";
+        } else {
+          const [f, g] = sample(r, LIN, 2);
+          N = f[0] * p + f[1] * q + f[2] * s; D = g[0] * p + g[1] * q + g[2] * s;
+          top = xyz(f); bot = xyz(g);
+        }
+        if (N === 0 || D === 0) return { skip: true };
+        const K = quad ? "k^{2}" : "k";
+        return {
+          q: `$\\frac{x}{${p}}=\\frac{y}{${q}}=\\frac{z}{${s}}\\neq 0$ のとき，$\\frac{${top}}{${bot}}$ の値を求めよ。`,
+          ans: fracAns(N, D),
+          hint: "比例式は $=k$ とおいて，$x,\\ y,\\ z$ を $k$ で表す。",
+          steps: [
+            `$\\frac{x}{${p}}=\\frac{y}{${q}}=\\frac{z}{${s}}=k$ とおくと $x=${p}k,\\ y=${q}k,\\ z=${s}k$（$k\\neq 0$）`,
+            `与式 $=\\frac{${coefVar(N, K)}}{${coefVar(D, K)}}$`,
+            `$k\\neq 0$ なので約分して，答え：$${fracTex(N, D)}$`,
+          ],
+        };
+      }),
+      t("HII-shiki-2e", (r) => {
+        const a = pick(r, [1, 2, 3]), b = pick(r, [1, 2, 3, -1, -2, -3]);
+        if ((a === 1 && Math.abs(b) === 1) || gcd(a, b) > 1) return { skip: true };
+        const T = (c) => [[c[0], "x^{3}"], [c[1], "x^{2}y"], [c[2], "xy^{2}"], [c[3], "y^{3}"]]
+          .filter(([k]) => k !== 0)
+          .map(([k, m], i) => `${k < 0 ? "-" : i === 0 ? "" : "+"}${Math.abs(k) === 1 ? "" : Math.abs(k)}${m}`).join("");
+        const ok = [a ** 3, 3 * a * a * b, 3 * a * b * b, b ** 3];
+        const ans = tex(T(ok));
+        const X = coefVar(a, "x"), Y = coefVar(b, "y");
+        return {
+          q: `$(${X}${signedVar(b, "y")})^{3}$ を展開せよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(T([a ** 3, a * a * b, a * b * b, b ** 3])),
+            tex(T([a ** 3, 3 * a * b, 3 * a * b, b ** 3])),
+            tex(T([a, 3 * a * a * b, 3 * a * b * b, b])),
+          ], (i) => tex(T([a ** 3, 3 * a * a * b, 3 * a * b * b + i + 1, b ** 3]))),
+          hint: "$(a+b)^{3}=a^{3}+3a^{2}b+3ab^{2}+b^{3}$ の $a,\\ b$ に，係数ごと代入する。",
+          steps: [
+            `$${pw(X, 3)}+3\\cdot ${pw(X, 2)}\\cdot ${pw(Y, 1)}+3\\cdot ${pw(X, 1)}\\cdot ${pw(Y, 2)}+${pw(Y, 3)}$`,
+            `答え：${ans}`,
+          ],
+        };
+      }),
+      t("HII-shiki-2f", (r) => {
+        const p = rnz(r, -3, 3), q = r(1, 3), sg = r(0, 1) ? 1 : -1;
+        const f1 = (s2) => fx(-(p + s2 * q));
+        const f2 = (s2) => poly([1, 2 * p - s2 * q, p * p - s2 * p * q + q * q]);
+        const ans = tex(`${f1(sg)}(${f2(sg)})`);
+        return {
+          q: `$(${poly([1, p])})^{3}${sg > 0 ? "+" : "-"}${q ** 3}$ を因数分解せよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(`${f1(sg)}(${f2(-sg)})`),
+            tex(`${f1(-sg)}(${f2(sg)})`),
+            tex(`${f1(sg)}(${poly([1, -sg * q, q * q])})`),
+          ], (i) => tex(`${f1(sg)}(${poly([1, 2 * p - sg * q, p * p - sg * p * q + q * q + i + 1])})`)),
+          hint: `$${poly([1, p])}=A$ とおくと，$A^{3}${sg > 0 ? "+" : "-"}${q}^{3}$ の形になる。`,
+          steps: [
+            `$A=${poly([1, p])}$ とおくと $A^{3}${sg > 0 ? "+" : "-"}${q}^{3}=(A${sg > 0 ? "+" : "-"}${q})(A^{2}${sg > 0 ? "-" : "+"}${q === 1 ? "" : q}A+${q * q})$`,
+            `$A=${poly([1, p])}$ をもどして整理する`,
+            `答え：${ans}`,
           ],
         };
       }),
@@ -230,21 +381,73 @@ const SHIKI = {
           ],
         };
       }),
+      t("HII-shiki-3d", (r) => {
+        const n = r(4, 6);
+        const al = pick(r, [1, 1, 2]), be = pick(r, [1, -1, 2, -2, 3]), ga = pick(r, [1, -1, 2, -2]);
+        const i = r(1, n - 2), j = r(1, n - 1 - i), k = n - i - j;
+        const C1 = nCr(n, k), C2 = nCr(n - k, j);
+        const ans = C1 * C2 * al ** i * be ** j * ga ** k;
+        const X = coefVar(al, "x"), Y = coefVar(be, "y"), Z = coefVar(ga, "z");
+        const ab = `${X}${signedVar(be, "y")}`;
+        return {
+          q: `$(${ab}${signedVar(ga, "z")})^{${n}}$ の展開式における $${xp(i)}${xp(j, "y")}${xp(k, "z")}$ の係数を求めよ。`,
+          ans,
+          hint: `$\\{(${ab})${signedVar(ga, "z")}\\}^{${n}}$ と見て，二項定理を2回使う。`,
+          steps: [
+            `$${xp(k, "z")}$ をふくむ項は $${Cn(n, k)}(${ab})^{${n - k}}${pw(Z, k)}$`,
+            `$(${ab})^{${n - k}}$ の展開式で $${xp(i)}${xp(j, "y")}$ の項は $${Cn(n - k, j)}${pw(X, i)}${pw(Y, j)}$`,
+            `係数は $${C1}\\times ${C2}\\times ${par(al ** i)}\\times ${par(be ** j)}\\times ${par(ga ** k)}=${ans}$`,
+          ],
+        };
+      }),
+      t("HII-shiki-3e", (r) => {
+        if (r(0, 1) === 1) {
+          const s = rnz(r, -6, 6), p = rnz(r, -6, 6);
+          if (s * s < 4 * p) return { skip: true }; // x, y が実数になる組だけ
+          const v = s ** 3 - 3 * p * s;
+          return {
+            q: `実数 $x,\\ y$ が $x+y=${s}$，$xy=${p}$ をみたすとき，$x^{3}+y^{3}$ の値を求めよ。`,
+            ans: v,
+            hint: "$x^{3}+y^{3}$ を $x+y$ と $xy$ で表す。",
+            steps: [
+              "$x^{3}+y^{3}=(x+y)^{3}-3xy(x+y)$",
+              `$=${par(s)}^{3}-3\\cdot ${par(p)}\\cdot ${par(s)}=${s ** 3}${signed(-3 * p * s)}$`,
+              `答え：$${v}$`,
+            ],
+          };
+        }
+        const k = pick(r, [3, 4, 5, 6, -3, -4, -5]);
+        const v = k ** 3 - 3 * k;
+        return {
+          q: `$x+\\frac{1}{x}=${k}$ のとき，$x^{3}+\\frac{1}{x^{3}}$ の値を求めよ。`,
+          ans: v,
+          hint: "$x\\cdot\\frac{1}{x}=1$ を使って，$x^{3}+\\frac{1}{x^{3}}$ を $x+\\frac{1}{x}$ で表す。",
+          steps: [
+            "$x^{3}+\\frac{1}{x^{3}}=\\left(x+\\frac{1}{x}\\right)^{3}-3\\cdot x\\cdot\\frac{1}{x}\\left(x+\\frac{1}{x}\\right)$",
+            `$=${par(k)}^{3}-3\\cdot ${par(k)}=${v}$`,
+            `答え：$${v}$`,
+          ],
+        };
+      }),
     ],
     4: [
       t("HII-shiki-4a", (r) => {
         const a = pick(r, [1, 1, 2, 3]);
         const n = a === 1 ? r(5, 10) : a === 2 ? r(4, 7) : r(4, 5);
         const ans = n * a * (1 + a) ** (n - 1);
-        const term = a === 1 ? `k\\,${Cn(n, "k")}` : `k\\,${Cn(n, "k")}\\cdot ${a}^{k}`;
-        const na = a === 1 ? `${n}` : `${n}\\cdot ${a}`;
+        const term = (k) => `${k}\\cdot ${Cn(n, k)}${a === 1 ? "" : `\\cdot ${a}${k === 1 ? "" : `^{${k}}`}`}`;
+        const sum = n <= 4
+          ? Array.from({ length: n }, (_, i) => term(i + 1)).join("+")
+          : `${[1, 2, 3].map(term).join("+")}+\\cdots+${term(n)}`;
         return {
-          q: `$\\sum_{k=1}^{${n}} ${term}$ の値を求めよ。`,
+          q: `$${sum}$ の値を求めよ。`,
           ans,
           hint: `$k\\,${Cn(n, "k")}$ を $${Cn(n - 1, "k-1")}$ を使って書きかえると，二項定理の形になる。`,
           steps: [
-            `$k\\,${Cn(n, "k")}=k\\cdot\\frac{${n}!}{k!\\,(${n}-k)!}=${n}\\,${Cn(n - 1, "k-1")}$`,
-            `与式 $=${na}\\sum_{k=1}^{${n}}${Cn(n - 1, "k-1")}${a === 1 ? "" : `\\cdot ${a}^{k-1}`}=${na}\\cdot(1+${a})^{${n - 1}}$`,
+            `$k\\,${Cn(n, "k")}=k\\cdot\\frac{${n}!}{k!\\,(${n}-k)!}=${n}\\,${Cn(n - 1, "k-1")}$ を各項に使う`,
+            a === 1
+              ? `与式 $=${n}\\left(${Cn(n - 1, 0)}+${Cn(n - 1, 1)}+\\cdots+${Cn(n - 1, n - 1)}\\right)=${n}\\cdot(1+1)^{${n - 1}}$`
+              : `与式 $=${n}\\cdot ${a}\\left(${Cn(n - 1, 0)}+${Cn(n - 1, 1)}\\cdot ${a}+\\cdots+${Cn(n - 1, n - 1)}\\cdot ${a}^{${n - 1}}\\right)=${n}\\cdot ${a}\\cdot(1+${a})^{${n - 1}}$`,
             `答え：$${ans}$`,
           ],
         };
@@ -264,6 +467,88 @@ const SHIKI = {
             `$\\frac{${coefVar(A, "y")}}{x}+\\frac{${coefVar(B)}}{y}\\geqq 2\\sqrt{${A * B}}=${2 * s * u}$ より $x+y\\geqq ${ans}$`,
             `等号は $x=${s * (s + u)},\\ y=${u * (s + u)}$ のとき成り立つ（条件式に直接2回使うと等号が同時に成り立たず誤り）`,
             `答え：最小値 $${ans}$`,
+          ],
+        };
+      }),
+      t("HII-shiki-4c", (r) => {
+        const a = r(1, 3), c = a + r(1, 4), b = c * c - a * a;
+        const askXY = r(0, 1) === 1;
+        const lhs = a === 1 ? "x+y" : `${a}(x+y)`;
+        const ans = askXY ? (a + c) ** 2 : 2 * (a + c);
+        return {
+          q: `$x>0,\\ y>0$ が $xy=${lhs}+${b}$ をみたすとき，$${askXY ? "xy" : "x+y"}$ の最小値を求めよ。`,
+          ans,
+          hint: askXY
+            ? "相加平均と相乗平均の関係 $x+y\\geqq 2\\sqrt{xy}$ を使って，$\\sqrt{xy}$ だけの不等式を作る。"
+            : "$xy\\leqq\\left(\\frac{x+y}{2}\\right)^{2}$ を使って，$x+y$ だけの不等式を作る。",
+          steps: askXY
+            ? [
+              `$x+y\\geqq 2\\sqrt{xy}$ より $xy=${lhs}+${b}\\geqq ${2 * a}\\sqrt{xy}+${b}$`,
+              `$t=\\sqrt{xy}\\ (t>0)$ とおくと $t^{2}-${2 * a}t-${b}\\geqq 0$，$(t-${a + c})(t+${c - a})\\geqq 0$ より $t\\geqq ${a + c}$`,
+              `等号は $x=y=${a + c}$ のとき成り立つ。答え：最小値 $${ans}$`,
+            ]
+            : [
+              `$xy\\leqq\\frac{(x+y)^{2}}{4}$ より $${lhs}+${b}\\leqq\\frac{(x+y)^{2}}{4}$`,
+              `$u=x+y\\ (u>0)$ とおくと $u^{2}-${4 * a}u-${4 * b}\\geqq 0$，$(u-${2 * (a + c)})(u+${2 * (c - a)})\\geqq 0$ より $u\\geqq ${2 * (a + c)}$`,
+              `等号は $x=y=${a + c}$ のとき成り立つ。答え：最小値 $${ans}$`,
+            ],
+        };
+      }),
+      t("HII-shiki-4d", (r) => {
+        const [p, q] = sample(r, [1, 2, 3, 4], 2);
+        const K = rootFrac(1, p * q * (p + q), p * q), ans = tex(K);
+        const L = `${coefVar(p)}${signedVar(q, "y")}`, Lt = `${coefVar(p, "t^{2}")}+${q}`;
+        const M = fracTex(p + q, p * q);
+        return {
+          q: `すべての正の実数 $x,\\ y$ に対して $\\sqrt{x}+\\sqrt{y}\\leqq k\\sqrt{${L}}$ が成り立つような実数 $k$ の最小値を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(rootFrac(1, 4 * (p + q), p + q)),
+            tex(rootFrac(1, p * q * (p + q), p + q)),
+            tex(sqrtTex(1, p + q)),
+          ], (i) => tex(rootFrac(1, p * q * (p + q) + i + 1, p * q))),
+          hint: `両辺は正なので2乗し，$\\frac{(\\sqrt{x}+\\sqrt{y})^{2}}{${L}}$ の最大値を考える。$t=\\sqrt{\\frac{x}{y}}$ とおくとよい。`,
+          steps: [
+            `$t=\\sqrt{\\frac{x}{y}}\\ (t>0)$ とおくと，条件は $k^{2}\\geqq\\frac{(t+1)^{2}}{${Lt}}$ がすべての $t>0$ で成り立つこと`,
+            `$(${Lt})\\cdot ${M}-(t+1)^{2}=${fracTex(p, q)}\\left(t-${fracTex(q, p)}\\right)^{2}\\geqq 0$`,
+            `よって $\\frac{(t+1)^{2}}{${Lt}}$ の最大値は $${M}$（$t=${fracTex(q, p)}$ のとき）`,
+            `$k^{2}\\geqq ${M}$，$k>0$ より，答え：$k=${K}$`,
+          ],
+        };
+      }),
+      t("HII-shiki-4e", (r) => {
+        let s, tt, u, n = 0;
+        // a, b, c がすべて実数になる組だけ（a, b, c を解とする3次方程式の判別式≧0）
+        do { s = r(1, 5); tt = rnz(r, -5, 5); u = rnz(r, -5, 5); n++; }
+        while (18 * s * tt * u - 4 * s ** 3 * u + s * s * tt * tt - 4 * tt ** 3 - 27 * u * u < 0 && n < 100);
+        if (n >= 100) return { skip: true };
+        const sq = s * s - 2 * tt, w = s * (sq - tt), v = w + 3 * u;
+        const given2 = r(0, 1) === 1;
+        return {
+          q: `実数 $a,\\ b,\\ c$ が $a+b+c=${s}$，${given2 ? `$a^{2}+b^{2}+c^{2}=${sq}$` : `$ab+bc+ca=${tt}$`}，$abc=${u}$ をみたすとき，$a^{3}+b^{3}+c^{3}$ の値を求めよ。`,
+          ans: v,
+          hint: "$a^{3}+b^{3}+c^{3}-3abc=(a+b+c)(a^{2}+b^{2}+c^{2}-ab-bc-ca)$ を使う。",
+          steps: [
+            given2
+              ? `$ab+bc+ca=\\frac{(a+b+c)^{2}-(a^{2}+b^{2}+c^{2})}{2}=\\frac{${s * s}-${par(sq)}}{2}=${tt}$`
+              : `$a^{2}+b^{2}+c^{2}=(a+b+c)^{2}-2(ab+bc+ca)=${s * s}${signed(-2 * tt)}=${sq}$`,
+            `$a^{3}+b^{3}+c^{3}-3abc=(a+b+c)(a^{2}+b^{2}+c^{2}-ab-bc-ca)=${s}\\cdot(${sq}${signed(-tt)})=${w}$`,
+            `$a^{3}+b^{3}+c^{3}=${w}+3\\cdot ${par(u)}=${v}$`,
+          ],
+        };
+      }),
+      t("HII-shiki-4f", (r) => {
+        const k = pick(r, [3, 4, 5, 6, -3, -4, -5]);
+        const a2 = k * k - 2, a3 = k ** 3 - 3 * k, a5 = a2 * a3 - k;
+        return {
+          q: `$x+\\frac{1}{x}=${k}$ のとき，$x^{5}+\\frac{1}{x^{5}}$ の値を求めよ。`,
+          ans: a5,
+          hint: "$x^{2}+\\frac{1}{x^{2}}$ と $x^{3}+\\frac{1}{x^{3}}$ を先に求め，その積を展開してみる。",
+          steps: [
+            `$x^{2}+\\frac{1}{x^{2}}=\\left(x+\\frac{1}{x}\\right)^{2}-2=${a2}$`,
+            `$x^{3}+\\frac{1}{x^{3}}=\\left(x+\\frac{1}{x}\\right)^{3}-3\\left(x+\\frac{1}{x}\\right)=${a3}$`,
+            `$\\left(x^{2}+\\frac{1}{x^{2}}\\right)\\left(x^{3}+\\frac{1}{x^{3}}\\right)=x^{5}+\\frac{1}{x^{5}}+x+\\frac{1}{x}$ より $x^{5}+\\frac{1}{x^{5}}=${a2}\\cdot ${par(a3)}-${par(k)}=${a5}$`,
+            `答え：$${a5}$`,
           ],
         };
       }),
@@ -336,8 +621,26 @@ const FUKUSO = {
           ans,
           hint: "解と係数の関係 $\\alpha+\\beta=-\\frac{b}{a}$，$\\alpha\\beta=\\frac{c}{a}$ を使う。",
           steps: askSum
-            ? [`$\\alpha+\\beta=-\\frac{${b}}{${a}}${a === 1 ? "" : `=${fracTex(-b, a)}`}$`]
-            : [`$\\alpha\\beta=\\frac{${c}}{${a}}${a === 1 || gcd(c, a) === 1 ? "" : `=${fracTex(c, a)}`}$`],
+            ? [`$\\alpha+\\beta=-\\frac{${b}}{${a}}${fracTex(-b, a) === `-\\frac{${b}}{${a}}` ? "" : `=${fracTex(-b, a)}`}$`]
+            : [`$\\alpha\\beta=\\frac{${c}}{${a}}${fracTex(c, a) === `\\frac{${c}}{${a}}` ? "" : `=${fracTex(c, a)}`}$`],
+        };
+      }),
+      t("HII-fukuso-1d", (r) => {
+        const a1 = r(1, 3), b1 = rnz(r, -2, 2), a2 = pick(r, [1, 2, -1]), b2 = rnz(r, -3, 3);
+        if (a1 * b2 - a2 * b1 === 0) return { skip: true };
+        const x0 = rnz(r, -4, 4), y0 = rnz(r, -4, 4);
+        const c = a1 * x0 + a2 * y0, d = b1 * x0 + b2 * y0;
+        const askX = r(0, 1) === 1;
+        const re = `${coefVar(a1, "x")}${signedVar(a2, "y")}`, im = `${coefVar(b1, "x")}${signedVar(b2, "y")}`;
+        return {
+          q: `$(${cx(a1, b1)})x+(${cx(a2, b2)})y=${cx(c, d)}$ をみたす実数 $x,\\ y$ について，$${askX ? "x" : "y"}$ の値を求めよ。`,
+          ans: askX ? x0 : y0,
+          hint: "左辺を実部と虚部に分けて整理し，両辺の実部どうし・虚部どうしが等しいとおく。",
+          steps: [
+            `左辺 $=(${re})+(${im})i$`,
+            `$x,\\ y$ は実数なので $${re}=${c}$，$${im}=${d}$`,
+            `これを解いて $x=${x0}$，$y=${y0}$。答え：$${askX ? x0 : y0}$`,
+          ],
         };
       }),
     ],
@@ -399,6 +702,26 @@ const FUKUSO = {
           ],
         };
       }),
+      t("HII-fukuso-2d", (r) => {
+        const p = r(-3, 3), m = pick(r, [1, 2, 3, 4, 5, 6, 8, 9]);
+        const co = [1, -2 * p, p * p + m];
+        const s = sqrtTex(1, m), im = s === "1" ? "i" : `${s}i`;
+        const xp0 = p ? `x${signed(-p)}` : "x";
+        const fac = (pp, imT) => (pp === 0 ? `(x-${imT})(x+${imT})` : `(x${signed(-pp)}-${imT})(x${signed(-pp)}+${imT})`);
+        const ans = tex(fac(p, im));
+        const [ra, rb] = sqrtSimp(m);
+        const noI = rb === 1 ? fx2(p + ra, p - ra) : `(${xp0}-${s})(${xp0}+${s})`;
+        return {
+          q: `2次式 $${poly(co)}$ を複素数の範囲で因数分解せよ。`,
+          ans,
+          choices: choices4(r, ans, [tex(fac(-p, im)), tex(noI), tex(fac(p, `${m === 1 ? "" : m}i`))], (i) => tex(fac(p + i + 1, im))),
+          hint: `2次方程式 $${poly(co)}=0$ の2つの解を $\\alpha,\\ \\beta$ とすると $${poly(co)}=(x-\\alpha)(x-\\beta)$。`,
+          steps: [
+            `$${poly(co)}=0$ を解くと $x=${p === 0 ? "" : p}\\pm ${im}$`,
+            `答え：${ans}`,
+          ],
+        };
+      }),
     ],
     3: [
       t("HII-fukuso-3a", (r) => {
@@ -432,7 +755,7 @@ const FUKUSO = {
           S = -m * p; P = m * m * q;
           wrongs = [poly([1, S, P]), poly([1, -S, m * q]), poly([1, -S, -P])];
           label = `${coefVar(m, "\\alpha")},\\ ${coefVar(m, "\\beta")}`;
-          how = [`和 $=${m}(\\alpha+\\beta)=${S}$`, `積 $=${m * m}\\alpha\\beta=${P}$`];
+          how = [`和 $=${m === -1 ? "-" : m}(\\alpha+\\beta)=${S}$`, `積 $=${m * m === 1 ? "" : m * m}\\alpha\\beta=${P}$`];
         }
         const ans = tex(`${poly([1, -S, P])}=0`);
         return {
@@ -459,6 +782,31 @@ const FUKUSO = {
             `2つの解を $\\alpha,\\ ${rr}\\alpha$ とおくと $${1 + rr}\\alpha=-k$，$${rr}\\alpha^{2}=${qv}$`,
             `$\\alpha^{2}=${m * m}$ より $\\alpha=\\pm ${m}$`,
             `$k=-${1 + rr}\\alpha$ より $k=\\pm ${K}$`,
+          ],
+        };
+      }),
+      t("HII-fukuso-3d", (r) => {
+        const r1 = r(-2, 2), r2 = r(Math.max(r1 + 1, 1, 1 - r1), 5);
+        const p = r1 + r2, q = -r1 * r2; // p>0
+        const lin = `${coefVar(p, "k")}${q ? signed(q) : ""}`;
+        const pts = [[r1, 1], [r2, 1], [0, 1], [-q, p]];
+        const disc = (k) => (k - r1) * (k - r2) > 0, sum = (k) => k > 0, prod = (k) => p * k + q > 0;
+        const ans = tex(ivTex((k) => disc(k) && sum(k) && prod(k), pts));
+        const ivD = ivTex(disc, pts), ivP = ivTex(prod, pts);
+        return {
+          q: `2次方程式 $x^{2}-2kx+${lin}=0$ が異なる2つの正の解をもつような定数 $k$ の値の範囲を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(ivD),
+            tex(ivTex((k) => disc(k) && prod(k), pts)),
+            tex(ivTex((k) => disc(k) && sum(k), pts)),
+            tex(`${r1}<k<${r2}`),
+          ], (i) => tex(`${r2 + i + 1}<k`)),
+          hint: "2つの解を $\\alpha,\\ \\beta$ とすると，異なる2つの正の解 $\\iff D>0,\\ \\alpha+\\beta>0,\\ \\alpha\\beta>0$。",
+          steps: [
+            `$\\frac{D}{4}=k^{2}-(${lin})=${fx2(r1, r2, "k")}>0$ より $${ivD}$`,
+            `$\\alpha+\\beta=2k>0$ より $0<k$。$\\alpha\\beta=${lin}>0$ より $${ivP}$`,
+            `共通部分をとって，答え：${ans}`,
           ],
         };
       }),
@@ -505,6 +853,50 @@ const FUKUSO = {
           ],
         };
       }),
+      t("HII-fukuso-4c", (r) => {
+        const p = pick(r, [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]);
+        const k2 = -1 - p, D = p * p - 4 * p, both = D >= 0;
+        const ans = tex(both ? listTex("k", [p, k2]) : `k=${k2}`);
+        const e1 = `x^{2}+kx${p ? signed(p) : ""}=0`, e2 = `x^{2}${p ? signedVar(p) : ""}+k=0`;
+        return {
+          q: `2つの2次方程式 $${e1}$，$${e2}$ が共通の実数解をもつような定数 $k$ の値をすべて求めよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(both ? `k=${k2}` : listTex("k", [p, k2])),
+            tex(`k=${p}`),
+            tex(listTex("k", [p, 1 + p])),
+            tex(`k=${1 - p}`),
+          ], (i) => tex(`k=${k2 - i - 1}`)),
+          hint: "共通の実数解を $\\alpha$ として2つの式に代入し，辺々引いて因数分解する。",
+          steps: [
+            `共通の実数解を $\\alpha$ とすると $\\alpha^{2}+k\\alpha${p ? signed(p) : ""}=0$，$\\alpha^{2}${p ? signedVar(p, "\\alpha") : ""}+k=0$`,
+            `辺々引くと $${p === 0 ? "k" : `(k${signed(-p)})`}(\\alpha-1)=0$ より $k=${p}$ または $\\alpha=1$`,
+            `$k=${p}$ のとき2式はともに $${poly([1, p, p])}=0$ で，判別式は $D=${D}$。${both ? "実数解をもつので適する" : "$D<0$ で実数解をもたないので不適"}`,
+            `$\\alpha=1$ のとき $1+k${p ? signed(p) : ""}=0$ より $k=${k2}$（このとき $x=1$ が共通解）。答え：${ans}`,
+          ],
+        };
+      }),
+      t("HII-fukuso-4d", (r) => {
+        const r1 = pick(r, [-4, -3, -2, -1, 1]);
+        const cand = [];
+        for (let v = r1 + 1; v <= 5; v++) if (v !== 0 && 3 * r1 < v && r1 < 3 * v) cand.push(v);
+        const r2 = pick(r, cand);
+        const p = r1 + r2, q = -r1 * r2;
+        const lin = p === 0 ? `${q}` : `${coefVar(p, "k")}${signed(q)}`;
+        const g = poly([4, -2 * p, -2 * q], "k");
+        const ans = 2 * Math.min(r1 * r1, r2 * r2);
+        return {
+          q: `$k$ を実数の定数とする。2次方程式 $x^{2}-2kx${p ? signedVar(p, "k") : ""}${signed(q)}=0$ が実数解 $\\alpha,\\ \\beta$ をもつとき，$\\alpha^{2}+\\beta^{2}$ の最小値を求めよ。ただし，重解のときは $\\alpha=\\beta$ とする。`,
+          ans,
+          hint: "$\\alpha^{2}+\\beta^{2}$ を $k$ の式で表す。$\\alpha,\\ \\beta$ が実数になるための $k$ の条件も忘れずに。",
+          steps: [
+            `$\\alpha+\\beta=2k$，$\\alpha\\beta=${lin}$ より $\\alpha^{2}+\\beta^{2}=(2k)^{2}-2${p === 0 ? `\\cdot ${par(q)}` : `(${lin})`}=${g}$`,
+            `実数解をもつ条件は $\\frac{D}{4}=k^{2}${p === 0 ? signed(-q) : `-(${lin})`}=${fx2(r1, r2, "k")}\\geqq 0$ より $k\\leqq ${r1},\\ ${r2}\\leqq k$`,
+            `$${g}$ のグラフの軸は $k=${fracTex(p, 4)}$ で，$${r1}<${fracTex(p, 4)}<${r2}$。よって最小になるのは $k=${r1}$ または $k=${r2}$ のとき`,
+            `$k=${r1}$ のとき $${2 * r1 * r1}$，$k=${r2}$ のとき $${2 * r2 * r2}$。答え：最小値 $${ans}$`,
+          ],
+        };
+      }),
     ],
   },
 };
@@ -515,7 +907,7 @@ const FUKUSO = {
 const KOUJI = {
   id: "HII-kouji", grade: "H2", area: "num", name: "高次方程式",
   desc: "剰余の定理・因数定理・3次方程式",
-  prereqs: ["HII-fukuso", "HI-inbun"],
+  prereqs: ["HII-fukuso", "HI-inbun", "HII-shiki"],
   ...COURSE,
   points: [
     "剰余の定理：整式 $P(x)$ を $x-a$ で割った余りは $P(a)$。",
@@ -549,7 +941,47 @@ const KOUJI = {
           hint: `因数定理：$${poly([1, -a])}$ で割り切れる $\\iff P(${a})=0$。`,
           steps: [
             `$P(${a})=${a ** 3}+${coefVar(a * a, "k")}${c ? signed(c * a) : ""}${d ? signed(d) : ""}=0$`,
-            `$${coefVar(a * a, "k")}=${-(a ** 3 + c * a + d)}$ より $k=${k}$`,
+            a * a === 1 ? `よって $k=${k}$` : `$${coefVar(a * a, "k")}=${-(a ** 3 + c * a + d)}$ より $k=${k}$`,
+          ],
+        };
+      }),
+      t("HII-kouji-1c", (r) => {
+        const a = rnz(r, -3, 3), b = r(-5, 5), c = r(-5, 5), d = r(-5, 5);
+        const syn = (s) => { const q1 = b + s, q0 = c + s * q1; return [q1, q0, d + s * q0]; };
+        const [q1, q0, R] = syn(a), [w1, w0, W] = syn(-a);
+        const ch = (x1, x0, rr) => `商 $${poly([1, x1, x0])}$，余り $${rr}$`;
+        const ans = ch(q1, q0, R);
+        return {
+          q: `整式 $${poly([1, b, c, d])}$ を $${poly([1, -a])}$ で割ったときの商と余りを求めよ。`,
+          ans,
+          choices: choices4(r, ans, [ch(w1, w0, W), ch(q1, q0, -R), ch(w1, w0, R)], (i) => ch(q1, q0, R + i + 1)),
+          hint: `組立除法を使う。$${poly([1, -a])}$ で割るときは $${a}$ を使って計算する。`,
+          steps: [
+            `組立除法：係数 $1,\\ ${b},\\ ${c},\\ ${d}$ を並べ，$${a}$ をかけて次の係数に加えることをくり返す`,
+            `商の係数は $1,\\ ${q1},\\ ${q0}$，余りは $${R}$`,
+            `答え：${ans}`,
+          ],
+        };
+      }),
+      t("HII-kouji-1d", (r) => {
+        const [p, q, s] = sample(r, [-3, -2, -1, 1, 2, 3], 3).sort((x, y) => x - y);
+        const co = [1, -(p + q + s), p * q + q * s + s * p, -p * q * s];
+        const fac = (u, v, w) => [u, v, w].sort((x, y) => x - y).map((z) => fx(z)).join("");
+        const ans = tex(fac(p, q, s));
+        const z = pick(r, [p, q, s]);
+        return {
+          q: `$${poly(co)}$ を因数分解せよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(fac(-p, -q, -s)),
+            tex(fac(...[p, q, s].map((x) => (x === z ? -x : x)))),
+            tex(fac(...[p, q, s].map((x) => (x === z ? x + 1 : x)))),
+          ], (i) => tex(fac(p, q, s + i + 4))),
+          hint: "定数項の約数のうち，代入して $0$ になる値を探す（因数定理）。",
+          steps: [
+            `$P(x)=${poly(co)}$ とおくと $P(${p})=0$ より，$P(x)$ は $${poly([1, -p])}$ を因数にもつ`,
+            `組立除法で $P(x)=${fx(p)}(${poly([1, -(q + s), q * s])})$`,
+            `答え：${ans}`,
           ],
         };
       }),
@@ -596,6 +1028,48 @@ const KOUJI = {
             `$P(${a})=${a === 0 ? "t" : `${coefVar(a, "s")}+t`}=${A}$，$P(${b})=${b === 0 ? "t" : `${coefVar(b, "s")}+t`}=${B}$`,
             `これを解いて $s=${p}$，$t=${q}$`,
             `答え：$${poly([p, q])}$`,
+          ],
+        };
+      }),
+      t("HII-kouji-2c", (r) => {
+        const [u, v] = sample(r, [-4, -3, -2, -1, 1, 2, 3, 4], 2);
+        const A = -(u + v), B = u * v;
+        const part = (w) => (w > 0 ? `\\pm ${sqrtTex(1, w)}` : `\\pm ${sqrtTex(1, -w) === "1" ? "" : sqrtTex(1, -w)}i`);
+        const ord = (ws) => [...ws].sort((x, y) => ((x > 0) !== (y > 0) ? (x > 0 ? -1 : 1) : Math.abs(x) - Math.abs(y)));
+        const sol = (ws) => `x=${[...new Set(ord(ws).map(part))].join(",\\ ")}`;
+        const ans = tex(sol([u, v]));
+        return {
+          q: `方程式 $${poly([1, 0, A, 0, B])}=0$ を解け。`,
+          ans,
+          choices: choices4(r, ans, [tex(sol([-u, -v])), Math.abs(u) !== Math.abs(v) ? tex(sol([Math.abs(u), Math.abs(v)])) : null, tex(listTex("x", [u, v]))],
+            (i) => tex(sol([u + (u > 0 ? i + 1 : -(i + 1)), v]))),
+          hint: "$x^{2}=t$ とおくと，$t$ の2次方程式になる。",
+          steps: [
+            `$x^{2}=t$ とおくと $${poly([1, A, B], "t")}=0$，$${fx2(u, v, "t")}=0$`,
+            `$t=${u},\\ ${v}$ より $x^{2}=${u}$ または $x^{2}=${v}$`,
+            `答え：${ans}`,
+          ],
+        };
+      }),
+      t("HII-kouji-2d", (r) => {
+        const a = pick(r, [1, 2, 3, 4, -1, -2, -3, -4]), A = Math.abs(a);
+        const cpx = (re2, im2) => (re2 % 2 === 0 && im2 % 2 === 0
+          ? `${re2 / 2}\\pm ${im2 / 2 === 1 ? "" : im2 / 2}\\sqrt{3}i`
+          : `\\frac{${re2}\\pm ${im2 === 1 ? "" : im2}\\sqrt{3}i}{2}`);
+        const ans = tex(`x=${a},\\ ${cpx(-a, A)}`);
+        return {
+          q: `方程式 $x^{3}=${a ** 3}$ を解け。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(`x=${a}`),
+            tex(`x=${a},\\ ${cpx(a, A)}`),
+            tex(`x=${a},\\ ${-a}\\pm ${A === 1 ? "" : A}\\sqrt{3}i`),
+          ]),
+          hint: "移項して因数分解する（$a^{3}-b^{3}=(a-b)(a^{2}+ab+b^{2})$ などを使う）。",
+          steps: [
+            `$x^{3}${signed(-(a ** 3))}=0$ より $${fx(a)}(${poly([1, a, a * a])})=0$`,
+            `$${poly([1, a, a * a])}=0$ を解くと $x=${cpx(-a, A)}$`,
+            `答え：${ans}`,
           ],
         };
       }),
@@ -655,6 +1129,26 @@ const KOUJI = {
             `$(${poly([1, -p])})(${poly([1, -(q + s), q * s])})=0$ と因数分解でき，さらに $${fx(p)}${fx2(q, s)}=0$`,
             `異なる解は $x=${roots.sort((x, y) => x - y).join(",\\ ")}$`,
             `答え：和は $${ans}$`,
+          ],
+        };
+      }),
+      t("HII-kouji-3d", (r) => {
+        const p = r(-2, 2), q = r(1, 2), e = r(-3, 3), s = rnz(r, -3, 3), tt = r(-4, 4);
+        const B = -2 * p, Cc = p * p + q * q;
+        const co = [1, B + e, Cc + B * e + s, Cc * e + tt];
+        const z = cx(p, q);
+        const ans = tex(cx(s * p + tt, s * q));
+        return {
+          q: `$x=${z}$ のとき，$P(x)=${poly(co)}$ の値を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [tex(cx(s * p + tt, -s * q)), tex(cx(tt - s * p, s * q)), tex(cx(s * p - tt, s * q))],
+            (i) => tex(cx(s * p + tt + i + 1, s * q))),
+          hint: `$x=${z}$ を解にもつ実数係数の2次方程式を作り，$P(x)$ をその左辺で割る。`,
+          steps: [
+            `$x=${z}$ を解にもつ2次方程式は $${poly([1, B, Cc])}=0$`,
+            `$P(x)$ を $${poly([1, B, Cc])}$ で割ると，商は $${poly([1, e])}$，余りは $${poly([s, tt])}$`,
+            `$P(x)=(${poly([1, B, Cc])})(${poly([1, e])})+${poly([s, tt]).startsWith("-") ? `(${poly([s, tt])})` : poly([s, tt])}$ で，$x=${z}$ のとき $${poly([1, B, Cc])}=0$ なので`,
+            `$P(${z})=${coefVar(s, `(${z})`)}${tt ? signed(tt) : ""}=${cx(s * p + tt, s * q)}$。答え：${ans}`,
           ],
         };
       }),
@@ -732,6 +1226,60 @@ const KOUJI = {
           ],
         };
       }),
+      t("HII-kouji-4d", (r) => {
+        const a = pick(r, [1, -1, 2, -2]);
+        let b = r(-4, 4);
+        if (b === -2 * a) b += 1; // 3重解にならないように
+        const k1 = [b * b, 4], k2 = [-a * (a + b), 1];
+        const cubic = `x^{3}${signedVar(b - a, "x^{2}")}${a * b === 0 ? "+kx" : `+(k${signed(-a * b)})x`}${signedVar(-a, "k")}`;
+        const quad = `x^{2}${signedVar(b)}+k`;
+        const kl = (vals) => listFrac("k", vals.filter((v, i) => vals.findIndex((w) => w[0] * v[1] === v[0] * w[1]) === i)); // 同じ値は1つに
+        const ans = tex(kl([k1, k2]));
+        return {
+          q: `3次方程式 $${cubic}=0$ が2重解をもつような定数 $k$ の値をすべて求めよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(`k=${fracTex(...k1)}`),
+            tex(`k=${fracTex(...k2)}`),
+            tex(kl([k1, [a * (a + b), 1]])),
+          ], (i) => tex(kl([k1, [k2[0] + i + 1, 1]]))),
+          hint: "$k$ の値によらず成り立つ解を1つ見つけて，左辺を因数分解する。",
+          steps: [
+            `$P(x)=${cubic}$ とおくと $P(${a})=0$（$k$ によらない）より $P(x)=${fx(a)}(${quad})$`,
+            `(i) $${quad}=0$ が重解をもつとき：$D=${b === 0 ? "" : b * b}-4k=0$ より $k=${fracTex(...k1)}$（重解 $x=${fracTex(-b, 2)}$ は $${a}$ と異なる）`,
+            `(ii) $${quad}=0$ が $x=${a}$ を解にもつとき：$${a * a}${a * b ? signed(a * b) : ""}+k=0$ より $k=${k2[0]}$（もう1つの解 $x=${-a - b}$ は $${a}$ と異なる）`,
+            `答え：${ans}`,
+          ],
+        };
+      }),
+      t("HII-kouji-4e", (r) => {
+        const a = r(-2, 2);
+        let b = r(-3, 3);
+        if (b === a) b = a + pick(r, [-2, -1, 1, 2]);
+        const p = r(-4, 4), q = r(-4, 4), c = rnz(r, -3, 3);
+        if (p === 0 && q === 0) return { skip: true };
+        const R = c * (b - a) ** 2 + p * b + q;
+        const rem = (cc) => poly([cc, p - 2 * a * cc, cc * a * a + q]);
+        const ans = tex(rem(c));
+        const sq = a === 0 ? "x^{2}" : `(${poly([1, -a])})^{2}`;
+        const div = b === 0 ? `x${sq}` : `${sq}${fx(b)}`;
+        const pq = poly([p, q]);
+        const wrong = [tex(pq), tex(rem(-c)), tex(poly([c, p - 2 * b * c, c * b * b + q]))];
+        const c1 = (R - p * b - q) / (b - a);
+        if (Number.isInteger(c1) && c1 !== c) wrong.push(tex(rem(c1)));
+        return {
+          q: `整式 $P(x)$ を $${sq}$ で割ると余りが $${pq}$，$${poly([1, -b])}$ で割ると余りが $${R}$ である。$P(x)$ を $${div}$ で割った余りを求めよ。`,
+          ans,
+          choices: choices4(r, ans, wrong, (i) => tex(rem(c + i + 1))),
+          hint: `$${div}$ で割った余りは2次以下。それを $${sq}$ で割った余りが $${pq}$ になることを使って，余りのおき方を工夫する。`,
+          steps: [
+            `$P(x)=${div}Q(x)+R(x)$（$R(x)$ は2次以下）とおく`,
+            `$P(x)$ を $${sq}$ で割った余りは $R(x)$ を $${sq}$ で割った余りに等しいので，$R(x)=c${sq}${pq.startsWith("-") ? "" : "+"}${pq}$ とおける`,
+            `$P(${b})=${R}$ より $${(b - a) ** 2}c${p * b + q ? signed(p * b + q) : ""}=${R}$，$c=${c}$`,
+            `答え：${ans}`,
+          ],
+        };
+      }),
     ],
   },
 };
@@ -782,9 +1330,8 @@ const ZUHOU = {
       }),
       t("HII-zuhou-1b", (r) => {
         const x1 = r(-6, 6), y1 = r(-6, 6), x2 = r(-6, 6), y2 = r(-6, 6);
-        const m = r(1, 4);
-        let n = r(1, 4);
-        if (n === m) n = m === 4 ? 1 : m + 1;
+        if (x1 === x2 && y1 === y2) return { skip: true };
+        const [m, n] = pick(r, [[1, 2], [2, 1], [1, 3], [3, 1], [2, 3], [3, 2], [1, 4], [4, 1], [3, 4], [4, 3]]); // 既約な比だけ
         const askX = r(0, 1) === 1;
         const ans = askX ? fracAns(n * x1 + m * x2, m + n) : fracAns(n * y1 + m * y2, m + n);
         const [u1, u2] = askX ? [x1, x2] : [y1, y2];
@@ -812,10 +1359,37 @@ const ZUHOU = {
           ],
         };
       }),
+      t("HII-zuhou-1d", (r) => {
+        const x1 = r(-4, 4), y1 = r(-4, 4);
+        let x2 = r(-4, 4), y2 = r(-4, 4);
+        if (x2 === x1) x2 = x1 + r(1, 3);
+        if (y2 === y1) y2 = y1 + pick(r, [-2, -1, 1, 2]);
+        const a = y2 - y1, b = -(x2 - x1), c = -a * x1 - b * y1;
+        const ans = tex(lineTex(a, b, c));
+        const mT = fracTex(y2 - y1, x2 - x1);
+        return {
+          q: `2点 $(${x1},\\ ${y1})$，$(${x2},\\ ${y2})$ を通る直線の方程式を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(lineTex(x2 - x1, y2 - y1, -(x2 - x1) * x1 - (y2 - y1) * y1)),
+            tex(lineTex(a, b, a * x1 + b * y1)),
+            tex(lineTex(-a, b, a * x1 - b * y1)),
+          ], (i) => tex(lineTex(a, b, c + i + 1))),
+          hint: "傾き $\\frac{y_{2}-y_{1}}{x_{2}-x_{1}}$ を求め，$y-y_{1}=m(x-x_{1})$ に代入する。",
+          steps: [
+            `傾きは $\\frac{${y2}-${par(y1)}}{${x2}-${par(x1)}}=${mT}$`,
+            `$${y1 ? `y${signed(-y1)}` : "y"}=${(() => { const mC = mT === "1" ? "" : mT === "-1" ? "-" : mT, xs = x1 ? `x${signed(-x1)}` : "x"; return mC === "" || !x1 ? `${mC}${xs}` : `${mC}(${xs})`; })()}$`,
+            `整理して，答え：${ans}`,
+          ],
+        };
+      }),
     ],
     2: [
       t("HII-zuhou-2a", (r) => {
-        const a = rnz(r, -4, 4), b = rnz(r, -4, 4), c = r(-6, 6), x0 = r(-4, 4), y0 = r(-4, 4);
+        let a = rnz(r, -4, 4), b = rnz(r, -4, 4), c = r(-6, 6);
+        const x0 = r(-4, 4), y0 = r(-4, 4);
+        // 問題文の直線（lineTex で約分・符号をそろえた形）と解説の係数を合わせる
+        { const g = gcd(gcd(a, b), c), sg = a < 0 ? -1 : 1; a = (sg * a) / g; b = (sg * b) / g; c = (sg * c) / g; }
         const ans = tex(lineTex(b, -a, -b * x0 + a * y0));
         return {
           q: `点 $(${x0},\\ ${y0})$ を通り，直線 $${lineTex(a, b, c)}$ に垂直な直線の方程式を求めよ。`,
@@ -868,6 +1442,25 @@ const ZUHOU = {
             `中心 $(${p},\\ ${q})$ と直線の距離は $d=\\frac{|${a}\\cdot ${par(p)}${signed(b)}\\cdot ${par(q)}${c ? signed(c) : ""}|}{${N}}=${d}$`,
             `半径は $${R}$ で，$d${kind === 2 ? "<" : kind === 1 ? "=" : ">"}${R}$`,
             `答え：${ans}`,
+          ],
+        };
+      }),
+      t("HII-zuhou-2d", (r) => {
+        const [a, b] = pick(r, [[1, 1], [1, -1], [1, 2], [2, 1], [1, -2], [2, -1], [1, 3], [3, 1], [1, -3], [3, -1]]);
+        const x0 = r(-4, 4), y0 = r(-4, 4), N = a * a + b * b;
+        const t0 = N % 2 === 0 ? rnz(r, -3, 3) : 2 * rnz(r, -2, 2);
+        const c = (t0 * N) / 2 - a * x0 - b * y0;
+        const x1 = x0 - t0 * a, y1 = y0 - t0 * b;
+        const sx = x0 ? `${x0}+p` : "p", sy = y0 ? `${y0}+q` : "q";
+        const askX = r(0, 1) === 1;
+        return {
+          q: `直線 $${coefVar(a)}${signedVar(b, "y")}${c ? signed(c) : ""}=0$ に関して，点 $A(${x0},\\ ${y0})$ と対称な点 $B$ の ${askX ? "$x$" : "$y$"} 座標を求めよ。`,
+          ans: askX ? x1 : y1,
+          hint: "$B(p,\\ q)$ とおき，「直線 $AB$ が与えられた直線に垂直」「線分 $AB$ の中点が直線上にある」の2つを式にする。",
+          steps: [
+            `$B(p,\\ q)$ とおく。直線の傾きは $${fracTex(-a, b)}$ なので，$AB$ の傾きは $\\frac{${y0 ? `q${signed(-y0)}` : "q"}}{${x0 ? `p${signed(-x0)}` : "p"}}=${fracTex(b, a)}$`,
+            `中点 $\\left(\\frac{${sx}}{2},\\ \\frac{${sy}}{2}\\right)$ が直線上にあるので $${coefVar(a, x0 ? `(${sx})` : "p")}${signedVar(b, y0 ? `(${sy})` : "q")}${c ? signed(2 * c) : ""}=0$`,
+            `これを解いて $p=${x1}$，$q=${y1}$。答え：$${askX ? x1 : y1}$`,
           ],
         };
       }),
@@ -939,6 +1532,25 @@ const ZUHOU = {
           ],
         };
       }),
+      t("HII-zuhou-3d", (r) => {
+        const [A0, B0, N] = pick(r, PYTH);
+        const a = A0 * (r(0, 1) ? 1 : -1), b = B0 * (r(0, 1) ? 1 : -1);
+        const p = r(-3, 3), q = r(-3, 3), R = r(1, 4);
+        const tt = R * N + r(1, 3 * N), sg = r(0, 1) ? 1 : -1;
+        const c = sg * tt - a * p - b * q;
+        const askMax = r(0, 1) === 1;
+        const v = askMax ? tt + R * N : tt - R * N;
+        return {
+          q: `円 $${circTex(p, q, R * R)}$ 上を点 $P$ が動くとき，点 $P$ と直線 $${coefVar(a)}${signedVar(b, "y")}${c ? signed(c) : ""}=0$ の距離の${askMax ? "最大値" : "最小値"}を求めよ。`,
+          ans: fracAns(v, N),
+          hint: "円の中心と直線の距離 $d$ を求め，半径 $r$ と比べる。",
+          steps: [
+            `中心 $(${p},\\ ${q})$ と直線の距離は $d=\\frac{|${a}\\cdot ${par(p)}${signed(b)}\\cdot ${par(q)}${c ? signed(c) : ""}|}{${N}}=${fracTex(tt, N)}$`,
+            `半径は $${R}$ で $d>${R}$ なので，円と直線は共有点をもたない。円周上の点と直線の距離は $d-${R}$ 以上 $d+${R}$ 以下`,
+            `答え：${askMax ? "最大値" : "最小値"} $${fracTex(v, N)}$`,
+          ],
+        };
+      }),
     ],
     4: [
       t("HII-zuhou-4a", (r) => {
@@ -970,6 +1582,63 @@ const ZUHOU = {
             `中心との距離 $\\frac{|${-A}k|}{\\sqrt{k^{2}+1}}\\leqq ${rr}$ より $${a * a - rr * rr}k^{2}\\leqq ${rr * rr}$`,
             `$${fracTex(-rr, s)}\\leqq k\\leqq ${fracTex(rr, s)}$（両端は接するとき）`,
             `答え：$${fracTex(askMax ? rr : -rr, s)}$`,
+          ],
+        };
+      }),
+      t("HII-zuhou-4c", (r) => {
+        if (r(0, 1) === 1) {
+          const rr = r(1, 4), r2 = rr * rr;
+          const ans = `円 $x^{2}+y^{2}=${2 * r2}$`;
+          return {
+            q: `円 $x^{2}+y^{2}=${r2}$ に点 $P$ から引いた2本の接線が直交するとき，点 $P$ の軌跡を求めよ。`,
+            ans,
+            choices: choices4(r, ans, [`円 $x^{2}+y^{2}=${r2}$`, `円 $x^{2}+y^{2}=${4 * r2}$`, `円 $x^{2}+y^{2}=${2 * rr}$`], (i) => `円 $x^{2}+y^{2}=${3 * r2 + i}$`),
+            hint: "点 $P(X,\\ Y)$ を通る傾き $m$ の直線が円に接する条件を $m$ の2次方程式にし，2つの解（2本の接線の傾き）の積を考える。",
+            steps: [
+              `$P(X,\\ Y)$ を通る傾き $m$ の直線 $y=m(x-X)+Y$ が円に接する条件は $\\frac{|Y-mX|}{\\sqrt{m^{2}+1}}=${rr}$`,
+              `2乗して整理すると $(X^{2}-${r2})m^{2}-2XYm+Y^{2}-${r2}=0$`,
+              `2本の接線の傾きの積が $-1$ なので $\\frac{Y^{2}-${r2}}{X^{2}-${r2}}=-1$，すなわち $X^{2}+Y^{2}=${2 * r2}$（$X=\\pm ${rr}$ のときも，接線 $x=\\pm ${rr}$ と $y=\\pm ${rr}$ が直交し，この円上の点になる）`,
+              `答え：${ans}`,
+            ],
+          };
+        }
+        const a = pick(r, [1, 2, 3, -1, -2]), c = r(-3, 3);
+        const Y = fracTex(4 * a * c - 1, 4 * a);
+        const ans = `直線 $y=${Y}$`;
+        const yc = c ? `(Y${signed(-c)})` : "Y";
+        return {
+          q: `放物線 $y=${poly([a, 0, c])}$ に点 $P$ から引いた2本の接線が直交するとき，点 $P$ の軌跡を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [`直線 $y=${fracTex(4 * a * c + 1, 4 * a)}$`, `直線 $y=${fracTex(2 * a * c - 1, 2 * a)}$`, `直線 $y=${fracTex(-1, 4 * a)}$`],
+            (i) => `直線 $y=${fracTex(4 * a * c - 1 - 4 * a * (i + 1), 4 * a)}$`),
+          hint: "点 $P(X,\\ Y)$ を通る傾き $m$ の直線が放物線に接する条件（判別式 $=0$）を $m$ の2次方程式にし，2つの解（2本の接線の傾き）の積を考える。",
+          steps: [
+            `$P(X,\\ Y)$ を通る傾き $m$ の直線 $y=m(x-X)+Y$ と放物線の式から $y$ を消去すると $${coefVar(a, "x^{2}")}-mx+mX-Y${c ? signed(c) : ""}=0$`,
+            `接する条件 $D=0$ より $m^{2}-${a === 1 ? "4" : `4\\cdot ${par(a)}`}(mX-Y${c ? signed(c) : ""})=0$，すなわち $m^{2}${signedVar(-4 * a, "Xm")}${signedVar(4 * a, yc)}=0$`,
+            `2本の接線の傾きの積が $-1$ なので $${4 * a}${yc}=-1$，$Y=${Y}$（このとき判別式は正で，接線は2本引ける）`,
+            `答え：${ans}`,
+          ],
+        };
+      }),
+      t("HII-zuhou-4d", (r) => {
+        const p = r(-2, 2), s = r(1, 3), q = p * p - s * s;
+        const curve = poly([2, -2 * p, q]);
+        const ans = `放物線 $y=${curve}$ の $x<${p - s}$，$${p + s}<x$ の部分`;
+        const mx = (v) => (p ? `m(${v}${signed(-p)})` : `m${v}`);
+        return {
+          q: `放物線 $y=x^{2}$ と，点 $(${p},\\ ${q})$ を通る傾き $m$ の直線が異なる2点 $A,\\ B$ で交わるとき，線分 $AB$ の中点 $M$ の軌跡を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            `放物線 $y=${curve}$`,
+            `放物線 $y=${curve}$ の $${p - s}<x<${p + s}$ の部分`,
+            `放物線 $y=x^{2}$ の $x<${p - s}$，$${p + s}<x$ の部分`,
+          ]),
+          hint: "交点の $x$ 座標を $\\alpha,\\ \\beta$ として，解と係数の関係から中点を $m$ で表す。異なる2点で交わる条件から，$x$ のとりうる範囲も求める。",
+          steps: [
+            `直線は $y=${mx("x")}${q ? signed(q) : ""}$。$y$ を消去すると $x^{2}-mx${p ? signedVar(p, "m") : ""}${q ? signed(-q) : ""}=0$`,
+            `異なる2点で交わる条件は $D=m^{2}${p ? signedVar(-4 * p, "m") : ""}${q ? signed(4 * q) : ""}>0$`,
+            `中点 $M(X,\\ Y)$ は $X=\\frac{\\alpha+\\beta}{2}=\\frac{m}{2}$，$Y=${mx("X")}${q ? signed(q) : ""}$。$m=2X$ を代入して $Y=${poly([2, -2 * p, q], "X")}$`,
+            `$D>0$ に $m=2X$ を代入すると $X^{2}${p ? signedVar(-2 * p, "X") : ""}${q ? signed(q) : ""}>0$ より $X<${p - s}$，$${p + s}<X$。答え：${ans}`,
           ],
         };
       }),
@@ -1050,6 +1719,33 @@ const normDeg = (x) => { const y = ((((x + 180) % 360) + 360) % 360) - 180; retu
 const angTex = (a) => (a > 0 ? `+${radTex(a)}` : `-${radTex(-a)}`);
 const sinForm = (RT, a) => `${RT}\\sin\\left(\\theta${angTex(a)}\\right)`;
 
+/** 0≦θ<360° で sin(θ+α) ≷ sin φ0 となる θ の区間の列 [{lo, hi, loIn, hiIn}]（度） */
+function trigIneqDeg(alpha, phi0, op) {
+  const incl = op === "\\geqq" || op === "\\leqq", gt = op === ">" || op === "\\geqq";
+  const [L, U] = gt ? [phi0, 180 - phi0] : [180 - phi0, 360 + phi0];
+  const out = [];
+  for (let n = -2; n <= 2; n++) {
+    let lo = L + 360 * n - alpha, hi = U + 360 * n - alpha, loIn = incl, hiIn = incl;
+    if (hi <= 0 || lo >= 360) continue;
+    if (lo < 0) { lo = 0; loIn = true; }
+    if (hi >= 360) { hi = 360; hiIn = false; }
+    out.push({ lo, hi, loIn, hiIn });
+  }
+  return out.sort((x, y) => x.lo - y.lo);
+}
+/** 解の端が θ=0（2π）にならない組か（なると θ=0 だけの点が出るので使わない） */
+const trigIneqOK = (alpha, phi0) => [phi0 - alpha, 180 - phi0 - alpha].every((x) => ((x % 360) + 360) % 360 !== 0);
+/** 区間の列を TeX に（v は変数） */
+const ivTheta = (list, v = "\\theta") => list.map(({ lo, hi, loIn, hiIn }) => `${radTex(lo)}${loIn ? "\\leqq " : "<"}${v}${hiIn ? "\\leqq " : "<"}${radTex(hi)}`).join(",\\ ");
+/** tan の値（[分子, 分母]）3つと，3つの角（それぞれ 0〜90°）の和（度） */
+const TAN3 = [
+  [[1, 2], [1, 5], [1, 8], 45], [[1, 3], [1, 3], [1, 7], 45], [[1, 3], [1, 4], [2, 9], 45], [[1, 7], [1, 8], [4, 7], 45],
+  [[1, 2], [1, 2], [3, 4], 90], [[1, 3], [1, 7], [2, 1], 90], [[1, 5], [1, 8], [3, 1], 90], [[1, 2], [1, 8], [3, 2], 90],
+  [[1, 2], [3, 1], [3, 4], 135], [[1, 3], [2, 1], [4, 3], 135], [[1, 7], [2, 1], [2, 1], 135], [[1, 5], [2, 1], [7, 4], 135],
+  [[2, 1], [2, 1], [4, 3], 180], [[3, 1], [3, 1], [3, 4], 180], [[1, 2], [3, 1], [7, 1], 180], [[2, 1], [3, 2], [7, 4], 180],
+  [[2, 1], [5, 1], [8, 1], 225], [[3, 1], [3, 1], [7, 1], 225], [[3, 1], [4, 1], [9, 2], 225],
+];
+
 const SANKAKU = {
   id: "HII-sankaku", grade: "H2", area: "func", name: "三角関数",
   desc: "弧度法・加法定理・2倍角・合成",
@@ -1125,6 +1821,28 @@ const SANKAKU = {
             `$${af}^{2}\\theta=1-\\left(${fracTex(gS * p, q)}\\right)^{2}=${fracTex(n, q * q)}$`,
             `$${range}$ では $${af}\\theta${aS > 0 ? ">" : "<"}0$`,
             `答え：$${rootFrac(aS, n, q)}$`,
+          ],
+        };
+      }),
+      t("HII-sankaku-1d", (r) => {
+        const fn = pick(r, ["sin", "cos", "tan"]);
+        const [bn, bd] = pick(r, [[2, 1], [3, 1], [4, 1], [1, 2], [1, 3], [3, 2]]);
+        const A = pick(r, [1, 2, 3, -1, -2]), C = pick(r, [0, 30, 45, 60, -30, -45, -60, 90]);
+        const per = fn === "tan" ? [bd, bn] : [2 * bd, bn];
+        const ansT = piTex(...per), base = fn === "tan" ? "\\pi" : "2\\pi";
+        const arg = bd === 1 ? `${bn}\\theta` : `\\frac{${bn === 1 ? "" : bn}\\theta}{${bd}}`;
+        const f = `${A === 1 ? "" : A === -1 ? "-" : A}\\${fn}${C === 0 ? ` ${arg}` : `\\left(${arg}${angTex(C)}\\right)`}`;
+        const ans = tex(ansT);
+        return {
+          q: `関数 $y=${f}$ の周期を求めよ。ただし，周期は正で最小のものとする。`,
+          ans,
+          choices: choices4(r, ans, [tex(piTex(per[0] * bn * bn, per[1] * bd * bd)), tex(piTex(fn === "tan" ? 2 * bd : bd, bn)), tex(base)],
+            (i) => tex(piTex(per[0] * (i + 2), per[1]))),
+          hint: `$y=\\${fn} k\\theta$（$k>0$）の周期は $${fn === "tan" ? "\\frac{\\pi}{k}" : "\\frac{2\\pi}{k}"}$。`,
+          steps: [
+            `$y=\\${fn}\\theta$ の周期は $${base}$ で，$\\theta$ の係数は $${fracTex(bn, bd)}$`,
+            `周期は $${base}\\div ${fracTex(bn, bd)}=${ansT}$（$y$ 軸方向の拡大や，かっこ内の定数は周期に関係しない）`,
+            `答え：${ans}`,
           ],
         };
       }),
@@ -1213,6 +1931,31 @@ const SANKAKU = {
           ],
         };
       }),
+      t("HII-sankaku-2d", (r) => {
+        const [n, d] = pick(r, [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [1, 5], [2, 5], [-1, 2], [-1, 3], [-2, 3], [4, 3], [5, 4], [6, 5], [-1, 4]]);
+        const type = r(0, 2);
+        const a = fracTex(n, d), sc = fracTex(n * n - d * d, 2 * d * d);
+        let ansN, ansD, what, last;
+        if (type === 0) {
+          [ansN, ansD] = [n * n - d * d, 2 * d * d]; what = "\\sin\\theta\\cos\\theta"; last = null;
+        } else if (type === 1) {
+          ansN = n * (3 * d * d - n * n); ansD = 2 * d * d * d; what = "\\sin^{3}\\theta+\\cos^{3}\\theta";
+          last = `$\\sin^{3}\\theta+\\cos^{3}\\theta=(\\sin\\theta+\\cos\\theta)(1-\\sin\\theta\\cos\\theta)=${pt(a)}\\cdot\\left(1-${pt(sc)}\\right)$`;
+        } else {
+          ansN = 2 * n * d; ansD = n * n - d * d; what = "\\frac{1}{\\sin\\theta}+\\frac{1}{\\cos\\theta}";
+          last = `$\\frac{1}{\\sin\\theta}+\\frac{1}{\\cos\\theta}=\\frac{\\sin\\theta+\\cos\\theta}{\\sin\\theta\\cos\\theta}=${pt(a)}\\div ${pt(sc)}$`;
+        }
+        return {
+          q: `$\\sin\\theta+\\cos\\theta=${a}$ のとき，$${what}$ の値を求めよ。`,
+          ans: fracAns(ansN, ansD),
+          hint: "両辺を2乗すると，$\\sin\\theta\\cos\\theta$ の値がわかる。",
+          steps: [
+            `両辺を2乗して $1+2\\sin\\theta\\cos\\theta=${fracTex(n * n, d * d)}$ より $\\sin\\theta\\cos\\theta=${sc}$`,
+            ...(last ? [last] : []),
+            `答え：$${fracTex(ansN, ansD)}$`,
+          ],
+        };
+      }),
     ],
     3: [
       t("HII-sankaku-3a", (r) => {
@@ -1293,6 +2036,37 @@ const SANKAKU = {
           ],
         };
       }),
+      t("HII-sankaku-3d", (r) => {
+        const alpha = pick(r, [30, 60, -30, -60, 120, 150, -120, -150, 45, -45, 135, -135]);
+        const kk = r(1, 2), S = synth(alpha, kk);
+        const is45 = Math.abs(alpha) % 90 === 45;
+        const [phi0, wT] = pick(r, is45
+          ? [[45, "\\frac{\\sqrt{2}}{2}"], [-45, "-\\frac{\\sqrt{2}}{2}"], [0, "0"]]
+          : [[30, "\\frac{1}{2}"], [-30, "-\\frac{1}{2}"], [45, "\\frac{\\sqrt{2}}{2}"], [-45, "-\\frac{\\sqrt{2}}{2}"], [60, "\\frac{\\sqrt{3}}{2}"], [-60, "-\\frac{\\sqrt{3}}{2}"], [0, "0"]]);
+        if (!trigIneqOK(alpha, phi0)) return { skip: true };
+        const rhs = niceTex(S.R * Math.sin(phi0 * DEG));
+        const op = pick(r, [">", "<", "\\geqq", "\\leqq"]);
+        const flip = { ">": "<", "<": ">", "\\geqq": "\\leqq", "\\leqq": "\\geqq" }[op];
+        const swap = { ">": "\\geqq", "<": "\\leqq", "\\geqq": ">", "\\leqq": "<" }[op];
+        const sol = trigIneqDeg(alpha, phi0, op);
+        const ans = tex(ivTheta(sol));
+        const wrongs = [ivTheta(trigIneqDeg(alpha, phi0, flip)), ivTheta(trigIneqDeg(alpha, phi0, swap))];
+        if (trigIneqOK(-alpha, phi0)) wrongs.push(ivTheta(trigIneqDeg(-alpha, phi0, op)));
+        if (trigIneqOK(0, phi0)) wrongs.push(ivTheta(trigIneqDeg(0, phi0, op)));
+        const v = `\\theta${angTex(alpha)}`;
+        return {
+          q: `$0\\leqq\\theta<2\\pi$ のとき，不等式 $${S.expr}${op}${rhs}$ を解け。`,
+          ans,
+          choices: choices4(r, ans, wrongs.map(tex)),
+          hint: "左辺を合成して $r\\sin(\\theta+\\alpha)$ の形にし，$\\theta+\\alpha$ の動く範囲に注意して単位円で考える。",
+          steps: [
+            `左辺 $=${sinForm(S.RT, alpha)}$ より，不等式は $\\sin\\left(${v}\\right)${op}${wT}$`,
+            `$0\\leqq\\theta<2\\pi$ より $${radTex(alpha)}\\leqq ${v}<${radTex(alpha + 360)}$`,
+            `この範囲で単位円から読みとると $${ivTheta(sol.map((s) => ({ ...s, lo: s.lo + alpha, hi: s.hi + alpha })), v)}$`,
+            `答え：${ans}`,
+          ],
+        };
+      }),
     ],
     4: [
       t("HII-sankaku-4a", (r) => {
@@ -1341,6 +2115,55 @@ const SANKAKU = {
             `$\\theta$ が4つ $\\iff$ $y=${g}$ と直線 $y=k$ が $-1<t<1$ で異なる2点で交わる`,
             `頂点は $t=${vt}$ で $y=${fracTex(...(isSin ? hi : lo))}$，端は $t=1$ で $${isSin ? b - 1 : 1 + b}$，$t=-1$ で $${isSin ? -b - 1 : 1 - b}$`,
             `グラフより，答え：$${L}<k<${H}$`,
+          ],
+        };
+      }),
+      t("HII-sankaku-4c", (r) => {
+        const [an, ad] = pick(r, [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [1, 1], [3, 2], [2, 1], [5, 2], [3, 1], [5, 4], [4, 3], [4, 1]]);
+        const b = r(-2, 2);
+        const inside = an <= ad;
+        const M = inside ? [an * an + (1 + b) * ad * ad, ad * ad] : [2 * an + b * ad, ad];
+        const MT = fracTex(...M);
+        const m1 = [M[0] - (1 + b) * M[1], M[1]]; // a^2（(i) のとき）
+        const a2 = [M[0] - b * M[1], 2 * M[1]];  // a（(ii) のとき）
+        const v1 = m1[0] / m1[1];
+        const c1 = 1 + b ? signed(1 + b) : "";
+        const bb = b ? signed(b) : "";
+        return {
+          q: `$a$ を正の定数とする。$0\\leqq x<2\\pi$ における関数 $y=\\cos^{2}x+2a\\sin x${bb}$ の最大値が $${MT}$ であるとき，$a$ の値を求めよ。`,
+          ans: fracAns(an, ad),
+          hint: "$\\sin x=t$ とおいて，$t$ の2次関数の最大値を考える。$t$ のとりうる値の範囲に注意する。",
+          steps: [
+            `$t=\\sin x$ とおくと $-1\\leqq t\\leqq 1$ で，$y=1-t^{2}+2at${bb}=-(t-a)^{2}+a^{2}${c1}$`,
+            `(i) $0<a\\leqq 1$ のとき，最大値は $t=a$ で $a^{2}${c1}$。$a^{2}${c1}=${MT}$ より $a^{2}=${fracTex(...m1)}$，${inside ? `$a=${fracTex(an, ad)}$（$0<a\\leqq 1$ をみたす）` : v1 > 0 ? `$a=${rootFrac(1, m1[0] * m1[1], m1[1])}$ となり $a>1$ なので不適` : "これをみたす正の $a$ はない"}`,
+            `(ii) $a>1$ のとき，最大値は $t=1$ で $2a${bb}$。$2a${bb}=${MT}$ より $a=${fracTex(...a2)}$，${inside ? "$a>1$ をみたさないので不適" : "$a>1$ をみたす"}`,
+            `答え：$a=${fracTex(an, ad)}$`,
+          ],
+        };
+      }),
+      t("HII-sankaku-4d", (r) => {
+        const T3 = pick(r, TAN3), sum = T3[3];
+        const [A, B, G] = shuffle(r, T3.slice(0, 3));
+        const F = (x) => fracTex(...x);
+        const t1 = reduce(A[0] * B[1] + B[0] * A[1], A[1] * B[1] - A[0] * B[0]);
+        const n2 = t1[0] * G[1] + G[0] * t1[1], d2 = t1[1] * G[1] - t1[0] * G[0];
+        const T1 = fracTex(...t1);
+        const ans = tex(radTex(sum));
+        const wr = [sum + 180, sum - 180, sum + 90, sum - 90].filter((x) => x > 0 && x !== sum).map((x) => tex(radTex(x)));
+        return {
+          q: `$0<\\alpha<\\frac{\\pi}{2}$，$0<\\beta<\\frac{\\pi}{2}$，$0<\\gamma<\\frac{\\pi}{2}$ で，$\\tan\\alpha=${F(A)}$，$\\tan\\beta=${F(B)}$，$\\tan\\gamma=${F(G)}$ のとき，$\\alpha+\\beta+\\gamma$ の値を求めよ。`,
+          ans,
+          choices: choices4(r, ans, wr, (i) => tex(radTex(45 * (i + 1)))),
+          hint: "$\\tan(\\alpha+\\beta)$ を求めてから $\\tan(\\alpha+\\beta+\\gamma)$ を計算する。角の大きさの範囲も見積もる。",
+          steps: [
+            `$\\tan(\\alpha+\\beta)=\\frac{${F(A)}+${F(B)}}{1-${F(A)}\\cdot ${F(B)}}=${T1}$`,
+            t1[0] > 0
+              ? "$\\tan(\\alpha+\\beta)>0$ と $0<\\alpha+\\beta<\\pi$ より $0<\\alpha+\\beta<\\frac{\\pi}{2}$，よって $0<\\alpha+\\beta+\\gamma<\\pi$"
+              : "$\\tan(\\alpha+\\beta)<0$ と $0<\\alpha+\\beta<\\pi$ より $\\frac{\\pi}{2}<\\alpha+\\beta<\\pi$，よって $\\frac{\\pi}{2}<\\alpha+\\beta+\\gamma<\\frac{3\\pi}{2}$",
+            d2 === 0
+              ? `$1-\\tan(\\alpha+\\beta)\\tan\\gamma=1-${T1}\\cdot ${F(G)}=0$ なので，$\\alpha+\\beta+\\gamma$ は $\\tan$ が定義されない角（$\\frac{\\pi}{2}$ の奇数倍）`
+              : `$\\tan(\\alpha+\\beta+\\gamma)=\\frac{${T1}+${F(G)}}{1-${pt(T1)}\\cdot ${F(G)}}=${fracTex(n2, d2)}$`,
+            `この範囲で考えて，答え：$\\alpha+\\beta+\\gamma=${radTex(sum)}$`,
           ],
         };
       }),
@@ -1399,6 +2222,60 @@ const SHISU = {
           ],
         };
       }),
+      t("HII-shisu-1c", (r) => {
+        const n = pick(r, [2, 3, 3, 4]);
+        const c = n === 2 ? r(2, 6) : n === 3 ? r(2, 4) : r(2, 3);
+        const P = c ** n;
+        const isPow = (x) => Math.round(x ** (1 / n)) ** n === x;
+        let expr, mid;
+        if (r(0, 1) === 1) {
+          const divs = [];
+          for (let d = 2; d < P; d++) if (P % d === 0 && d * d !== P && !isPow(d) && !isPow(P / d)) divs.push(d);
+          if (!divs.length) return { skip: true };
+          const d = pick(r, divs);
+          expr = `${rootT(n, d)}\\times ${rootT(n, P / d)}`;
+          mid = rootT(n, `${d}\\times ${P / d}`);
+        } else {
+          const d = pick(r, [2, 3, 5].filter((x) => x !== c));
+          expr = `${rootT(n, P * d)}\\div ${rootT(n, d)}`;
+          mid = rootT(n, `\\frac{${P * d}}{${d}}`);
+        }
+        return {
+          q: `$${expr}$ を計算せよ。`,
+          ans: c,
+          hint: "$\\sqrt[n]{a}\\sqrt[n]{b}=\\sqrt[n]{ab}$，$\\sqrt[n]{a}\\div\\sqrt[n]{b}=\\sqrt[n]{\\frac{a}{b}}$ を使う。",
+          steps: [
+            `$${expr}=${mid}=${rootT(n, P)}$`,
+            `$=${rootT(n, `${c}^{${n}}`)}=${c}$`,
+          ],
+        };
+      }),
+      t("HII-shisu-1d", (r) => {
+        const base = pick(r, [2, 3, 5]);
+        const p = base === 5 ? r(1, 2) : r(1, 3);
+        const half = r(0, 3) === 0;
+        const qn = half ? pick(r, [1, 3, 5, -1, -3]) : rnz(r, -4, 4), qd = half ? 2 : 1;
+        if (qn === p * qd) return { skip: true };
+        if (!half && base === 5 && Math.abs(qn) > 3) return { skip: true };
+        const L = base ** p;
+        let rhs;
+        if (!half) rhs = qn > 0 ? `${base ** qn}` : `\\frac{1}{${base ** -qn}}`;
+        else {
+          const k = (Math.abs(qn) - 1) / 2, body = `${k === 0 ? "" : base ** k}\\sqrt{${base}}`;
+          rhs = qn > 0 ? body : `\\frac{1}{${body}}`;
+        }
+        const qT = fracTex(qn, qd);
+        return {
+          q: `方程式 $${L}^{x}=${rhs}$ を解け。`,
+          ans: fracAns(qn, qd * p),
+          hint: `両辺を ${base} の累乗で表して，指数を比べる。`,
+          steps: [
+            `${p === 1 ? "" : `$${L}=${base}^{${p}}$，`}$${rhs}=${base}^{${qT}}$`,
+            `$${base}^{${p === 1 ? "" : p}x}=${base}^{${qT}}$ より $${p === 1 ? "" : p}x=${qT}$`,
+            `答え：$x=${fracTex(qn, qd * p)}$`,
+          ],
+        };
+      }),
     ],
     2: [
       t("HII-shisu-2a", (r) => {
@@ -1438,6 +2315,49 @@ const SHISU = {
             `${four.map(([p, q]) => `$${rootT(q, b ** p)}=${b}^{\\frac{${p}}{${q}}}$`).join("，")}`,
             `底 ${b} は1より大きいので，指数が大きいほど大きい`,
             `答え：${T(best)}`,
+          ],
+        };
+      }),
+      t("HII-shisu-2c", (r) => {
+        const b = pick(r, [2, 3]), e1 = pick(r, [1, 2, -1, -2]);
+        const c = r(-3, 3), e2 = rnz(r, -4, 4);
+        if (b === 3 && Math.abs(e2) > 3) return { skip: true };
+        const op = pick(r, [">", "<", "\\geqq", "\\leqq"]);
+        const flip = { ">": "<", "<": ">", "\\geqq": "\\leqq", "\\leqq": "\\geqq" };
+        const swap = { ">": "\\geqq", "<": "\\leqq", "\\geqq": ">", "\\leqq": "<" };
+        const op2 = e1 > 0 ? op : flip[op];
+        const B = fracTex(e2 - c * e1, e1);
+        const ans = tex(`x${op2}${B}`);
+        const baseT = e1 === 1 ? `${b}` : e1 === 2 ? `${b * b}` : `\\left(\\frac{1}{${b ** -e1}}\\right)`;
+        const ex = poly([1, c]);
+        const expo = c === 0 ? coefVar(e1, "x") : `${e1 === 1 ? "" : e1 === -1 ? "-" : e1}(${ex})`;
+        const rhsT = e2 > 0 ? `${b ** e2}` : `\\frac{1}{${b ** -e2}}`;
+        return {
+          q: `不等式 $${baseT}^{${ex}}${op}${rhsT}$ を解け。`,
+          ans,
+          choices: choices4(r, ans, [tex(`x${flip[op2]}${B}`), tex(`x${op2}${fracTex(e2 + c * e1, e1)}`), tex(`x${swap[op2]}${B}`)],
+            (i) => tex(`x${op2}${fracTex(e2 - c * e1 + (i + 1) * e1, e1)}`)),
+          hint: "両辺の底を同じ数にそろえて，指数を比べる。底が $1$ より小さいときは不等号の向きが変わる。",
+          steps: [
+            `$${baseT}^{${ex}}=${b}^{${expo}}$，$${rhsT}=${b}^{${e2}}$`,
+            `底 $${b}$ は $1$ より大きいので $${expo}${op}${e2}$`,
+            `答え：${ans}`,
+          ],
+        };
+      }),
+      t("HII-shisu-2d", (r) => {
+        const b = pick(r, [2, 3]), s = r(0, 2);
+        const tt = pick(r, [0, 1, 2, 3, 4].filter((x) => (s + x) % 2 === 0 && s + x >= 2));
+        const h = (s + tt) / 2, ans = 2 * b ** h;
+        const t1 = s === 0 ? `${b}^{x}` : `${b}^{x+${s}}`, t2 = tt === 0 ? `${b}^{-x}` : `${b}^{${tt}-x}`;
+        return {
+          q: `関数 $y=${t1}+${t2}$ の最小値を求めよ。`,
+          ans,
+          hint: `$${t1}>0$，$${t2}>0$ で，2つの積が一定になることに注目する。`,
+          steps: [
+            `$${t1}>0$，$${t2}>0$ だから，相加平均と相乗平均の関係より $y\\geqq 2\\sqrt{${t1}\\cdot ${t2}}=2\\sqrt{${b}^{${s + tt}}}=${ans}$`,
+            `等号は $${t1}=${t2}$ すなわち $x=${fracTex(tt - s, 2)}$ のとき成り立つ`,
+            `答え：最小値 $${ans}$`,
           ],
         };
       }),
@@ -1495,8 +2415,27 @@ const SHISU = {
           hint: "$t=2^{x}$ とおいて $t$ の2次関数にする。$t$ の範囲に注意。",
           steps: [
             `$t=2^{x}$ とおくと $${tl}\\leqq t\\leqq ${th}$，$2^{x+1}=2t$`,
-            `$y=t^{2}-${2 * a}t${c ? signed(c) : ""}=(t-${a})^{2}${signed(c - a * a)}$`,
+            `$y=t^{2}-${2 * a}t${c ? signed(c) : ""}=(t-${a})^{2}${c - a * a ? signed(c - a * a) : ""}$`,
             `${a === ts ? `軸 $t=${a}$ は範囲内なので` : `軸 $t=${a}$ は範囲外なので端の`} $t=${ts}$ で最小。答え：$${ans}$`,
+          ],
+        };
+      }),
+      t("HII-shisu-3d", (r) => {
+        const b = pick(r, [2, 3]);
+        const [u, v] = sample(r, b === 2 ? [0, 1, 2, 3, 4] : [0, 1, 2, 3], 2).sort((x, y) => x - y);
+        const S = b ** u + b ** v, P = b ** (u + v);
+        const pair = (x, y) => `(${x},\\ ${y})`;
+        const sol = (x, y) => `(x,\\ y)=${pair(x, y)},\\ ${pair(y, x)}`;
+        const ans = tex(sol(u, v));
+        return {
+          q: `連立方程式 $${b}^{x}+${b}^{y}=${S}$，$${b}^{x+y}=${P}$ を解け。`,
+          ans,
+          choices: choices4(r, ans, [tex(`(x,\\ y)=${pair(u, v)}`), tex(sol(b ** u, b ** v)), tex(sol(u + 1, v + 1))], (i) => tex(sol(u, v + i + 2))),
+          hint: `$X=${b}^{x}$，$Y=${b}^{y}$ とおくと，$X+Y$ と $XY$ の値がわかる。`,
+          steps: [
+            `$X=${b}^{x},\\ Y=${b}^{y}$ とおくと $X+Y=${S}$，$XY=${b}^{x}\\cdot ${b}^{y}=${b}^{x+y}=${P}$`,
+            `$X,\\ Y$ は $t^{2}-${S}t+${P}=0$ の2つの解で，$${fx2(b ** u, b ** v, "t")}=0$ より $t=${b ** u},\\ ${b ** v}$`,
+            `$(X,\\ Y)=(${b ** u},\\ ${b ** v}),\\ (${b ** v},\\ ${b ** u})$ より，答え：${ans}`,
           ],
         };
       }),
@@ -1556,6 +2495,50 @@ const SHISU = {
           ],
         };
       }),
+      t("HII-shisu-4c", (r) => {
+        const b = pick(r, [2, 3]), k = r(1, 4), c = r(-3, 5);
+        const ans = k >= 2 ? c - 2 - k * k : 2 - 4 * k + c;
+        const B2 = b * b;
+        return {
+          q: `関数 $y=${B2}^{x}+${B2}^{-x}-${2 * k}(${b}^{x}+${b}^{-x})${c ? signed(c) : ""}$ の最小値を求めよ。`,
+          ans,
+          hint: `$t=${b}^{x}+${b}^{-x}$ とおいて，$${B2}^{x}+${B2}^{-x}$ を $t$ で表す。$t$ のとりうる値の範囲に注意する。`,
+          steps: [
+            `$t=${b}^{x}+${b}^{-x}$ とおくと，相加平均と相乗平均の関係より $t\\geqq 2\\sqrt{${b}^{x}\\cdot ${b}^{-x}}=2$（等号は $x=0$）`,
+            `$${B2}^{x}+${B2}^{-x}=t^{2}-2$ より $y=t^{2}-${2 * k}t${c - 2 ? signed(c - 2) : ""}=(t-${k})^{2}${c - 2 - k * k ? signed(c - 2 - k * k) : ""}$`,
+            k >= 2 ? `軸 $t=${k}$ は $t\\geqq 2$ の範囲にあるので，$t=${k}$ で最小。答え：$${ans}$` : `軸 $t=${k}$ は $t\\geqq 2$ の範囲の外なので，$t=2$ で最小。答え：$${ans}$`,
+          ],
+        };
+      }),
+      t("HII-shisu-4d", (r) => {
+        const b = pick(r, [2, 3]), type = r(0, 1);
+        let p, q, r1, r2;
+        if (type === 0) { const m = r(1, 3); p = 1; q = m * (m + 1); r1 = -m; r2 = m + 1; }
+        else { const s = r(1, 3); p = 2; q = s * s - 1; r1 = 1 - s; r2 = 1 + s; }
+        const lin = `${p === 1 ? "+k" : "+2k"}${q ? signed(q) : ""}`;
+        const disc = (k) => (k - r1) * (k - r2) > 0, axis = (k) => k > 1, f1 = (k) => 1 - 2 * k + p * k + q > 0;
+        const pts = [[r1, 1], [r2, 1], [1, 1], [0, 1], [1 + q, 1]];
+        const ans = tex(ivTex((k) => disc(k) && axis(k) && f1(k), pts));
+        const f1T = p === 1 ? `${1 + q}-k` : `${1 + q}`;
+        const eq = b === 2 ? `4^{x}-k\\cdot 2^{x+1}${lin}=0` : `9^{x}-2k\\cdot 3^{x}${lin}=0`;
+        return {
+          q: `$x$ の方程式 $${eq}$ が異なる2つの正の解をもつような，定数 $k$ の値の範囲を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(ivTex(disc, pts)),
+            tex(ivTex((k) => disc(k) && axis(k), pts)),
+            tex(ivTex((k) => disc(k) && k > 0 && p * k + q > 0, pts)),
+            tex(type === 0 ? `${r1}<k<${1 + q}` : `${r1}<k`),
+          ], (i) => tex(`${r2 + i + 1}<k`)),
+          hint: `$t=${b}^{x}$ とおくと，$x$ と $t$ は1対1に対応する。$x>0$ に対応する $t$ の範囲を考える。`,
+          steps: [
+            `$t=${b}^{x}$ とおくと，$x>0 \\iff t>1$ で，$x$ と $t$ は1対1に対応する`,
+            `方程式は $f(t)=t^{2}-2kt${lin}=0$。これが $t>1$ の範囲に異なる2つの解をもてばよい`,
+            `条件は $\\frac{D}{4}=k^{2}${signedVar(-p, "k")}${q ? signed(-q) : ""}=${fx2(r1, r2, "k")}>0$，軸について $k>1$，$f(1)=${f1T}>0$`,
+            `これらを合わせて，答え：${ans}`,
+          ],
+        };
+      }),
     ],
   },
 };
@@ -1584,6 +2567,13 @@ function linAB([ca, cb, c0]) {
 }
 const LOGS = { 2: 3010, 3: 4771, 5: 6990, 6: 7781, 12: 10791, 15: 11761, 18: 12552 };
 const LOGHOW = { 2: "\\log_{10}2", 3: "\\log_{10}3", 5: "1-\\log_{10}2", 6: "\\log_{10}2+\\log_{10}3", 12: "2\\log_{10}2+\\log_{10}3", 15: "\\log_{10}3+1-\\log_{10}2", 18: "\\log_{10}2+2\\log_{10}3" };
+
+/** 常用対数の近似値（×10000）と求め方（小数第何位の問題用） */
+const LOGF = {
+  "1/2": [-3010, "-\\log_{10}2"], "1/3": [-4771, "-\\log_{10}3"], "2/3": [3010 - 4771, "\\log_{10}2-\\log_{10}3"],
+  "1/6": [-7781, "-(\\log_{10}2+\\log_{10}3)"], "3/10": [4771 - 10000, "\\log_{10}3-1"], "1/5": [3010 - 10000, "\\log_{10}2-1"],
+  "3/4": [4771 - 6020, "\\log_{10}3-2\\log_{10}2"],
+};
 
 const TAISU = {
   id: "HII-taisu", grade: "H2", area: "func", name: "対数関数",
@@ -1639,6 +2629,51 @@ const TAISU = {
           steps: [`$\\log_{${a}}\\frac{${a ** k * Q}}{${Q}}=\\log_{${a}}${a ** k}$`, `答え：$${k}$`],
         };
       }),
+      t("HII-taisu-1c", (r) => {
+        const rr = pick(r, [2, 3, 5]), s = rr === 5 ? r(1, 2) : r(1, 3);
+        const n = rnz(r, rr === 5 ? -3 : -4, rr === 5 ? 3 : 4);
+        if (n === s) return { skip: true }; // log の値が 1 になる簡単すぎる組は除く
+        const a = rr ** s, pT = fracTex(n, s);
+        const val = n > 0 ? `${rr ** n}` : `\\frac{1}{${rr ** -n}}`;
+        if (r(0, 1) === 1) {
+          return {
+            q: `$\\log_{${a}}x=${pT}$ をみたす $x$ の値を求めよ。`,
+            ans: n > 0 ? rr ** n : fracAns(1, rr ** -n),
+            hint: "$\\log_{a}M=p \\iff a^{p}=M$ を使って，指数の式に書きかえる。",
+            steps: [
+              s === 1 ? `$x=${a}^{${pT}}=${val}$` : `$x=${a}^{${pT}}=(${rr}^{${s}})^{${pT}}=${rr}^{${n}}=${val}$`,
+              `答え：$x=${val}$`,
+            ],
+          };
+        }
+        return {
+          q: `$\\log_{x}${val}=${pT}$ をみたす $x$ の値を求めよ。`,
+          ans: a,
+          hint: "$\\log_{a}M=p \\iff a^{p}=M$ を使って，指数の式に書きかえる。",
+          steps: [
+            `$x^{${pT}}=${val}=${rr}^{${n}}$`,
+            `両辺を $${fracTex(s, n)}$ 乗して $x=${rr}^{${n}\\times ${pt(fracTex(s, n))}}=${rr}^{${s}}=${a}$`,
+            `答え：$x=${a}$`,
+          ],
+        };
+      }),
+      t("HII-taisu-1d", (r) => {
+        const a = pick(r, [2, 3, 5]);
+        const q = pick(r, [2, 3, 5, 7].filter((x) => x !== a));
+        const c1 = q >= 5 ? 2 : pick(r, [2, 3]);
+        const e1 = r(0, 1), e2 = e1 === 0 ? 1 : r(0, 1);
+        const M1 = a ** e1 * q, M2 = q ** c1 * a ** e2, v = c1 * e1 - e2;
+        return {
+          q: `$${c1}\\log_{${a}}${M1}-\\log_{${a}}${M2}$ を計算せよ。`,
+          ans: v,
+          hint: "$k\\log_{a}M=\\log_{a}M^{k}$ で係数を真数の指数にして，1つの $\\log$ にまとめる。",
+          steps: [
+            `与式 $=\\log_{${a}}${M1}^{${c1}}-\\log_{${a}}${M2}=\\log_{${a}}\\frac{${M1 ** c1}}{${M2}}$`,
+            `$=\\log_{${a}}${fracTex(M1 ** c1, M2)}=${v}$`,
+            `答え：$${v}$`,
+          ],
+        };
+      }),
     ],
     2: [
       t("HII-taisu-2a", (r) => {
@@ -1652,14 +2687,14 @@ const TAISU = {
           hint: "底の変換公式で，底を共通（たとえば 10）にそろえる。",
           steps: [
             `$\\log_{${a ** p}}${b ** q}=\\frac{${q === 1 ? "" : q}\\log ${b}}{${p === 1 ? "" : p}\\log ${a}}$，$\\log_{${b ** rr}}${a ** s}=\\frac{${s === 1 ? "" : s}\\log ${a}}{${rr === 1 ? "" : rr}\\log ${b}}$`,
-            `かけると $\\log ${a}$ と $\\log ${b}$ が約分されて $\\frac{${q * s}}{${p * rr}}$`,
+            `かけると $\\log ${a}$ と $\\log ${b}$ が約分されて $${p * rr === 1 ? q * s : `\\frac{${q * s}}{${p * rr}}`}$`,
             `答え：$${fracTex(q * s, p * rr)}$`,
           ],
         };
       }),
       t("HII-taisu-2b", (r) => {
         const i = r(0, 3), j = r(0, 3), k = i + j;
-        if (k === 0) return { skip: true };
+        if (k === 0 || i === j) return { skip: true }; // i=j だと同じ log を2つ並べた式になる
         const x1 = r(-3, 8), a = x1 - 2 ** i, b = x1 - 2 ** j, x2 = a + b - x1;
         return {
           q: `方程式 $\\log_{2}${logArg(a)}+\\log_{2}${logArg(b)}=${k}$ を解け。`,
@@ -1686,6 +2721,29 @@ const TAISU = {
             b === 2 || b === 3 ? `$\\log_{10}${b}=${dec4(LOGS[b])}$` : `$\\log_{10}${b}=${LOGHOW[b]}=${dec4(LOGS[b])}$`,
             `$\\log_{10}${b}^{${n}}=${n}\\times ${dec4(LOGS[b])}=${dec4(L)}$`,
             `$${ip}\\leqq\\log_{10}${b}^{${n}}<${ip + 1}$ より $10^{${ip}}\\leqq ${b}^{${n}}<10^{${ip + 1}}$。答え：$${ip + 1}$ 桁`,
+          ],
+        };
+      }),
+      t("HII-taisu-2d", (r) => {
+        const a = pick(r, [2, 3]);
+        const [u, v] = sample(r, a === 2 ? [-1, 0, 1, 2, 3] : [-1, 0, 1, 2], 2).sort((x, y) => x - y);
+        const S = u + v, P = u * v;
+        if (S < 1) return { skip: true };
+        const xv = (e) => (e >= 0 ? [a ** e, 1] : [1, a ** -e]);
+        const ans = tex(listFrac("x", [xv(u), xv(v)]));
+        return {
+          q: `方程式 $(\\log_{${a}}x)^{2}-\\log_{${a}}x${S === 1 ? "" : `^{${S}}`}${P ? signed(P) : ""}=0$ を解け。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(listTex("x", [u, v])),
+            tex(listFrac("x", [xv(-u), xv(-v)])),
+            tex(`x=${fracTex(...xv(v))}`),
+          ], (i) => tex(listFrac("x", [xv(u), xv(v + i + 1)]))),
+          hint: `真数条件を確認し，$\\log_{${a}}x=t$ とおく。`,
+          steps: [
+            `真数条件より $x>0$。${S === 1 ? "" : `$\\log_{${a}}x^{${S}}=${S}\\log_{${a}}x$ なので，`}$t=\\log_{${a}}x$ とおくと $${poly([1, -S, P], "t")}=0$`,
+            `$${fx2(u, v, "t")}=0$ より $t=${u},\\ ${v}$`,
+            `$x=${a}^{${u}},\\ ${a}^{${v}}$ より，答え：${ans}`,
           ],
         };
       }),
@@ -1749,7 +2807,8 @@ const TAISU = {
         }
         const [m, n] = sample(r, P, 2);
         const same = (x, y) => ([2, 4, 8].includes(x) && [2, 4, 8].includes(y)) || ([3, 9].includes(x) && [3, 9].includes(y));
-        if (same(m, n)) return { skip: true };
+        // 4 と 9 の組は答えが 2b/2a（約分できる形）になるので除く
+        if (same(m, n) || (m === 4 && n === 9) || (m === 9 && n === 4)) return { skip: true };
         const vm = logVec(m), vn = logVec(n);
         const fr = (top, bot) => tex(`\\frac{${linAB(top)}}{${linAB(bot)}}`);
         const bad5 = (v) => [v[0] + 2 * v[2], v[1] + v[2], 0];
@@ -1764,6 +2823,26 @@ const TAISU = {
             `$\\log_{${m}}${n}=\\frac{\\log_{10}${n}}{\\log_{10}${m}}$`,
             `$\\log_{10}${n}=${linAB(vn)}$，$\\log_{10}${m}=${linAB(vm)}$`,
             `答え：$\\frac{${linAB(vn)}}{${linAB(vm)}}$`,
+          ],
+        };
+      }),
+      t("HII-taisu-3d", (r) => {
+        const key = pick(r, Object.keys(LOGF)), [Lf, how] = LOGF[key];
+        const [fn, fd] = key.split("/").map(Number);
+        const n = r(10, 50);
+        const L = n * Lf, m = -Math.floor(L / 10000);
+        if (-Math.floor(n * Math.log10(fn / fd)) !== m) return { skip: true }; // 近似値で答えが変わらないものだけ
+        const base = key === "3/10" ? "0.3" : `\\frac{${fn}}{${fd}}`;
+        const N = key === "3/10" ? `0.3^{${n}}` : `\\left(\\frac{${fn}}{${fd}}\\right)^{${n}}`;
+        return {
+          q: `$${N}$ を小数で表すと，小数第 $m$ 位に初めて $0$ でない数字が現れる。$m$ の値を求めよ。ただし $\\log_{10}2=0.3010$，$\\log_{10}3=0.4771$ とする。`,
+          ans: m,
+          hint: "$\\log_{10}N$ を計算する。$-m\\leqq\\log_{10}N<-m+1$ なら，$N$ は小数第 $m$ 位に初めて $0$ でない数字が現れる。",
+          steps: [
+            `$\\log_{10}${base}=${how}=${dec4(Lf)}$`,
+            `$\\log_{10}${N}=${n}\\times(${dec4(Lf)})=${dec4(L)}$`,
+            `$${-m}\\leqq\\log_{10}${N}<${-m + 1}$ より $10^{${-m}}\\leqq ${N}<10^{${-m + 1}}$`,
+            `答え：$m=${m}$`,
           ],
         };
       }),
@@ -1803,7 +2882,7 @@ const TAISU = {
           steps: [
             `$\\log_{10}\\frac{${p}}{${q}}=\\log_{10}${p}-\\log_{10}${q}=${dec4(L)}$`,
             big ? `両辺の常用対数をとると $${dec4(-L)}n>${k}$` : `両辺の常用対数をとると $${dec4(L)}n<-${k}$`,
-            `$n>\\frac{${k}}{${dec4(-L)}}=${(k * 10000 / -L).toFixed(2)}\\cdots$ より，答え：$n=${n}$`,
+            `$n>\\frac{${k}}{${dec4(-L)}}=${(Math.floor((k * 1000000) / -L) / 100).toFixed(2)}\\cdots$ より，答え：$n=${n}$`,
           ],
         };
       }),
@@ -1826,6 +2905,52 @@ const TAISU = {
           ],
         };
       }),
+      t("HII-taisu-4d", (r) => {
+        const [a, b] = pick(r, [[2, 3], [2, 5], [2, 7], [3, 2], [3, 5], [3, 7], [5, 2], [5, 3], [5, 7], [7, 2], [7, 3], [7, 5]]);
+        // N = (10 log_a b の整数部分) を整数の大小比較で求める：b^10 ≧ a^N となる最大の N
+        const B10 = BigInt(b) ** 10n;
+        let N = 0;
+        while (BigInt(a) ** BigInt(N + 1) <= B10) N++;
+        const d = N % 10;
+        const [p1, q1] = reduce(N, 10), [p2, q2] = reduce(N + 1, 10);
+        const big = (x, e) => (BigInt(x) ** BigInt(e)).toString();
+        const lowT = (N / 10).toFixed(1), highT = ((N + 1) / 10).toFixed(1);
+        return {
+          q: `$\\log_{${a}}${b}$ の小数第1位の数字を求めよ。`,
+          ans: d,
+          hint: `$\\log_{${a}}${b}>\\frac{p}{q}$ は $${b}^{q}>${a}^{p}$ と同じこと。整数の累乗の大小を比べて，$\\log_{${a}}${b}$ をはさみうちする。`,
+          steps: [
+            `$\\log_{${a}}${b}>${lowT}=${fracTex(p1, q1)} \\iff ${b}^{${q1}}>${a}^{${p1}}$ で，$${b}^{${q1}}=${big(b, q1)}>${big(a, p1)}=${a}^{${p1}}$ より成り立つ`,
+            `$\\log_{${a}}${b}<${highT}=${fracTex(p2, q2)} \\iff ${b}^{${q2}}<${a}^{${p2}}$ で，$${b}^{${q2}}=${big(b, q2)}<${big(a, p2)}=${a}^{${p2}}$ より成り立つ`,
+            `よって $${lowT}<\\log_{${a}}${b}<${highT}$。答え：$${d}$`,
+          ],
+        };
+      }),
+      t("HII-taisu-4e", (r) => {
+        const p = r(-1, 1), c = Math.max(p + r(1, 2), 1), q = c + r(1, 2);
+        const fp = p * p - 2 * c * p, fq = q * q - 2 * c * q; // f(p)=fp+k，f(q)=fq+k
+        const lo = Math.max(-fp, -fq), hi = c * c;
+        const ans = tex(`${lo}<k<${hi}`);
+        const xr = (e) => (e >= 0 ? `${2 ** e}` : `\\frac{1}{${2 ** -e}}`);
+        const fT = (f0) => (f0 === 0 ? "k" : `${f0}+k`);
+        return {
+          q: `$x$ の方程式 $(\\log_{2}x)^{2}-${2 * c}\\log_{2}x+k=0$ が $${xr(p)}<x<${xr(q)}$ の範囲に異なる2つの解をもつような，定数 $k$ の値の範囲を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(`k<${hi}`),
+            tex(`${Math.min(-fp, -fq)}<k<${hi}`),
+            tex(`${lo}\\leqq k\\leqq ${hi}`),
+            tex(`${lo}<k\\leqq ${hi}`),
+          ]),
+          hint: "$t=\\log_{2}x$ とおくと，$x$ の範囲は $t$ の範囲に1対1で対応する。",
+          steps: [
+            `$t=\\log_{2}x$ とおくと，$${xr(p)}<x<${xr(q)} \\iff ${p}<t<${q}$ で，$x$ と $t$ は1対1に対応する`,
+            `$f(t)=t^{2}-${2 * c}t+k$ が $${p}<t<${q}$ に異なる2つの解をもつ条件は，$\\frac{D}{4}=${c * c}-k>0$，軸 $t=${c}$ が $${p}<t<${q}$ にあること，$f(${p})>0$，$f(${q})>0$`,
+            fp === fq ? `$f(${p})=f(${q})=${fT(fp)}>0$ より $k>${-fp}$` : `$f(${p})=${fT(fp)}>0$，$f(${q})=${fT(fq)}>0$ より $k>${-fp}$，$k>${-fq}$`,
+            `答え：${ans}`,
+          ],
+        };
+      }),
     ],
   },
 };
@@ -1840,6 +2965,9 @@ function cubicAB(s, al, be, d) {
   return { co, f };
 }
 const range2 = (lo, hi, v = "k", eq = false) => tex(`${lo}${eq ? "\\leqq " : "<"}${v}${eq ? "\\leqq " : "<"}${hi}`);
+
+/** 長方形の厚紙（縦, 横）と，容積が最大になる切り取る長さ x */
+const BOX_R = [[5, 8, 1], [10, 16, 2], [9, 24, 2], [15, 24, 3], [16, 21, 3], [14, 30, 3]];
 
 const BIBUN = {
   id: "HII-bibun", grade: "H2", area: "func", name: "微分",
@@ -1876,6 +3004,44 @@ const BIBUN = {
           steps: [
             `$f'(x)=${a}\\cdot 3x^{2}${signed(b)}\\cdot 2x${signed(c)}+0$`,
             `答え：$${poly([3 * a, 2 * b, c])}$`,
+          ],
+        };
+      }),
+      t("HII-bibun-1c", (r) => {
+        const cubic = r(0, 2) === 0;
+        const co = cubic ? [1, r(-3, 3), r(-4, 4), r(-5, 5)] : [rnz(r, -3, 3), r(-5, 5), r(-5, 5)];
+        const f = (x) => co.reduce((s, c) => s * x + c, 0);
+        const p = r(-3, 2), q = p + r(1, 3);
+        const ans = (f(q) - f(p)) / (q - p);
+        return {
+          q: `関数 $f(x)=${poly(co)}$ について，$x$ が $${p}$ から $${q}$ まで変化するときの平均変化率を求めよ。`,
+          ans,
+          hint: "平均変化率は $\\frac{f(b)-f(a)}{b-a}$。",
+          steps: [
+            `$f(${q})=${f(q)}$，$f(${p})=${f(p)}$`,
+            `$\\frac{f(${q})-f(${p})}{${q}-${par(p)}}=\\frac{${f(q)}-${par(f(p))}}{${q - p}}=${ans}$`,
+          ],
+        };
+      }),
+      t("HII-bibun-1d", (r) => {
+        const sq = r(0, 2) === 0;
+        const a = rnz(r, -3, 3), b = rnz(r, -4, 4);
+        const c = sq ? a : rnz(r, -3, 3), d = sq ? b : rnz(r, -4, 4);
+        const e = [a * c, a * d + b * c, b * d];
+        const ans = tex(poly([2 * e[0], e[1]]));
+        const f = sq ? `(${poly([a, b])})^{2}` : `(${poly([a, b])})(${poly([c, d])})`;
+        return {
+          q: `関数 $y=${f}$ を微分せよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(String(a * c)),
+            tex(poly([e[0], e[1]])),
+            tex(sq ? poly([2 * a, 2 * b]) : poly([2 * e[0], e[1] + 2 * b * d])),
+          ], (i) => tex(poly([2 * e[0], e[1] + i + 1]))),
+          hint: "展開してから微分する。",
+          steps: [
+            `$y=${poly(e)}$ と展開して`,
+            `$y'=${poly([2 * e[0], e[1]])}$`,
           ],
         };
       }),
@@ -1929,6 +3095,33 @@ const BIBUN = {
           ],
         };
       }),
+      t("HII-bibun-2d", (r) => {
+        const tt = r(1, 2), c = r(-2, 3), d = r(-3, 3);
+        const m = 3 * tt * tt + c;
+        const f = (x) => x ** 3 + c * x + d;
+        const n1 = d - 2 * tt ** 3, n2 = d + 2 * tt ** 3;
+        const L = (n) => `y=${poly([m, n])}`;
+        const L2 = (u, v) => `${L(Math.min(u, v))},\\ ${L(Math.max(u, v))}`; // 小さい順（同じ組の誤答が重複しないように）
+        const ans = tex(L2(n1, n2));
+        const tl = (y0, xs) => `${y0 ? `y${signed(-y0)}` : "y"}=${m === 1 ? xs : `${m}(${xs})`}`; // 点(t, y0) を通る傾き m の直線
+        const tline = (y0, xs, n) => (tl(y0, xs) === L(n) ? `$${L(n)}$` : `$${tl(y0, xs)}$，すなわち $${L(n)}$`);
+        return {
+          q: `曲線 $y=${poly([1, 0, c, d])}$ の接線のうち，傾きが $${m}$ であるものの方程式をすべて求めよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(L(n1)),
+            tex(L2(d - tt ** 3, d + tt ** 3)),
+            tex(L2(f(tt), f(-tt))),
+          ], (i) => tex(L2(n1 - i - 1, n2 + i + 1))),
+          hint: "接点の $x$ 座標を $a$ とおき，$f'(a)$ が傾きに等しいとして $a$ を求める。",
+          steps: [
+            `$y'=${poly([3, 0, c])}$。接点の $x$ 座標を $a$ とすると $${poly([3, 0, c], "a")}=${m}$ より $a=\\pm ${tt}$`,
+            `$a=${tt}$ のとき接点は $(${tt},\\ ${f(tt)})$ で，接線は ${tline(f(tt), `x-${tt}`, n1)}`,
+            `$a=${-tt}$ のとき接点は $(${-tt},\\ ${f(-tt)})$ で，接線は ${tline(f(-tt), `x+${tt}`, n2)}`,
+            `答え：${ans}`,
+          ],
+        };
+      }),
     ],
     3: [
       t("HII-bibun-3a", (r) => {
@@ -1965,7 +3158,7 @@ const BIBUN = {
           hint: "3次関数が極値をもつ $\\iff$ $f'(x)=0$ が異なる2つの実数解をもつ（判別式 $>0$）。",
           steps: [
             `$f'(x)=3x^{2}+2kx${signedVar(m, "k")}$`,
-            `$\\frac{D}{4}=k^{2}-3\\cdot ${par(m)}k=k(k${signed(-3 * m)})>0$`,
+            `$\\frac{D}{4}=k^{2}-${m === 1 ? "3" : `3\\cdot ${par(m)}`}k=k(k${signed(-3 * m)})>0$`,
             `答え：$k<${lo},\\ ${hi}<k$`,
           ],
         };
@@ -1986,6 +3179,33 @@ const BIBUN = {
             `$f(x)=${poly(co)}$ とおくと $f'(x)=6${fx2(al, be)}$`,
             `極大値 $f(${al})=${M}$，極小値 $f(${be})=${m}$`,
             `直線 $y=k$ が極小値と極大値の間にあればよい。答え：$${m}<k<${M}$`,
+          ],
+        };
+      }),
+      t("HII-bibun-3d", (r) => {
+        if (r(0, 1) === 1) {
+          const L = pick(r, [6, 9, 12, 15, 18, 24, 30]), x0 = L / 6, V = (2 * L ** 3) / 27;
+          return {
+            q: `1辺の長さが $${L}$ の正方形の厚紙の四すみから，1辺の長さ $x$ の正方形を切り取り，残りを折り曲げてふたのない箱を作る。箱の容積の最大値を求めよ。`,
+            ans: V,
+            hint: "容積 $V$ を $x$ の式で表し，$x$ のとりうる値の範囲で増減を調べる。",
+            steps: [
+              `$V=x(${L}-2x)^{2}$（$0<x<${L / 2}$）`,
+              `$V'=(${L}-2x)^{2}-4x(${L}-2x)=(${L}-2x)(${L}-6x)$ より，$0<x<${L / 2}$ では $x=${x0}$ で極大かつ最大`,
+              `答え：最大値 $V=${x0}\\cdot ${L - 2 * x0}^{2}=${V}$`,
+            ],
+          };
+        }
+        const [a, b, x0] = pick(r, BOX_R);
+        const V = x0 * (a - 2 * x0) * (b - 2 * x0);
+        return {
+          q: `縦 $${a}$，横 $${b}$ の長方形の厚紙の四すみから，1辺の長さ $x$ の正方形を切り取り，残りを折り曲げてふたのない箱を作る。箱の容積の最大値を求めよ。`,
+          ans: V,
+          hint: "容積 $V$ を $x$ の式で表し，$x$ のとりうる値の範囲で増減を調べる。",
+          steps: [
+            `$V=x(${a}-2x)(${b}-2x)=${poly([4, -2 * (a + b), a * b, 0])}$（$0<x<${fracTex(a, 2)}$）`,
+            `$V'=${poly([12, -4 * (a + b), a * b])}=0$ より $x=${x0},\\ ${fracTex(a * b, 12 * x0)}$。$0<x<${fracTex(a, 2)}$ にあるのは $x=${x0}$ で，ここで極大かつ最大`,
+            `答え：最大値 $V=${x0}\\cdot ${a - 2 * x0}\\cdot ${b - 2 * x0}=${V}$`,
           ],
         };
       }),
@@ -2024,6 +3244,58 @@ const BIBUN = {
             `$x^{2}${signedVar(p)}${q ? signed(q) : ""}-m=0$ が $0$ でない異なる2つの実数解をもてばよい`,
             `判別式 $${p * p}-4(${q === 0 ? "-m" : `${q}-m`})>0$ より $m>${L}$。また $x=0$ が解にならないので $m\\neq ${q}$`,
             `答え：$${L}<m<${q},\\ ${q}<m$`,
+          ],
+        };
+      }),
+      t("HII-bibun-4c", (r) => {
+        const type = r(0, 1), k = r(1, 3);
+        const C = type === 0 ? 2 * k ** 3 : 4 * k ** 3, bound = type === 0 ? k * k : k;
+        const f = type === 0 ? `x^{3}-3ax+${C}` : `x^{3}-3ax^{2}+${C}`;
+        const ans = tex(`a\\leqq ${bound}`);
+        return {
+          q: `$x\\geqq 0$ のすべての $x$ に対して，不等式 $${f}\\geqq 0$ が成り立つような定数 $a$ の値の範囲を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [tex(`0<a\\leqq ${bound}`), tex(`a<${bound}`), tex(`a\\leqq ${type === 0 ? k : k * k}`), tex(`a\\geqq ${bound}`)]),
+          hint: "左辺を $f(x)$ とおき，$x\\geqq 0$ における $f(x)$ の最小値が $0$ 以上になる条件を考える。",
+          steps: type === 0
+            ? [
+              `$f(x)=${f}$ とおくと $f'(x)=3x^{2}-3a$`,
+              `$a\\leqq 0$ のとき，$x\\geqq 0$ で $f'(x)\\geqq 0$ なので $f(x)$ は増加し，最小値 $f(0)=${C}>0$ で成り立つ`,
+              `$a>0$ のとき，$x\\geqq 0$ での最小値は $f(\\sqrt{a})=${C}-2a\\sqrt{a}$。$${C}-2a\\sqrt{a}\\geqq 0$ より $a\\sqrt{a}\\leqq ${k ** 3}$，$0<a\\leqq ${k * k}$`,
+              `合わせて，答え：$a\\leqq ${k * k}$`,
+            ]
+            : [
+              `$f(x)=${f}$ とおくと $f'(x)=3x^{2}-6ax=3x(x-2a)$`,
+              `$a\\leqq 0$ のとき，$x\\geqq 0$ で $f'(x)\\geqq 0$ なので $f(x)$ は増加し，最小値 $f(0)=${C}>0$ で成り立つ`,
+              `$a>0$ のとき，$x\\geqq 0$ での最小値は $f(2a)=${C}-4a^{3}$。$${C}-4a^{3}\\geqq 0$ より $a^{3}\\leqq ${k ** 3}$，$0<a\\leqq ${k}$`,
+              `合わせて，答え：$a\\leqq ${k}$`,
+            ],
+        };
+      }),
+      t("HII-bibun-4d", (r) => {
+        const p = r(1, 3), neg = r(0, 1) === 1, askMax = r(0, 1) === 1;
+        const f = neg ? `-x^{3}+${3 * p}x^{2}` : `x^{3}-${3 * p}x^{2}`;
+        const big = neg !== askMax; // 答えが a≧3p の形
+        const ans = tex(big ? `a\\geqq ${3 * p}` : `0<a\\leqq ${2 * p}`);
+        const w = askMax ? "最大値" : "最小値";
+        return {
+          q: `関数 $f(x)=${f}$ の $0\\leqq x\\leqq a$（$a>0$）における${w}が $f(a)$ となるような $a$ の値の範囲を求めよ。`,
+          ans,
+          choices: choices4(r, ans, [
+            tex(big ? `a\\geqq ${2 * p}` : `0<a\\leqq ${3 * p}`),
+            tex(big ? `a>${3 * p}` : `0<a<${2 * p}`),
+            tex(big ? `0<a\\leqq ${2 * p}` : `a\\geqq ${3 * p}`),
+          ], (i) => tex(`a\\geqq ${3 * p + i + 1}`)),
+          hint: "増減を調べ，区間の右端 $a$ が極値をとる $x$ より左か右かで場合分けする。$f(a)=f(0)$ となる $a$ にも注目する。",
+          steps: [
+            `$f'(x)=${neg ? `-3x^{2}+${6 * p}x=-3x(x-${2 * p})` : `3x^{2}-${6 * p}x=3x(x-${2 * p})`}$ より，$f(x)$ は $0\\leqq x\\leqq ${2 * p}$ で${neg ? "増加" : "減少"}，$x\\geqq ${2 * p}$ で${neg ? "減少" : "増加"}`,
+            big
+              ? `$0<a\\leqq ${2 * p}$ のとき，${w}は $f(0)=0$ で，$f(a)${askMax ? "<" : ">"}0$ なので不適`
+              : `$0<a\\leqq ${2 * p}$ のとき，この区間で $f(x)$ は${neg ? "増加" : "減少"}するので，${w}は $f(a)$`,
+            big
+              ? `$a>${2 * p}$ のとき，${w}は $f(0)=0$ と $f(a)$ の${askMax ? "大きい" : "小さい"}方。$f(a)=${neg ? `a^{2}(${3 * p}-a)` : `a^{2}(a-${3 * p})`}${askMax ? "\\geqq" : "\\leqq"} 0$ より $a\\geqq ${3 * p}$`
+              : `$a>${2 * p}$ のとき，${w}は $f(${2 * p})$ で，$f(a)${askMax ? "<" : ">"}f(${2 * p})$ なので不適`,
+            `答え：${ans}`,
           ],
         };
       }),
@@ -2092,6 +3364,41 @@ const SEKIBUN = {
           ],
         };
       }),
+      t("HII-sekibun-1c", (r) => {
+        const A = pick(r, [3, 6, -3, 0]), B = pick(r, [2, 4, -2, -4, 0, 6]), Cc = r(-5, 5);
+        if (A === 0 && B === 0) return { skip: true };
+        const F = (x) => (A / 3) * x ** 3 + (B / 2) * x ** 2 + Cc * x;
+        const p = r(-2, 2), v = r(-6, 6), C0 = v - F(p);
+        let q = r(-2, 3);
+        if (q === p) q = p + 1;
+        const ans = F(q) + C0;
+        return {
+          q: `$f'(x)=${poly([A, B, Cc])}$，$f(${p})=${v}$ をみたす関数 $f(x)$ について，$f(${q})$ の値を求めよ。`,
+          ans,
+          hint: `$f(x)=\\int f'(x)\\,dx$ を積分定数 $C$ をふくめて求め，$f(${p})=${v}$ から $C$ を決める。`,
+          steps: [
+            `$f(x)=\\int(${poly([A, B, Cc])})\\,dx=${poly([A / 3, B / 2, Cc, 0])}+C$`,
+            `$f(${p})=${F(p)}+C=${v}$ より $C=${C0}$`,
+            `$f(${q})=${F(q)}${C0 ? `${signed(C0)}=${ans}` : ""}$`,
+          ],
+        };
+      }),
+      t("HII-sekibun-1d", (r) => {
+        const a = r(1, 3);
+        const c3 = r(-3, 3), c2 = pick(r, [3, 6, -3, 1, 2]), c1 = r(-4, 4), c0 = r(-4, 4);
+        if (c3 === 0 && c1 === 0) return { skip: true };
+        const num = 2 * (c2 * a ** 3 + 3 * c0 * a);
+        return {
+          q: `定積分 $\\int_{-${a}}^{${a}}(${poly([c3, c2, c1, c0])})\\,dx$ を求めよ。`,
+          ans: fracAns(num, 3),
+          hint: "奇数次の項と偶数次の項に分けて考える。$-a$ から $a$ までの積分では，奇数次の項の積分は $0$ になる。",
+          steps: [
+            `$\\int_{-${a}}^{${a}}(${poly([c3, 0, c1, 0])})\\,dx=0$（奇数次の項）`,
+            `$\\int_{-${a}}^{${a}}(${poly([c2, 0, c0])})\\,dx=2\\int_{0}^{${a}}(${poly([c2, 0, c0])})\\,dx=2\\left[${polyQ([[c2, 3, 3], [c0, 1, 1]])}\\right]_{0}^{${a}}$`,
+            `答え：$${fracTex(num, 3)}$`,
+          ],
+        };
+      }),
     ],
     2: [
       t("HII-sekibun-2a", (r) => {
@@ -2141,6 +3448,29 @@ const SEKIBUN = {
           ],
         };
       }),
+      t("HII-sekibun-2d", (r) => {
+        const p = r(-3, 2);
+        let q = r(-3, 3);
+        if (q === p) q = p + pick(r, [-2, -1, 1, 2]);
+        const k = pick(r, [1, -1, 2, -2]);
+        const co = [1, -(2 * p + q), p * p + 2 * p * q, -p * p * q].map((c) => c * k);
+        const kT = k === 1 ? "" : k === -1 ? "-" : `${k}`;
+        const sq = p === 0 ? "x^{2}" : `(${poly([1, -p])})^{2}`;
+        const fac = q === 0 ? `${kT}x${sq}` : `${kT}${sq}${fx(q)}`;
+        const lo = Math.min(p, q), hi = Math.max(p, q);
+        const pos = q > p ? k < 0 : k > 0; // 区間で y≧0 か
+        const S = [Math.abs(k) * (q - p) ** 4, 12];
+        return {
+          q: `曲線 $y=${poly(co)}$ と $x$ 軸で囲まれた部分の面積を求めよ。`,
+          ans: fracAns(...S),
+          hint: "右辺を因数分解して $x$ 軸との共有点を求め，その間でグラフが $x$ 軸の上下どちらにあるかを調べる。",
+          steps: [
+            `$${poly(co)}=${fac}$ より，$x$ 軸との共有点の $x$ 座標は $${lo},\\ ${hi}$`,
+            `$${lo}\\leqq x\\leqq ${hi}$ で $y${pos ? "\\geqq" : "\\leqq"} 0$`,
+            `$S=${pos ? "" : "-"}\\int_{${lo}}^{${hi}}${fac.startsWith("-") ? `\\left\\{${fac}\\right\\}` : fac}\\,dx=${fracTex(...S)}$`,
+          ],
+        };
+      }),
     ],
     3: [
       t("HII-sekibun-3a", (r) => {
@@ -2186,6 +3516,21 @@ const SEKIBUN = {
             `$k=\\int_{0}^{1}f(t)\\,dt$ とおくと $f(x)=${poly([a, b, 0])}${signedVar(c, "k")}$`,
             `$k=\\int_{0}^{1}(${poly([a, b, 0], "t")}${signedVar(c, "k")})dt=${fracTex(2 * a + 3 * b, 6)}${signedVar(c, "k")}$ より $k=${fracTex(kN, kD)}$`,
             `$f(1)=${a + b}${signed(c)}\\cdot\\left(${fracTex(kN, kD)}\\right)=${fracTex(num, den)}$`,
+          ],
+        };
+      }),
+      t("HII-sekibun-3d", (r) => {
+        const al = r(-3, 2), be = al + r(1, 3), askMax = r(0, 1) === 1;
+        const at = askMax ? al : be;
+        const n = 2 * at ** 3 - 3 * (al + be) * at * at + 6 * al * be * at;
+        return {
+          q: `関数 $F(x)=\\int_{0}^{x}(${poly([1, -(al + be), al * be], "t")})\\,dt$ の${askMax ? "極大値" : "極小値"}を求めよ。`,
+          ans: fracAns(n, 6),
+          hint: "$\\frac{d}{dx}\\int_{0}^{x}f(t)\\,dt=f(x)$ を使って $F'(x)$ を求め，増減を調べる。",
+          steps: [
+            `$F'(x)=${poly([1, -(al + be), al * be])}=${fx2(al, be)}$`,
+            `$F'(x)$ の符号は $x=${al}$ の前後で $+$ から $-$，$x=${be}$ の前後で $-$ から $+$ に変わるので，$x=${al}$ で極大，$x=${be}$ で極小`,
+            `$F(x)=${polyQ([[1, 3, 3], [-(al + be), 2, 2], [al * be, 1, 1]])}$ より，答え：$F(${at})=${fracTex(n, 6)}$`,
           ],
         };
       }),
@@ -2240,6 +3585,47 @@ const SEKIBUN = {
             `直線との交点は $x=0,\\ ${a}-${mk}$。直線と放物線で囲まれた面積は $\\frac{${k}}{6}\\left(${a}-${mk}\\right)^{3}$`,
             `これが全体の半分なので $\\left(${a}-${mk}\\right)^{3}=\\frac{${a ** 3}}{2}$，$${a}-${mk}=\\frac{${a}}{\\sqrt[3]{2}}=${a / 2 === 1 ? "" : a / 2}\\sqrt[3]{4}$`,
             `答え：$m=${ansT}$`,
+          ],
+        };
+      }),
+      t("HII-sekibun-4d", (r) => {
+        const a = pick(r, [1, 1, 2]), p = r(-2, 2), s = r(1, 3), q = a * p * p + a * s * s;
+        const xa = coefVar(a, "x^{2}");
+        const num = `m^{2}${p ? signedVar(-4 * a * p, "m") : ""}+${4 * a * q}`;
+        const sqm = p ? `(m${signed(-2 * a * p)})^{2}` : "m^{2}";
+        const fr = (t) => (a === 1 ? t : `\\frac{${t}}{${a * a}}`);
+        return {
+          q: `放物線 $y=${xa}$ と，点 $(${p},\\ ${q})$ を通る直線で囲まれた部分の面積の最小値を求めよ。`,
+          ans: fracAns(4 * a * s ** 3, 3),
+          hint: "直線の傾きを $m$ として，交点の $x$ 座標の差 $\\beta-\\alpha$ を $m$ で表す。面積は $\\beta-\\alpha$ で決まる。",
+          steps: [
+            `直線を $y=${p ? `m(x${signed(-p)})` : "mx"}+${q}$ とおくと，放物線と連立して $${xa}-mx${p ? signedVar(p, "m") : ""}${signed(-q)}=0$（判別式はつねに正）`,
+            `2つの解を $\\alpha<\\beta$ とすると $(\\beta-\\alpha)^{2}=${fr(num)}${p ? `=${fr(`${sqm}+${4 * a * a * s * s}`)}` : ""}$`,
+            `面積 $S=${fracTex(a, 6)}(\\beta-\\alpha)^{3}$ は $\\beta-\\alpha$ が最小のとき最小で，$m=${2 * a * p}$ のとき $\\beta-\\alpha=${2 * s}$`,
+            `答え：最小値 $${fracTex(a, 6)}\\cdot ${2 * s}^{3}=${fracTex(4 * a * s ** 3, 3)}$`,
+          ],
+        };
+      }),
+      t("HII-sekibun-4e", (r) => {
+        const c = r(1, 4), askA = r(0, 1) === 1;
+        const [N, D] = reduce(c ** 3, 6);
+        const minT = D === 1 ? `${2 * N}-${N === 1 ? "" : N}\\sqrt{2}` : `\\frac{${2 * N}-${N === 1 ? "" : N}\\sqrt{2}}{${D}}`;
+        const aT = c % 2 === 0 ? `${c / 2 === 1 ? "" : c / 2}\\sqrt{2}` : `\\frac{${c === 1 ? "" : c}\\sqrt{2}}{2}`;
+        const ans = tex(askA ? aT : minT);
+        const r3 = c % 3 === 0 ? `${c / 3 === 1 ? "" : c / 3}\\sqrt{3}` : `\\frac{${c === 1 ? "" : c}\\sqrt{3}}{3}`;
+        const wr = askA
+          ? [tex(fracTex(c, 2)), tex(r3), tex(`${c === 1 ? "" : c}\\sqrt{2}`)]
+          : [tex(fracTex(c ** 3, 8)), tex(fracTex(c ** 3, 3)), tex(fracTex(c ** 3, 6))];
+        return {
+          q: `$0\\leqq a\\leqq ${c}$ のとき，$I(a)=\\int_{0}^{${c}}|x^{2}-ax|\\,dx$ ${askA ? "を最小にする $a$ の値" : "の最小値"}を求めよ。`,
+          ans,
+          choices: choices4(r, ans, wr),
+          hint: "$x=a$ の前後で絶対値の中の符号が変わる。$I(a)$ を $a$ の3次式で表して微分する。",
+          steps: [
+            `$0\\leqq x\\leqq a$ で $x^{2}-ax\\leqq 0$，$a\\leqq x\\leqq ${c}$ で $x^{2}-ax\\geqq 0$ より $I(a)=\\int_{0}^{a}(ax-x^{2})\\,dx+\\int_{a}^{${c}}(x^{2}-ax)\\,dx$`,
+            `計算すると $I(a)=\\frac{a^{3}}{3}-${c === 2 ? "2" : fracTex(c * c, 2)}a+${fracTex(c ** 3, 3)}$`,
+            `$I'(a)=a^{2}-${fracTex(c * c, 2)}$ より，$0\\leqq a\\leqq ${c}$ では $a=${aT}$ で極小かつ最小`,
+            `答え：${askA ? `$a=${aT}$` : `最小値 $I\\left(${aT}\\right)=${minT}$`}`,
           ],
         };
       }),

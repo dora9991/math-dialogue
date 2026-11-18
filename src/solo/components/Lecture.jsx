@@ -2,7 +2,8 @@
 // Lecture.jsx — 講義（解説）
 //   ・ホー先生の解説がある単元 … スライドを1枚ずつ（話す→板書→ポイント→例題→理解チェック）
 //   ・まだ無い単元 … 要点＋例題（タップで1行ずつ解き方）。ホー先生の解説動画（lectures/videos.js）があれば一緒に出す
-//   ・中学校の単元 … ホー先生とポンタの「会話授業」（lectures/talk.js）へのリンクを出す（新しいタブで開く）
+//   ・中学校の単元 … ホー先生とポンタの「会話授業」（lectures/talk.js）が、解説動画のカードに出る。
+//     同じ章のほかの授業・章の応用問題と入試レベルは、「会話授業のつづき」のカードに出す（新しいタブで開く）
 // ============================================================
 import { useMemo, useState } from "react";
 import M from "./M.jsx";
@@ -54,7 +55,7 @@ function Check({ ck, onDone }) {
           if (sel != null) cls = String(c) === String(ck.ans) ? "right" : i === sel ? "wrong" : "";
           return (
             <button key={i} className={`choice ${cls}`} disabled={sel != null} onClick={() => { setSel(i); onDone?.(); }}>
-              <span className="no">{i + 1}</span><M>{String(c)}</M>
+              <span className="no">{i + 1}</span><M breakable>{String(c)}</M>
             </button>
           );
         })}
@@ -99,7 +100,57 @@ function SlidePlayer({ lecture, onFinish }) {
   );
 }
 
-/** ホー先生とポンタの会話授業（公開サイトの授業ページを、新しいタブで開く） */
+/** ホー先生の解説動画・会話授業（lectures/videos.js）。url はこの画面の中で再生／別タブで開く、yt は YouTube の埋め込み */
+function VideoCard({ videos }) {
+  const [video, setVideo] = useState(null);
+  return (
+    <div className="card">
+      <h2>📺 {TEACHER.name}の解説動画</h2>
+      {video?.yt && (
+        <div className="video"><iframe src={`https://www.youtube-nocookie.com/embed/${video.yt}?autoplay=1`} title="解説動画" allow="autoplay; encrypted-media" allowFullScreen /></div>
+      )}
+      {video?.url && (
+        <div>
+          <iframe
+            className="talkframe" src={video.url} title={video.title || "会話授業"}
+            allow="autoplay; fullscreen; encrypted-media" allowFullScreen referrerPolicy="no-referrer"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+          />
+          <div className="tiny muted mt8">
+            うまく表示されない・画面が小さいときは、
+            <a href={video.url} target="_blank" rel="noopener noreferrer">新しいタブで開く ↗</a>
+          </div>
+        </div>
+      )}
+      <div className="mt8">
+        {videos.map((v) => {
+          const key = v.yt || v.url;
+          const on = video && (video.yt || video.url) === key;
+          const name = v.title || `${TEACHER.name}の解説`;
+          if (v.yt) {
+            return (
+              <button key={key} className="rec" onClick={() => setVideo(on ? null : v)} style={{ marginBottom: 6 }}>
+                <span className="badge" style={{ background: "#fff7e6" }}>▶</span>
+                <span className="grow"><span className="nm">{name}</span></span>
+              </button>
+            );
+          }
+          return (
+            <div key={key} className="row" style={{ gap: 8, marginBottom: 6, alignItems: "stretch" }}>
+              <button className="rec grow" onClick={() => setVideo(on ? null : v)} style={{ marginBottom: 0, borderColor: on ? "var(--pri)" : undefined }}>
+                <span className="badge" style={{ background: "#fff7e6" }}>▶</span>
+                <span className="grow"><span className="nm">{name}</span><span className="why" style={{ display: "block" }}>{on ? "上で再生中（もう一度おすと閉じます）" : "この画面で見る"}</span></span>
+              </button>
+              <a className="btn sm ghost" href={v.url} target="_blank" rel="noopener noreferrer" style={{ display: "grid", placeItems: "center", textDecoration: "none" }} aria-label={`${name}を新しいタブで開く`}>↗<br /><span className="tiny">別タブ</span></a>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** 会話授業のつづき：同じ章のほかの授業・章の応用問題と入試レベル（公開サイトの授業ページを、新しいタブで開く） */
 function TalkLink({ l }) {
   return (
     <a className="rec" href={l.url} target="_blank" rel="noopener noreferrer">
@@ -112,16 +163,13 @@ function TalkLink({ l }) {
 
 function TalkCard({ unitId }) {
   const talk = useMemo(() => getTalk(unitId), [unitId]);
-  if (!talk) return null;
+  if (!talk || (!talk.more.length && !talk.problems.length)) return null;
   const apply = talk.problems.filter((p) => p.kind === "応用");
   const exam = talk.problems.filter((p) => p.kind === "入試");
   return (
     <div className="card">
-      <h2>💬 {TEACHER.name}とポンタの会話授業</h2>
-      <div className="small muted" style={{ marginBottom: 10 }}>
-        黒板の前で、{TEACHER.name}とポンタが掛け合いながら進む授業です。4択に答えながら、ゆっくり解説します。（新しいタブで開きます）
-      </div>
-      {talk.main.map((l) => <TalkLink key={l.id} l={l} />)}
+      <h2>💬 {TEACHER.name}とポンタの会話授業<span className="sub">（つづき）</span></h2>
+      <div className="small muted">黒板の前で、{TEACHER.name}とポンタが掛け合いながら、4択に答えて進む授業です。新しいタブで開きます。</div>
       {talk.more.length > 0 && (
         <details className="talk-more">
           <summary>同じ章のほかの授業（{talk.more.length}本）</summary>
@@ -146,16 +194,12 @@ export default function Lecture({ unit, onStartPractice }) {
   const [mode, setMode] = useState(lecture ? "slides" : "summary");
   const example = useMemo(() => genProblem(unit.id, 1), [unit.id]);
   const videos = getVideos(unit.id);
-  const [video, setVideo] = useState(null);
-  const hasTalk = useMemo(() => !!getTalk(unit.id), [unit.id]);
+  const vcard = videos.length > 0 && <VideoCard key={unit.id} videos={videos} />;
+  const tcard = <TalkCard unitId={unit.id} />;
 
+  // スライドの解説がある単元でも、動画・会話授業は先頭に出す
   if (lecture && mode === "slides") {
-    return (
-      <div>
-        <SlidePlayer lecture={lecture} onFinish={onStartPractice} />
-        <TalkCard unitId={unit.id} />
-      </div>
-    );
+    return <div>{vcard}<SlidePlayer lecture={lecture} onFinish={onStartPractice} />{tcard}</div>;
   }
 
   return (
@@ -164,13 +208,16 @@ export default function Lecture({ unit, onStartPractice }) {
         <button className="btn block grad" onClick={() => setMode("slides")} style={{ marginBottom: 14 }}>
           {TEACHER.icon} {TEACHER.name}の解説を見る（約{lecture.minutes}分）
         </button>
-      ) : videos.length === 0 && !hasTalk && (
+      ) : videos.length === 0 && (
         <div className="card" style={{ background: "#fffaf0" }}>
           <Coach>
             <span className="small">この単元の{TEACHER.name}の解説は、いま準備中だよ。まずは要点と例題で確かめよう。</span>
           </Coach>
         </div>
       )}
+
+      {vcard}
+      {tcard}
 
       <div className="card">
         <h2>📌 この単元の要点</h2>
@@ -190,25 +237,6 @@ export default function Lecture({ unit, onStartPractice }) {
           {example.hint && <div className="small muted mt8">💡 考え方：<M>{example.hint}</M></div>}
         </div>
       )}
-
-      {videos.length > 0 && (
-        <div className="card">
-          <h2>📺 {TEACHER.name}の解説動画</h2>
-          {video && (
-            <div className="video"><iframe src={`https://www.youtube-nocookie.com/embed/${video}?autoplay=1`} title="解説動画" allow="autoplay; encrypted-media" allowFullScreen /></div>
-          )}
-          <div className="mt8">
-            {videos.map((v) => (
-              <button key={v.yt} className="rec" onClick={() => setVideo(v.yt)} style={{ marginBottom: 6 }}>
-                <span className="badge" style={{ background: "#fff7e6" }}>▶</span>
-                <span className="grow"><span className="nm">{v.title || `${TEACHER.name}の解説`}</span></span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <TalkCard unitId={unit.id} />
 
       <button className="btn block" onClick={onStartPractice}>演習へすすむ ▸</button>
     </div>

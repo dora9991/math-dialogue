@@ -1,5 +1,5 @@
 // ============================================================
-// main.jsx — 数学ラボ ソロの入口（solo/index.html から読み込まれる）
+// main.jsx — 数学ラボ ソロの入口（solo-lab/index.html から読み込まれる）
 // ============================================================
 import React from "react";
 import ReactDOM from "react-dom/client";

@@ -8,20 +8,29 @@ import { applyAnswer, applyTest, applyDiag, applyReview } from "./engine/actions
 import { mixPlan } from "./engine/recommend.js";
 import { BADGES } from "./engine/motivation.js";
 import { getUnit } from "./content/index.js";
+import { migrateProfile } from "./engine/goals.js";
 import { BottomNav, Toast } from "./components/ui.jsx";
 import Onboarding from "./screens/Onboarding.jsx";
 import Home from "./screens/Home.jsx";
 import MapScreen from "./screens/MapScreen.jsx";
 import UnitScreen from "./screens/UnitScreen.jsx";
+import UnitList from "./screens/UnitList.jsx";
 import Practice from "./screens/Practice.jsx";
 import Records from "./screens/Records.jsx";
 import Settings from "./screens/Settings.jsx";
 import { DiagIntro, DiagRun, DiagResult } from "./screens/Diagnosis.jsx";
 
-const TABS = ["home", "map", "records", "settings"];
+const TABS = ["home", "units", "map", "records", "settings"];
+
+// 古い形の記録（習った範囲・目標レベルの持ち方）を、いまの形にそろえて開く
+const loadState = () => {
+  const s = load();
+  return s.profile ? { ...s, profile: migrateProfile(s.profile) } : s;
+};
 
 export default function App() {
-  const [state, setState] = useState(load);
+  const [state, setState] = useState(loadState);
+  const [unitsGrade, setUnitsGrade] = useState(null); // 単元一覧で見ている学年（null = いまの学年）
   const [route, setRoute] = useState(() => (state.profile ? { name: "home" } : { name: "onboard" }));
   const [stack, setStack] = useState([]);
   const [toast, setToast] = useState(null);
@@ -79,6 +88,14 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
+  // 学校で「習った／未修」を、小単元ごとに切りかえる
+  const setLearned = (unitId, on) => {
+    const cur = stateRef.current;
+    const set = new Set(cur.profile.learned || []);
+    if (on) set.add(unitId); else set.delete(unitId);
+    commit({ ...cur, profile: { ...cur.profile, learned: [...set], learnedV: 2 } });
+  };
+
   const openUnit = (unitId) => {
     if (!getUnit(unitId)) return;
     go("unit", { unitId });
@@ -98,9 +115,12 @@ export default function App() {
       body = (
         <Onboarding
           onDone={(profile) => {
-            commit({ ...stateRef.current, profile });
+            // 診断は任意。設定のあとは、ホームへ（診断は、ホームの一番上から、いつでも受けられる）
+            commit({ ...stateRef.current, profile: migrateProfile(profile) });
+            setUnitsGrade(null);
             setStack([]);
-            setRoute({ name: "diagIntro" });
+            setRoute({ name: "home" });
+            window.scrollTo(0, 0);
           }}
         />
       );
@@ -109,7 +129,7 @@ export default function App() {
       body = (
         <Onboarding
           initial={state.profile} startStep={1} onCancel={back}
-          onDone={(profile) => { commit({ ...stateRef.current, profile }); setToast("保存しました"); back(); }}
+          onDone={(profile) => { commit({ ...stateRef.current, profile: migrateProfile(profile) }); setUnitsGrade(null); setToast("保存しました"); back(); }}
         />
       );
       break;
@@ -126,7 +146,7 @@ export default function App() {
       body = (
         <UnitScreen
           key={route.unitId} state={state} unitId={route.unitId} tab={route.tab}
-          onBack={back} onPractice={startPractice} onOpenUnit={openUnit}
+          onBack={back} onPractice={startPractice} onOpenUnit={openUnit} onSetLearned={setLearned}
         />
       );
       break;
@@ -138,6 +158,9 @@ export default function App() {
           onExit={back} onHome={() => go("home")} onOpenUnit={openUnit} onRestart={startPractice}
         />
       );
+      break;
+    case "units":
+      body = <UnitList state={state} grade={unitsGrade} onGrade={setUnitsGrade} onOpenUnit={openUnit} />;
       break;
     case "map":
       body = <MapScreen state={state} onOpenUnit={openUnit} />;
@@ -151,7 +174,7 @@ export default function App() {
           state={state}
           onEditProfile={() => go("editProfile")}
           onDiag={() => go("diagIntro")}
-          onReplace={(s) => commit(s)}
+          onReplace={(s) => commit(s.profile ? { ...s, profile: migrateProfile(s.profile) } : s)}
           onReset={() => { clearAll(); commit(blankState()); setStack([]); setRoute({ name: "onboard" }); }}
         />
       );

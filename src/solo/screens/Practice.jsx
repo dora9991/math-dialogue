@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Problem from "../components/Problem.jsx";
 import { TopBar, Coach, LevelPips } from "../components/ui.jsx";
-import { getUnit, genProblem, usableLevel, prereqsOf, GRADE_LABEL, LEVEL_INFO, unitTitle } from "../content/index.js";
+import { getUnit, genProblem, usableLevel, prereqsOf, GRADE_LABEL, levelName, unitTitle } from "../content/index.js";
 import { requiredLevel } from "../engine/goals.js";
 import { displayLevel, startLevel, masteredLevel } from "../engine/mastery.js";
 import { cheer, BADGES } from "../engine/motivation.js";
@@ -80,13 +80,13 @@ export default function Practice({ state, cfg, onAnswer, onTestDone, onReviewDon
         if (up > L) {
           setLevels((m) => ({ ...m, [uid]: up }));
           runs.current[uid] = 0;
-          msg = `${cheer("streak")} 次は「${LEVEL_INFO[up].label}」へ ↑`;
+          msg = `${cheer("streak")} 次は「${levelName(up, u.grade)}」へ ↑`;
         }
       } else if (nr <= -2 && L > 1) {
         const down = usableLevel(u, L - 1);
         setLevels((m) => ({ ...m, [uid]: down }));
         runs.current[uid] = 0;
-        msg = `「${LEVEL_INFO[down].label}」にもどって確実に`;
+        msg = `「${levelName(down, u.grade)}」にもどって確実に`;
       } else if (nr <= -2 && L === 1 && !sakanobori) {
         // いちばん下でもつまずく → 前提へさかのぼる提案
         const pre = prereqsOf(uid)
@@ -124,7 +124,7 @@ export default function Practice({ state, cfg, onAnswer, onTestDone, onReviewDon
     window.scrollTo(0, 0);
   };
 
-  const title = kind === "mix" ? "おすすめ演習" : kind === "test" ? `確認テスト（${LEVEL_INFO[cfg.level].label}）` : `演習：${getUnit(cfg.unitId)?.name}`;
+  const title = kind === "mix" ? "おすすめ演習" : kind === "test" ? `確認テスト（${levelName(cfg.level, getUnit(cfg.unitId)?.grade)}）` : `演習：${getUnit(cfg.unitId)?.name}`;
 
   if (done) {
     return (
@@ -179,7 +179,7 @@ function Summary({ state, kind, cfg, log, before, events, testRes, sakanobori, o
   let headline = c === log.length ? "全問正解！" : c >= log.length * 0.6 ? "よくがんばった！" : "おつかれさま！";
   let face = c === log.length ? "🎉" : c >= log.length * 0.6 ? "😊" : "💪";
   if (testRes) {
-    headline = testRes.pass ? `合格！「${LEVEL_INFO[cfg.level].label}」を習得` : "あと少し！";
+    headline = testRes.pass ? `合格！「${levelName(cfg.level, u?.grade)}」を習得` : "あと少し！";
     face = testRes.pass ? "🏅" : "🌱";
   }
 
@@ -222,7 +222,7 @@ function Summary({ state, kind, cfg, log, before, events, testRes, sakanobori, o
                 <div style={{ fontWeight: 800, fontSize: 14.5 }}>{GRADE_LABEL[uu.grade]}　{uu.name}</div>
                 <div className="tiny muted">{mine.filter((x) => x.correct).length}/{mine.length} 正解{a.level > b.level && !a.estimated ? "　・　レベルアップ！" : ""}</div>
               </div>
-              <LevelPips level={a.level} req={r} max={uu.maxLevel} estimated={a.estimated} />
+              <LevelPips level={a.level} req={r} max={uu.maxLevel} estimated={a.estimated} grade={uu.grade} />
             </div>
           );
         })}
@@ -246,13 +246,13 @@ function Summary({ state, kind, cfg, log, before, events, testRes, sakanobori, o
         {kind === "unit" && <button className="btn" onClick={() => onRestart({ kind: "unit", unitId: cfg.unitId, n: 5 })}>もう5問</button>}
         {kind === "unit" && u && mastered < u.maxLevel && (
           <button className="btn soft" onClick={() => onRestart({ kind: "test", unitId: u.id, level: nextTestLevel, n: 5 })}>
-            確認テスト（{LEVEL_INFO[nextTestLevel].label}）に挑戦{nextTestLevel >= req && req ? "・目標レベル" : ""}
+            確認テスト（{levelName(nextTestLevel, u.grade)}）に挑戦{nextTestLevel >= req && req ? "・目標レベル" : ""}
           </button>
         )}
         {kind === "test" && !testRes?.pass && <button className="btn" onClick={() => onRestart({ kind: "unit", unitId: cfg.unitId, n: 5 })}>演習で練習してから</button>}
         {kind === "test" && testRes?.pass && u && mastered < u.maxLevel && (
           <button className="btn soft" onClick={() => onRestart({ kind: "test", unitId: u.id, level: Math.min(u.maxLevel, mastered + 1), n: 5 })}>
-            次のレベル（{LEVEL_INFO[Math.min(u.maxLevel, mastered + 1)].label}）に挑戦
+            次のレベル（{levelName(Math.min(u.maxLevel, mastered + 1), u.grade)}）に挑戦
           </button>
         )}
         {kind === "mix" && <button className="btn" onClick={() => onRestart({ kind: "mix" })}>おすすめをもう10問</button>}

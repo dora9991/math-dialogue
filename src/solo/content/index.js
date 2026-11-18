@@ -17,6 +17,7 @@ import { UNITS as HII } from "./high/hII.js";
 import { UNITS as HB } from "./high/hB.js";
 import { UNITS as HC } from "./high/hC.js";
 import { UNITS as HIII } from "./high/hIII.js";
+import { CHAPTER_DEFS } from "./chapters.js";
 import { dbTemplatesFor } from "../../data/dbProblems.js";
 
 // ── 学年・分野・レベルの共通定義 ─────────────────────────
@@ -38,12 +39,18 @@ export const AREA_INFO = {
 };
 
 export const LEVELS = [1, 2, 3, 4];
+// 色と XP。名前（label）は、学年によってちがう → levelName(L, 学年) を使う
 export const LEVEL_INFO = {
   1: { label: "簡単", color: "#22c55e", xp: 10 },
   2: { label: "標準", color: "#3b82f6", xp: 15 },
   3: { label: "応用", color: "#f97316", xp: 20 },
   4: { label: "難関", color: "#a855f7", xp: 30 },
 };
+// レベルの呼び名：小学校・中学校は「基礎・標準・応用・入試レベル」、高校は「簡単・標準・応用・難関」
+export const LEVEL_NAMES_LOW = ["基礎", "標準", "応用", "入試レベル"];
+export const LEVEL_NAMES_HIGH = ["簡単", "標準", "応用", "難関"];
+/** レベル（1〜4）の呼び名。grade は "E3" "J2" "H1" など（省略すると小・中の呼び名） */
+export const levelName = (L, grade) => (grade && STAGE_OF(grade) === "H" ? LEVEL_NAMES_HIGH : LEVEL_NAMES_LOW)[L - 1] || "";
 
 // ── 単元の一覧 ───────────────────────────────────────
 // 中1の実問題（教科書PDF由来・problem_bank.json）を、該当単元の各レベルに1枠として混ぜる
@@ -64,14 +71,52 @@ function withDbProblems(u) {
 
 const RAW = [...E1, ...E2, ...E3, ...E4, ...E5, ...E6, ...JHS.map(withDbProblems), ...HI, ...HA, ...HII, ...HB, ...HC, ...HIII];
 
-export const UNITS = RAW.map((u) => ({
-  ...u,
-  gi: gradeIndex(u.grade),
-  maxLevel: Math.max(0, ...LEVELS.filter((L) => (u.levels?.[L] || []).length > 0)),
-}));
+// 小学校・高校の単元（章）：chapters.js の定義から。中学校は、既存データの章（jhs/index.js が chapterId/chapterName を持つ）
+const CHAPTER_OF = new Map(); // 小単元 id → { id, name, course }
+{
+  const counter = {};
+  for (const [grade, name, course, ids] of CHAPTER_DEFS) {
+    counter[grade] = (counter[grade] || 0) + 1;
+    const id = `${grade}-ch${counter[grade]}`;
+    for (const uid of ids) CHAPTER_OF.set(uid, { id, name, course });
+  }
+}
+
+export const UNITS = RAW.map((u) => {
+  const ch = CHAPTER_OF.get(u.id);
+  return {
+    ...u,
+    chapterId: u.chapterId || ch?.id || `${u.grade}-other`,
+    chapterName: u.chapterName || ch?.name || "そのほか",
+    chapterCourse: ch?.course || u.course || null,
+    gi: gradeIndex(u.grade),
+    maxLevel: Math.max(0, ...LEVELS.filter((L) => (u.levels?.[L] || []).length > 0)),
+  };
+});
 
 const BY_ID = new Map(UNITS.map((u) => [u.id, u]));
 export const getUnit = (id) => BY_ID.get(id) || null;
+
+// ── 単元（章）の一覧：学年の順に、章 → 小単元 ─────────────────
+//   CHAPTERS = [{ id, grade, name, course, units:[小単元…] }]
+export const CHAPTERS = [];
+{
+  const byId = new Map();
+  for (const g of GRADE_ORDER) {
+    const inGrade = UNITS.filter((u) => u.grade === g);
+    // 小学校・高校は chapters.js の並び順、中学校は小単元の並び順で、章を並べる
+    const order = [];
+    for (const u of inGrade) if (!order.includes(u.chapterId)) order.push(u.chapterId);
+    for (const cid of order) {
+      const units = inGrade.filter((u) => u.chapterId === cid);
+      const ch = { id: cid, grade: g, name: units[0].chapterName, course: units[0].chapterCourse, units };
+      byId.set(cid, ch);
+      CHAPTERS.push(ch);
+    }
+  }
+}
+export const chaptersOfGrade = (g) => CHAPTERS.filter((c) => c.grade === g);
+export const getChapter = (id) => CHAPTERS.find((c) => c.id === id) || null;
 
 // 前提（prereqs）の逆引き＝この単元を土台にしている単元
 const DEPENDENTS = new Map(UNITS.map((u) => [u.id, []]));

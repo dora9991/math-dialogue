@@ -288,7 +288,7 @@ export default function Home({
             </div>
 
             {/* 別アプリ：数学ラボ ソロ（小1〜高3・目標設定→診断→おすすめで一人で習熟） */}
-            <a href={`${import.meta.env.BASE_URL}solo/`} style={{
+            <a href={`${import.meta.env.BASE_URL}solo-lab/`} style={{
               display: "flex", alignItems: "center", gap: 12, margin: "12px 0", padding: "14px 16px", borderRadius: 16,
               background: "linear-gradient(135deg,#4f46e5,#7c3aed)", color: "#fff", textDecoration: "none",
               border: "2px solid rgba(255,255,255,.25)", boxShadow: "0 6px 18px rgba(79,70,229,.35)",

@@ -9,7 +9,8 @@ import { resolve } from "node:path";
 //
 // ページは2つ：
 //   index.html      … 数学ラボ（ゲーム・対話授業）
-//   solo/index.html … 数学ラボ ソロ（小1〜高3の一人で学ぶ習熟アプリ）→ 公開URL …/math-dialogue/solo/
+//   solo-lab/index.html … 数学ラボ ソロ（小1〜高3の一人で学ぶ習熟アプリ）→ 公開URL …/math-dialogue/solo-lab/
+//     ※ /solo/ は別の版（コツコツくん）が使っているので、重ならないよう solo-lab にしている
 export default defineConfig({
   base: "/math-dialogue/",
   plugins: [react()],
@@ -17,7 +18,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),
-        solo: resolve(__dirname, "solo/index.html"),
+        "solo-lab": resolve(__dirname, "solo-lab/index.html"),
       },
     },
   },
