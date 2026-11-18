@@ -175,6 +175,7 @@ export default {
       eqClear: true,
       eq: ["## 答え", `(1) ${perpABC.join("・")}`, `(2) ${parABC.join("・")}`, "(3) 平面BEFC", `(4) ${skewDE.join("・")}`],
       fin: true,
+      dur: 8000,
     },
   ],
 };

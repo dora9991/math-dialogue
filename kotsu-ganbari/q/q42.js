@@ -76,6 +76,7 @@ export default {
     {
       cap: "まず面**ウ**（J, C, D）を、立体の手前の面にするよ。J、C、D の3つの頂点に、**3色**をつけよう。",
       add: [netFill("ウ"), solFill("ウ", "y", 0.45, "sfウ"), nd("J"), nd("C"), nd("D"), v3("j", "J", "vj"), v3("x", "C", "vx"), v3("z", "D", "vz")],
+      eqClear: true,
       eq: ["## 組み立てる順", "① ウ：J、C、D"],
     },
     {
@@ -97,7 +98,7 @@ export default {
       hide: ["sfエ", "e2", "e2s", "vnx"],
       add: [netFill("ア"), solFill("ア", "y", 0.45, "sfア"), netEdge("B", "J", "e3"), solEdge("nz", "j", "e3s"), nd("A"), v3("nx", "A・I", "vnx2")],
       hl: ["e3", "e3s"],
-      eq: ["④ ア：A（C の向かい側）", "→ A ＝ I"],
+      eq: ["④ ア：A ＝ I（C の向かい側）"],
     },
     {
       cap: "面**オ**（I, D, E）は、エと**辺ID**でくっつくよ。エの J と向かい合うのが E。E は一番うしろの頂点（黄）だね。",
@@ -111,26 +112,27 @@ export default {
       hide: ["sfオ", "e4", "e4s", "vnz"],
       add: [netFill("カ"), solFill("カ", "y", 0.45, "sfカ"), netEdge("I", "E", "e5"), solEdge("nx", "y", "e5s"), nd("H"), v3("nz", "B・H", "vnz2")],
       hl: ["e5", "e5s"],
-      eq: ["⑥ カ：H（D の向かい側）", "→ H ＝ B"],
+      eq: ["⑥ カ：H ＝ B（D の向かい側）"],
     },
     {
       cap: "面**キ**（H, E, G）は、カと**辺HE**でくっつくよ。カの I と向かい合うのが G。だから G は C と同じ頂点（青）だよ。",
       hide: ["sfカ", "e5", "e5s", "vx"],
       add: [netFill("キ"), solFill("キ", "y", 0.45, "sfキ"), netEdge("H", "E", "e6"), solEdge("nz", "y", "e6s"), nd("G"), v3("x", "C・G", "vx2")],
       hl: ["e6", "e6s"],
-      eq: ["⑦ キ：G（I の向かい側）", "→ G ＝ C"],
+      eq: ["⑦ キ：G ＝ C（I の向かい側）"],
     },
     {
       cap: "最後の面**ク**（E, G, F）は、キと**辺EG**でくっつくよ。キの H と向かい合うのが F。だから F は D と同じ頂点（緑）だね。",
       hide: ["sfキ", "e6", "e6s", "vz"],
       add: [netFill("ク"), solFill("ク", "y", 0.45, "sfク"), netEdge("E", "G", "e7"), solEdge("y", "x", "e7s"), nd("F"), v3("z", "D・F", "vz2")],
       hl: ["e7", "e7s"],
-      eq: ["⑧ ク：F（H の向かい側）", "→ F ＝ D"],
+      eq: ["⑧ ク：F ＝ D（H の向かい側）"],
     },
     {
       cap: "これで8枚の面がそろったよ。**同じ色 ＝ 同じ頂点**。立体の頂点は、J、C＝G、D＝F、E、A＝I、B＝H の6つ！",
       hide: [...allNetFills, "sfク", "e7", "e7s", "ax1", "ax2", "ax3"],
-      eq: ["## 同じ頂点", "C ＝ G　　D ＝ F", "A ＝ I　　B ＝ H", "J と E は1つだけ"],
+      eqClear: true,
+      eq: ["## 同じ頂点", "C ＝ G　　D ＝ F", "A ＝ I　　B ＝ H", "// J と E は、名前が1つだけ"],
     },
     {
       cap: "(1) 辺CDに重なる辺。C は G と、D は F と同じ頂点だから、辺CD は**辺GF**と重なるよ。",
@@ -159,7 +161,8 @@ export default {
     },
     {
       cap: "答え：(1) 辺**FG**、(2) 面**ア・エ・オ・カ**、(3) 面**オ**。向かい合う頂点を使うと、立体を思いうかべやすいよ！",
-      eq: ["=> (1) 辺FG　(2) ア・エ・オ・カ　(3) オ"],
+      eqClear: true,
+      eq: ["## まとめ", "=> (1) 辺FG（辺GF）", "=> (2) 面ア・エ・オ・カ", "=> (3) 面オ"],
       fin: true,
     },
   ]),
