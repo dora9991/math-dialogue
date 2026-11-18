@@ -60,7 +60,7 @@ export default {
     },
     {
       cap: "**③ 2点 P, Q を通る直線**を、定規でひくよ。辺 AD と交わる点が **E**、辺 BC と交わる点が **F** だね。",
-      add: [seg("P", "Q", { id: "pq" }), P("E", E[0], E[1], "E", "nw"), P("F", F[0], F[1], "F", "se")],
+      add: [seg("P", "Q", { id: "pq" }), P("E", E[0], E[1], "E", "sw", { dx: -10, dy: 16 }), P("F", F[0], F[1], "F", "se")],
       eq: ["③ 直線 PQ をひく", "　 → 辺 AD との交点 E、辺 BC との交点 F"],
     },
     {
@@ -71,17 +71,16 @@ export default {
       fin: true,
     },
     {
-      cap: "なぜ正しい？ **AP＝CP、AQ＝CQ**（同じ半径）。P, Q は A, C から等しい距離にあるから、直線 PQ は AC の**垂直二等分線**になるよ。",
+      cap: "なぜ正しい？ **AP＝CP**（同じ半径）。Q も同じで AQ＝CQ。P, Q は A, C から等しい距離だから、直線 PQ は AC の**垂直二等分線**だよ。",
       add: [
         seg("A", "P", { id: "w1", dash: true, c: "p", tick: 1 }), seg("C", "P", { id: "w2", dash: true, c: "p", tick: 1 }),
-        seg("A", "Q", { id: "w3", dash: true, c: "p", tick: 1 }), seg("C", "Q", { id: "w4", dash: true, c: "p", tick: 1 }),
         P("M", M[0], M[1], "M", "se", { dx: 6, dy: 20 }), rt("M", "C", "E", { c: "p" }),
       ],
       eq: ["// AP＝CP、AQ＝CQ（同じ半径）", "// → P, Q は A, C から等しい距離", "// → 直線 PQ は AC の垂直二等分線", "// AC と直角に交わり、AM＝MC"],
     },
     {
       cap: "ほんとうに重なるか、折ってみよう。EF の**左がわ**（A がある側）を、EF で折り返すよ。",
-      hide: ["w1", "w2", "w3", "w4", "ac"],
+      hide: ["w1", "w2", "ac"],
       add: [poly(flap(1), { id: "f1", c: "y", fill: "y" })],
       hl: ["f1"],
       eq: ["## 折ってみる"],

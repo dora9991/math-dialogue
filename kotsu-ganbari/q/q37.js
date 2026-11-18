@@ -112,6 +112,7 @@ export default {
     },
     {
       cap: "影は、右上の**三日月形**と、左下の**レンズ形**。レンズ形は、対角線で**2つの弓形**に分けられるよ。",
+      hide: ["s2r1", "s2r1t", "s2r2", "s2r2t", "s2d0", "s2d1", "s2d2"],
       add: [
         seg(BL, X, { c: "p", w: 2.4, dash: true, id: "s2ch" }),
         path(chordSeg(BL, X, rs), { fill: "p", fo: 0.4, w: 0, id: "s2u" }),       // 中心が下辺の中点の弧（紫）
@@ -138,13 +139,13 @@ export default {
     },
     {
       cap: "動かすと、影は、**大きな弧と、左上〜右下の線でできた弓形**になったよ。（面積は変わらない！）",
-      clear: true,
+      clear: true, eqClear: true,
       hide: ["s2sh", "s2a1", "s2a2"],
       add: [
         path(chordSeg(TL, BR, rb), { fill: "hatch", w: 0, id: "s2big" }),
         seg(TL, BR, { c: "b", w: 2.5, id: "s2cd" }),
       ],
-      eq: ["影 ＝ 大きな弓形", "＝ おうぎ形 − 三角形"],
+      eq: ["## (2)", "影 ＝ 大きな弓形", "＝ おうぎ形 − 三角形"],
     },
     {
       cap: "おうぎ形は、半径8cm・中心角90°（円の4分の1）。三角形は、底辺8cm・高さ8cmだよ。",

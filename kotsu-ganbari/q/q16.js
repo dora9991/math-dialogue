@@ -67,12 +67,12 @@ export default {
     },
     {
       cap: "**③ 点 P を中心**に、AP より**大きい半径**で円（弧）をかくよ。",
-      add: [arc("P", r2, dirDeg(Pp, Qq) - 62, dirDeg(Pp, Qq) + 62, { id: "c2" })],
+      add: [arc("P", r2, dirDeg(Pp, Qq) - 56, dirDeg(Pp, Qq) + 56, { id: "c2" })],
       eq: ["③ P を中心に円（弧）"],
     },
     {
       cap: "**④ 点 Q を中心**に、③と**同じ半径**で円（弧）をかくよ。2つの弧が交わる点を **R, S** とするよ。",
-      add: [arc("Q", r2, dirDeg(Qq, Pp) - 62, dirDeg(Qq, Pp) + 62, { id: "c3" }), P("R", Rr[0], Rr[1], "R", "nw"), P("S", Ss[0], Ss[1], "S", "se")],
+      add: [arc("Q", r2, dirDeg(Qq, Pp) - 56, dirDeg(Qq, Pp) + 56, { id: "c3" }), P("R", Rr[0], Rr[1], "R", "ne"), P("S", Ss[0], Ss[1], "S", "ne")],
       eq: ["④ Q を中心に、同じ半径で円", "　 → 交点 R, S"],
     },
     {

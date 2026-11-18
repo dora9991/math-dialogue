@@ -88,7 +88,7 @@ function xline(e, o = {}) {
   return [seg(a, pr(q), { ...base, dash: true }), seg(pr(p), a, { ...base, id: base.id + "b", dash: true })];   // 点線は、もとの辺と点線のリズムをそろえる
 }
 const face = (names, id, fill) => poly(names.split(""), { id, fill, w: 0 });
-const mark = (at, from, to, id) => rt(at, from, to, { id, c: "a", s: 12 });
+const mark = (at, from, to, id) => rt(at, from, to, { id, c: "a", s: 15 });
 
 export default {
   n: 19,
