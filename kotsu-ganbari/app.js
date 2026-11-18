@@ -82,7 +82,7 @@ function showNext(idx) {
   if (nx) {
     const b = document.createElement("button");
     b.className = "pbtn main"; b.type = "button"; b.textContent = `つぎ：問${nx.n} ›`;
-    b.onclick = () => { location.hash = String(nx.n); };
+    b.onclick = () => go(nx.n);
     box.appendChild(b);
   }
   box.hidden = false;
@@ -94,13 +94,15 @@ function close() {
   document.body.style.overflow = "";
   renderList();
 }
+// 動画のあいだの移動（前へ・つぎへ）は、履歴を積まない（「一覧」で一覧にもどれるように）
+const go = (n) => { if (openN) location.replace("#" + n); else location.hash = String(n); };
 function route() {
   const n = parseInt(location.hash.replace("#", ""), 10);
   if (n) open(n); else close();
 }
 $("ov-close").onclick = () => { if (location.hash) history.back(); else close(); };
-$("ov-prev").onclick = () => { const i = manifest.findIndex((x) => x.n === openN); if (i > 0) location.hash = String(manifest[i - 1].n); };
-$("ov-next").onclick = () => { const i = manifest.findIndex((x) => x.n === openN); if (i < manifest.length - 1) location.hash = String(manifest[i + 1].n); };
+$("ov-prev").onclick = () => { const i = manifest.findIndex((x) => x.n === openN); if (i > 0) go(manifest[i - 1].n); };
+$("ov-next").onclick = () => { const i = manifest.findIndex((x) => x.n === openN); if (i < manifest.length - 1) go(manifest[i + 1].n); };
 window.addEventListener("hashchange", route);
 window.addEventListener("keydown", (e) => {
   if (!player || $("overlay").hidden) return;

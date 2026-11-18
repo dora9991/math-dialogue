@@ -70,7 +70,7 @@ export function makeEl(el, ctx, o) {
   const g = S("g", { class: `el t-${el.t}${o.isNew ? " new" : ""}${o.anim ? " anim" : ""}`, "data-id": el.id || null });
   const col = el.c ? PAL[el.c] || el.c : PAL[o.base ? "g" : "b"];
   g.style.setProperty("--c0", col);
-  if (el.c === "a" || o.base) g.classList.add("keepc");
+  if (el.c === "a" || el.keep || o.base) g.classList.add("keepc");
   g.style.setProperty("--d", `${o.delay || 0}ms`);
   const sw = el.w || (el.t === "txt" ? 0 : 2);
   const draw = (d, extra = {}, cls = "draw") => {
@@ -222,7 +222,7 @@ export function createPlayer(root, scene, opt = {}) {
   bar.appendChild(dots); bar.appendChild(ctrl);
   const left = H("div", "pl-left"), right = H("div", "pl-right");
   left.appendChild(figWrap); left.appendChild(bar);
-  right.appendChild(cap); right.appendChild(board); right.appendChild(ans);
+  right.appendChild(cap); right.appendChild(ans); right.appendChild(board);
   root.appendChild(left); root.appendChild(right);
 
   let cur = -1, playing = false, timer = null, speed = 1;
