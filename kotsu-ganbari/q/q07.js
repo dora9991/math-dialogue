@@ -48,7 +48,7 @@ export default {
     },
     {
       cap: "頂点Cは、ℓまで**1マス**。ℓの右**1マス**の点が C′ だよ。",
-      add: [seg("C", HC, { id: "ch1", tick: 3, w: 2.4 }), dot(HC[0], HC[1], { c: "b" }), seg(HC, "C2", { id: "ch2", tick: 3, w: 2.4 }), P("C2", C2[0], C2[1], "C′", "se")],
+      add: [seg("C", HC, { id: "ch1", tick: 3, w: 2.4 }), dot(HC[0], HC[1], { c: "b" }), seg(HC, "C2", { id: "ch2", tick: 3, w: 2.4 }), P("C2", C2[0], C2[1], "C′", "s", { dy: 23 })],
       eq: ["## 頂点C", "C → ℓ：右へ 1 マス", "ℓ → C′：右へ 1 マス"],
     },
     {
@@ -70,10 +70,9 @@ export default {
       eq: ["// 2マス ＝ 2マスだから、ℓ は AA′ の真ん中を通る"],
     },
     {
-      cap: "(3) 直線BB′も、ℓに**垂直**（横線）だね。BB′に直角の印をつけてみるよ。",
+      cap: "(3) 直線BB′も、ℓに**垂直**（横線）だね。AA′もBB′も、ℓに直角に交わっているよ。",
       eqClear: true,
-      hide: ["aap"],
-      add: [seg("B", "B2", { id: "bbp", c: "p", w: 3.4 }), rt(HB, "B", L1, { id: "rtb2", s: 12, c: "p" })],
+      add: [seg("B", "B2", { id: "bbp", c: "p", w: 3.4 }), rt(HB, "B", L2, { id: "rtb2", s: 12, c: "p" }), rt(HA, "A", L1, { id: "rta3", s: 12, c: "p" })],
       hl: ["bbp"],
       eq: ["## (3)", "AA′ ⊥ ℓ、BB′ ⊥ ℓ"],
     },
