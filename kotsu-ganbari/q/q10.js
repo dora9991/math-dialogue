@@ -15,13 +15,14 @@ function bis(X, Y, h) {
 }
 const near = (c, r, p, o = {}) => arc(c, r, dirDeg(c, p) - 11, dirDeg(c, p) + 11, o);   // 交点のまわりだけの短い弧
 const O = geo.circumcenter(A, B, C);                  // 答えの点P（2本の垂直二等分線の交点）
-const w1 = bis(A, B, 48), w2 = bis(B, C, 80);
+const h1 = 40, h2 = 95;
+const w1 = bis(A, B, h1), w2 = bis(B, C, h2);
 const unit = (p, q) => { const d = geo.dist(p, q); return [(q[0] - p[0]) / d, (q[1] - p[1]) / d]; };
 // 直線らしく、両はしを少しのばした線分（from を通り、dir の向きに、t0〜t1）
 const along = (p, dir, t0, t1) => [[p[0] + dir[0] * t0, p[1] + dir[1] * t0], [p[0] + dir[0] * t1, p[1] + dir[1] * t1]];
 const n1 = unit(w1.M, O), n2 = unit(w2.M, O);
-const [l1a, l1b] = along(w1.M, n1, -(48 + 14), geo.dist(w1.M, O) + 24);   // ABの垂直二等分線
-const [l2a, l2b] = along(w2.M, n2, -(80 + 14), geo.dist(w2.M, O) + 40);   // BCの垂直二等分線
+const [l1a, l1b] = along(w1.M, n1, -(h1 + 14), geo.dist(w1.M, O) + 8);   // ABの垂直二等分線
+const [l2a, l2b] = along(w2.M, n2, -(h2 + 14), h2 + 14);   // BCの垂直二等分線
 // 3つめ：ACの垂直二等分線
 const mAC = geo.mid(A, C), n3 = unit(mAC, O), [l3a, l3b] = along(mAC, n3, -26, geo.dist(mAC, O) + 40);
 const Rr = geo.dist(O, A);
@@ -31,7 +32,7 @@ export default {
   title: "3点から等しい距離の点の作図",
   problem: "図の3点A，B，Cから等しい距離にある点Pを作図しなさい。",
   answer: "辺ABの垂直二等分線と辺BCの垂直二等分線をかき、その交点がP（PA＝PB＝PC）。",
-  view: [0, 20, 420, 335],
+  view: [0, 20, 420, 350],
   steps: [
     {
       cap: "問題：3点 A、B、C から**等しい距離**にある点Pを、定規とコンパスで作図するよ。",
@@ -83,6 +84,7 @@ export default {
     },
     {
       cap: "なぜ？ P は ABの垂直二等分線の上だから **PA＝PB**。BCの垂直二等分線の上だから **PB＝PC**。よって **PA＝PB＝PC**！",
+      hide: ["a1", "a2", "b1", "b2", "b3", "b4", "c1", "c2", "Q", "R", "S", "T"],
       add: [seg("P", "A", { c: "p", dash: true, tick: 1 }), seg("P", "B", { c: "p", dash: true, tick: 1 }), seg("P", "C", { c: "p", dash: true, tick: 1 })],
       eq: ["// P は AB の垂直二等分線の上 → PA＝PB", "// P は BC の垂直二等分線の上 → PB＝PC", "// よって PA＝PB＝PC"],
     },

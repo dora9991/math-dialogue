@@ -22,7 +22,7 @@ function swing(id, X, X2, o = {}) {
   ];
 }
 // O のまわりの「時計まわり」の矢じるし（短い円弧）
-const ringFrom = polar(O, 26, 130), ringTo = polar(O, 26, 25);
+const ringFrom = polar(O, 34, 150), ringTo = polar(O, 34, 15);
 const ring = swing("ring", [Math.round(ringFrom[0] * 100) / 100, Math.round(ringFrom[1] * 100) / 100], [Math.round(ringTo[0] * 100) / 100, Math.round(ringTo[1] * 100) / 100]);
 
 export default {
@@ -43,7 +43,7 @@ export default {
     },
     {
       cap: "回転移動は、図形の**すべての点**を、中心Oのまわりに**同じ角度**だけ回すこと。頂点A、B、Cの行き先を決めよう。",
-      add: [...ring, txt(O[0] + 40, O[1] + 50, "時計まわり", { id: "ringt", size: 16, c: "p" })],
+      add: [...ring, txt(O[0] + 14, O[1] + 30, "時計まわり", { id: "ringt", size: 16, c: "p", anchor: "start" })],
       eq: ["## 考え方", "回転移動 ＝ 中心Oのまわりに、同じ角度だけ回す", "向き：時計の針と同じ（右まわり）", "角度：90°"],
     },
     {
@@ -80,7 +80,7 @@ export default {
     },
     {
       cap: "A′、B′、C′を線でむすぼう。できた △A′B′C′ が答えだよ！",
-      hide: ["rtc", "sa", "sah", "sb", "sbh", "sc", "sch"],
+      hide: ["rtc", "sa", "sah", "sb", "sbh", "sc", "sch", "oa", "oa2", "ob", "ob2", "oc", "oc2"],
       add: [poly(["A2", "B2", "C2"], { id: "ans", c: "a", w: 3.2, fill: "a" })],
       eq: ["=> △A′B′C′（A′ B′ C′ をむすぶ）"],
       fin: true,
