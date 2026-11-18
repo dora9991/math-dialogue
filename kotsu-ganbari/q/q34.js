@@ -26,6 +26,9 @@ const cube = solid(pr, V,
   [["D", "H"], ["H", "E"], ["H", "G"]],
   { lp: { A: "nw", B: "se", C: "ne", D: "n", E: "sw", F: "s", G: "se", H: "se", P: "sw", Q: "se", R: "se" } });
 const q = cube.pt;                                     // 画面の座標
+cube.els.find((e) => e.id === "P").dx = -2;            // 名前 P を、AP の数字「1」から少しはなす
+// 色ぬりが B の名前の上にかぶらないよう、色ぬりのあとに B の名前をもう一度かさねる
+const Blab = (id) => P(id, q.B[0], q.B[1], "B", "se", { dot: false, c: "g" });
 const num = (x, y, t, id, c = "b") => txt(x, y, t, { id, size: 17, c });
 
 export default {
@@ -45,7 +48,7 @@ export default {
     },
     {
       cap: "切り取る三角錐 BPQR を色でぬったよ。考え方は、**立方体の体積 − 切り取る三角錐の体積** だね。",
-      add: [poly(["P", "Q", "R"], { id: "tet", fill: "y", fo: 0.32, w: 0 })],
+      add: [poly(["P", "Q", "R"], { id: "tet", fill: "y", fo: 0.32, w: 0 }), Blab("Bl1")],
       eq: ["## 考え方", "残り ＝ 立方体 − 三角錐"],
     },
     {
@@ -61,7 +64,7 @@ export default {
     {
       cap: "辺の長さを調べよう。AP＝1cm は A から測った長さ。B から測った **BP は 5 − 1 ＝ 4cm** だよ。",
       add: [
-        seg("A", "P", { id: "sAP", c: "p", w: 4 }), num(50, 124, "1", "nAP", "p"),
+        seg("A", "P", { id: "sAP", c: "p", w: 4 }), num(46, 124, "1", "nAP", "p"),
         seg("B", "P", { id: "sBP", c: "b", w: 4 }), num(150, 152, "4", "nBP"),
       ],
       eqClear: true,
@@ -79,8 +82,9 @@ export default {
     {
       cap: "立方体の角だから、BP・BR・BQ は**たがいに直角**。△BPR を**底面**、BQ を**高さ**と考えよう。",
       add: [
-        poly(["B", "P", "R"], { id: "tbase", fill: "b", fo: 0.3, w: 0 }),
-        rt("B", "P", "R", { s: 12 }), rt("B", "P", "Q", { s: 12 }), rt("B", "R", "Q", { s: 12 }),
+        poly(["B", "P", "R"], { id: "tbase", fill: "b", fo: 0.24, w: 0 }),
+        Blab("Bl2"),
+        rt("B", "P", "R", { id: "rt1", s: 12 }), rt("B", "P", "Q", { id: "rt2", s: 12 }), rt("B", "R", "Q", { id: "rt3", s: 12 }),
       ],
       hl: ["sBQ"],
     },
@@ -103,8 +107,8 @@ export default {
     },
     {
       cap: "確かめよう。底面を△BQR、高さを BP にしても、[[1|3]] × [[9|2]] × 4 ＝ 6 で同じになるよ。",
-      hide: ["tbase"],
-      add: [poly(["B", "Q", "R"], { id: "tbase2", fill: "p", fo: 0.3, w: 0 })],
+      hide: ["tbase", "rt1", "rt2"],
+      add: [poly(["B", "Q", "R"], { id: "tbase2", fill: "p", fo: 0.22, w: 0 }), Blab("Bl3")],
       hl: ["sBP"],
       eq: ["## 確かめ", "△BQR ＝ [[1|2]] × 3 × 3 ＝ [[9|2]]", "[[1|3]] × [[9|2]] × 4 ＝ 6 ✓"],
     },

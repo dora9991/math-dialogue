@@ -2,14 +2,14 @@
 import { P, seg, line, poly, arc, circ, ang, rt, arrow, txt, geo, polar, dirDeg } from "../dsl.js";
 
 // ── 円 O と点 A（印刷物の図：A は円周の右上、O は円の中心。O の名前は点の左）
-const O = [200, 180], r = 125, aDeg = 48;
+const O = [195, 200], r = 115, aDeg = 48;
 const A = polar(O, r, aDeg);
 const u = geo.mul(geo.sub(A, O), 1 / geo.dist(O, A));       // O → A の向きの単位ベクトル
 const at = (p, k, v) => [p[0] + k * v[0], p[1] + k * v[1]];
 
 // ── (2) 作図：直線 OA を A の先までのばす → A を中心に円 → 直線 OA との交点 P, Q → P, Q から同じ半径の円 → 交点 R, S
-const ext = at(A, 78, u);                         // のばした先
-const r1 = 45, r2 = 70;                           // ②の半径、③④の半径
+const ext = at(A, 80, u);                         // のばした先
+const r1 = 55, r2 = 85;                           // ②の半径、③④の半径
 const Pp = at(A, r1, u), Qq = at(A, -r1, u);      // Pp：円の外がわ、Qq：円の内がわ
 const [Y1, Y2] = geo.interCC(Pp, r2, Qq, r2);
 const Rr = Y1[1] < Y2[1] ? Y1 : Y2, Ss = Y1[1] < Y2[1] ? Y2 : Y1;   // R：左上、S：右下
@@ -26,11 +26,11 @@ export default {
   title: "円の接線の性質と作図",
   problem: "円の接線の性質について、次の問いに答えなさい。\n(1) 円の接線は接点を通る円の半径と（　　　）に交わる。（　　　）にあてはまる用語を答えなさい。\n(2) 円の接線の性質を利用して、円 O の円周上の点 A における接線 ℓ を作図しなさい。",
   answer: "(1) 垂直　(2) 点 A を通り、半径 OA に垂直な直線 ℓ（A を通る OA の垂線）が接線。",
-  view: [0, 20, 400, 300],
+  view: [0, 20, 400, 310],
   steps: [
     {
       cap: "問題：円の**接線**についての問題だよ。(1)は（　）にはいることば、(2)は作図だね。",
-      add: [circ("O", r, { id: "circle" }), P("O", O[0], O[1], "O", "w"), P("A", A[0], A[1], "A", "n")],
+      add: [circ("O", r, { id: "circle" }), P("O", O[0], O[1], "O", "w"), P("A", A[0], A[1], "A", "n", { dy: -13 })],
     },
     {
       cap: "(1) 円と**1点だけで接する直線**が**接線**、その点が**接点**だよ。ここでは、接点を T とするね。",
@@ -39,7 +39,7 @@ export default {
     },
     {
       cap: "接点 T と中心 O を結ぶ**半径 OT** をひいてみよう。接線と、**直角（90°）**に交わっているね。",
-      add: [seg("O", "T", { id: "oT" }), rt("T", "O", T1, { id: "rtT" }), txt(160, 205, "半径", { id: "tx2", size: 16 })],
+      add: [seg("O", "T", { id: "oT" }), rt("T", "O", T1, { id: "rtT" }), txt(162, 258, "半径", { id: "tx2", size: 16 })],
       eq: ["接線 と 半径 OT は 90° に交わる"],
     },
     {
@@ -83,10 +83,10 @@ export default {
       fin: true,
     },
     {
-      cap: "なぜ正しい？ **AP＝AQ、RP＝RQ、SP＝SQ**。だから直線 RS は PQ の**垂直二等分線**で、A を通って OA と**直角**に交わるよ。",
+      cap: "なぜ正しい？ **AP＝AQ、RP＝RQ**。R は PQ の垂直二等分線の上。S も同じ。だから直線 RS は、A で OA と**直角**に交わるよ。",
       add: [
-        seg("R", "P", { id: "w1", dash: true, c: "p", tick: 2 }), seg("R", "Q", { id: "w2", dash: true, c: "p", tick: 2 }),
-        seg("S", "P", { id: "w3", dash: true, c: "p", tick: 2 }), seg("S", "Q", { id: "w4", dash: true, c: "p", tick: 2 }),
+        seg("A", "P", { id: "w1", c: "p", tick: 1 }), seg("A", "Q", { id: "w2", c: "p", tick: 1 }),
+        seg("R", "P", { id: "w3", dash: true, c: "p", tick: 2 }), seg("R", "Q", { id: "w4", dash: true, c: "p", tick: 2 }),
         rt("A", "Q", "R", { id: "rtA", c: "p", s: 13 }),
       ],
       eq: ["// AP＝AQ（円A の半径）", "// RP＝RQ、SP＝SQ（同じ半径）", "// → RS は PQ の垂直二等分線", "// → ℓ ⊥ OA（A で直角）"],
