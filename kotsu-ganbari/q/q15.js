@@ -19,8 +19,9 @@ function bisector(at, from, to, r1, r2) {
   const Z = geo.dist(at, Z1) > geo.dist(at, Z2) ? Z1 : Z2;     // at から遠いほう（三角形の内側）
   return { X, Y, Z };
 }
-const bA = bisector(A, B, C, 85, 75);             // ∠A：P（AB 上）, Q（AC 上）, R
-const bB = bisector(B, A, C, 100, 70);            // ∠B：S（BA 上）, T（BC 上）, U
+const rA1 = 60, rA2 = 50, rB1 = 60, rB2 = 50;   // コンパスの半径（①④ と ②⑤）
+const bA = bisector(A, B, C, rA1, rA2);             // ∠A：P（AB 上）, Q（AC 上）, R
+const bB = bisector(B, A, C, rB1, rB2);            // ∠B：S（BA 上）, T（BC 上）, U
 const Pp = bA.X, Qq = bA.Y, Rr = bA.Z, Ss = bB.X, Tt = bB.Y, Uu = bB.Z;
 const I = geo.interLL(A, Rr, B, Uu);              // 2本の二等分線の交点
 const footA = geo.interLL(A, Rr, B, C);           // A の二等分線が BC と交わる点
@@ -51,13 +52,13 @@ export default {
     },
     {
       cap: "まず ∠A の二等分線。**① 点 A を中心**に円（弧）をかいて、辺 AB, AC との交点を **P, Q** とするよ。",
-      add: [arc("A", 85, ...arcThru(A, Pp, Qq), { id: "a1" }), P("P", Pp[0], Pp[1], "P", "w"), P("Q", Qq[0], Qq[1], "Q", "ne")],
+      add: [arc("A", rA1, ...arcThru(A, Pp, Qq), { id: "a1" }), P("P", Pp[0], Pp[1], "P", "w"), P("Q", Qq[0], Qq[1], "Q", "ne")],
       hl: ["a1"],
       eq: ["## ∠A の二等分線", "① A を中心に円 → P, Q"],
     },
     {
       cap: "**② 点 P, 点 Q を中心**に、**同じ半径**で円（弧）をかくよ。交わる点を **R** とするよ。",
-      add: [arc("P", 75, ...around(Pp, Rr), { id: "a2" }), arc("Q", 75, ...around(Qq, Rr), { id: "a3" }), P("R", Rr[0], Rr[1], "R", "se")],
+      add: [arc("P", rA2, ...around(Pp, Rr), { id: "a2" }), arc("Q", rA2, ...around(Qq, Rr), { id: "a3" }), P("R", Rr[0], Rr[1], "R", "e")],
       eq: ["② P, Q を中心に、同じ半径で円", "　 → 交点 R"],
     },
     {
@@ -68,18 +69,18 @@ export default {
     },
     {
       cap: "次は ∠B の二等分線。**④ 点 B を中心**に円（弧）をかいて、辺 BA, BC との交点を **S, T** とするよ。",
-      add: [arc("B", 100, ...arcThru(B, Ss, Tt), { id: "b1" }), P("S", Ss[0], Ss[1], "S", "w"), P("T", Tt[0], Tt[1], "T", "s")],
+      add: [arc("B", rB1, ...arcThru(B, Ss, Tt), { id: "b1" }), P("S", Ss[0], Ss[1], "S", "w"), P("T", Tt[0], Tt[1], "T", "s")],
       hl: ["b1"],
       eq: ["## ∠B の二等分線", "④ B を中心に円 → S, T"],
     },
     {
       cap: "**⑤ 点 S, 点 T を中心**に、同じ半径で円（弧）をかいて、交わる点を **U** とするよ。",
-      add: [arc("S", 70, ...around(Ss, Uu), { id: "b2" }), arc("T", 70, ...around(Tt, Uu), { id: "b3" }), P("U", Uu[0], Uu[1], "U", "ne")],
+      add: [arc("S", rB2, ...around(Ss, Uu), { id: "b2" }), arc("T", rB2, ...around(Tt, Uu), { id: "b3" }), P("U", Uu[0], Uu[1], "U", "nw")],
       eq: ["⑤ S, T を中心に、同じ半径で円", "　 → 交点 U"],
     },
     {
       cap: "**⑥ 点 B と点 U を通る直線**をひくよ。さっきの直線 AR と交わる点が、**中心 I** だ！",
-      add: [seg("B", footB, { id: "lb" }), P("I", I[0], I[1], "I", "n", { c: "a", r: 4.8 })],
+      add: [seg("B", footB, { id: "lb" }), P("I", I[0], I[1], "I", "e", { c: "a", r: 4.8, dx: 12, dy: 8 })],
       hl: ["lb"],
       eq: ["⑥ 直線 BU をひく", "=> I ＝ 直線 AR と直線 BU の交点"],
       fin: true,
