@@ -291,6 +291,8 @@ await section("宿題を出す：入力のエラー（サーバーを呼ばず�
   await p.fill("#f-due", day(-1)); await submit(); t = await errsText(); ok(t.includes("開始日と同じ日か") || t.includes("きょうより前"), "期限が開始日より前：止まる");
   await p.fill("#f-start", day(-5)); await p.fill("#f-due", day(-1)); await submit(); t = await errsText(); ok(t.includes("きょうより前"), "期限がきょうより前：止まる");
   await p.fill("#f-start", TODAY); await p.fill("#f-due", day(400)); await submit(); t = await errsText(); ok(t.includes("長すぎ"), "期間が1年より長い：止まる");
+  await p.fill("#f-due", day(60)); await submit(); t = await errsText(); ok(t.includes("最長60日"), "期間が61日（両端をふくむ）：最長60日で止まる");
+  ok(creates() === 0, "61日の期間は、サーバーに送らない");
   await p.fill("#f-due", ""); await submit(); t = await errsText(); ok(t.includes("期限"), "期限が空：止まる");
   await p.fill("#f-due", day(1));
   await p.fill("#f-title", "あ".repeat(61)); ok((await p.inputValue("#f-title")).length === 60, "題：入力欄は60字までしか入らない");

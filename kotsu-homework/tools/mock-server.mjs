@@ -155,6 +155,7 @@ export function createMock({ now = () => Date.now(), units = null } = {}) {
       if (a.p_n == null && a.p_min == null) bad();
       if (a.p_unit != null && unitIds && !unitIds.has(a.p_unit)) bad();
       if (!validDate(a.p_start) || !validDate(a.p_due) || a.p_due < a.p_start) bad();
+      if (Math.round((Date.parse(a.p_due) - Date.parse(a.p_start)) / DAY) > 59) bad();      // 期間は最長60日（両端をふくむ）：本番 hw.sql と同じ
       if (a.p_note != null && [...String(a.p_note)].length > 200) bad();
       if (a.p_title != null && [...String(a.p_title)].length > 100) bad();
       if ((a.p_class == null) === (a.p_users == null)) bad();        // どちらか一方だけ
@@ -208,7 +209,7 @@ export function createMock({ now = () => Date.now(), units = null } = {}) {
       const u = staffOf(p_token); const hw = needHw(u, p_id);
       // 消せるのは、作ってから 1日以内、または 取り組んだ生徒が 0 人のとき（契約の「決めて報告」の、この模擬での決め）
       const fresh = clock() - Date.parse(hw.created_at) < DAY;
-      const touched = targets(hw).some((s) => { const r = rowOf(hw, s); return r.count > 0 || r.sec > 0; });
+      const touched = targets(hw).some((s) => { const r = rowOf(hw, s); return (hw.n != null && r.count > 0) || (hw.min != null && r.sec > 0); });   // n の宿題は その単元を解いた／min の宿題は 学習した（本番 hw.sql と同じ）
       if (!fresh && touched) throw new AppError("not_deletable");
       db().hws.delete(hw.id); return { ok: true };
     },

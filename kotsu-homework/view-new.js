@@ -28,7 +28,8 @@ export function validate(f, today) {
   if (!e.start && !e.due) {
     if (f.due < f.start) e.due = "期限は、開始日と同じ日か、そのあとの日にしてください。";
     else if (f.due < today) e.due = "期限が、きょうより前です。きょう以降の日にしてください。";
-    else if (diffDays(f.due, f.start) > 365) e.due = "期間が長すぎます（最長1年）。";
+    else if (diffDays(f.due, f.start) > 59) e.due = "期間が長すぎます（最長60日）。";
+    else if (diffDays(f.start, today) > 365) e.start = "開始日が、先すぎます（1年以内にしてください）。";
   }
   if ([...f.title.trim()].length > 60) e.title = "題は60字までです。";
   if ([...f.note.trim()].length > 200) e.note = "ひとことは200字までです。";

@@ -73,3 +73,18 @@ SUPABASE ＝ `https://mtzhbiadzqjhvhzzdsbn.supabase.co/rest/v1`、publishable ke
 - `progress.mjs`：`progress(hw, state, nowMs)` → `{count, correct, sec, pct, done, doneAt, status, phase}`（純粋な関数。日本時間）。
 - `vectors.json`：検算データ（`{name, hw, state, nowMs, expect}` の配列）。実装は、全部のデータで `expect` と同じ結果になること。
   - `pct` は小数第3位までの比較でよい。`doneAt` は `YYYY-MM-DD`（日本時間）または null。
+
+---
+
+## 付録：データベースを作ったあとに、確定した点（2026-11-18）
+
+契約から変わった点・決めた点は、`db/HANDOFF-hw-db.md` の「4．契約から変えた所・決めたこと」にまとめた。画面の作りに関わるもの：
+
+- **期間は最長60日**（両端をふくむ）。開始日は、きょうの前後1年以内。超えると `bad_args`。
+- **`hw_t_delete`**：作ってから24時間以内、または取り組みが 0 のものだけ消せる。n の宿題は「その単元を期間中に1問でも解いた生徒がいる」、min の宿題は「期間中の学習時間が1秒でもある生徒がいる」を「取り組み」とする。それ以外は `not_deletable`。
+- **エラー**：役割ちがいは `role`（`auth`/`forbidden` ではない）。追加：`org_off`・`hw_limit`（1日60件）・`full`（学校20000件）。
+- **`hw_t_grid`**：締めた宿題は出さない。開始日の新しい順に最大40件を取り、古い順で返す。
+- **`hw_s_list`**：締めていない、期限が「きょう−14日」以降のもの。期限の近い順に最大50件。進み具合は返さない。
+- **`unit_name` は返さない**（画面が `units.json` から出す）。やめた（active=false）生徒は対象に入れない。
+
+未決の1点（`db/HANDOFF-hw-db.md` の「8．危険点」の2）：進み具合は生徒の `log`（直近400件）から、その場で計算するため、期限のあとに400問以上解くと、期限内の記録が押し出されて、終わった宿題が「未達成」に戻って見えることがある。対策の案は「生徒の画面が、達成した瞬間に `state` へ `hwDone` を書き、サーバーが『達成ずみ』として読む」。関数は `create or replace` なので、あとから足せる。
