@@ -10,6 +10,8 @@ SRC = os.path.join(ROOT, 'src')
 DIST = os.path.join(ROOT, 'dist')
 ORDER = ['core', 'chars', 'sim', 'ai', 'art', 'render', 'stages', 'input', 'audio', 'rollback', 'net', 'scenes', 'main']
 VENDOR = ['vendor/peerjs.min']   # 外部ライブラリ（PeerJS, MIT）。別の<script>として先に読み込む
+# スマホでピンチ拡大させない（ゲーム画面が勝手に拡大・移動しないように）。iPhone の Safari は無視することがあるので、input.js 側でも止めている
+VIEWPORT = 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover'
 
 
 def read(p):
@@ -52,7 +54,7 @@ def main():
     with open(os.path.join(DIST, 'artifact.html'), 'w', encoding='utf-8') as f:
         f.write(frag)
     wrap = ('<!doctype html>\n<html lang="ja"><head><meta charset="utf-8">'
-            '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+            '<meta name="viewport" content="' + VIEWPORT + '">'
             '<style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}'
             'body{margin:0;font:14px system-ui,sans-serif;background:#f7f7f5;color:#111}img{max-width:100%}[hidden]{display:none!important}</style>'
             '</head><body>\n' + frag + '\n</body></html>\n')
@@ -62,7 +64,7 @@ def main():
     site = os.path.join(DIST, 'site')
     os.makedirs(site, exist_ok=True)
     page_site = ('<!doctype html>\n<html lang="ja"><head><meta charset="utf-8">'
-                 '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+                 '<meta name="viewport" content="' + VIEWPORT + '">'
                  '<meta name="description" content="パーツが宙に浮いたロボ8体で戦う、ファミコン風の格闘ゲーム。ひとりでも、2人でも、ネットでも。">'
                  '<link rel="icon" href="data:,">'
                  '<style>:root{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}'

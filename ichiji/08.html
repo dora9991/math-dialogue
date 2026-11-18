@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>x の変域と y の変域</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 一次関数 第8時：x の変域から、y の変域を求めよう（ikkan の lesson_ichiji_new_08 と同じ流れ）。
+   x の区間が x 軸の上で光り、グラフはその部分（線分）だけが残る。両はしから y 軸へ写すと、y の変域になる。端は ●（ふくむ）・○（ふくまない）。
+   数値は ikkan のまま（y＝2x−1・−1≦x≦3、例題 y＝−2x＋5、練習 y＝−x＋3・1≦x＜4、考えよう −2≦x≦4 の4つの式、チャレンジ y＝ax＋2）。
+   y の変域は、x を細かく動かして、最大・最小を調べ直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum;
+  /* ---- 分数入りの字（[2/3] をたての分数に）。canvas 用と、右の板書（HTML）用 ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+  var OUT = 'rgba(20,40,30,.92)';
+  function plane(D, P, xr, yr, o) { var s = CH.fs(D, .72); return CH.plane(D, CH.rect(P.x0 + s * .4, P.y0 + s * 1.6, P.x1 - s * 1.8, P.y1 - s * .4), Object.assign({ x: xr, y: yr }, o || {})); }
+  function lab(D, Pl, x, y, txt, col, o) { o = o || {}; TX(D, Pl.X(x) + (o.dx || 0), Pl.Y(y) + (o.dy || 0), txt, { col: col, size: o.size || CH.fs(D, .9), align: o.align || 'left', outline: OUT, a: o.a }); }
+  function full(D) { return CH.box(D, { l: .08, r: .06, t: .02, b: .03 }); }
+  /* 字（式・x の変域・y の変域）は、広い画面では座標平面の左に、せまい画面では上に */
+  function lay(D) {
+    var R = CH.box(D, { l: .03, r: .04, t: .02, b: .03 }), s = CH.fs(D), wide = D.W > D.H * .9;
+    if (wide) return { P: CH.rect(R.x0 + R.w * .36, R.y0, R.x1, R.y1), tx: R.x0 + s * .3, ty: R.y0 + R.h * .22, dy: s * 1.7, k: 1.05 };
+    return { P: CH.rect(R.x0, R.y0 + s * 3.9, R.x1, R.y1), tx: R.x0 + s * .3, ty: R.y0 + s * .55, dy: s * 1.35, k: 1.05 };
+  }
+  function lines(D, L, list) { var s = CH.fs(D); list.forEach(function (z, i) { if (z) TX(D, L.tx, L.ty + i * L.dy, z[0], { col: z[1], size: s * L.k * (i ? .95 : 1.1), align: 'left', a: z[2] }); }); }
+
+  /* ---- y の変域を、x を細かく動かして調べる（端をふくむかどうかも） ---- */
+  function yRange(a, b, lo, hi, e) {
+    var min = Infinity, max = -Infinity, n = 6000;
+    for (var i = 0; i <= n; i++) { var x = lo + (hi - lo) * i / n, y = a * x + b; if (y < min) min = y; if (y > max) max = y; }
+    var yl = a * lo + b, yh = a * hi + b, minIn = CH.near(min, yl) ? e[0] : e[1], maxIn = CH.near(max, yl) ? e[0] : e[1];
+    return { min: Math.round(min * 1e6) / 1e6, max: Math.round(max * 1e6) / 1e6, txt: S(min) + (minIn === 'in' ? '≦' : '＜') + 'y' + (maxIn === 'in' ? '≦' : '＜') + S(max), ends: [minIn, maxIn] };
+  }
+  var P1 = { a: 2, b: -1, lo: -1, hi: 3, e: ['in', 'in'] }, P2 = { a: -2, b: 5, lo: -1, hi: 3, e: ['in', 'in'] }, P3 = { a: -1, b: 3, lo: 1, hi: 4, e: ['in', 'out'] };
+  [P1, P2, P3].forEach(function (p) { p.r = yRange(p.a, p.b, p.lo, p.hi, p.e); });
+  CH.check(P1.r.txt === '−3≦y≦5', '今日の問い（−3≦y≦5）');
+  CH.check(P2.r.txt === '−1≦y≦7', '例題（−1≦y≦7）');
+  CH.check(P3.r.txt === '−1＜y≦2', '練習（−1＜y≦2）');
+  var TH = [[2, 1, 'y＝2x＋1'], [.5, -1, 'y＝[1/2]x−1'], [-1, 2, 'y＝−x＋2'], [-3, 0, 'y＝−3x']];
+  CH.check(TH.map(function (f) { var r = yRange(f[0], f[1], -2, 4, ['in', 'in']); return r.max - r.min; }).join() === '12,3,6,18', '考えよう（ここで確かめるだけ）');
+  var CHA = []; for (var k = -400; k <= 400; k++) { var a = k / 100, r = yRange(a, 2, -2, 3, ['in', 'in']); if (CH.near(r.max - r.min, 10)) CHA.push(a); }
+  CH.check(CHA.join() === '-2,2', 'チャレンジ（a＝2、−2）');
+
+  /* ---- 変域の絵。t：0〜1（x の区間 → 縦の線 → 線分 → 横の線 → y の区間） ---- */
+  function band(D, Pl, p, q, axis, ends, col, a) {
+    var A = axis === 'x' ? [p, 0] : [0, p], B = axis === 'x' ? [q, 0] : [0, q];
+    CH.pseg(D, Pl, A, B, { col: col, w: 7, glow: true, a: a });
+    [[A, ends[0]], [B, ends[1]]].forEach(function (z) { CH.pt(D, Pl, z[0][0], z[0][1], { col: col, open: z[1] === 'out', r: CH.fs(D, .3), a: a }); });
+  }
+  function domain(D, L, Pl, P, t, o) {
+    o = o || {}; var s = CH.fs(D), yl = P.a * P.lo + P.b, yh = P.a * P.hi + P.b, ka = CH.smooth(0, .15, t), kv = CH.smooth(.15, .35, t), kc = CH.smooth(.3, .5, t), kh = CH.smooth(.5, .7, t), ky = CH.smooth(.65, .85, t);
+    CH.lin(D, Pl, P.a, P.b, { col: C.orange, w: 3, a: 1 - kc * .78 });
+    if (ka > 0) band(D, Pl, P.lo, P.hi, 'x', P.e, C.blue, ka);
+    if (kv > 0) [[P.lo, yl], [P.hi, yh]].forEach(function (z) { CH.pseg(D, Pl, [z[0], 0], [z[0], z[1] * kv], { col: C.blue, w: 2, dash: true }); });
+    if (kc > 0) CH.lin(D, Pl, P.a, P.b, { col: C.orange, w: 4.4, glow: true, x0: P.lo, x1: P.hi, ends: P.e, a: kc });
+    if (kh > 0) [[P.lo, yl], [P.hi, yh]].forEach(function (z) { CH.pseg(D, Pl, [z[0], z[1]], [z[0] * (1 - kh), z[1]], { col: C.yel, w: 2, dash: true }); });
+    if (ky > 0) band(D, Pl, P.r.min, P.r.max, 'y', P.r.ends, C.yel, ky);
+    if (o.pts && kc > .5) { lab(D, Pl, P.lo, yl, '(' + S(P.lo) + ', ' + S(yl) + ')', C.orange, { dx: o.pts[0][0] * s, dy: o.pts[0][1] * Pl.u, align: o.pts[0][0] < 0 ? 'right' : 'left', a: kc }); lab(D, Pl, P.hi, yh, '(' + S(P.hi) + ', ' + S(yh) + ')', C.orange, { dx: o.pts[1][0] * s, dy: o.pts[1][1] * Pl.u, align: o.pts[1][0] < 0 ? 'right' : 'left', a: kc }); }
+    lines(D, L, [[o.title, C.orange], ['x の変域　' + S(P.lo) + (P.e[0] === 'in' ? '≦' : '＜') + 'x' + (P.e[1] === 'in' ? '≦' : '＜') + S(P.hi), C.blue], ky > 0 ? ['y の変域　' + P.r.txt, C.yel, ky] : null]);
+  }
+
+  K3.run({
+    no: '第8時', title: 'x の変域から、y の変域を求めよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '07.html', label: '◀ 第7時' }, { href: '09.html', label: '第9時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: 'y＝2x−1（−1≦x≦3）', q: '一次関数 y＝2x−1 で、x の値が −1 以上 3 以下のとき、y の値は、どんな範囲の値をとるだろう。グラフをかいて、考えよう。',
+        notes: ['① 自分の考え（3分）　y の範囲を書こう。', '② ペアの考え（3分）'],
+        draw: function (D) { var L = lay(D), Pl = plane(D, L.P, [-3, 5], [-5, 7]); domain(D, L, Pl, P1, 0, { title: 'y＝2x−1' }); } },
+      { tag: '今日の問い', q: 'x が −1 以上 3 以下のとき、y はどんな範囲？', a: '−3≦y≦5', sub: 'x＝−1 のとき y＝−3、x＝3 のとき y＝5。グラフは 2点 (−1, −3)、(3, 5) を結ぶ線分', dur: 7,
+        b: { t: 'y＝2x−1（−1≦x≦3）… 両はし (−1, −3)・(3, 5) → <b>−3≦y≦5</b>', col: C.yel },
+        draw: function (D) { var L = lay(D), Pl = plane(D, L.P, [-3, 5], [-5, 7]); domain(D, L, Pl, P1, D.ph ? D.t : 0, { title: 'y＝2x−1', pts: [[-.3, .5], [-.3, .3]] }); } },
+      { tag: 'ことば', bh: 'ことば', q: 'x、y のとりうる値の範囲を何という？ ≦ と ＜ のちがいは？', a: '変域。≦ はふくむ、＜ はふくまない', sub: '−1≦x≦3 は −1 も 3 もふくむ（●）。−1＜x≦3 は −1 をふくまない（○）。変域があるとき、グラフは線分になる', dur: 4,
+        b: [{ t: 'x、y のとりうる値の範囲 … <b>変域</b>', col: C.green }, { t: '≦ … <b>ふくむ</b>（●）　＜ … <b>ふくまない</b>（○）', col: C.green }, { t: '変域があるとき、グラフは <b>線分</b>', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .1, r: .1, t: .1, b: .14 }), rs = CH.rows(R, 2, .3), t = D.ph ? D.t : 0, s = CH.fs(D);
+          [['−1≦x≦3', ['in', 'in'], 'ふくむ　　　ふくむ'], ['−1＜x≦3', ['out', 'in'], 'ふくまない　ふくむ']].forEach(function (g, k) {
+            var a = k === 0 ? 1 : (D.ph ? CH.smooth(.1, .4, t) : 0), r = rs[k], X = CH.numline(D, r, -3, 5, 1, { a: a }), y = r.y1;
+            CH.line(D, X(-1), y, X(3), y, { col: C.blue, w: 7, a: a, glow: true });
+            [[-1, g[1][0]], [3, g[1][1]]].forEach(function (z) { CH.circle(D, X(z[0]), y, s * .38, z[1] === 'out' ? { fill: '#1f3a2c', stroke: C.blue, sw: 3, a: a } : { fill: C.blue, stroke: 'rgba(20,30,24,.8)', sw: 1.2, a: a }); });
+            CH.text(D, r.x0, r.y0 + s * .2, g[0], { col: C.blue, align: 'left', size: s * 1.2, a: a });
+            CH.text(D, X(-1), y - s * 1.2, g[1][0] === 'in' ? '● ふくむ' : '○ ふくまない', { col: g[1][0] === 'in' ? C.yel : C.pink, size: s * .85, a: a * (D.ph ? CH.smooth(.3 + k * .3, .5 + k * .3, t) : 0) });
+            CH.text(D, X(3), y - s * 1.2, '● ふくむ', { col: C.yel, size: s * .85, a: a * (D.ph ? CH.smooth(.3 + k * .3, .5 + k * .3, t) : 0) });
+          });
+        } },
+      { tag: '例題', bh: '例題', q: '一次関数 y＝−2x＋5 で、x の変域が −1≦x≦3 のとき、y の変域を求めよう。', a: '−1≦y≦7', sub: 'x＝−1 のとき y＝7、x＝3 のとき y＝−1。線分の両はしは (−1, 7)、(3, −1)。小さい数を左に書く', dur: 7,
+        b: { t: 'y＝−2x＋5（−1≦x≦3）… x＝−1 で 7、x＝3 で −1 → <b>−1≦y≦7</b>（小さい数を左に）', col: C.pink },
+        draw: function (D) { var L = lay(D), Pl = plane(D, L.P, [-3, 5], [-3, 9]); domain(D, L, Pl, P2, D.ph ? D.t : 0, { title: 'y＝−2x＋5', pts: [[-.5, 0], [.5, 0]] }); } },
+      { tag: '例題', q: '一次関数 y＝−x＋3 で、x の変域が 1≦x＜4 のとき、y の変域を求めよう。', a: '−1＜y≦2', sub: 'x＝1 のとき y＝2（ふくむ）、x＝4 のとき y＝−1（ふくまない）。○ の点は、線分にふくまれない', dur: 7,
+        b: { t: 'y＝−x＋3（1≦x＜4）→ <b>−1＜y≦2</b>（x＝4 の端は ○）', col: C.pink },
+        draw: function (D) { var L = lay(D), Pl = plane(D, L.P, [-2, 6], [-3, 5]); domain(D, L, Pl, P3, D.ph ? D.t : 0, { title: 'y＝−x＋3', pts: [[.5, .1], [.5, .2]] }); } },
+      { tag: '考えよう', bh: '考えよう', q: 'x の変域が −2≦x≦4 のとき、y の変域は、a の値によってどう変わるだろう。y＝2x＋1、y＝[1/2]x−1、y＝−x＋2、y＝−3x で、x＝−2 のとき・x＝4 のときの y と、y の変域を表にして調べよう。',
+        notes: ['気づいたことを書こう。', 'どんな一次関数でも使える、y の変域の求め方を、まとめよう。', 'スライダーで、式を切りかえられます。'],
+        sliders: [{ key: 'k', label: '式', min: 0, max: 3, step: 1, val: 0, fmt: function (k) { return ['y＝2x＋1', 'y＝1/2x−1', 'y＝−x＋2', 'y＝−3x'][k]; } }],
+        draw: function (D) {
+          var L = lay(D), Pl = plane(D, L.P, [-3, 5], [-13, 10], { lab: 2 }), f = TH[D.V.k], P = { a: f[0], b: f[1], lo: -2, hi: 4, e: ['in', 'in'] }, s = CH.fs(D);
+          P.r = yRange(P.a, P.b, -2, 4, P.e);
+          CH.lin(D, Pl, P.a, P.b, { col: C.orange, w: 2.4, a: .25 });
+          band(D, Pl, -2, 4, 'x', P.e, C.blue, 1);
+          [[-2, P.a * -2 + P.b], [4, P.a * 4 + P.b]].forEach(function (z) { CH.pseg(D, Pl, [z[0], 0], [z[0], z[1]], { col: C.blue, w: 2, dash: true }); CH.pseg(D, Pl, [z[0], z[1]], [0, z[1]], { col: C.yel, w: 2, dash: true }); });
+          CH.lin(D, Pl, P.a, P.b, { col: C.orange, w: 4.4, glow: true, x0: -2, x1: 4, ends: P.e });
+          band(D, Pl, P.r.min, P.r.max, 'y', ['in', 'in'], C.yel, 1);
+          lines(D, L, [[f[2], C.orange], ['x の変域　−2≦x≦4', C.blue]]);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '一次関数 y＝ax＋2 で、x の変域が −2≦x≦3 のとき、y の最大値と最小値の差が 10 になった。a の値をすべて求めよう。', a: 'a＝2、−2', sub: 'x＝−2 で y＝−2a＋2、x＝3 で y＝3a＋2。3a＋2 が大きいとき 5a＝10 で a＝2、−2a＋2 が大きいとき −5a＝10 で a＝−2', dur: 8,
+        b: { t: 'a＝<b>2</b>（−2≦y≦8）、a＝<b>−2</b>（−4≦y≦6）', col: C.orange },
+        draw: function (D) {
+          var L = lay(D), Pl = plane(D, L.P, [-3, 4], [-5, 9]), t = D.ph ? D.t : 0, s = CH.fs(D);
+          var a = !D.ph ? 1 : t < .45 ? CH.lerp(.5, 2, CH.ease(CH.smooth(0, .3, t))) : CH.lerp(2, -2, CH.ease(CH.smooth(.5, .8, t)));
+          var P = { a: a, b: 2, lo: -2, hi: 3, e: ['in', 'in'] }; P.r = yRange(a, 2, -2, 3, P.e);
+          CH.lin(D, Pl, a, 2, { col: C.orange, w: 2.4, a: .25 });
+          band(D, Pl, -2, 3, 'x', P.e, C.blue, 1);
+          CH.lin(D, Pl, a, 2, { col: C.orange, w: 4.4, glow: true, x0: -2, x1: 3, ends: P.e });
+          [[-2, -2 * a + 2], [3, 3 * a + 2]].forEach(function (z) { CH.pseg(D, Pl, [z[0], z[1]], [0, z[1]], { col: C.yel, w: 2, dash: true }); });
+          band(D, Pl, P.r.min, P.r.max, 'y', P.e, C.yel, 1);
+          var d = P.r.max - P.r.min, ok = CH.near(d, 10);
+          lines(D, L, [['y＝ax＋2　a＝' + (Math.abs(a - Math.round(a)) < .02 ? S(Math.round(a)) : CH.f1(a).replace('-', '−')), C.orange], ['−2≦x≦3', C.blue], ['y の変域 ' + (D.ph && ok ? P.r.txt : '') + '　差 ' + (ok ? '10' : CH.f1(d)), ok ? C.yel : C.chalk]]);
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

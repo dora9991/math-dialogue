@@ -1,0 +1,1634 @@
+<title>フレーズポケット</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: one-screen app. A paper header with four tabs; each view scrolls inside a 760px column.
+   Materials: a study notebook — blue ink, red pen for corrections, yellow highlighter for picked phrases, index cards for drills. */
+:root{
+  --paper:#F4F6FA; --sheet:#FFFFFF; --ink:#172238; --ink-2:#5A6680; --rule:#DDE3EE;
+  --blue:#2452B5; --blue-soft:#E5ECFA; --on-blue:#FFFFFF;
+  --red:#C2362C; --red-soft:#FBE9E6; --red-line:#EDB0AA;
+  --marker:#FFE066; --marker-soft:#FFF2B0; --marker-ink:#4A3B00;
+  --green:#1D7A4E; --green-soft:#E2F4EA; --amber:#B7791F;
+  --shadow:rgba(23,34,56,.14);
+  --font-ja:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;
+  --font-en:"Literata",Georgia,"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Noto Sans JP",serif;
+  --font-pen:"Klee One","Zen Kaku Gothic New","Hiragino Maru Gothic ProN","Noto Sans JP",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E131D; --sheet:#161D2B; --ink:#E4E8F1; --ink-2:#9BA6BC; --rule:#283247;
+    --blue:#8DB0FF; --blue-soft:#1C2944; --on-blue:#0E131D;
+    --red:#FF8D84; --red-soft:#3A1D1C; --red-line:#6E3330;
+    --marker:#E6CB45; --marker-soft:#40391A; --marker-ink:#F3E39A;
+    --green:#71D6A1; --green-soft:#15302A; --amber:#E2B04A;
+    --shadow:rgba(0,0,0,.45);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E131D; --sheet:#161D2B; --ink:#E4E8F1; --ink-2:#9BA6BC; --rule:#283247;
+  --blue:#8DB0FF; --blue-soft:#1C2944; --on-blue:#0E131D;
+  --red:#FF8D84; --red-soft:#3A1D1C; --red-line:#6E3330;
+  --marker:#E6CB45; --marker-soft:#40391A; --marker-ink:#F3E39A;
+  --green:#71D6A1; --green-soft:#15302A; --amber:#E2B04A;
+  --shadow:rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;box-sizing:border-box}
+body{height:100%;background:var(--paper);color:var(--ink);font-family:var(--font-ja);font-size:15px;line-height:1.7;-webkit-text-size-adjust:100%}
+button,input,textarea{font:inherit;color:inherit}
+h1,h2,h3,h4{margin:0;text-wrap:balance;line-height:1.35}
+p{margin:0}
+ul{margin:0;padding:0;list-style:none}
+:focus-visible{outline:2.5px solid var(--blue);outline-offset:2px}
+[hidden]{display:none!important}
+
+.app{height:100%;display:flex;flex-direction:column}
+.wrap{width:100%;max-width:760px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header */
+.top{flex:none;background:var(--sheet);border-bottom:1px solid var(--rule);position:relative;z-index:5}
+.top-in{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:10px 2px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;letter-spacing:.03em}
+.brand svg{width:26px;height:26px;flex:none}
+.logo-card{fill:var(--marker);stroke:var(--ink);stroke-width:1.5}
+.logo-pocket{fill:var(--blue)}
+.logo-stitch{stroke:var(--sheet);stroke-width:1.4;stroke-dasharray:2 2;fill:none}
+.status{font-size:12px;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.status::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ink-2)}
+.status[data-mode="db"]::before{background:var(--green)}
+.status[data-mode="local"]::before{background:var(--amber)}
+.tabs{display:flex;gap:2px}
+.tab{appearance:none;background:none;border:0;border-bottom:2.5px solid transparent;padding:9px 14px 8px;font-weight:500;color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--blue);border-bottom-color:var(--blue);font-weight:700}
+.badge{min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:var(--red);color:var(--sheet);font-size:11px;line-height:19px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+@media (max-width:520px){.tab{flex:1 1 0;padding-inline:4px}}
+
+main{flex:1;min-height:0;position:relative}
+.view{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.view-in{padding-block:22px 56px;display:flex;flex-direction:column;gap:22px}
+#v-talk{overflow:hidden}
+.pane{position:absolute;inset:0;overflow-y:auto}
+.pane.chat{display:flex;flex-direction:column;overflow:hidden}
+
+/* type */
+.h-title{font-size:22px;font-weight:700;letter-spacing:.02em}
+.lead{color:var(--ink-2);margin-top:4px}
+.label{font-size:12px;letter-spacing:.08em;color:var(--ink-2);font-weight:700}
+.en{font-family:var(--font-en)}
+.muted{color:var(--ink-2)}
+.small{font-size:13px}
+
+/* controls */
+.btn{appearance:none;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);padding:8px 15px;border-radius:9px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1.3;min-height:40px;text-decoration:none}
+.btn:hover{border-color:var(--ink-2)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:var(--on-blue);font-weight:700}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--ink-2)}
+.btn.ghost:hover{color:var(--ink);background:var(--blue-soft)}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn:disabled{opacity:.45;cursor:default;filter:none}
+.btn svg{width:17px;height:17px;flex:none}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.icon-btn{appearance:none;border:0;background:none;width:34px;height:34px;border-radius:8px;display:inline-grid;place-items:center;color:var(--ink-2);cursor:pointer;flex:none}
+.icon-btn:hover{background:var(--blue-soft);color:var(--blue)}
+.icon-btn svg{width:18px;height:18px}
+.link{appearance:none;border:0;background:none;padding:0;color:var(--blue);cursor:pointer;font-size:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.link.danger{color:var(--red)}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:9px;overflow:hidden;background:var(--sheet)}
+.seg button{appearance:none;border:0;background:none;padding:6px 13px;cursor:pointer;color:var(--ink-2);font-size:14px}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--blue-soft);color:var(--blue);font-weight:700}
+.field{width:100%;border:1px solid var(--rule);border-radius:10px;padding:9px 12px;background:var(--sheet);line-height:1.6;font-size:16px}
+textarea.field{resize:vertical}
+.sheet{background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.notice{border-radius:10px;padding:12px 14px;background:var(--blue-soft);color:var(--ink);font-size:14px}
+.notice.warn{background:var(--red-soft)}
+.kind{font-family:var(--font-ja);font-size:11px;font-weight:700;letter-spacing:.04em;padding:1px 7px;border-radius:4px;border:1px solid currentColor;display:inline-block;line-height:1.6;white-space:nowrap;font-style:normal}
+.kind.fix{color:var(--red)}
+.kind.howto,.kind.meaning{color:var(--blue)}
+.kind.phrase{color:var(--marker-ink);background:var(--marker-soft);border-color:transparent}
+.kind.nice{color:var(--green)}
+.kind.sample{color:var(--ink-2)}
+.dots{display:inline-flex;gap:3px;align-items:center;vertical-align:1px}
+.dots i{width:7px;height:7px;border-radius:50%;border:1.3px solid var(--blue);display:block}
+.dots i.on{background:var(--blue)}
+.mark{background:linear-gradient(transparent 58%,var(--marker-soft) 58%);-webkit-box-decoration-break:clone;box-decoration-break:clone;padding-inline:1px}
+
+/* talk: start */
+.scenes{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
+.scene{appearance:none;text-align:left;border:1px solid var(--rule);background:var(--sheet);border-radius:11px;padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:1px;min-height:84px;min-width:0}
+.scene:hover{border-color:var(--blue)}
+.scene b{font-size:15px}
+.scene i{font-family:var(--font-en);font-size:13px;color:var(--blue)}
+.scene span{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin-top:2px}
+.scene.review{background:var(--blue-soft);border-color:transparent}
+.scene.review:hover{border-color:var(--blue)}
+.scene[aria-current="true"]{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}
+.custom{display:flex;flex-wrap:wrap;gap:8px}
+.custom .field{flex:1 1 240px;min-width:0}
+.opts{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center}
+.opt{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink-2)}
+details.about summary{cursor:pointer;color:var(--ink-2);font-size:13.5px}
+details.about[open] summary{margin-bottom:8px}
+.recent li{border-bottom:1px solid var(--rule)}
+.recent li:first-child{border-top:1px solid var(--rule)}
+.recent button{appearance:none;width:100%;text-align:left;background:none;border:0;padding:11px 2px;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:2px 12px;align-items:baseline}
+.recent button:hover .r-title{color:var(--blue)}
+.r-date{font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums;min-width:5.2em}
+.r-title{font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-count{font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+.r-first{grid-column:2 / 4;font-family:var(--font-en);font-size:13px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+
+/* talk: chat */
+.chatbar{flex:none;border-bottom:1px solid var(--rule);background:var(--paper)}
+.chatbar-in{display:flex;align-items:center;gap:8px;padding-block:7px}
+.scene-btn{appearance:none;border:0;background:none;padding:6px 4px;cursor:pointer;display:flex;align-items:center;gap:8px;flex:1;min-width:0;text-align:left;border-radius:8px}
+.scene-btn:hover{background:var(--blue-soft)}
+#chat-title{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scene-btn .lv{font-size:12px;color:var(--ink-2);border:1px solid var(--rule);border-radius:999px;padding:0 8px;white-space:nowrap}
+.scene-btn .caret{color:var(--ink-2);font-size:12px}
+.today{appearance:none;border:0;cursor:pointer;font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--marker-soft);color:var(--marker-ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.toggle{appearance:none;cursor:pointer;font-size:12.5px;padding:4px 11px;border-radius:999px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink-2);white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.toggle::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--rule)}
+.toggle[aria-pressed="true"]{color:var(--blue);border-color:var(--blue);font-weight:700}
+.toggle[aria-pressed="true"]::before{background:var(--blue)}
+.divider{align-self:stretch;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-2);letter-spacing:.04em}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--rule)}
+.msg.welcome .bubble{border-style:dashed}
+.panel-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.log{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.log-in{padding-block:18px 26px;display:flex;flex-direction:column;gap:16px}
+.msg{display:flex;flex-direction:column;gap:6px;max-width:88%;min-width:0}
+.msg.me{align-self:flex-end;align-items:flex-end}
+.msg.ai{align-self:flex-start;align-items:flex-start}
+.bubble{padding:10px 14px;border-radius:15px;line-height:1.7;overflow-wrap:anywhere;max-width:100%}
+.msg.ai .bubble{background:var(--sheet);border:1px solid var(--rule);border-top-left-radius:4px;font-family:var(--font-en);font-size:16px}
+.msg.me .bubble{background:var(--blue-soft);border-top-right-radius:4px;white-space:pre-wrap}
+.bubble strong{font-weight:700;background:linear-gradient(transparent 58%,var(--marker-soft) 58%);-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.msg-tools{display:flex;gap:2px;align-items:center;margin-top:-2px}
+.thinking{font-family:var(--font-ja);font-size:14px;color:var(--ink-2)}
+.thinking i{display:inline-block;animation:blink 1.2s infinite both;font-style:normal}
+.thinking i:nth-child(2){animation-delay:.2s}
+.thinking i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+.err{font-size:13px;color:var(--red);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pens{display:flex;flex-direction:column;gap:6px;align-items:flex-end;max-width:100%}
+.msg.ai .pens{align-items:flex-start}
+.pen{font-family:var(--font-pen);font-size:14.5px;line-height:1.6;padding:6px 11px;border-radius:9px;max-width:100%;overflow-wrap:anywhere;text-align:left}
+.pen b{font-family:var(--font-en);font-weight:600}
+.pen s{text-decoration-thickness:1.5px}
+.pen .note{display:block;font-size:13px;opacity:.92}
+.pen .st{font-family:var(--font-ja);font-size:10.5px;font-weight:700;letter-spacing:.04em;margin-left:8px;opacity:.75;white-space:nowrap}
+.pen .tag{font-family:var(--font-ja);font-size:11px;font-weight:700;letter-spacing:.04em;margin-right:7px}
+.pen.fix{color:var(--red);background:var(--red-soft)}
+.pen.howto,.pen.meaning{color:var(--blue);background:var(--blue-soft)}
+.pen.nice{color:var(--green);background:var(--green-soft)}
+.pen.phrase{color:var(--marker-ink);background:var(--marker-soft);font-family:var(--font-ja);font-size:13.5px}
+.composer{flex:none;border-top:1px solid var(--rule);background:var(--sheet)}
+.comp-in{display:flex;gap:8px;align-items:flex-end;padding-top:10px}
+.comp-in textarea{flex:1;min-width:0;resize:none;border:1px solid var(--rule);border-radius:12px;padding:9px 12px;background:var(--paper);min-height:44px;max-height:168px;line-height:1.5;font-size:16px}
+.comp-hint{font-size:11.5px;color:var(--ink-2);padding-block:5px 9px}
+.past-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-block:8px}
+.past-head .title{flex:1;min-width:0;font-weight:700}
+.raw{white-space:pre-wrap;font-family:var(--font-en);font-size:14px;line-height:1.7;overflow-wrap:anywhere;margin:0}
+
+/* notes */
+.counts{display:flex;flex-wrap:wrap;gap:6px}
+.chip{appearance:none;border:1px solid var(--rule);background:var(--sheet);border-radius:999px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.day{display:flex;flex-direction:column}
+.day>h3{font-size:12.5px;color:var(--ink-2);font-weight:700;letter-spacing:.06em;padding:4px 0 6px;border-bottom:1.5px solid var(--ink)}
+.entry{padding:14px 0 13px;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px}
+.entry .hw{font-family:var(--font-en);font-weight:600;font-size:19px;line-height:1.45;display:flex;gap:9px;align-items:baseline;flex-wrap:wrap;min-width:0}
+.entry .hw .kind{vertical-align:3px}
+.entry .tools{grid-row:1;grid-column:2;display:flex;gap:2px}
+.entry .ja{grid-column:1 / -1;font-size:15px;min-width:0}
+.entry .more{grid-column:1 / -1;display:flex;flex-direction:column;gap:4px;min-width:0}
+.entry .was{font-family:var(--font-pen);color:var(--red);font-size:14px}
+.entry .was s{font-family:var(--font-en)}
+.entry .note{font-family:var(--font-pen);color:var(--ink-2);font-size:14px;line-height:1.6}
+.ex{font-family:var(--font-en);font-style:italic;color:var(--ink-2);font-size:14.5px;display:flex;gap:4px;align-items:center}
+.meta{font-size:12px;color:var(--ink-2);display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;margin-top:3px}
+.meta .ok{color:var(--green);font-weight:700}
+.meta .due{color:var(--red);font-weight:700}
+.empty{display:flex;flex-direction:column;gap:14px}
+.sample-entries{opacity:.9;border-top:1px dashed var(--rule)}
+
+/* practice */
+.due-sum{display:grid;grid-template-columns:auto 1fr;gap:4px 18px;align-items:center}
+.due-sum .big{font-size:44px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:var(--blue);grid-row:1 / span 2}
+.due-sum .big small{font-size:15px;margin-left:3px;color:var(--ink-2);font-weight:500}
+.due-sum .row{grid-column:1 / -1;margin-top:8px}
+.due-list li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--rule)}
+.due-list .q{min-width:0;overflow-wrap:anywhere}
+.progress{display:flex;align-items:center;gap:12px}
+.bar{flex:1;height:5px;border-radius:3px;background:var(--rule);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--blue);border-radius:3px;transition:width .3s}
+.pnum{font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.icard{background:var(--sheet);border:1px solid var(--rule);border-radius:7px;box-shadow:0 10px 26px -16px var(--shadow);overflow:hidden}
+.icard .head{padding:12px 18px 9px;border-bottom:2px solid var(--red-line);display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.icard .head .qtext{font-size:13px;color:var(--ink-2);font-weight:500}
+.icard .body{padding:0 18px 18px;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 33px,var(--rule) 33px,var(--rule) 34px);line-height:34px;min-height:120px;display:flex;flex-direction:column}
+.icard .prompt{font-size:21px;font-weight:700;overflow-wrap:anywhere}
+.icard .prompt.en{font-weight:600;font-size:23px}
+.icard .hint{font-family:var(--font-pen);color:var(--red);font-size:15px}
+.icard .hint .en{letter-spacing:.06em}
+.answer-in{font-size:17px}
+.reveal{display:flex;flex-direction:column;gap:6px;padding:14px 18px;border-top:1px dashed var(--rule)}
+.reveal .ans{font-size:21px;font-weight:600;display:flex;gap:6px;align-items:center;flex-wrap:wrap;overflow-wrap:anywhere}
+.reveal .note{font-family:var(--font-pen);color:var(--ink-2)}
+.judge{border-radius:9px;padding:9px 12px;font-size:14px;display:flex;flex-direction:column;gap:2px}
+.judge.ok{background:var(--green-soft);color:var(--green)}
+.judge.close{background:var(--marker-soft);color:var(--marker-ink)}
+.judge.retry{background:var(--red-soft);color:var(--red)}
+.judge.none{background:var(--blue-soft);color:var(--ink)}
+.judge b{font-weight:700}
+.judge .better{font-family:var(--font-en);color:var(--ink)}
+.rate{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rate .btn{min-height:48px}
+.rate .btn.suggest{outline:2.5px solid var(--blue);outline-offset:1px}
+.result-nums{display:flex;gap:18px;flex-wrap:wrap}
+.result-nums div{display:flex;flex-direction:column}
+.result-nums b{font-size:28px;line-height:1.2;font-variant-numeric:tabular-nums}
+.copybox{width:100%;font-size:14px;font-family:var(--font-ja);min-height:120px}
+
+/* import */
+.step{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px}
+.step .n{width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-weight:700;font-size:14px;grid-row:1 / span 3}
+.step>*:not(.n){grid-column:2}
+.pick li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;padding:10px 0;border-bottom:1px solid var(--rule);align-items:start}
+.pick input{width:18px;height:18px;margin-top:5px;accent-color:var(--blue)}
+.pick .en{font-weight:600;font-size:16px}
+.pick .sub{font-size:13.5px;color:var(--ink-2)}
+.pick .was{font-family:var(--font-pen);color:var(--red);font-size:13.5px}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);background:var(--ink);color:var(--paper);padding:9px 18px;border-radius:999px;font-size:13.5px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="wrap top-in">
+      <div class="brand">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <rect class="logo-card" x="9.5" y="2.5" width="13" height="13" rx="1.5"/>
+          <path class="logo-pocket" d="M4 11.5h24V22a7 7 0 0 1-7 7H11a7 7 0 0 1-7-7z"/>
+          <path class="logo-stitch" d="M7 15h18"/>
+        </svg>
+        <span>フレーズポケット</span>
+      </div>
+      <span class="status" id="status" data-mode="loading">準備中…</span>
+    </div>
+    <nav class="wrap tabs" role="tablist" aria-label="画面">
+      <button class="tab" role="tab" data-view="talk" id="tab-talk">話す</button>
+      <button class="tab" role="tab" data-view="notes" id="tab-notes">ノート</button>
+      <button class="tab" role="tab" data-view="practice" id="tab-practice">練習 <span class="badge" id="badge-practice" hidden></span></button>
+      <button class="tab" role="tab" data-view="import" id="tab-import">取り込む</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- 話す -->
+    <section class="view" id="v-talk" role="tabpanel" aria-labelledby="tab-talk" hidden>
+      <div class="pane chat" id="talk-chat">
+        <div class="chatbar"><div class="wrap chatbar-in">
+          <button class="scene-btn" type="button" id="scene-btn" aria-haspopup="dialog" title="場面とレベルを変える"><span id="chat-title">フリートーク</span><span class="lv" id="chat-level"></span><span class="caret" aria-hidden="true">▾</span></button>
+          <button class="today" type="button" id="today-chip" hidden></button>
+          <button class="toggle" type="button" id="speak-toggle" aria-pressed="true">読み上げ</button>
+        </div></div>
+        <div class="log" id="log"><div class="wrap log-in" id="log-in"></div></div>
+        <form class="composer" id="composer">
+          <div class="wrap">
+            <div class="comp-in">
+              <textarea id="msg" rows="1" maxlength="4000" placeholder="Type in English…" aria-label="メッセージ"></textarea>
+              <button class="btn primary" type="submit" id="send" aria-label="送る">送る</button>
+              <button class="btn" type="button" id="stop" hidden>止める</button>
+            </div>
+            <div class="comp-hint" id="comp-hint"></div>
+          </div>
+        </form>
+      </div>
+
+      <div class="pane" id="talk-start" hidden role="dialog" aria-labelledby="panel-title">
+        <div class="wrap view-in">
+          <div class="panel-head">
+            <div>
+              <h2 class="h-title" id="panel-title">場面と設定</h2>
+              <p class="lead">場面を選ぶと、いまの会話のままその場面に切りかわります。</p>
+            </div>
+            <button class="btn" type="button" id="panel-close">会話にもどる</button>
+          </div>
+          <div id="start-notice" hidden></div>
+          <div class="scenes" id="scene-grid"></div>
+          <form class="custom" id="custom-form">
+            <input class="field" id="custom-scene" type="text" maxlength="200" placeholder="場面を自分で書く　例）ALTの先生と授業の打ち合わせ">
+            <button class="btn" type="submit">この場面にする</button>
+          </form>
+          <div class="opts">
+            <div class="opt"><span>レベル</span>
+              <div class="seg" id="seg-level">
+                <button type="button" data-v="easy">やさしめ</button><button type="button" data-v="normal">ふつう</button><button type="button" data-v="hard">チャレンジ</button>
+              </div>
+            </div>
+            <div class="opt"><span>返事</span>
+              <div class="seg" id="seg-speed">
+                <button type="button" data-v="quick">はやい</button><button type="button" data-v="deep">じっくり</button>
+              </div>
+            </div>
+          </div>
+          <details class="about" id="about-box">
+            <summary>Claudeに伝えておくこと（任意）</summary>
+            <textarea class="field" id="about" rows="3" maxlength="600" placeholder="例）中学校の先生。子どもが3人。週末はギターを弾く。&#10;話題えらびに使われます。"></textarea>
+          </details>
+          <div class="row"><button class="btn" type="button" id="new-thread">新しい会話をはじめる</button><span class="small muted">いまの会話は「これまでの会話」に残ります。</span></div>
+          <div id="recent-wrap" hidden>
+            <p class="label">これまでの会話</p>
+            <ul class="recent" id="recent"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="pane chat" id="talk-past" hidden>
+        <div class="chatbar"><div class="wrap past-head" id="past-head"></div></div>
+        <div class="log"><div class="wrap log-in" id="past-log"></div></div>
+      </div>
+    </section>
+
+    <!-- ノート -->
+    <section class="view" id="v-notes" role="tabpanel" aria-labelledby="tab-notes" hidden>
+      <div class="wrap view-in">
+        <div>
+          <h2 class="h-title">表現ノート</h2>
+          <p class="lead" id="notes-sum">会話で出てきた表現と、つまずいたところ。</p>
+        </div>
+        <div class="counts" id="notes-filters" role="group" aria-label="しぼりこみ"></div>
+        <input class="field" id="notes-q" type="search" placeholder="さがす（英語でも日本語でも）" aria-label="ノートをさがす">
+        <div id="notes-list"></div>
+      </div>
+    </section>
+
+    <!-- 練習 -->
+    <section class="view" id="v-practice" role="tabpanel" aria-labelledby="tab-practice" hidden>
+      <div class="wrap view-in" id="practice-root"></div>
+    </section>
+
+    <!-- 取り込む -->
+    <section class="view" id="v-import" role="tabpanel" aria-labelledby="tab-import" hidden>
+      <div class="wrap view-in">
+        <div>
+          <h2 class="h-title">いつもの会話を取り込む</h2>
+          <p class="lead">claude.ai のふつうのチャットでした英会話を、ここに貼るだけ。表現とつまずきを拾って、ノートに入れます。</p>
+        </div>
+        <div id="imp-notice" hidden></div>
+        <div class="sheet step">
+          <span class="n">1</span>
+          <h3>会話をコピーする</h3>
+          <p class="small muted">会話をまるごとコピーしても大丈夫です。長い会話なら、最後に下の文をClaudeに送って「まとめ」を作ってもらい、そのまとめをコピーすると確実です。</p>
+          <textarea class="field copybox" id="imp-prompt" readonly rows="6"></textarea>
+          <div class="row"><button class="btn" type="button" id="imp-copy">この文をコピー</button></div>
+        </div>
+        <div class="sheet step">
+          <span class="n">2</span>
+          <h3>ここに貼りつける</h3>
+          <textarea class="field" id="imp-text" rows="9" placeholder="ここに会話（またはまとめ）を貼りつけ"></textarea>
+          <div class="row">
+            <button class="btn primary" type="button" id="imp-go">表現を拾う</button>
+            <button class="btn" type="button" id="imp-stop" hidden>止める</button>
+            <span class="small muted" id="imp-count"></span>
+          </div>
+        </div>
+        <div id="imp-result"></div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= constants ================= */
+const DAY = 864e5;
+const INTERVALS = [0, 1, 3, 7, 14, 30, 60]; // days until next review, by box
+const MAX_BOX = 6;                           // box 6 = 覚えた
+const MARK = '###NOTES###';
+const PREF_KEY = 'phrasePocket.prefs';
+const VIEWS = ['talk', 'notes', 'practice', 'import'];
+const KINDS = {
+  fix:     { label: '言い直し',     group: 'stumble' },
+  howto:   { label: '言えなかった', group: 'stumble' },
+  meaning: { label: 'わからなかった', group: 'stumble' },
+  phrase:  { label: '拾った表現',   group: 'phrase' },
+  nice:    { label: '使えた！',     group: 'nice' },
+};
+const STUMBLE = new Set(['fix', 'howto', 'meaning']);
+const LEVELS = {
+  easy:   { ja: 'やさしめ',   en: 'Elementary (CEFR A2). Use simple, common words and short sentences.' },
+  normal: { ja: 'ふつう',     en: 'Intermediate (CEFR B1-B2). Natural everyday English, not too many idioms.' },
+  hard:   { ja: 'チャレンジ', en: 'Upper-intermediate (CEFR B2-C1). Natural, native-like English with common idioms and phrasal verbs.' },
+};
+const SCENES = [
+  { key: 'free',   ja: 'フリートーク',   en: 'Free talk',            desc: '最近のこと、なんでも',   prompt: 'Free conversation. Ask me about my day, recent events and things I care about.' },
+  { key: 'intro',  ja: '自己紹介',       en: 'Nice to meet you',     desc: 'はじめましての会話',     prompt: 'We just met at a casual international meetup. Get to know each other: work, family, hometown, hobbies.' },
+  { key: 'travel', ja: '旅行',           en: 'Airport & hotel',      desc: '空港・ホテル・道案内',   prompt: 'Role-play: I am traveling abroad. You play the people I meet (airport staff, hotel front desk, a local giving directions). Move naturally from one situation to the next.' },
+  { key: 'work',   ja: '学校・仕事',     en: 'Talking about work',   desc: '仕事や同僚との会話',     prompt: 'Talk about my work: what I do, a typical day, challenges and ideas. Be a curious colleague from another country.' },
+  { key: 'family', ja: '家族・くらし',   en: 'Family life',          desc: '家族や毎日のこと',       prompt: 'Talk about family life, kids, weekends and daily routines, like two friendly parents chatting.' },
+  { key: 'hobby',  ja: '趣味・音楽',     en: 'Hobbies & music',      desc: '好きなことの話',         prompt: 'Talk about hobbies, music, books and things I enjoy. Be enthusiastic and ask follow-up questions.' },
+  { key: 'shop',   ja: 'お店・レストラン', en: 'Ordering & shopping', desc: '注文・質問・支払い',     prompt: 'Role-play: you are staff at a cafe, restaurant or shop abroad, and I am the customer. Include ordering, asking questions and paying.' },
+];
+const REVIEW_SCENE = { key: 'review', ja: 'ノートの表現を使ってみる', en: 'Review talk', desc: '', prompt: 'Free conversation designed so that I get natural chances to use the expressions on my practice list. Bring them up one by one through your questions, and let me try them.' };
+const KICKOFF = '(From the practice app: we are switching to this scene now. Start it with one short line and a question for me.)';
+const IMPORT_HELP = [
+  '今日の英会話をふりかえって、次の4つを箇条書きでまとめてください。',
+  '1. 私の英語で、言い直したほうがいいところ（私の表現 → 自然な表現、理由）',
+  '2. 私が英語で言えなかったこと（言いたかったこと → 英語）',
+  '3. 私が意味をたずねた表現（表現 → 意味）',
+  '4. 覚えておくと便利な表現（表現 → 意味）',
+].join('\n');
+
+/* ================= state ================= */
+const S = {
+  view: 'talk',
+  store: null, storeKind: 'loading', itemsLoaded: false,
+  items: [], itemsById: new Map(), sessions: [],
+  sample: null, sampleState: 'pending',
+  prefs: { level: 'normal', speed: 'quick', about: '', autoSpeak: true },
+  chat: null, past: null, panel: false, threadReady: false, busy: false, ctl: null,
+  practice: null,
+  noteFilter: 'all', noteQuery: '',
+  imp: { busy: false, ctl: null, result: null, error: '' },
+};
+let samplePromise = Promise.resolve(null);
+let resolveStore;
+const storeReady = new Promise(r => { resolveStore = r; });
+function withStore(fn) { return storeReady.then(st => fn(st)).catch(writeErr); }
+const bubbleEls = new WeakMap();
+
+/* ================= small helpers ================= */
+const $ = (s, el) => (el || document).querySelector(s);
+const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+function h(tag, props) {
+  const el = document.createElement(tag);
+  if (props) for (const k in props) {
+    const v = props[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'text') el.textContent = v;
+    else if (k.slice(0, 2) === 'on' && typeof v === 'function') el.addEventListener(k.slice(2), v);
+    else if (typeof v === 'boolean') { if (k in el) el[k] = v; else if (v) el.setAttribute(k, ''); }
+    else el.setAttribute(k, v);
+  }
+  for (let i = 2; i < arguments.length; i++) append(el, arguments[i]);
+  return el;
+}
+function fill(el) { el.replaceChildren(); for (let i = 1; i < arguments.length; i++) append(el, arguments[i]); }
+function append(el, c) {
+  if (c == null || c === false) return;
+  if (Array.isArray(c)) { c.forEach(x => append(el, x)); return; }
+  el.append(c instanceof Node ? c : String(c));
+}
+const ICONS = {
+  speak: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 19V5L7.5 9.5z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>',
+};
+function icon(name) { const s = document.createElement('span'); s.style.display = 'contents'; s.innerHTML = ICONS[name]; return s; }
+function iconBtn(name, label, fn) { return h('button', { class: 'icon-btn', type: 'button', 'aria-label': label, title: label, onclick: fn }, icon(name)); }
+function norm(s) {
+  return String(s || '').toLowerCase().replace(/[’‘`]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ')
+    .replace(/^[\s"'(（「]+/, '').replace(/[\s.!?。！？,、"')）」]+$/, '').trim();
+}
+function hash(s) { let x = 0x811c9dc5; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 0x01000193); } return (x >>> 0).toString(36); }
+function itemIdFor(en) { const n = norm(en); return 'i_' + hash(n) + n.length.toString(36); }
+function genId(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function uniq(a) { return Array.from(new Set(a)); }
+const WD = '日月火水木金土';
+function dayLabel(ts) { const d = new Date(ts); return (d.getMonth() + 1) + '月' + d.getDate() + '日（' + WD[d.getDay()] + '）'; }
+function shortDate(ts) { const d = new Date(ts); return (d.getMonth() + 1) + '/' + d.getDate(); }
+function dayKey(ts) { const d = new Date(ts); return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
+function startOfDay(ts) { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); }
+function dueText(it) {
+  if (it.mastered) return '';
+  const now = Date.now();
+  if ((it.due || 0) <= now) return '今日の練習';
+  const days = Math.round((startOfDay(it.due) - startOfDay(now)) / DAY);
+  return days <= 1 ? '次はあした' : '次は' + days + '日後';
+}
+function dots(box) { const d = h('span', { class: 'dots', title: '定着度 ' + (box || 0) + '/' + MAX_BOX }); for (let i = 1; i <= MAX_BOX; i++) d.append(h('i', { class: i <= (box || 0) ? 'on' : '' })); return d; }
+function kindTag(kind) { return h('span', { class: 'kind ' + kind }, (KINDS[kind] || {}).label || ''); }
+function fmt(text) {
+  const frag = document.createDocumentFragment();
+  String(text || '').split('\n').forEach((line, i) => {
+    if (i) frag.append(h('br'));
+    line.split(/(\*\*[^*\n]+\*\*)/).forEach(part => {
+      if (/^\*\*[^*\n]+\*\*$/.test(part)) frag.append(h('strong', null, part.slice(2, -2)));
+      else if (part) frag.append(part.replace(/\*\*/g, ''));
+    });
+  });
+  return frag;
+}
+let toastTimer = 0;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+async function copyText(text, fallbackEl) {
+  try { await navigator.clipboard.writeText(text); toast('コピーしました'); }
+  catch (e) {
+    if (fallbackEl) { fallbackEl.hidden = false; fallbackEl.focus(); fallbackEl.select(); toast('選択しました。長押し（またはCtrl+C）でコピーしてください'); }
+    else toast('コピーできませんでした');
+  }
+}
+function use(name) {
+  try {
+    if (window.claude && typeof window.claude.use === 'function') return Promise.resolve(window.claude.use(name)).catch(() => null);
+  } catch (e) { /* ignore */ }
+  return Promise.resolve(null);
+}
+const coarse = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch (e) { return false; } })();
+
+/* ---------- speech (read aloud) ---------- */
+// 日本語と英語を切り分けて、それぞれの声で読む（英語は英語の声、日本語の説明は日本語の声）
+const canSpeak = typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance !== 'undefined';
+const JA_RUN = /[　-ヿ㐀-鿿！-｠]+/g;
+const SAYABLE = /[A-Za-z0-9぀-ヿ㐀-鿿]/;
+let ttsPrimed = false;
+function voiceFor(lang) {
+  const vs = speechSynthesis.getVoices();
+  if (lang === 'ja') return vs.find(x => /^ja/i.test(x.lang)) || null;
+  return vs.find(x => /^en[-_]US/i.test(x.lang)) || vs.find(x => /^en/i.test(x.lang)) || null;
+}
+function speechParts(text) {
+  const t = String(text || '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim();
+  const parts = [];
+  const push = (str, lang) => {
+    str = str.trim(); if (!str || !SAYABLE.test(str)) return;
+    const last = parts[parts.length - 1];
+    if (last && last.lang === lang) last.text += ' ' + str; else parts.push({ text: str, lang });
+  };
+  let at = 0;
+  t.replace(JA_RUN, (m, i) => { push(t.slice(at, i), 'en'); push(m, 'ja'); at = i + m.length; return m; });
+  push(t.slice(at), 'en');
+  return parts;
+}
+function speak(text) {
+  if (!canSpeak) return;
+  try {
+    speechSynthesis.cancel();
+    speechParts(text).forEach(part => {
+      const u = new SpeechSynthesisUtterance(part.text);
+      u.lang = part.lang === 'ja' ? 'ja-JP' : 'en-US';
+      u.rate = part.lang === 'ja' ? 1.05 : 0.95;
+      const v = voiceFor(part.lang); if (v) u.voice = v;
+      speechSynthesis.speak(u);
+    });
+  } catch (e) { /* ignore */ }
+}
+// スマホは、最初の1回をタップの中で鳴らしておかないと、あとから自動で読めないことがある
+function primeSpeech() {
+  if (!canSpeak || ttsPrimed) return;
+  try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); ttsPrimed = true; } catch (e) { /* ignore */ }
+}
+function stopSpeech() { if (canSpeak) { try { speechSynthesis.cancel(); } catch (e) { /* ignore */ } } }
+function speakBtn(text) { return canSpeak ? iconBtn('speak', '読み上げ', () => speak(text)) : null; }
+
+/* ---------- errors ---------- */
+const OFF_CODES = new Set(['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed']);
+function errorCopy(e) {
+  const c = e && e.code;
+  if (c === 'not_granted') return 'Claudeの利用が許可されていません。このページのメニューにある「権限」から許可できます。';
+  if (OFF_CODES.has(c)) return 'この画面ではClaudeを使えません。claude.ai でこのページを開いてください。';
+  if (c === 'rate_limited') return '少し混み合っています。時間をおいてから、もう一度どうぞ。';
+  if (c === 'session_expired') return 'claude.ai にログインし直してください。';
+  if (c === 'refused') return 'この内容には答えられませんでした。言い方を変えてみてください。';
+  if (c === 'prompt_too_large') return '長すぎて読めませんでした。半分ずつ貼ってください。';
+  if (c === 'invalid_json' || c === 'empty_completion') return 'うまく読み取れませんでした。もう一度ためしてください。';
+  return 'うまくつながりませんでした。もう一度ためしてください。';
+}
+function handleSampleError(e) {
+  if (e && OFF_CODES.has(e.code)) { S.sampleState = 'off'; renderNotices(); }
+}
+let lastWriteToast = 0;
+function writeErr(e) {
+  console.warn('save failed', e);
+  if (Date.now() - lastWriteToast < 4000) return;
+  lastWriteToast = Date.now();
+  const c = e && e.code;
+  if (c === 'quota_exceeded') toast('保存できる上限です。古い会話を削除してください。');
+  else if (c === 'invalid_argument') toast('保存できませんでした。このページに書きこむ権限が必要です。');
+  else toast('保存に失敗しました。通信を確かめてください。');
+}
+
+/* ================= storage ================= */
+// claude.ai の db（自分専用の data/users/<id>/ 以下）に保存。使えないときはこの端末の localStorage。
+class DbStore {
+  constructor(db, uid) {
+    this.kind = 'db';
+    this.base = db.doc('data/users/' + uid + '/pocket');
+    this.itemsCol = this.base.collection('items');
+    this.sessCol = this.base.collection('sessions');
+    this.logCol = this.base.collection('logs');
+    this.chain = new Map();
+  }
+  subscribe(hd) {
+    this.itemsCol.orderBy('createdAt', 'desc').limit(1000).onSnapshot(
+      s => hd.items(s.docs.map(d => Object.assign({}, d.data(), { id: d.id }))), e => hd.error(e));
+    this.sessCol.orderBy('updatedAt', 'desc').limit(200).onSnapshot(
+      s => hd.sessions(s.docs.map(d => Object.assign({}, d.data(), { id: d.id }))), e => hd.error(e));
+    this.base.onSnapshot(s => hd.prefs((s.exists && s.data().prefs) || {}), e => hd.error(e));
+  }
+  run(ref, op) {
+    const once = () => op().catch(e => {
+      if (e && e.code === 'unavailable') return new Promise(r => setTimeout(r, 400 + Math.random() * 900)).then(op);
+      throw e;
+    });
+    const prev = this.chain.get(ref.path) || Promise.resolve();
+    const next = prev.catch(() => {}).then(once);
+    this.chain.set(ref.path, next);
+    next.catch(() => {}).then(() => { if (this.chain.get(ref.path) === next) this.chain.delete(ref.path); });
+    return next;
+  }
+  body(o) { const c = JSON.parse(JSON.stringify(o)); delete c.id; return c; }
+  setItem(it) { const r = this.itemsCol.doc(it.id); const b = this.body(it); return this.run(r, () => r.set(b)); }
+  deleteItem(id) { const r = this.itemsCol.doc(id); return this.run(r, () => r.delete()); }
+  setSession(id, meta) { const r = this.sessCol.doc(id); const b = this.body(meta); return this.run(r, () => r.set(b)); }
+  setLog(id, log) { const r = this.logCol.doc(id); const b = this.body(log); return this.run(r, () => r.set(b)); }
+  getLog(id) { return this.logCol.doc(id).get().then(s => (s.exists ? s.data() : null)); }
+  deleteSession(id) {
+    const a = this.sessCol.doc(id), b = this.logCol.doc(id);
+    return Promise.all([this.run(a, () => a.delete()), this.run(b, () => b.delete())]);
+  }
+  setPrefs(p) { const r = this.base; const b = { prefs: Object.assign({}, p), updatedAt: Date.now() }; return this.run(r, () => r.set(b)); }
+}
+class LocalStore {
+  constructor() {
+    this.kind = 'local'; this.key = 'phrasePocket.v1'; this.hd = null;
+    this.data = { items: {}, sessions: {}, logs: {}, prefs: {} };
+    try { const raw = localStorage.getItem(this.key); if (raw) Object.assign(this.data, JSON.parse(raw)); } catch (e) { /* ignore */ }
+  }
+  save() { try { localStorage.setItem(this.key, JSON.stringify(this.data)); } catch (e) { /* ignore */ } }
+  emit() {
+    if (!this.hd || this.pending) return;
+    this.pending = true;
+    queueMicrotask(() => {
+      this.pending = false;
+      this.hd.items(Object.values(this.data.items).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
+      this.hd.sessions(Object.values(this.data.sessions).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)));
+    });
+  }
+  subscribe(hd) { this.hd = hd; this.emit(); queueMicrotask(() => hd.prefs(this.data.prefs || {})); }
+  async setItem(it) { this.data.items[it.id] = JSON.parse(JSON.stringify(it)); this.save(); this.emit(); }
+  async deleteItem(id) { delete this.data.items[id]; this.save(); this.emit(); }
+  async setSession(id, meta) { this.data.sessions[id] = Object.assign({}, JSON.parse(JSON.stringify(meta)), { id }); this.save(); this.emit(); }
+  async setLog(id, log) { this.data.logs[id] = JSON.parse(JSON.stringify(log)); this.save(); }
+  async getLog(id) { return this.data.logs[id] || null; }
+  async deleteSession(id) { delete this.data.sessions[id]; delete this.data.logs[id]; this.save(); this.emit(); }
+  async setPrefs(p) { this.data.prefs = Object.assign({}, p); this.save(); }
+}
+async function initStore() {
+  const got = await Promise.all([use('db'), use('user')]);
+  const db = got[0], user = got[1];
+  let uid = null;
+  if (db && user) { try { uid = await user.id(); } catch (e) { uid = null; } }
+  attachStore((db && uid) ? new DbStore(db, uid) : new LocalStore());
+}
+function attachStore(store) {
+  if (S.store) return;
+  S.store = store; S.storeKind = store.kind;
+  renderStatus();
+  resolveStore(store);
+  store.subscribe({
+    items(list) { S.items = list; S.itemsById = new Map(list.map(i => [i.id, i])); S.itemsLoaded = true; onItemsChanged(); },
+    sessions(list) { S.sessions = list; onSessionsChanged(); },
+    prefs(p) { if (!prefsDirty) { applyPrefs(p); } },
+    error(e) { console.warn('db', e); if (e && e.code === 'revoked') toast('このページへのアクセスが変わりました。再読み込みしてください。'); },
+  });
+}
+
+/* ================= prefs ================= */
+let prefsDirty = false, prefsTimer = 0;
+function applyPrefs(p) {
+  if (!p || typeof p !== 'object') return;
+  if (LEVELS[p.level]) S.prefs.level = p.level;
+  if (p.speed === 'quick' || p.speed === 'deep') S.prefs.speed = p.speed;
+  if (typeof p.about === 'string') S.prefs.about = p.about.slice(0, 600);
+  if (typeof p.autoSpeak === 'boolean') S.prefs.autoSpeak = p.autoSpeak;
+  syncPrefsUI();
+}
+function savePrefs() {
+  prefsDirty = true;
+  try { localStorage.setItem(PREF_KEY, JSON.stringify(S.prefs)); } catch (e) { /* ignore */ }
+  clearTimeout(prefsTimer);
+  prefsTimer = setTimeout(() => {
+    withStore(st => st.setPrefs(S.prefs)).then(() => { prefsDirty = false; });
+  }, 800);
+}
+function syncPrefsUI() {
+  $$('#seg-level button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === S.prefs.level)));
+  $$('#seg-speed button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === S.prefs.speed)));
+  const a = $('#about'); if (document.activeElement !== a) a.value = S.prefs.about || '';
+}
+
+/* ================= items ================= */
+function cleanItem(r) {
+  if (!r || typeof r !== 'object' || !KINDS[r.kind]) return null;
+  const s = v => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, 300) : '');
+  const en = s(r.en);
+  if (!en) return null;
+  return { kind: r.kind, en, ja: s(r.ja), wrong: r.kind === 'fix' ? s(r.wrong) : '', note: s(r.note), example: s(r.example) };
+}
+// 新しい項目は追加。すでにある表現でまたつまずいたら、練習の最初（箱0）にもどす。会話で使えたら箱を1つ上げる。
+function upsertItems(raw, ctx) {
+  const out = [], now = Date.now(), changed = new Map();
+  (Array.isArray(raw) ? raw : []).slice(0, 30).forEach(r => {
+    const n = cleanItem(r); if (!n) return;
+    const id = itemIdFor(n.en);
+    const ex = changed.get(id) || S.itemsById.get(id);
+    let it, status;
+    if (!ex) {
+      it = { id, kind: n.kind, en: n.en, ja: n.ja, wrong: n.wrong, note: n.note, example: n.example,
+        sessionId: ctx.sessionId || '', sceneJa: ctx.sceneJa || '', createdAt: now, updatedAt: now,
+        box: n.kind === 'nice' ? 3 : 0, due: n.kind === 'nice' ? now + INTERVALS[3] * DAY : now,
+        reviews: 0, correct: 0, stumbles: STUMBLE.has(n.kind) ? 1 : 0, uses: n.kind === 'nice' ? 1 : 0, mastered: false };
+      status = 'new';
+    } else {
+      it = Object.assign({}, ex, { updatedAt: now });
+      ['ja', 'note', 'example'].forEach(k => { if (!it[k] && n[k]) it[k] = n[k]; });
+      if (STUMBLE.has(n.kind)) {
+        if (!STUMBLE.has(ex.kind)) it.kind = n.kind;
+        if (n.kind === 'fix' && n.wrong) it.wrong = n.wrong;
+        it.box = 0; it.due = now; it.mastered = false; it.stumbles = (ex.stumbles || 0) + 1;
+        status = 'again';
+      } else if (n.kind === 'nice') {
+        it.uses = (ex.uses || 0) + 1;
+        if (!it.mastered) { it.box = Math.min((ex.box || 0) + 1, MAX_BOX); it.due = now + INTERVALS[it.box] * DAY; it.mastered = it.box >= MAX_BOX; }
+        status = 'used';
+      } else { status = 'seen'; }
+    }
+    if (status !== 'seen') changed.set(id, it);
+    out.push(Object.assign({}, n, { id, status }));
+  });
+  changed.forEach(it => {
+    S.itemsById.set(it.id, it);
+    withStore(st => st.setItem(it));
+  });
+  if (changed.size) renderBadges();
+  return out;
+}
+function dueItems() { const now = Date.now(); return S.items.filter(it => !it.mastered && (it.due || 0) <= now); }
+function practiceOrder(a, b) {
+  const g = it => (STUMBLE.has(it.kind) ? 0 : it.kind === 'phrase' ? 1 : 2);
+  return g(a) - g(b) || (a.due || 0) - (b.due || 0);
+}
+function pickTargets(n) {
+  return S.items.filter(it => !it.mastered).sort(practiceOrder).slice(0, n);
+}
+function toggleMastered(it) {
+  const now = Date.now();
+  const next = it.mastered
+    ? Object.assign({}, it, { mastered: false, box: Math.min(it.box || 0, 3), due: now + DAY, updatedAt: now })
+    : Object.assign({}, it, { mastered: true, box: MAX_BOX, due: now + INTERVALS[MAX_BOX] * DAY, updatedAt: now });
+  withStore(st => st.setItem(next));
+  toast(next.mastered ? '覚えた！に入れました' : '練習にもどしました');
+}
+
+/* ================= talk: prompts ================= */
+function rulesFor(c) {
+  const lv = LEVELS[c.level] || LEVELS.normal;
+  const about = (S.prefs.about || '').trim();
+  const t = pickTargets(c.sceneKey === 'review' ? 8 : 5);
+  return [
+    'You are my English conversation partner and a kind, clear tutor. I am a Japanese adult learning English.',
+    'This is one long, ongoing conversation. Days may pass between my messages; if so, just pick it up naturally. Lines in parentheses come from the practice app, not from me.',
+    'Scene: ' + c.scenePrompt,
+    'My level: ' + lv.en,
+    about ? 'About me (use it only to choose topics): ' + about : '',
+    t.length ? 'Expressions I am practicing. When it fits naturally, create chances for me to use them, but never force it:\n' + t.map(x => '- ' + x.en + (x.ja ? ' (' + x.ja + ')' : '')).join('\n') : '',
+    '',
+    'How to reply:',
+    '- Speak English. Keep each reply short: 1-3 sentences, about 40 words at most, and usually end with a question that keeps the talk going.',
+    '- If I write in Japanese, ask what something means, or ask how to say something: first answer briefly and clearly in Japanese (1-3 sentences, put the English expression in **bold**), then continue the conversation in English.',
+    '- If my English has a mistake, you may recast it naturally in your reply, but do not lecture. Feedback goes in NOTES.',
+    '- Plain text only. Use **bold** only for a key English expression.',
+    '',
+    'After your reply, write a line with exactly ' + MARK + ' and then one JSON object, and nothing after it:',
+    '{"items":[{"kind":"fix","wrong":"...","en":"...","ja":"...","note":"...","example":"..."}]}',
+    'Item kinds. Judge ONLY my latest message. Ignore typos, capitalization and missing punctuation.',
+    '- "fix": my latest message had a grammar error or clearly unnatural wording. wrong = the exact words I wrote; en = the natural way to say it (short); ja = what I meant, in Japanese; note = why, one short Japanese sentence. At most 2, only things that matter.',
+    '- "howto": I used Japanese, or asked how to say something. ja = what I wanted to say; en = natural English; note = a short Japanese tip.',
+    '- "meaning": I asked what an English word or phrase means. en = that phrase; ja = its meaning; note = nuance, in Japanese.',
+    '- "phrase": one useful, reusable expression from YOUR reply worth keeping (at most 1; skip if nothing special). en = the expression; ja = its meaning.',
+    '- "nice": I used a natural, good expression, especially one from my practice list (then copy its en exactly). Only real wins, at most 1.',
+    'example = one short, natural English example sentence (optional). Write {"items":[]} when there is nothing to note.',
+  ].filter(x => x !== null && x !== undefined && x !== false).join('\n').replace(/\n{3,}/g, '\n\n');
+}
+function notesForTurn(c, idx) {
+  // the items noted on assistant message idx: learner notes sit on the user message before it
+  const m = c.messages[idx];
+  let prevUser = null;
+  for (let j = idx - 1; j >= 0; j--) { if (c.messages[j].role === 'user') { prevUser = c.messages[j]; break; } }
+  const list = [].concat((prevUser && prevUser.notes) || [], m.notes || []);
+  return list.map(n => { const o = { kind: n.kind, en: n.en, ja: n.ja }; if (n.wrong) o.wrong = n.wrong; return o; });
+}
+function buildTurns(c) {
+  const msgs = c.messages.map((m, i) => ({ m, i })).filter(x => (x.m.role === 'user' || x.m.role === 'assistant') && !x.m.pending && !(x.m.role === 'assistant' && !x.m.content));
+  const recent = msgs.slice(-40);
+  const turns = [{ role: 'user', content: rulesFor(c) }];
+  recent.forEach(x => {
+    if (x.m.role === 'assistant') turns.push({ role: 'assistant', content: x.m.content + '\n' + MARK + '\n' + JSON.stringify({ items: notesForTurn(c, x.i) }) });
+    else turns.push({ role: 'user', content: x.m.content });
+  });
+  if (turns[turns.length - 1].role !== 'user') turns.push({ role: 'user', content: '(Please continue.)' });
+  return turns;
+}
+function tidy(s) { return String(s || '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/(\n\s*-{3,}\s*)+$/, '').replace(/[\s`]+$/, '').trim(); }
+function splitReply(text, final) {
+  text = String(text || '');
+  const i = text.indexOf(MARK);
+  if (i >= 0) return { reply: tidy(text.slice(0, i)), notesRaw: text.slice(i + MARK.length) };
+  if (final) {
+    const f = text.match(/```(?:json)?\s*(\{[\s\S]*"items"[\s\S]*\})\s*```\s*$/);
+    if (f) return { reply: tidy(text.slice(0, f.index)), notesRaw: f[1] };
+  }
+  const j = text.indexOf('{"items"');
+  if (j >= 0) return { reply: tidy(text.slice(0, j)), notesRaw: final ? text.slice(j) : null };
+  if (!final) for (let k = MARK.length - 1; k > 0; k--) { if (text.endsWith(MARK.slice(0, k))) return { reply: tidy(text.slice(0, text.length - k)), notesRaw: null }; }
+  return { reply: tidy(text), notesRaw: null };
+}
+function parseNotes(raw) {
+  if (!raw) return [];
+  const a = raw.indexOf('{'), b = raw.lastIndexOf('}');
+  if (a < 0 || b < a) return [];
+  try { const o = JSON.parse(raw.slice(a, b + 1)); return Array.isArray(o.items) ? o.items : []; } catch (e) { return []; }
+}
+
+/* ================= talk: flow ================= */
+// 会話は1本につながっている。開くと前回の続きから。場面を変えても同じ会話のまま続く。
+const MAX_THREAD = 260;
+function sceneByKey(k) { return SCENES.find(x => x.key === k) || (k === 'review' ? REVIEW_SCENE : null); }
+function claudeOff() { return S.sampleState === 'none' || S.sampleState === 'off'; }
+function newThread(scene) {
+  scene = scene || SCENES[0];
+  return { id: genId('s_'), sceneKey: scene.key, sceneJa: scene.ja, scenePrompt: scene.prompt, level: S.prefs.level, messages: [], pickedIds: [], createdAt: Date.now() };
+}
+function threadFromLog(id, meta, log) {
+  const sc = sceneByKey(log.sceneKey || meta.sceneKey);
+  return { id, sceneKey: log.sceneKey || meta.sceneKey || 'free', sceneJa: log.sceneJa || meta.title || 'フリートーク',
+    scenePrompt: log.scenePrompt || (sc ? sc.prompt : SCENES[0].prompt), level: log.level || S.prefs.level,
+    messages: (log.messages || []).map(m => Object.assign({}, m, { notes: m.notes ? m.notes.map(n => Object.assign({}, n)) : undefined })),
+    pickedIds: (meta.pickedIds || []).slice(), createdAt: meta.createdAt || Date.now() };
+}
+let resumeStarted = false;
+function resumeThread() {
+  if (resumeStarted) return;
+  resumeStarted = true;
+  const last = S.sessions.find(x => x.kind === 'chat');
+  const done = () => { if (!S.chat) S.chat = newThread(); S.threadReady = true; refreshTalk(); scrollLog(true); };
+  if (S.chat || !last) { done(); return; }
+  storeReady.then(st => st.getLog(last.id)).then(log => {
+    if (S.chat) return;
+    if (log && (log.messages || []).length < MAX_THREAD) S.chat = threadFromLog(last.id, last, log);
+    else S.chat = newThread(sceneByKey(last.sceneKey) || undefined);
+  }).catch(e => console.warn(e)).then(done);
+}
+function setScene(scene) {
+  if (S.busy) { toast('返事を待ってから切りかえてください'); return; }
+  if (claudeOff()) { toast('Claudeとつながっていないので、会話できません'); return; }
+  if (scene.key === 'review' && !pickTargets(1).length) { toast('ノートにまだ表現がありません'); return; }
+  if (!S.chat) S.chat = newThread(scene);
+  const c = S.chat, now = Date.now();
+  c.sceneKey = scene.key; c.sceneJa = scene.ja; c.scenePrompt = scene.prompt; c.level = S.prefs.level;
+  if (c.messages.some(m => !m.hidden)) c.messages.push({ role: 'event', content: scene.ja + 'の場面にしました', ts: now });
+  c.messages.push({ role: 'user', content: KICKOFF, hidden: true, ts: now });
+  S.panel = false;
+  renderTalk(); scrollLog(true);
+  askClaude();
+}
+function startNewThread() {
+  if (S.busy) return;
+  const c = S.chat;
+  S.chat = newThread(c ? { key: c.sceneKey, ja: c.sceneJa, prompt: c.scenePrompt } : null);
+  S.threadReady = true; S.panel = false;
+  renderTalk(); focusComposer();
+}
+function focusComposer() { if (!coarse) { try { $('#msg').focus(); } catch (e) { /* ignore */ } } }
+async function askClaude() {
+  const c = S.chat; if (!c || S.busy) return;
+  S.busy = true;
+  const m = { role: 'assistant', content: '', ts: Date.now(), pending: true };
+  c.messages.push(m);
+  renderLog(); updateComposer(); scrollLog(true);
+  const sample = S.sample || await samplePromise;
+  if (!sample) {
+    m.pending = false; m.error = 'Claudeとつながっていません。claude.ai でこのページを開くと会話できます。';
+    S.busy = false; renderLog(); updateComposer(); return;
+  }
+  const ctl = new AbortController(); S.ctl = ctl;
+  const turns = buildTurns(c);
+  let spoke = false;
+  try {
+    const res = await sample(turns, {
+      cache: false, signal: ctl.signal, modelTier: S.prefs.speed === 'deep' ? 'default' : 'quick',
+      onText: u => { m.content = splitReply(u.text).reply; updateBubble(m); },
+    });
+    const sp = splitReply(res.text, true);
+    m.content = sp.reply || '…'; m.pending = false;
+    if (res.truncated) m.error = '返事が途中で切れました。';
+    spoke = true;
+    const notes = parseNotes(sp.notesRaw);
+    if (notes.length) {
+      let lastUser = null;
+      for (let j = c.messages.length - 2; j >= 0; j--) { if (c.messages[j].role === 'user') { lastUser = c.messages[j]; break; } }
+      const learnerOk = lastUser && !lastUser.hidden;
+      const applied = upsertItems(notes.filter(n => n && (n.kind === 'phrase' || learnerOk)), { sessionId: c.id, sceneJa: c.sceneJa });
+      const slim = a => ({ kind: a.kind, en: a.en, ja: a.ja, wrong: a.wrong, note: a.note, status: a.status });
+      const forUser = applied.filter(a => a.kind !== 'phrase').map(slim);
+      const forAi = applied.filter(a => a.kind === 'phrase').map(slim);
+      if (learnerOk && forUser.length) lastUser.notes = forUser;
+      if (forAi.length) m.notes = forAi;
+      c.pickedIds = uniq((c.pickedIds || []).concat(applied.filter(a => a.status !== 'seen').map(a => a.id)));
+    }
+  } catch (e) {
+    m.pending = false;
+    m.content = splitReply((e && e.text) || '').reply;
+    if (e && e.code === 'cancelled') { if (!m.content) c.messages.splice(c.messages.indexOf(m), 1); }
+    else { m.error = errorCopy(e); m.retry = true; handleSampleError(e); }
+  } finally {
+    if (S.ctl === ctl) S.ctl = null;
+    S.busy = false;
+    if (S.chat === c) {
+      renderLog(); updateComposer(); scrollLog(); renderChatBar();
+      if (spoke && S.prefs.autoSpeak && S.view === 'talk' && !S.past && !S.panel) speak(m.content);
+    }
+    persistChat(c);
+  }
+}
+function retryLast(m) {
+  const c = S.chat; if (!c || S.busy) return;
+  const i = c.messages.indexOf(m); if (i >= 0) c.messages.splice(i, 1);
+  askClaude();
+}
+function submitMsg() {
+  const ta = $('#msg'); const text = ta.value.trim();
+  if (!text || S.busy || !S.threadReady) return;
+  if (claudeOff()) { toast('Claudeとつながっていないので、会話できません'); return; }
+  stopSpeech(); primeSpeech();
+  if (!S.chat) S.chat = newThread();
+  if (S.chat.messages.length >= MAX_THREAD) { const c = S.chat; S.chat = newThread({ key: c.sceneKey, ja: c.sceneJa, prompt: c.scenePrompt }); }
+  ta.value = ''; autosize(ta);
+  try { ta.focus(); } catch (e) { /* ignore */ }
+  S.chat.messages.push({ role: 'user', content: text, ts: Date.now() });
+  askClaude();
+}
+function cleanMsgs(msgs) {
+  return msgs.filter(m => !m.pending && !(m.role === 'assistant' && !m.content)).slice(-300).map(m => {
+    const o = { role: m.role, content: m.content || '', ts: m.ts || 0 };
+    if (m.hidden) o.hidden = true;
+    if (m.notes && m.notes.length) o.notes = m.notes.map(n => ({ kind: n.kind, en: n.en || '', ja: n.ja || '', wrong: n.wrong || '', note: n.note || '', status: n.status || '' }));
+    return o;
+  });
+}
+function persistChat(c) {
+  if (!c) return;
+  const userMsgs = c.messages.filter(m => m.role === 'user' && !m.hidden);
+  if (!userMsgs.length) return;
+  const now = Date.now();
+  const meta = { kind: 'chat', title: c.sceneJa, sceneKey: c.sceneKey, level: c.level, createdAt: c.createdAt, updatedAt: now,
+    turns: userMsgs.length, pickedIds: (c.pickedIds || []).slice(-200), firstLine: userMsgs[userMsgs.length - 1].content.slice(0, 90) };
+  const log = { messages: cleanMsgs(c.messages), sceneJa: c.sceneJa, sceneKey: c.sceneKey, scenePrompt: c.scenePrompt, level: c.level };
+  withStore(st => Promise.all([st.setSession(c.id, meta), st.setLog(c.id, log)]));
+}
+function openPast(id) {
+  const meta = S.sessions.find(x => x.id === id);
+  if (!meta) { toast('その会話は見つかりませんでした'); return; }
+  S.past = { id, meta, log: null, loading: true, confirmDel: false };
+  go('talk'); renderTalk();
+  storeReady.then(st => st.getLog(id)).then(log => {
+    if (S.past && S.past.id === id) { S.past.log = log; S.past.loading = false; renderTalk(); }
+  }).catch(e => { console.warn(e); if (S.past && S.past.id === id) { S.past.loading = false; renderTalk(); } });
+}
+function continuePast() {
+  const p = S.past; if (!p || !p.log || S.busy) return;
+  S.chat = threadFromLog(p.id, p.meta, p.log);
+  S.threadReady = true; S.past = null; S.panel = false;
+  renderTalk(); scrollLog(true); focusComposer();
+}
+
+/* ================= talk: render ================= */
+function renderTalk() {
+  const start = $('#talk-start'), chat = $('#talk-chat'), past = $('#talk-past');
+  past.hidden = !S.past;
+  start.hidden = !!S.past || !S.panel;
+  chat.hidden = !!S.past || !!S.panel;
+  if (S.past) renderPast();
+  else if (S.panel) renderStart();
+  else { renderChatBar(); renderLog(); updateComposer(); }
+}
+function refreshTalk() { if (S.view === 'talk') renderTalk(); }
+function noticeText() {
+  return S.sampleState === 'off'
+    ? 'Claudeの利用が許可されていないため、会話と取り込みは使えません。ページのメニューの「権限」から許可できます。ノートと練習（自己採点）は使えます。'
+    : 'この画面ではClaudeとつながっていません。claude.ai でこのページを開くと、会話と取り込みが使えます。ノートと練習（自己採点）はここでも使えます。';
+}
+function renderNotices() {
+  const off = claudeOff();
+  [$('#start-notice'), $('#imp-notice')].forEach(el => { el.hidden = !off; el.className = 'notice warn'; el.textContent = off ? noticeText() : ''; });
+}
+let sceneGridBuilt = false;
+function renderStart() {
+  renderNotices();
+  const grid = $('#scene-grid');
+  if (!sceneGridBuilt) {
+    sceneGridBuilt = true;
+    grid.append(h('button', { class: 'scene review', type: 'button', id: 'scene-review', 'data-key': 'review', hidden: true, onclick: () => setScene(REVIEW_SCENE) },
+      h('b', null, REVIEW_SCENE.ja), h('i', null, REVIEW_SCENE.en), h('span', { id: 'review-desc' })));
+    SCENES.forEach(sc => grid.append(h('button', { class: 'scene', type: 'button', 'data-key': sc.key, onclick: () => setScene(sc) },
+      h('b', null, sc.ja), h('i', null, sc.en), h('span', null, sc.desc))));
+  }
+  const cur = S.chat ? S.chat.sceneKey : 'free';
+  $$('#scene-grid .scene').forEach(b => b.setAttribute('aria-current', String(b.dataset.key === cur)));
+  const n = S.items.filter(it => !it.mastered).length;
+  $('#scene-review').hidden = n === 0;
+  $('#review-desc').textContent = 'ノートの表現（' + Math.min(n, 8) + '個）が会話に出てきます';
+  syncPrefsUI();
+  renderRecent();
+}
+function renderRecent() {
+  const wrap = $('#recent-wrap'), ul = $('#recent');
+  const list = S.sessions.slice(0, 12);
+  wrap.hidden = !list.length;
+  fill(ul, ...list.map(x => h('li', null, h('button', { type: 'button', onclick: () => openPast(x.id) },
+    h('span', { class: 'r-date' }, shortDate(x.updatedAt || x.createdAt || 0)),
+    h('span', { class: 'r-title' }, (x.kind === 'import' ? '取り込み：' + (x.title || '') : (x.title || '会話')) + (S.chat && S.chat.id === x.id ? '（いまの会話）' : '')),
+    h('span', { class: 'r-count' }, (x.kind === 'import' ? '' : (x.turns || 0) + '往復・') + ((x.pickedIds || []).length) + '件'),
+    x.firstLine ? h('span', { class: 'r-first' }, x.firstLine) : null))));
+}
+function todayCount() { const t0 = startOfDay(Date.now()); return S.items.filter(it => (it.createdAt || 0) >= t0).length; }
+function renderChatBar() {
+  const c = S.chat;
+  $('#chat-title').textContent = c ? c.sceneJa : 'フリートーク';
+  $('#chat-level').textContent = (LEVELS[(c && c.level) || S.prefs.level] || LEVELS.normal).ja;
+  const n = todayCount(), chip = $('#today-chip');
+  chip.hidden = !n; chip.textContent = '今日 +' + n; chip.title = '今日ノートに入った数（タップでノートへ）';
+  const t = $('#speak-toggle');
+  t.hidden = !canSpeak;
+  t.setAttribute('aria-pressed', String(!!S.prefs.autoSpeak));
+  t.textContent = S.prefs.autoSpeak ? '読み上げ オン' : '読み上げ オフ';
+  t.title = S.prefs.autoSpeak ? '返事を自動で読み上げます（タップで止める）' : '返事の自動読み上げは止まっています（タップでオン）';
+}
+function penEl(n) {
+  const st = { new: 'ノートへ', again: '練習にもどしました', used: 'レベルアップ', seen: 'ノートにあります' }[n.status] || '';
+  const stEl = st ? h('span', { class: 'st' }, st) : null;
+  const note = n.note ? h('span', { class: 'note' }, n.note) : null;
+  if (n.kind === 'fix') return h('div', { class: 'pen fix' }, h('span', { class: 'tag' }, '言い直し'), n.wrong ? [h('s', null, n.wrong), ' → '] : null, h('b', null, n.en), stEl, note);
+  if (n.kind === 'howto') return h('div', { class: 'pen howto' }, h('span', { class: 'tag' }, '言えなかった'), n.ja ? '「' + n.ja + '」→ ' : null, h('b', null, n.en), stEl, note);
+  if (n.kind === 'meaning') return h('div', { class: 'pen meaning' }, h('span', { class: 'tag' }, 'わからなかった'), h('b', null, n.en), n.ja ? ' ＝ ' + n.ja : null, stEl, note);
+  if (n.kind === 'nice') return h('div', { class: 'pen nice' }, h('span', { class: 'tag' }, '使えた！'), h('b', null, n.en), stEl);
+  return h('div', { class: 'pen phrase' }, h('span', { class: 'tag' }, '拾った表現'), h('b', null, n.en), n.ja ? '　' + n.ja : null, stEl);
+}
+function thinkingEl() { return h('span', { class: 'thinking' }, '考え中', h('i', null, '・'), h('i', null, '・'), h('i', null, '・')); }
+function msgEl(m, readOnly) {
+  if (m.role === 'user') {
+    return h('div', { class: 'msg me' }, h('div', { class: 'bubble' }, m.content),
+      m.notes && m.notes.length ? h('div', { class: 'pens' }, m.notes.map(penEl)) : null);
+  }
+  const bub = h('div', { class: 'bubble' }, m.content ? fmt(m.content) : (m.pending ? thinkingEl() : '…'));
+  if (!readOnly) bubbleEls.set(m, bub);
+  const hasText = !!(m.content && !m.pending);
+  return h('div', { class: 'msg ai' },
+    (m.content || m.pending) ? bub : null,
+    hasText && canSpeak ? h('div', { class: 'msg-tools' }, speakBtn(m.content)) : null,
+    m.notes && m.notes.length ? h('div', { class: 'pens' }, m.notes.map(penEl)) : null,
+    m.error && !readOnly ? h('div', { class: 'err' }, h('span', null, m.error), m.retry ? h('button', { class: 'link', type: 'button', onclick: () => retryLast(m) }, 'もう一度') : null) : null);
+}
+// 日付の区切りと「場面にしました」の区切りを入れながら並べる
+function logEls(messages, readOnly) {
+  const out = []; let lastDay = '';
+  messages.filter(m => !m.hidden).forEach(m => {
+    const d = dayKey(m.ts || 0);
+    if (d !== lastDay) { lastDay = d; out.push(h('div', { class: 'divider' }, dayLabel(m.ts || 0))); }
+    out.push(m.role === 'event' ? h('div', { class: 'divider' }, m.content) : msgEl(m, readOnly));
+  });
+  return out;
+}
+function welcomeEl() {
+  return h('div', { class: 'msg ai welcome' }, h('div', { class: 'bubble' },
+    fmt("Hi! I'm here whenever you want to talk. Just type, or speak with your keyboard's mic, in English.\n日本語で「〜って英語でなんて言うの？」と聞いてもOKです。")));
+}
+function updateBubble(m) {
+  const el = bubbleEls.get(m); if (!el) return;
+  fill(el, m.content ? fmt(m.content) : thinkingEl());
+  scrollLog();
+}
+function renderLog() {
+  const box = $('#log-in');
+  if (!S.threadReady || !S.chat) { fill(box, h('p', { class: 'muted' }, '前回の会話を読み込んでいます…')); return; }
+  const c = S.chat;
+  const vis = c.messages.some(m => !m.hidden);
+  fill(box, claudeOff() ? h('div', { class: 'notice warn' }, noticeText()) : null, vis ? null : welcomeEl(), ...logEls(c.messages, false));
+}
+function updateComposer() {
+  $('#send').hidden = S.busy;
+  $('#stop').hidden = !S.busy;
+  $('#msg').disabled = !S.threadReady;
+  $('#comp-hint').textContent = coarse
+    ? 'キーボードのマイクで話して「送る」だけ。日本語の質問もOK'
+    : '日本語で質問してもOK ・ Enterで送信（Shift+Enterで改行）';
+}
+function scrollLog(force) {
+  const log = $('#log'); if (!log) return;
+  if (force || log.scrollHeight - log.scrollTop - log.clientHeight < 160) log.scrollTop = log.scrollHeight;
+}
+function autosize(ta) { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight + 2, 168) + 'px'; }
+function renderPast() {
+  const p = S.past, head = $('#past-head'), log = $('#past-log');
+  const meta = p.meta || {};
+  const isImport = meta.kind === 'import';
+  const isCurrent = !!(S.chat && S.chat.id === p.id);
+  fill(head,
+    h('button', { class: 'btn ghost', type: 'button', onclick: () => { S.past = null; renderTalk(); } }, '← もどる'),
+    h('span', { class: 'title' }, shortDate(meta.updatedAt || meta.createdAt || 0) + '　' + (isImport ? '取り込み：' : '') + (meta.title || '')),
+    !isImport && p.log && !isCurrent ? h('button', { class: 'btn primary', type: 'button', onclick: continuePast, disabled: S.busy }, 'この会話の続きを話す') : null,
+    p.confirmDel
+      ? h('button', { class: 'btn danger', type: 'button', onclick: () => {
+          const id = p.id; withStore(st => st.deleteSession(id));
+          if (S.chat && S.chat.id === id) S.chat = newThread();
+          S.past = null; renderTalk(); toast('会話を削除しました（ノートの表現は残ります）');
+        } }, '本当に削除')
+      : h('button', { class: 'btn ghost', type: 'button', onclick: () => { p.confirmDel = true; renderPast(); setTimeout(() => { if (S.past === p) { p.confirmDel = false; renderPast(); } }, 4000); } }, '削除'));
+  if (p.loading) { fill(log, h('p', { class: 'muted' }, '読み込み中…')); return; }
+  if (!p.log) { fill(log, h('p', { class: 'muted' }, 'この会話の記録は見つかりませんでした。')); return; }
+  if (isImport) { fill(log, h('div', { class: 'sheet' }, h('pre', { class: 'raw' }, p.log.raw || ''))); return; }
+  fill(log, ...logEls(p.log.messages || [], true));
+}
+
+/* ================= notes ================= */
+function noteCounts() {
+  const c = { all: S.items.length, stumble: 0, phrase: 0, nice: 0, mastered: 0 };
+  S.items.forEach(it => { c[(KINDS[it.kind] || KINDS.phrase).group]++; if (it.mastered) c.mastered++; });
+  return c;
+}
+function renderNotes() {
+  const c = noteCounts();
+  const sum = $('#notes-sum');
+  sum.textContent = !S.itemsLoaded ? '読み込み中…'
+    : c.all ? 'ぜんぶで ' + c.all + '件。今日の練習は ' + dueItems().length + '件です。'
+    : '会話で出てきた表現と、つまずいたところがたまっていきます。';
+  const F = [['all', 'すべて'], ['stumble', 'つまずき'], ['phrase', '拾った表現'], ['nice', '使えた'], ['mastered', '覚えた']];
+  fill($('#notes-filters'), ...F.map(f => h('button', { class: 'chip', type: 'button', 'aria-pressed': String(S.noteFilter === f[0]),
+    onclick: () => { S.noteFilter = f[0]; renderNotes(); } }, f[1] + ' ' + c[f[0]])));
+  $('#notes-filters').hidden = !c.all;
+  $('#notes-q').hidden = !c.all;
+  renderNotesList();
+}
+function renderNotesList() {
+  const list = $('#notes-list');
+  if (!S.itemsLoaded) { fill(list); return; }
+  if (!S.items.length) { fill(list, emptyNotes()); return; }
+  const q = norm(S.noteQuery);
+  const f = S.noteFilter;
+  const items = S.items.filter(it => {
+    if (f === 'mastered' && !it.mastered) return false;
+    if (f !== 'all' && f !== 'mastered' && (KINDS[it.kind] || KINDS.phrase).group !== f) return false;
+    if (q) { const hay = norm([it.en, it.ja, it.note, it.wrong, it.example].join(' ')); if (hay.indexOf(q) < 0) return false; }
+    return true;
+  });
+  if (!items.length) { fill(list, h('p', { class: 'muted' }, '見つかりませんでした。')); return; }
+  const groups = [];
+  let cur = null;
+  items.forEach(it => {
+    const k = dayKey(it.createdAt || 0);
+    if (!cur || cur.k !== k) { cur = { k, ts: it.createdAt || 0, items: [] }; groups.push(cur); }
+    cur.items.push(it);
+  });
+  fill(list, ...groups.map(g => h('section', { class: 'day' }, h('h3', null, dayLabel(g.ts)), g.items.map(it => entryEl(it, false)))));
+}
+const delArmed = new Set();
+function entryEl(it, isSample) {
+  const due = dueText(it);
+  const isDue = !it.mastered && (it.due || 0) <= Date.now();
+  return h('article', { class: 'entry' },
+    h('div', { class: 'hw' }, isSample ? h('span', { class: 'kind sample' }, '例') : kindTag(it.kind),
+      h('span', { class: it.kind === 'phrase' ? 'mark' : '' }, it.en)),
+    h('div', { class: 'tools' }, speakBtn(it.en)),
+    it.ja ? h('div', { class: 'ja' }, it.ja) : null,
+    h('div', { class: 'more' },
+      it.wrong ? h('div', { class: 'was' }, '前は　', h('s', null, it.wrong)) : null,
+      it.note ? h('div', { class: 'note' }, it.note) : null,
+      it.example ? h('div', { class: 'ex' }, h('span', null, it.example), speakBtn(it.example)) : null,
+      isSample ? null : h('div', { class: 'meta' },
+        dots(it.box),
+        it.mastered ? h('span', { class: 'ok' }, '覚えた') : h('span', { class: isDue ? 'due' : '' }, due),
+        it.sceneJa ? h('span', null, it.sceneJa) : null,
+        it.sessionId && S.sessions.some(s => s.id === it.sessionId) ? h('button', { class: 'link', type: 'button', onclick: () => openPast(it.sessionId) }, '会話を見る') : null,
+        h('button', { class: 'link', type: 'button', onclick: () => toggleMastered(it) }, it.mastered ? '練習にもどす' : '覚えた'),
+        delArmed.has(it.id)
+          ? h('button', { class: 'link danger', type: 'button', onclick: () => { delArmed.delete(it.id); withStore(st => st.deleteItem(it.id)); toast('削除しました'); } }, '本当に削除')
+          : h('button', { class: 'link danger', type: 'button', onclick: () => { delArmed.add(it.id); renderNotesList(); setTimeout(() => { if (delArmed.delete(it.id)) renderNotesList(); }, 4000); } }, '削除'))));
+}
+function emptyNotes() {
+  const ex = [
+    { kind: 'fix', en: "I'm bored today.", ja: '今日はたいくつだ', wrong: "I'm boring today.", note: 'boring は「人をたいくつにさせる」。自分の気持ちは bored。', example: "I'm bored. Let's go for a walk.", box: 0 },
+    { kind: 'phrase', en: 'That makes sense.', ja: 'なるほど、それなら納得', note: '相手の説明に「なるほど」と返すときに。', example: 'Oh, that makes sense now.', box: 0 },
+  ];
+  return h('div', { class: 'empty' },
+    h('div', { class: 'notice' }, 'まだ空っぽです。「話す」でClaudeと会話するか、「取り込む」にいつもの会話を貼ると、ここに表現がたまっていきます。下は、たまったときの例です。'),
+    h('div', { class: 'sample-entries' }, ex.map(it => entryEl(it, true))),
+    h('div', { class: 'row' }, h('button', { class: 'btn primary', type: 'button', onclick: () => go('talk') }, '話しはじめる'), h('button', { class: 'btn', type: 'button', onclick: () => go('import') }, '会話を取り込む')));
+}
+
+/* ================= practice ================= */
+function startRound(ids) {
+  if (!ids.length) return;
+  S.practice = { queue: ids.slice(), idx: 0, phase: 'ask', answer: '', hint: false, judge: null, judging: false, ctl: null, results: [], requeued: new Set() };
+  renderPractice();
+}
+function curItem() { const P = S.practice; const id = P.queue[P.idx]; return S.itemsById.get(id) || null; }
+function rate(r) {
+  const P = S.practice; const it = curItem(); if (!it) { skipMissing(); return; }
+  const now = Date.now();
+  let box = it.box || 0, due, mastered = false;
+  if (r === 'good') { box = Math.min(box + 1, MAX_BOX); due = now + INTERVALS[box] * DAY; mastered = box >= MAX_BOX; }
+  else if (r === 'close') { due = now + DAY; }
+  else { box = 0; due = now; if (!P.requeued.has(it.id)) { P.queue.push(it.id); P.requeued.add(it.id); } }
+  const next = Object.assign({}, it, { box, due, mastered, reviews: (it.reviews || 0) + 1, correct: (it.correct || 0) + (r === 'good' ? 1 : 0), lastReviewed: now, updatedAt: now });
+  S.itemsById.set(it.id, next);
+  withStore(st => st.setItem(next));
+  P.results.push({ id: it.id, r });
+  advance();
+}
+function skipMissing() { advance(); }
+function advance() {
+  const P = S.practice;
+  if (P.ctl) P.ctl.abort();
+  P.idx++; P.phase = P.idx >= P.queue.length ? 'done' : 'ask';
+  P.answer = ''; P.hint = false; P.judge = null; P.judging = false; P.ctl = null;
+  renderPractice(); renderBadges();
+}
+function judgePrompt(it, ans) {
+  const meaning = it.kind === 'meaning';
+  return [
+    "You check one answer in a Japanese learner's English phrase drill. Be kind and fair.",
+    meaning ? 'Task: explain in Japanese what the English expression "' + it.en + '" means. Reference meaning: ' + (it.ja || '(none)')
+      : 'Task: say this in English: "' + (it.ja || it.en) + '". Reference answer: "' + it.en + '"',
+    it.note ? 'Teacher note: ' + it.note : '',
+    'Learner answer: "' + ans + '"',
+    'Reply with only JSON: {"verdict":"ok|close|retry","comment":"one short Japanese sentence, at most 40 characters","better":"a natural English version, or empty"}',
+    '- ok: the meaning is right and it sounds natural. Other natural phrasings also count as ok.',
+    '- close: understandable, but it has a grammar mistake or sounds unnatural.',
+    '- retry: the meaning is wrong, or most of it is missing.',
+  ].filter(Boolean).join('\n');
+}
+async function judge() {
+  const P = S.practice; const it = curItem(); const ans = (P.answer || '').trim();
+  if (!it || !ans || P.judging) return;
+  const sample = S.sample || await samplePromise;
+  if (!sample) { toast('Claudeとつながっていません'); return; }
+  const ctl = new AbortController();
+  P.judging = true; P.ctl = ctl; renderPractice();
+  try {
+    const r = await sample.json(judgePrompt(it, ans), { modelTier: 'quick', signal: ctl.signal });
+    if (S.practice !== P || P.ctl !== ctl) return;
+    const v = r && ['ok', 'close', 'retry'].indexOf(r.verdict) >= 0 ? r.verdict : 'close';
+    P.judge = { verdict: v, comment: typeof r.comment === 'string' ? r.comment.slice(0, 120) : '', better: typeof r.better === 'string' ? r.better.slice(0, 200) : '' };
+  } catch (e) {
+    if (S.practice !== P || P.ctl !== ctl) return;
+    if (e && e.code === 'cancelled') { P.judging = false; P.ctl = null; renderPractice(); return; }
+    P.judge = { verdict: 'none', comment: errorCopy(e), better: '' };
+    handleSampleError(e);
+  }
+  P.judging = false; P.ctl = null; P.phase = 'reveal';
+  renderPractice();
+}
+function initials(en) { return en.split(/\s+/).map(w => w.replace(/^([^A-Za-z]*[A-Za-z])([A-Za-z']*)(.*)$/, (m, a, b, c) => a + b.replace(/[A-Za-z]/g, '_') + c)).join('  '); }
+function cardFront(it) {
+  if (it.kind === 'meaning') return { q: 'この表現の意味は？', prompt: it.en, en: true, ph: '意味を日本語で（考えるだけでもOK）', hint: it.example ? h('span', { class: 'en' }, it.example) : null };
+  const q = it.kind === 'fix' ? 'こう言いたいとき、英語で？' : '英語で言うと？';
+  const hint = it.kind === 'fix' && it.wrong
+    ? h('span', null, '前はこう言いました：', h('s', { class: 'en' }, it.wrong))
+    : h('span', { class: 'en' }, initials(it.en));
+  return { q, prompt: it.ja || it.en, en: !it.ja, ph: '英語で書く（声に出すだけでもOK）', hint };
+}
+function renderPractice() {
+  const root = $('#practice-root');
+  const P = S.practice;
+  if (P && P.phase !== 'done') return renderCard(root);
+  if (P && P.phase === 'done') return renderRoundEnd(root);
+  renderPracticeHome(root);
+}
+function renderPracticeHome(root) {
+  if (!S.itemsLoaded) { fill(root, h('p', { class: 'muted' }, '読み込み中…')); return; }
+  const due = dueItems().sort(practiceOrder);
+  const open = S.items.filter(it => !it.mastered);
+  const mastered = S.items.length - open.length;
+  const later = open.length - due.length;
+  const stumbles = due.filter(it => STUMBLE.has(it.kind)).length;
+  const next = open.filter(it => (it.due || 0) > Date.now()).sort((a, b) => a.due - b.due)[0];
+  const copyArea = h('textarea', { class: 'field copybox', readonly: true, hidden: true, rows: 6, 'aria-label': 'コピー用の文' });
+  const copyText_ = claudeCopyText();
+  copyArea.value = copyText_;
+  fill(root, 
+    h('div', null, h('h2', { class: 'h-title' }, '練習してみよう'),
+      h('p', { class: 'lead' }, 'つまずいた表現が、忘れかけたころにもう一度出てきます。言えたら次は少し先、まだなら明日もう一度。')),
+    S.items.length === 0
+      ? h('div', { class: 'notice' }, 'まだ練習するものがありません。「話す」で会話すると、つまずいたところがここに集まります。')
+      : h('div', { class: 'sheet due-sum' },
+          h('div', { class: 'big' }, String(due.length), h('small', null, '問')),
+          h('div', null, h('b', null, '今日の練習'), due.length ? '　つまずき ' + stumbles + '・表現 ' + (due.length - stumbles) : ''),
+          h('div', { class: 'muted small' }, due.length ? '1回10問まで。答えは書いても、声に出すだけでもOK。'
+            : next ? '今日の分はおわりです。次は' + dueText(next).replace('次は', '') + 'に出てきます。' : '練習中の表現はありません。'),
+          h('div', { class: 'row' },
+            due.length ? h('button', { class: 'btn primary', type: 'button', onclick: () => startRound(due.slice(0, 10).map(i => i.id)) }, 'はじめる（' + Math.min(due.length, 10) + '問）') : null,
+            !due.length && open.length ? h('button', { class: 'btn', type: 'button', onclick: () => startRound(open.sort(practiceOrder).slice(0, 10).map(i => i.id)) }, '前倒しで練習する') : null)),
+    due.length ? h('div', null, h('p', { class: 'label' }, '今日の練習リスト'),
+      h('ul', { class: 'due-list' }, due.slice(0, 30).map(it => h('li', null, kindTag(it.kind),
+        h('span', { class: 'q' + (it.kind === 'meaning' ? ' en' : '') }, it.kind === 'meaning' ? it.en : (it.ja || it.en)), dots(it.box)))),
+      due.length > 30 ? h('p', { class: 'muted small' }, 'ほか ' + (due.length - 30) + '件') : null) : null,
+    S.items.length ? h('div', { class: 'small muted' }, '練習中 ' + open.length + '・あした以降 ' + later + '・覚えた ' + mastered) : null,
+    open.length ? h('div', { class: 'sheet' },
+      h('h3', null, 'いつものClaudeで練習する'),
+      h('p', { class: 'small muted' }, 'つまずいた表現をまとめた文をコピーします。claude.ai のふつうのチャットに貼ると、それを使う会話をしてくれます。'),
+      h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => copyText(copyText_, copyArea) }, '練習用の文をコピー')),
+      copyArea) : null);
+}
+function claudeCopyText() {
+  const pool = S.items.filter(it => !it.mastered).sort(practiceOrder).slice(0, 15);
+  return ['英会話の練習相手になってください。',
+    '下は、私が前につまずいた表現です。会話の中で、私がこれらを使う場面を自然に作ってください。使えたらほめて、まちがえたら短く直してください。最初の質問からどうぞ。',
+    ''].concat(pool.map(it => it.kind === 'meaning' ? '- ' + it.en + '（' + (it.ja || '') + '）' : '- ' + (it.ja || '') + ' → ' + it.en)).join('\n');
+}
+function renderCard(root) {
+  const P = S.practice; const it = curItem();
+  if (!it) { advance(); return; }
+  const total = P.queue.length;
+  const f = cardFront(it);
+  const answerIn = h('input', { class: 'field answer-in', id: 'answer', type: 'text', autocomplete: 'off', autocapitalize: it.kind === 'meaning' ? 'off' : 'sentences', spellcheck: 'false', placeholder: f.ph, 'aria-label': '答え', disabled: P.phase !== 'ask' || P.judging });
+  answerIn.value = P.answer || '';
+  answerIn.addEventListener('input', () => { P.answer = answerIn.value; const jb = $('#judge-btn'); if (jb) jb.disabled = !answerIn.value.trim() || P.judging || !S.sample; });
+  answerIn.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); P.phase = 'reveal'; renderPractice(); } });
+  const head = h('div', { class: 'progress' },
+    h('span', { class: 'pnum' }, (P.idx + 1) + ' / ' + total),
+    h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(P.idx / total * 100) + '%' })),
+    h('button', { class: 'btn ghost', type: 'button', onclick: () => { if (P.ctl) P.ctl.abort(); S.practice = P.results.length ? Object.assign(P, { phase: 'done' }) : null; renderPractice(); } }, 'やめる'));
+  const card = h('div', { class: 'icard' },
+    h('div', { class: 'head' }, h('span', null, kindTag(it.kind)), h('span', { class: 'qtext' }, f.q)),
+    h('div', { class: 'body' },
+      h('div', { class: 'prompt' + (f.en ? ' en' : '') }, f.prompt, f.en ? speakBtn(f.prompt) : null),
+      P.hint && f.hint ? h('div', { class: 'hint' }, f.hint) : null),
+    P.phase === 'reveal' ? revealEl(it) : null);
+  const askRow = P.phase === 'ask' ? h('div', { class: 'row' },
+    h('button', { class: 'btn primary', type: 'button', onclick: () => { P.phase = 'reveal'; renderPractice(); } }, '答えを見る'),
+    S.sampleState !== 'none' && S.sampleState !== 'off'
+      ? h('button', { class: 'btn', type: 'button', id: 'judge-btn', disabled: !(P.answer || '').trim() || P.judging || !S.sample, onclick: judge }, P.judging ? 'Claudeが見ています…' : 'Claudeに見てもらう')
+      : null,
+    f.hint && !P.hint ? h('button', { class: 'btn ghost', type: 'button', onclick: () => { P.hint = true; renderPractice(); } }, 'ヒント') : null) : null;
+  const suggest = P.judge ? { ok: 'good', close: 'close', retry: 'again' }[P.judge.verdict] : '';
+  const rateRow = P.phase === 'reveal' ? h('div', { class: 'rate' },
+    h('button', { class: 'btn' + (suggest === 'again' ? ' suggest' : ''), type: 'button', onclick: () => rate('again') }, 'まだ'),
+    h('button', { class: 'btn' + (suggest === 'close' ? ' suggest' : ''), type: 'button', onclick: () => rate('close') }, 'おしい'),
+    h('button', { class: 'btn primary' + (suggest === 'good' ? ' suggest' : ''), type: 'button', onclick: () => rate('good') }, it.kind === 'meaning' ? 'わかった！' : '言えた！')) : null;
+  fill(root, head, card, P.phase === 'ask' ? answerIn : (P.answer ? h('p', { class: 'small muted' }, 'あなたの答え：', h('span', { class: it.kind === 'meaning' ? '' : 'en' }, P.answer)) : null), askRow, rateRow);
+  if (P.phase === 'ask' && !coarse && !P.judging) answerIn.focus();
+}
+function revealEl(it) {
+  const P = S.practice; const J = P.judge;
+  const meaning = it.kind === 'meaning';
+  return h('div', { class: 'reveal' },
+    h('div', { class: 'ans' + (meaning ? '' : ' en') }, meaning ? (it.ja || '') : it.en, meaning ? null : speakBtn(it.en)),
+    it.note ? h('div', { class: 'note' }, it.note) : null,
+    it.example ? h('div', { class: 'ex' }, h('span', null, it.example), speakBtn(it.example)) : null,
+    J ? h('div', { class: 'judge ' + J.verdict },
+      h('b', null, { ok: 'いいね！', close: 'おしい', retry: 'もう一歩', none: 'Claudeの判定' }[J.verdict]),
+      J.comment ? h('span', null, J.comment) : null,
+      J.better && J.verdict !== 'ok' ? h('span', { class: 'better' }, J.better) : null) : null);
+}
+function renderRoundEnd(root) {
+  const P = S.practice;
+  const last = new Map(); P.results.forEach(x => last.set(x.id, x.r));
+  let good = 0, close = 0, again = 0;
+  last.forEach(r => { if (r === 'good') good++; else if (r === 'close') close++; else again++; });
+  const againItems = Array.from(last).filter(x => x[1] === 'again').map(x => S.itemsById.get(x[0])).filter(Boolean);
+  const dueLeft = dueItems().length;
+  fill(root, 
+    h('div', null, h('h2', { class: 'h-title' }, 'おつかれさま！'),
+      h('p', { class: 'lead' }, good && !again ? 'ぜんぶ言えました。いい流れです。' : '言えたものは少し先に、まだのものは明日また出てきます。')),
+    h('div', { class: 'sheet' }, h('div', { class: 'result-nums' },
+      h('div', null, h('b', { style: 'color:var(--green)' }, String(good)), h('span', { class: 'small muted' }, '言えた')),
+      h('div', null, h('b', { style: 'color:var(--amber)' }, String(close)), h('span', { class: 'small muted' }, 'おしい')),
+      h('div', null, h('b', { style: 'color:var(--red)' }, String(again)), h('span', { class: 'small muted' }, 'まだ')))),
+    againItems.length ? h('div', null, h('p', { class: 'label' }, 'まだだった表現'),
+      h('ul', { class: 'due-list' }, againItems.map(it => h('li', null, kindTag(it.kind), h('span', { class: 'q en' }, it.en), speakBtn(it.en) || h('span'))))) : null,
+    h('div', { class: 'row' },
+      dueLeft ? h('button', { class: 'btn primary', type: 'button', onclick: () => startRound(dueItems().sort(practiceOrder).slice(0, 10).map(i => i.id)) }, 'つづける（あと' + dueLeft + '問）') : null,
+      h('button', { class: 'btn', type: 'button', onclick: () => { S.practice = null; renderPractice(); } }, '練習のはじめにもどる'),
+      h('button', { class: 'btn', type: 'button', onclick: () => { S.practice = null; renderPractice(); go('talk'); setScene(REVIEW_SCENE); } }, '会話で使ってみる')));
+}
+
+/* ================= import ================= */
+function importPrompt(text) {
+  return [
+    'The text below is from an English conversation practice between a Japanese learner and an AI tutor, or a review the AI wrote about such a practice. Pick out learning items for the learner\'s phrase notebook.',
+    'Reply with only one JSON object:',
+    '{"title":"short Japanese title, at most 15 characters","items":[{"kind":"fix|howto|meaning|phrase|nice","wrong":"","en":"","ja":"","note":"","example":""}]}',
+    'Kinds:',
+    '- fix: the learner\'s English mistakes or unnatural wording. wrong = what the learner wrote; en = the natural version; ja = the meaning in Japanese; note = why, one short Japanese sentence.',
+    '- howto: things the learner could not say in English (said in Japanese, or asked how to say). ja = what they wanted to say; en = natural English.',
+    '- meaning: words or phrases the learner asked the meaning of. en = the phrase; ja = the meaning.',
+    '- phrase: useful, reusable expressions that came up (at most 8).',
+    '- nice: expressions the learner used well (at most 3).',
+    'At most 25 items, stumbles (fix, howto, meaning) first. ja and note in Japanese. example = one short natural English sentence (optional).',
+    'If speakers are not labeled, the learner is the one who writes Japanese or less fluent English.',
+    '',
+    'TEXT:',
+    '"""',
+    text,
+    '"""',
+  ].join('\n');
+}
+function renderImport() {
+  renderNotices();
+  const I = S.imp;
+  const ta = $('#imp-text');
+  $('#imp-count').textContent = ta.value.length ? ta.value.length.toLocaleString() + '文字' + (ta.value.length > 50000 ? '（長いので最初の5万文字を読みます）' : '') : '';
+  $('#imp-go').disabled = I.busy || S.sampleState === 'none' || S.sampleState === 'off';
+  $('#imp-go').textContent = I.busy ? '読んでいます…（30秒〜1分ほど）' : '表現を拾う';
+  $('#imp-stop').hidden = !I.busy;
+  const box = $('#imp-result');
+  if (I.error) { fill(box, h('div', { class: 'notice warn' }, I.error)); return; }
+  if (!I.result) { fill(box); return; }
+  const r = I.result;
+  const nChecked = r.items.filter(x => x.checked).length;
+  fill(box, h('div', { class: 'sheet' },
+    h('h3', null, (r.title ? r.title + '：' : '') + r.items.length + '件 見つかりました'),
+    h('p', { class: 'small muted' }, 'ノートに入れたいものにチェック。すでにノートにあるものは、まとめて1つにします。'),
+    h('ul', { class: 'pick' }, r.items.map(x => {
+      const cb = h('input', { type: 'checkbox', checked: !!x.checked, 'aria-label': x.en, onchange: () => { x.checked = cb.checked; renderImport(); } });
+      return h('li', null, cb, h('div', null,
+        h('div', { class: 'row' }, kindTag(x.kind), h('span', { class: 'en' }, x.en), x.exists ? h('span', { class: 'small muted' }, 'ノートにあり') : null),
+        x.wrong ? h('div', { class: 'was' }, '前は　', h('s', { class: 'en' }, x.wrong)) : null,
+        x.ja ? h('div', { class: 'sub' }, x.ja) : null,
+        x.note ? h('div', { class: 'sub' }, x.note) : null));
+    })),
+    h('div', { class: 'row' },
+      h('button', { class: 'btn primary', type: 'button', disabled: !nChecked, onclick: saveImport }, 'チェックした ' + nChecked + '件をノートに入れる'),
+      h('button', { class: 'btn ghost', type: 'button', onclick: () => { S.imp.result = null; renderImport(); } }, 'やめる'))));
+}
+async function runImport() {
+  const ta = $('#imp-text'); const text = ta.value.trim();
+  if (S.imp.busy) return;
+  if (text.length < 20) { S.imp.error = 'もう少し長い会話を貼ってください。'; S.imp.result = null; renderImport(); return; }
+  const sample = S.sample || await samplePromise;
+  if (!sample) { S.imp.error = 'Claudeとつながっていません。claude.ai でこのページを開いてください。'; renderImport(); return; }
+  const ctl = new AbortController();
+  S.imp = { busy: true, ctl, result: null, error: '' };
+  renderImport();
+  try {
+    const o = await sample.json(importPrompt(text.slice(0, 50000)), { signal: ctl.signal });
+    const items = (o && Array.isArray(o.items) ? o.items : []).map(cleanItem).filter(Boolean);
+    const seen = new Set();
+    const dedup = items.filter(x => { const k = itemIdFor(x.en); if (seen.has(k)) return false; seen.add(k); return true; });
+    if (!dedup.length) S.imp.error = '拾える表現が見つかりませんでした。英語のやり取りが入っているか確かめてください。';
+    else S.imp.result = { title: o && typeof o.title === 'string' ? o.title.slice(0, 30) : '', raw: text.slice(0, 50000),
+      items: dedup.map(x => Object.assign({}, x, { checked: true, exists: S.itemsById.has(itemIdFor(x.en)) })) };
+  } catch (e) {
+    if (!e || e.code !== 'cancelled') { S.imp.error = errorCopy(e); handleSampleError(e); }
+  } finally {
+    S.imp.busy = false; S.imp.ctl = null;
+    renderImport();
+  }
+}
+function saveImport() {
+  const r = S.imp.result; if (!r) return;
+  const chosen = r.items.filter(x => x.checked);
+  if (!chosen.length) return;
+  const id = genId('m_'), now = Date.now(), title = r.title || '会話';
+  const applied = upsertItems(chosen, { sessionId: id, sceneJa: '取り込み：' + title });
+  const meta = { kind: 'import', title, createdAt: now, updatedAt: now, turns: 0, pickedIds: uniq(applied.map(a => a.id)), firstLine: '' };
+  withStore(st => Promise.all([st.setSession(id, meta), st.setLog(id, { raw: r.raw })]));
+  S.imp.result = null; $('#imp-text').value = '';
+  renderImport();
+  toast(chosen.length + '件 ノートに入れました');
+}
+
+/* ================= shell ================= */
+function renderStatus() {
+  const s = $('#status');
+  s.dataset.mode = S.storeKind;
+  s.textContent = S.storeKind === 'db' ? 'claude.ai に保存' : S.storeKind === 'local' ? 'この端末に保存' : '準備中…';
+  s.title = S.storeKind === 'db' ? 'ノートは claude.ai のあなた専用の場所に保存され、どの端末からでも見られます。'
+    : S.storeKind === 'local' ? 'claude.ai の保存先が使えないため、このブラウザの中だけに保存しています。' : '';
+}
+function renderBadges() {
+  const n = S.itemsLoaded ? dueItems().length : 0;
+  const b = $('#badge-practice');
+  b.hidden = !n; b.textContent = n > 99 ? '99+' : String(n);
+}
+function onItemsChanged() {
+  renderBadges();
+  if (S.view === 'notes') renderNotes();
+  if (S.view === 'practice' && !S.practice) renderPractice();
+  if (S.view === 'talk' && S.panel) renderStart();
+  else if (S.view === 'talk' && !S.past) renderChatBar();
+}
+function onSessionsChanged() {
+  if (!S.threadReady) resumeThread();
+  if (S.view === 'talk' && S.panel) renderRecent();
+  if (S.view === 'notes') renderNotesList();
+}
+function go(view) {
+  if (VIEWS.indexOf(view) < 0) view = 'talk';
+  if (location.hash.slice(1) !== view) { try { location.hash = view; } catch (e) { /* ignore */ } }
+  show(view);
+}
+function show(view) {
+  // 「話す」から離れたら、過去ログと設定の画面は閉じておく（もどったときは会話の続きから）
+  if (view !== 'talk') { S.past = null; S.panel = false; stopSpeech(); }
+  S.view = view;
+  VIEWS.forEach(v => {
+    $('#v-' + v).hidden = v !== view;
+    $('#tab-' + v).setAttribute('aria-selected', String(v === view));
+  });
+  if (view === 'talk') renderTalk();
+  else if (view === 'notes') renderNotes();
+  else if (view === 'practice') renderPractice();
+  else if (view === 'import') renderImport();
+}
+function bind() {
+  $$('.tab').forEach(t => t.addEventListener('click', () => go(t.dataset.view)));
+  window.addEventListener('hashchange', () => { const v = location.hash.slice(1); if (VIEWS.indexOf(v) >= 0 && v !== S.view) show(v); });
+  $('#custom-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const v = $('#custom-scene').value.trim(); if (!v) { $('#custom-scene').focus(); return; }
+    setScene({ key: 'custom', ja: v.length > 24 ? v.slice(0, 24) + '…' : v, prompt: 'A scene I described (it may be in Japanese): ' + v + '. Play whatever role this needs.' });
+    $('#custom-scene').value = '';
+  });
+  $('#seg-level').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.prefs.level = b.dataset.v; if (S.chat) S.chat.level = b.dataset.v; syncPrefsUI(); savePrefs(); });
+  $('#seg-speed').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.prefs.speed = b.dataset.v; syncPrefsUI(); savePrefs(); });
+  $('#about').addEventListener('input', e => { S.prefs.about = e.target.value.slice(0, 600); savePrefs(); });
+  $('#scene-btn').addEventListener('click', () => { S.panel = true; stopSpeech(); renderTalk(); $('#talk-start').scrollTop = 0; });
+  $('#panel-close').addEventListener('click', () => { S.panel = false; renderTalk(); scrollLog(true); focusComposer(); });
+  $('#new-thread').addEventListener('click', startNewThread);
+  $('#today-chip').addEventListener('click', () => go('notes'));
+  $('#speak-toggle').addEventListener('click', () => {
+    S.prefs.autoSpeak = !S.prefs.autoSpeak; savePrefs();
+    if (S.prefs.autoSpeak) primeSpeech(); else stopSpeech();
+    renderChatBar(); toast(S.prefs.autoSpeak ? '返事を自動で読み上げます' : '自動読み上げを止めました');
+  });
+  // 送るボタンを押してもキーボードが閉じないように、入力欄からフォーカスを外さない
+  $('#send').addEventListener('mousedown', e => e.preventDefault());
+  const ta = $('#msg');
+  $('#composer').addEventListener('submit', e => { e.preventDefault(); submitMsg(); });
+  ta.addEventListener('input', () => autosize(ta));
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey && !coarse && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); submitMsg(); }
+  });
+  $('#stop').addEventListener('click', () => { if (S.ctl) S.ctl.abort(); });
+  $('#notes-q').addEventListener('input', e => { S.noteQuery = e.target.value; renderNotesList(); });
+  $('#imp-prompt').value = IMPORT_HELP;
+  $('#imp-copy').addEventListener('click', () => copyText(IMPORT_HELP, $('#imp-prompt')));
+  $('#imp-text').addEventListener('input', () => { if (S.imp.error) S.imp.error = ''; renderImport(); });
+  $('#imp-go').addEventListener('click', runImport);
+  $('#imp-stop').addEventListener('click', () => { if (S.imp.ctl) S.imp.ctl.abort(); });
+  if (canSpeak) { try { speechSynthesis.getVoices(); } catch (e) { /* ignore */ } }
+}
+function boot(data) {
+  data = data || {};
+  try { const p = JSON.parse(localStorage.getItem(PREF_KEY) || 'null'); if (p) applyPrefs(p); } catch (e) { /* ignore */ }
+  bind();
+  if (data.chat && data.chat.id && Array.isArray(data.chat.messages)) S.chat = data.chat;
+  const fromHash = location.hash.slice(1);
+  show(VIEWS.indexOf(data.view) >= 0 ? data.view : VIEWS.indexOf(fromHash) >= 0 ? fromHash : 'talk');
+  renderStatus();
+  samplePromise = use('sample').then(s => {
+    S.sample = s || null;
+    if (S.sampleState === 'pending') S.sampleState = s ? 'ready' : 'none';
+    if (S.view === 'talk') renderTalk();
+    if (S.view === 'import') renderImport();
+    if (S.view === 'practice' && S.practice) renderPractice();
+    return S.sample;
+  });
+  initStore().catch(e => { console.warn(e); attachStore(new LocalStore()); });
+  try {
+    const hot = window.claude && window.claude.hot;
+    if (hot && typeof hot.snapshot === 'function') hot.snapshot(() => ({ view: S.view, chat: S.chat && !S.busy ? { id: S.chat.id, sceneKey: S.chat.sceneKey, sceneJa: S.chat.sceneJa, scenePrompt: S.chat.scenePrompt, level: S.chat.level, messages: cleanMsgs(S.chat.messages), pickedIds: S.chat.pickedIds, createdAt: S.chat.createdAt } : null }));
+  } catch (e) { /* ignore */ }
+}
+
+const hot = window.claude && window.claude.hot;
+if (hot && typeof hot.ready === 'function') hot.ready(boot);
+else boot((hot && hot.data) || {});
+})();
+</script>

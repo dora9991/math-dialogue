@@ -19,6 +19,7 @@
   --font-ui: "DotGothic16", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
 }
 html, body { height: 100%; }
+html { overscroll-behavior: none; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   margin: 0;
   background: linear-gradient(180deg, #b8dcff 0%, var(--bg) 40%, #eaf6ff 100%) fixed, var(--bg);
@@ -28,6 +29,15 @@ body {
   line-height: 1.5;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+}
+/* スマホ：ページを「ゲーム機の画面」のように固定する。
+   ピンチ／ダブルタップの拡大、ドラッグでのスクロール、ゴムのような跳ね返り、引っぱって更新を、すべて止める。
+   （.has-touch は input.js が、タッチできる端末でだけ付ける。パソコンは今までどおり） */
+html.has-touch, body.has-touch { touch-action: none; }
+html.has-touch { padding: 0; overflow: hidden; }   /* ノッチ分の余白を html に足すと、ページが画面より長くなって動いてしまう */
+body.has-touch {
+  position: fixed; left: 0; right: 0; width: 100%; height: auto; overflow: hidden;
+  top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px);   /* ノッチやホームバーにかぶらない */
 }
 #app {
   box-sizing: border-box;

@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>数直線と負の数</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 正の数・負の数 第2時：数直線の上に、負の数の場所をつくろう（ikkan の lesson_seifu_02 と同じ流れ）。
+   0 の右の目もり 1、2、3、… が、0 を中心に折り返して左へとび、−1、−2、−3、… の場所ができる。点 A〜D を読む。
+   右へ正の方向・左へ負の方向。例題は4本の数直線に点が落ちて、大小を不等号で。考えようは −1 と 0 の間の目もりを細かくする道具。
+   数値は ikkan のまま（A −5・B −2.5・C ＋1.5・D ＋4、例題 (1)〜(4)、チャレンジ A −7・B ＋5）。答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, POS = C.blue, NEG = C.pink, OUT = 'rgba(20,40,30,.9)';
+  function sg(v) { return v > 0 ? '＋' + S(v) : S(v); }
+  function sc(v) { return v > 0 ? POS : v < 0 ? NEG : C.yel; }
+  /* ---- 数直線（よこ。右に矢印）。o：s、lab、half、a、ta(v)→目もりの濃さ、la(v)→字の濃さ、lc(v)→字の色、fmt ---- */
+  function NL(D, x0, x1, y, min, max, o) {
+    o = o || {}; var s = o.s || CH.fs(D, .8), u = (x1 - x0) / (max - min), X = function (v) { return x0 + (v - min) * u; }, a = o.a == null ? 1 : o.a;
+    var lab = o.lab || [1, 2, 5, 10, 20, 50].filter(function (q) { return q * u >= s * 2.1; })[0] || 100, st = u < 6 ? lab : 1;
+    CH.arrow(D, x0 - s * .5, y, x1 + s * 1.1, y, { w: 2, head: 9, a: a });
+    for (var v = Math.ceil(min / st) * st; v <= max + 1e-9; v += st) {
+      var isL = v % lab === 0, h = v === 0 ? 9 : isL ? 7 : 4, ta = a * (o.ta ? o.ta(v) : 1), la = ta * (o.la ? o.la(v) : 1);
+      if (ta > 0) CH.line(D, X(v), y - h, X(v), y + h, { w: v === 0 ? 2.4 : 1.5, a: ta });
+      if (isL && la > 0) CH.text(D, X(v), y + s * 1.25, o.fmt ? o.fmt(v) : S(v), { size: s, num: true, a: la, col: o.lc ? o.lc(v) : C.chalk });
+      if (o.half && v < max) CH.line(D, X(v + .5), y - 3.5, X(v + .5), y + 3.5, { w: 1.2, a: a * .8 });
+    }
+    return { X: X, y: y, s: s, u: u, x0: x0, x1: x1 };
+  }
+  function pt(D, L, v, col, lab, o) {
+    o = o || {}; CH.circle(D, L.X(v), L.y, o.r || L.s * .36, { fill: col, stroke: 'rgba(20,30,24,.8)', sw: 1.2, a: o.a });
+    if (lab) CH.text(D, L.X(v), L.y - L.s * (o.up || 1.15), lab, { col: o.tc || col, size: o.size || L.s, a: o.a, outline: OUT });
+  }
+
+  /* ---- 数と検算 ---- */
+  var PTS = [['A', -5], ['B', -2.5], ['C', 1.5], ['D', 4]];
+  CH.check(CH.near((-3 + -2) / 2, -2.5) && CH.near((1 + 2) / 2, 1.5), '今日の問い（B・C は目もりのまん中）');
+  var EX = [[3, -5], [-2, -6], [-1.5, -2.5], [2, -4, -3]];
+  function ineq(a) { return a.slice().sort(function (p, q) { return p - q; }).map(sg).join('＜'); }
+  var EXA = EX.map(ineq);
+  CH.check(EXA.join('/') === '−5＜＋3/−6＜−2/−2.5＜−1.5/−4＜−3＜＋2', '例題の不等号');
+  var A0 = -7, B0 = 5, AB = (0 - A0) + B0;
+  CH.check(AB === 12 && A0 + AB / 2 === -1 && (A0 + B0) / 2 === -1 && A0 + AB / 3 === -3 && B0 - AB / 3 === 1, 'チャレンジ');
+
+  /* ---- 今日の問い：負の数の目もりが、0 で折り返してできる（k：答えの進み） ---- */
+  function fold(D, k) {
+    var R = CH.box(D, { l: .07, r: .08, t: .1, b: .1 }), s = CH.fs(D), y = R.y0 + R.h * .62;
+    var L = NL(D, R.x0, R.x1, y, -6, 6, { half: true, s: CH.fs(D, .9), la: function (v) { return v >= 0 ? 1 : CH.smooth(.12 + (-v - 1) * .1, .22 + (-v - 1) * .1, k); }, lc: function (v) { return v < 0 ? NEG : C.chalk; } });
+    for (var i = 1; i <= 6; i++) {
+      var t0 = .02 + (i - 1) * .1, q = (k - t0) / .2;
+      if (q > 0 && q < 1) {
+        var e = CH.ease(q), x = CH.lerp(L.X(i), L.X(-i), e), yy = y + L.s * 1.25 - Math.sin(e * Math.PI) * L.s * (2 + i * .5);
+        CH.text(D, x, yy, e < .5 ? String(i) : '−' + i, { size: L.s, num: true, col: e < .5 ? C.chalk : NEG, outline: OUT });
+      }
+    }
+    if (k > 0 && k < .8) { var a0 = CH.smooth(0, .08, k) * (1 - CH.smooth(.7, .8, k)); CH.circle(D, L.X(0), y, s * .5, { stroke: C.yel, sw: 2.4, a: a0 }); }
+    var ka = CH.smooth(.75, .95, k);
+    PTS.forEach(function (p, j) {
+      pt(D, L, p[1], sc(p[1]), p[0], { up: 1.3, size: s * 1.05 });
+      if (ka > 0) CH.text(D, L.X(p[1]), y - s * 2.6, sg(p[1]), { col: sc(p[1]), size: s * 1.1, a: ka, w: 700, outline: OUT });
+    });
+    if (k > 0) CH.text(D, R.cx, y + s * 3.2, '0 から左へ 1、2、3、… と数えて − をつける', { col: NEG, size: CH.fitSize(D, '0 から左へ 1、2、3、… と数えて − をつける', R.w * .9, s * .85), a: CH.smooth(.65, .8, k) * 1 });
+  }
+
+  /* ---- ことば：原点・正の方向・負の方向 ---- */
+  function dirs(D, k) {
+    var R = CH.box(D, { l: .07, r: .08, t: .1, b: .1 }), s = CH.fs(D), y = R.y0 + R.h * .5, L = NL(D, R.x0, R.x1, y, -6, 6, { s: CH.fs(D, .9), lc: function (v) { return v < 0 ? NEG : v > 0 ? POS : C.yel; } });
+    var k0 = CH.smooth(0, .15, k), k1 = CH.smooth(.15, .45, k), k2 = CH.smooth(.45, .75, k), k3 = CH.smooth(.75, .95, k), ay = y - s * 2.2;
+    CH.circle(D, L.X(0), y, s * .35, { fill: C.yel, a: k0 });
+    CH.text(D, L.X(0), y + s * 2.6, '原点 O', { col: C.yel, size: s * .95, a: k0, w: 700 });
+    if (k1 > 0) { CH.arrow(D, L.X(0), ay, CH.lerp(L.X(0), L.X(6), k1), ay, { col: POS, w: 4, head: 14 }); CH.text(D, L.X(3), ay - s * 1, '正の方向（右）', { col: POS, a: CH.smooth(.3, .45, k), size: CH.fitSize(D, '正の方向（右）', L.X(6) - L.X(0), s) }); }
+    if (k2 > 0) { CH.arrow(D, L.X(0), ay, CH.lerp(L.X(0), L.X(-6), k2), ay, { col: NEG, w: 4, head: 14 }); CH.text(D, L.X(-3), ay - s * 1, '負の方向（左）', { col: NEG, a: CH.smooth(.6, .75, k), size: CH.fitSize(D, '負の方向（左）', L.X(0) - L.X(-6), s) }); }
+    if (k3 > 0) {
+      var gy = y + s * 4.4, g = D.ctx, gr = g.createLinearGradient(L.X(-6), 0, L.X(6), 0);
+      gr.addColorStop(0, 'rgba(255,157,178,.15)'); gr.addColorStop(.5, 'rgba(255,226,122,.35)'); gr.addColorStop(1, 'rgba(154,216,255,.7)');
+      g.save(); g.globalAlpha = D.ga * k3; g.fillStyle = gr; g.beginPath(); g.moveTo(L.X(-6), gy); g.lineTo(L.X(6), gy - s * .7); g.lineTo(L.X(6), gy + s * .7); g.closePath(); g.fill(); g.restore();
+      CH.text(D, L.X(-6), gy + s * 1.5, '小さい', { col: NEG, size: s * .85, a: k3, align: 'left' });
+      CH.text(D, L.X(6), gy + s * 1.5, '大きい', { col: POS, size: s * .85, a: k3, align: 'right' });
+      CH.text(D, L.X(0), gy + s * 1.5, '右にある数ほど大きい', { col: C.yel, size: CH.fitSize(D, '右にある数ほど大きい', R.w * .45, s * .85), a: k3 });
+    }
+  }
+
+  /* ---- 例題：4本の数直線 ---- */
+  function exRows(D, k) {
+    var R = CH.box(D, { l: .05, r: .07, t: .05, b: .06 }), rs = CH.rows(R, 4, .1), s = CH.fs(D, .9);
+    rs.forEach(function (r, i) {
+      var nums = EX[i], ki = CH.smooth(i * .22, i * .22 + .12, k), ka = CH.smooth(i * .22 + .1, i * .22 + .2, k), ly = r.y0 + s * .55;
+      var L = NL(D, r.x0 + s * .4, r.x1 - s * .4, r.y1 - s * 1.3, -7, 5, { s: CH.fs(D, .72), half: i === 2, lc: function (v) { return v < 0 ? 'rgba(255,157,178,.9)' : C.chalk; } });
+      CH.text(D, r.x0, ly, '(' + (i + 1) + ')　' + nums.map(sg).join('、'), { align: 'left', size: s });
+      nums.forEach(function (v) { if (ki > 0) pt(D, L, v, sc(v), sg(v), { a: ki, size: s * .85, up: 1.1 }); });
+      if (ka > 0) CH.text(D, r.x1, ly, EXA[i], { align: 'right', col: C.yel, size: s * 1.05, a: ka, w: 700 });
+    });
+  }
+
+  /* ---- 考えよう：−1 と 0 の間の目もりを細かく ---- */
+  var DIV = [1, 2, 10, 100];
+  function zoom(D, n) {
+    var R = CH.box(D, { l: .06, r: .08, t: .08, b: .06 }), s = CH.fs(D), d = DIV[n];
+    var y1 = R.y0 + R.h * .25, L = NL(D, R.x0, R.x1, y1, -3, 3, { s: CH.fs(D, .8), lc: function (v) { return v < 0 ? NEG : C.chalk; } });
+    CH.fillRect(D, L.X(-1), y1 - s * .7, L.X(0), y1 + s * .3, { fill: 'rgba(255,226,122,.18)', stroke: C.yel, sw: 1.8 });
+    var y2 = R.y0 + R.h * .7, x0 = R.x0 + s * .5, x1 = R.x1 - s * .5, X = function (v) { return x0 + (v + 1) * (x1 - x0); };
+    CH.line(D, L.X(-1), y1 + s * 1.9, x0, y2 - s * 1.2, { col: C.yel, dash: [5, 5], w: 1.4 }); CH.line(D, L.X(0), y1 + s * 1.9, x1, y2 - s * 1.2, { col: C.yel, dash: [5, 5], w: 1.4 });
+    CH.line(D, x0 - s * .4, y2, x1 + s * .4, y2, { w: 2.4, col: C.yel });
+    for (var i = 0; i <= d; i++) {
+      var v = -1 + i / d, x = X(v), big = i === 0 || i === d, mid = d === 100 && i % 10 === 0, h = big ? 12 : mid ? 9 : d === 100 ? 4 : 8;
+      CH.line(D, x, y2 - h, x, y2 + h, { w: big ? 2.6 : 1.4 });
+      var lab = big || (d === 2) || (d === 10) || mid;
+      if (lab) { var txt = big ? S(v) : S(Math.round(v * 100) / 100), sz = CH.fitSize(D, '−0.5', (x1 - x0) / Math.min(d, 10) * .85, CH.fs(D, big ? .95 : .78), { num: true }); CH.text(D, x, y2 + s * 1.3 + (big ? 0 : 0), txt, { size: big ? CH.fs(D, .95) : sz, num: true, col: big ? C.yel : 'rgba(255,157,178,.95)' }); }
+    }
+    CH.text(D, R.cx, y2 - s * 2.2, '−1 と 0 の間を 大きくすると', { col: C.yel, size: CH.fitSize(D, '−1 と 0 の間を 大きくすると', R.w * .8, s * .85) });
+  }
+
+  /* ---- チャレンジ ---- */
+  function chal(D, k) {
+    var R = CH.box(D, { l: .06, r: .08, t: .08, b: .1 }), s = CH.fs(D), y = R.y0 + R.h * .62, L = NL(D, R.x0, R.x1, y, -8, 6, { s: CH.fs(D, .85), lc: function (v) { return v < 0 ? 'rgba(255,157,178,.9)' : C.chalk; } });
+    pt(D, L, A0, NEG, 'A', { up: 1.2 }); pt(D, L, B0, POS, 'B', { up: 1.2 });
+    var k1 = CH.smooth(0, .3, k), ay = y - s * 2.6;
+    if (k1 > 0) {
+      CH.arrow(D, L.X(A0), ay, CH.lerp(L.X(A0), L.X(0), Math.min(1, k1 * 2)), ay, { col: NEG, w: 3 });
+      if (k1 > .5) CH.arrow(D, L.X(0), ay, CH.lerp(L.X(0), L.X(B0), (k1 - .5) * 2), ay, { col: POS, w: 3 });
+      CH.text(D, L.X(A0 / 2), ay - s * .8, '7', { col: NEG, a: CH.smooth(.1, .2, k) }); CH.text(D, L.X(B0 / 2), ay - s * .8, '5', { col: POS, a: CH.smooth(.25, .3, k) });
+      CH.text(D, L.X((A0 + B0) / 2), ay - s * 2, 'AB の長さ　7＋5＝12', { col: C.yel, a: CH.smooth(.28, .36, k), size: s * .95 });
+    }
+    var k2 = CH.smooth(.4, .62, k), by = y + s * 3;
+    if (k2 > 0) {
+      CH.arrow(D, L.X(A0), by, CH.lerp(L.X(A0), L.X(-1), k2), by, { col: C.green, w: 3 });
+      CH.text(D, L.X(-4), by + s * .9, '12÷2＝6', { col: C.green, size: s * .85, a: k2 });
+      if (k2 >= 1) { pt(D, L, -1, C.green, '', {}); CH.text(D, L.X(-1), y - s * 1.2, '① −1', { col: C.green, w: 700, outline: OUT }); }
+    }
+    var k3 = CH.smooth(.68, .92, k), cy = y + s * 5;
+    if (k3 > 0) {
+      [0, 1, 2].forEach(function (j) { var a = A0 + j * 4, b = a + 4, q = CH.clamp(k3 * 3 - j, 0, 1); if (q > 0) { CH.arrow(D, L.X(a), cy, CH.lerp(L.X(a), L.X(b), q), cy, { col: C.orange, w: 3 }); CH.text(D, L.X(a + 2), cy + s * .9, '4', { col: C.orange, size: s * .85, a: q }); } });
+      if (k3 >= 1) { pt(D, L, -3, C.orange, '', {}); pt(D, L, 1, C.orange, '', { a: .6 }); CH.text(D, L.X(-3), y - s * 1.2, '② −3', { col: C.orange, w: 700, outline: OUT }); }
+    }
+  }
+
+  K3.run({
+    no: '第2時', title: '数直線の上に、負の数の場所をつくろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '01.html', label: '◀ 第1時' }, { href: '03.html', label: '第3時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '数直線の上の点', q: '点 A〜D は、どんな数を表しているだろう。0 より左にある点の数は、どう読めばよいか、考えよう。',
+        notes: ['① 自分の考え（3分）　A〜D の数と、読み方のくふうを書こう。', '② ペアの考え（3分）　自分とちがう読み方・気づきは？'],
+        draw: function (D) { fold(D, 0); } },
+      { tag: '今日の問い', q: '点 A〜D の表す数は？', a: 'A −5、B −2.5、C ＋1.5、D ＋4', sub: '0 の右の 1、2、3、… を、0 で折り返すと −1、−2、−3、…。B は −2 と −3 のまん中、C は 1 と 2 のまん中', dur: 6,
+        b: { t: 'A <b>−5</b>　B <b>−2.5</b>　C <b>＋1.5</b>　D <b>＋4</b>（0 より左は − をつける）', col: C.yel },
+        draw: function (D) { fold(D, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: '数直線で、0 を表す点を何という？ 右の方向、左の方向は？', a: '原点。右が正の方向、左が負の方向', sub: '数直線では、右にある数ほど大きい。（負の数）＜ 0 ＜（正の数）', dur: 4,
+        b: [{ t: '0 を表す点 … <b>原点</b>　右 … <b>正の方向</b>　左 … <b>負の方向</b>', col: C.green }, { t: '<b>右</b>にある数ほど大きい　（負の数）＜ 0 ＜（正の数）', col: C.green }],
+        draw: function (D) { dirs(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題　大小を不等号で', q: '大小を、不等号を使って表そう。数直線に点をかいて考えよう。(1) ＋3、−5　(2) −2、−6　(3) −1.5、−2.5　(4) ＋2、−4、−3',
+        a: '(1) −5＜＋3　(2) −6＜−2　(3) −2.5＜−1.5　(4) −4＜−3＜＋2', sub: '数直線では、右にある数ほど大きい。−6 は −2 より左にあるから −6＜−2', dur: 5,
+        b: { t: '(1) −5＜＋3　(2) −6＜−2　(3) −2.5＜−1.5　(4) −4＜−3＜＋2', col: C.pink },
+        draw: function (D) { exRows(D, D.ph ? D.t : 0); } },
+      { tag: '考えよう', bh: '考えよう', q: '数直線で、−1 と 0 の間には、数があるだろうか。あれば、いくつ見つかるだろう。',
+        notes: ['見つけた数を書こう。', '−3 と −2 の間など、ほかの2つの数の間でも確かめて、気づいたことを書こう。', 'スライダーで、−1 と 0 の間の目もりを細かくできます。'],
+        sliders: [{ key: 'n', label: '目もり', min: 0, max: 3, step: 1, val: 0, fmt: function (x) { return ['1 ごと', '0.5 ごと', '0.1 ごと', '0.01 ごと'][x]; } }],
+        draw: function (D) { zoom(D, D.V.n); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '数直線上に、−7 を表す点 A と、＋5 を表す点 B がある。① 線分 AB のまん中の点が表す数は？ ② AB を3等分する点のうち、A に近いほうの点が表す数は？',
+        a: '① −1　② −3', sub: 'AB の長さは、A から 0 まで 7、0 から B まで 5 で 12。① A から 12÷2＝6 進んで −1　② A から 12÷3＝4 進んで −3', dur: 6,
+        b: { t: 'AB＝7＋5＝12 → ① A から 6 進んで <b>−1</b>　② A から 4 進んで <b>−3</b>', col: C.orange },
+        draw: function (D) { chal(D, D.ph ? D.t : 0); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

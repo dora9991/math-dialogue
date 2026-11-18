@@ -1,0 +1,6 @@
+{
+  "name": "conference-editor",
+  "private": true,
+  "type": "commonjs",
+  "description": "大会サイトの編集ツール（ビルド不要の独立アプリ）。ルートが type: module なので、この中だけ CommonJS に戻して node の検査から js/*.js を読めるようにしている。"
+}

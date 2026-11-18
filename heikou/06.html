@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>多角形の外角の和</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="js/geo.js"></script>
+<script>
+/* 平行と合同 第6時：多角形の外角の和は、何度になるだろう（ikkan の lesson_heikou_new_06 と同じ流れ）。
+   図の形・数値は ikkan のワークシートと同じ（図1 五角形・図2 六角形の内角、例題 正十二角形・外角 40°、演習（3）図1 の ∠x＝55°、
+   チャレンジ 正五角形の辺をのばした交点 ∠x＝36°）。多角形は内角と辺の長さから座標を計算して描き、外角の和は座標から測り直して確かめる。 */
+(function () {
+  /* ---- このページの図の道具（角の印を、向きで描く） ---- */
+  var C = CH.C, RD = Math.PI / 180, OUT = 'rgba(20,40,30,.9)', NM = 'ABCDEFGHIJKL';
+  function nd(a) { return ((a % 360) + 360) % 360; }
+  function dir(p, q) { return Math.atan2(q[1] - p[1], q[0] - p[0]) / RD; }
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  /* 角の印：頂点 V（座標）で、向き a1 から a2 まで左まわり（度）。o：r（px）、col、fill、a、w */
+  function wedge(F, V, a1, a2, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(V), r = o.r || F.s * 1.1, col = o.col || C.chalk, d = nd(a2 - a1);
+    if (o.a === 0) return;
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a);
+    if (o.fill) { g.fillStyle = hexA(col, o.fill === true ? .35 : o.fill); g.beginPath(); g.moveTo(p[0], p[1]); g.arc(p[0], p[1], r, -a1 * RD, -(a1 + d) * RD, true); g.closePath(); g.fill(); }
+    g.strokeStyle = col; g.lineWidth = o.w || 2.4; g.beginPath(); g.arc(p[0], p[1], r, -a1 * RD, -(a1 + d) * RD, true); g.stroke(); g.restore();
+  }
+  function lab(F, p, deg, k, t, o) {
+    o = o || {}; var q = F.X(p), x = q[0] + Math.cos(deg * RD) * F.s * k, y = q[1] - Math.sin(deg * RD) * F.s * k, s = F.s * (o.size || .95);
+    if (o.t2 != null) { CH.text(F.D, x, y - s * .5, t, { col: o.col, size: s, a: o.a, outline: OUT }); CH.text(F.D, x, y + s * .55, o.t2, { col: o.col2 || o.col, size: s * .9, a: o.a, outline: OUT, num: true }); }
+    else CH.text(F.D, x, y, t, { col: o.col, size: s, a: o.a, outline: OUT, num: o.num });
+  }
+  /* 図の上の1行（はばに入らなければ、字を小さくする） */
+  function top(D, s, col, a, row) {
+    var B = CH.box(D, { t: 0, l: .02, r: .02 }), g = D.ctx, f0 = CH.fs(D, 1.05), fs = f0, w;
+    g.save(); g.font = '600 ' + fs + 'px "Klee One", sans-serif'; w = g.measureText(s).width; g.restore();
+    if (w > B.w) fs *= B.w / w;
+    CH.text(D, B.cx, B.y0 + f0 * (.75 + (row || 0) * 1.3), s, { col: col || C.yel, a: a, size: fs, outline: OUT });
+  }
+  function textIn(D, R, x, y, s, o) { var g = D.ctx, fs = o.size, w; g.save(); g.font = '600 ' + fs + 'px "Klee One", sans-serif'; w = g.measureText(s).width; g.restore(); if (w > R.w * .96) fs *= R.w * .96 / w; CH.text(D, x, y, s, Object.assign({}, o, { size: fs, outline: OUT })); }
+
+  /* ---- 凸多角形（左まわり）：内角 ints と辺の長さ lens（2つだけ null）、辺 AB の向き d0 から、頂点の座標を出す ---- */
+  function polyInt(ints, lens, d0) {
+    var n = ints.length, d = [d0], k;
+    for (k = 1; k < n; k++) d.push(d[k - 1] + 180 - ints[k]);
+    var u = d.map(function (a) { return GE.polar([0, 0], 1, a); }), un = [], sx = 0, sy = 0;
+    lens.forEach(function (l, i) { if (l == null) un.push(i); else { sx += l * u[i][0]; sy += l * u[i][1]; } });
+    var i = un[0], j = un[1], det = u[i][0] * u[j][1] - u[i][1] * u[j][0], L = lens.slice();
+    L[i] = (-sx * u[j][1] + sy * u[j][0]) / det; L[j] = (-u[i][0] * sy + u[i][1] * sx) / det;
+    var P = {}, p = [0, 0]; for (k = 0; k < n; k++) { P[NM[k]] = p; p = [p[0] + L[k] * u[k][0], p[1] + L[k] * u[k][1]]; }
+    P.n = n; return P;
+  }
+  function reg(n, R, a0) { var P = { n: n }; a0 = a0 == null ? 270 - 180 / n : a0; for (var k = 0; k < n; k++) P[NM[k]] = GE.polar([0, 0], R, a0 + 360 * k / n); return P; }
+  function keys(P) { return NM.slice(0, P.n).split(''); }
+  function vp(P, k) { return P[NM[((k % P.n) + P.n) % P.n]]; }
+  function cen(P) { var c = [0, 0]; keys(P).forEach(function (k) { c[0] += P[k][0] / P.n; c[1] += P[k][1] / P.n; }); return c; }
+  /* 頂点 k の内角の向き・外角の向き（入ってくる辺の向き → 出ていく辺の向き） */
+  function ispan(P, k) { var V = vp(P, k); return [dir(V, vp(P, k + 1)), dir(V, vp(P, k - 1))]; }
+  function espan(P, k) { return [dir(vp(P, k - 1), vp(P, k)), dir(vp(P, k), vp(P, k + 1))]; }
+  function eval_(P, k) { var s = espan(P, k); return nd(s[1] - s[0]); }
+  function ename(P, k, X) { return X + NM[k] + NM[(k + 1) % P.n]; }   // 外角 ∠X（延長上の点）V（頂点）次の頂点
+  function iname(P, k) { return NM[(k - 1 + P.n) % P.n] + NM[k] + NM[(k + 1) % P.n]; }
+  function convex(P) { for (var k = 0; k < P.n; k++) { var a = vp(P, k - 1), b = vp(P, k), c = vp(P, k + 1); if ((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]) <= 0) return false; } return true; }
+  /* 外角の和を、座標から（延長上の点を置いて GE.ang で測る） */
+  function esum(P) { var s = 0; for (var k = 0; k < P.n; k++) { var Q = Object.assign({}, P); Q.X = GE.add(vp(P, k), GE.sub(vp(P, k), vp(P, k - 1))); s += GE.ang(Q, ename(P, k, 'X')); } return s; }
+  function iLab(F, P, k, t, o) { o = o || {}; var s = ispan(P, k), w = nd(s[1] - s[0]); lab(F, vp(P, k), s[0] + w / 2, (o.k || 1) * (w < 80 ? 2.5 : 2.1), t, { col: o.col || C.chalk, size: o.size || .8, a: o.a }); }
+  function outline(F, P, o) { o = o || {}; GE.poly(F, NM.slice(0, P.n), { col: o.col || C.blue, fa: o.fa == null ? .1 : o.fa, stroke: C.chalk, sw: 2.6, a: o.a }); }
+  var EC = [C.yel, C.pink, C.green, C.blue, C.orange, C.lav, C.yel, C.pink, C.green, C.blue, C.orange, C.lav];
+  /* 外角を描く：延長の線（長さ L）、扇形、字。o.s：縮める割合（中心 c に向かって） */
+  function extAll(F, P, o) {
+    o = o || {}; var c = cen(P), sc = o.sc == null ? 1 : o.sc, al = o.a == null ? 1 : o.a;
+    function V(k) { return GE.lerpP(c, vp(P, k), sc); }
+    for (var k = 0; k < P.n; k++) {
+      var s = espan(P, k), v = V(k), w = nd(s[1] - s[0]);
+      if (o.line !== false) GE.seg(F, [v, GE.add(v, scale(GE.sub(vp(P, k), vp(P, k - 1)), (o.L || 1.3) * sc / GE.len(P, [vp(P, k), vp(P, k - 1)])))], { w: 2, dash: [6, 5], a: al * .8 });
+      wedge(F, v, s[0], s[1], { col: EC[k], fill: .4, r: o.r || F.s * 1.5, a: al * (o.wa ? o.wa(k) : 1) });
+      if (o.lab) { var t = o.lab(k); if (t) lab(F, v, s[0] + w / 2, (o.lk || 2.6) + (w < 50 ? .5 : 0), t, { col: EC[k], size: .85, a: al * (o.la ? o.la(k) : 1) }); }
+    }
+  }
+  function scale(v, k) { return [v[0] * k, v[1] * k]; }
+  function fitP(D, R, P, pad, extra) { var Q = Object.assign({}, P); if (extra) Object.assign(Q, extra); return GE.fit(D, R, Q, { keys: keys(P).concat(extra ? Object.keys(extra) : []), pad: pad == null ? .2 : pad }); }
+  var KN = ['', '', '', '三角形', '四角形', '五角形', '六角形', '七角形', '八角形', '九角形', '十角形', '十一角形', '十二角形'];
+
+  /* ---- 今日の問い：図1 五角形（内角 100°・125°・95°・115°・105°）、図2 六角形（130°・110°・125°・115°・120°・120°） ---- */
+  var I5 = [100, 125, 95, 115, 105], I6 = [130, 110, 125, 115, 120, 120];
+  var P5 = polyInt(I5, [3.2, 3.4, 3.0, null, null], 0), P6 = polyInt(I6, [3.0, 3.0, 2.8, 2.8, null, null], 0);
+  [[P5, I5], [P6, I6]].forEach(function (z) {
+    var P = z[0], ok = convex(P); z[1].forEach(function (v, k) { ok = ok && Math.abs(GE.ang(P, iname(P, k)) - v) < 1e-6 && Math.abs(eval_(P, k) - (180 - v)) < 1e-6; });
+    CH.check(ok && Math.abs(esum(P) - 360) < 1e-6, KN[P.n] + 'の外角（座標から）');
+  });
+  CH.check([80, 55, 85, 65, 75].join() === I5.map(function (v) { return 180 - v; }).join() && 80 + 55 + 85 + 65 + 75 === 360 && 50 + 70 + 55 + 65 + 60 + 60 === 360, '今日の問いの式');
+  /* ---- 例題：正十二角形の外角 30°・内角 150°、外角 40° → 正九角形 ---- */
+  var R12 = reg(12, 3), R9 = reg(9, 3);
+  CH.check(Math.abs(eval_(R12, 0) - 30) < 1e-6 && Math.abs(GE.ang(R12, iname(R12, 0)) - 150) < 1e-6 && Math.abs(eval_(R9, 0) - 40) < 1e-6 && 360 / 40 === 9, '例題');
+  /* ---- 例題2（演習（3）図1）：五角形の外角 ∠x、75°、65°、80°、85° → ∠x＝55° ---- */
+  var Q5 = polyInt([125, 105, 115, 100, 95], [3.2, 3.2, 3.0, null, null], 0);
+  CH.check(convex(Q5) && [55, 75, 65, 80, 85].every(function (v, k) { return Math.abs(eval_(Q5, k) - v) < 1e-6; }) && 360 - (75 + 65 + 80 + 85) === 55, '例題2');
+  /* ---- チャレンジ：正五角形 ABCDE、BC と ED を C・D の先へのばした交点 F → ∠CFD＝36° ---- */
+  var PC = reg(5, 3, 90); PC.F = GE.meet(PC.B, PC.C, PC.E, PC.D);
+  GE.verify(PC, '∠FCD＝∠FDC＝72°、∠CFD＝36°、∠BCD＝108°、∠FCD＋∠BCD＝180°', null, 'チャレンジ');
+  CH.check(360 / 5 === 72 && 180 - 72 - 72 === 36, 'チャレンジの式');
+
+  /* 歩く人：u（0〜1）で、A から出発して1周。辺を歩く → 頂点で外角だけ向きを変える、をくり返す */
+  function walk(P, u) {
+    var n = P.n, x = Math.min(u, .99999) * 2 * n, i = Math.floor(x), f = CH.ease(x - i), e = Math.floor(i / 2), d0 = dir(vp(P, e), vp(P, e + 1));
+    if (i % 2 === 0) return { pos: GE.lerpP(vp(P, e), vp(P, e + 1), f), head: d0, turns: e, part: 0 };
+    return { pos: vp(P, e + 1), head: d0 + eval_(P, e + 1) * f, turns: e, part: f, at: e + 1 };
+  }
+  function walker(F, w, col) {
+    var p = F.X(w.pos), L = F.s * 1.6, h = w.head * RD, dx = Math.cos(h) * L, dy = -Math.sin(h) * L;
+    CH.arrow(F.D, p[0] - dx * .2, p[1] - dy * .2, p[0] + dx, p[1] + dy, { col: col || C.yel, w: 4, head: F.s * .6 });
+    CH.circle(F.D, p[0], p[1], F.s * .3, { fill: col || C.yel, stroke: 'rgba(20,30,24,.8)', sw: 1.4 });
+  }
+  function walkDraw(F, P, u, o) {
+    o = o || {}; var w = walk(P, u), n = P.n;
+    for (var k = 0; k < n; k++) { var e = k + 1, V = vp(P, e), s = espan(P, e), done = k < w.turns || (u >= .99999), cur = k === w.turns && w.part > 0;
+      if (done || cur) { GE.seg(F, [V, GE.add(V, scale(GE.sub(V, vp(P, e - 1)), 1.3 / GE.len(P, [V, vp(P, e - 1)])))], { w: 2, dash: [6, 5], a: .8 }); wedge(F, V, s[0], done ? s[1] : s[0] + eval_(P, e) * w.part, { col: EC[e % n], fill: .4, r: F.s * 1.5 }); } }
+    var path = [P.A]; for (var j = 1; j <= w.turns; j++) path.push(vp(P, j)); path.push(w.pos);
+    for (var q = 0; q + 1 < path.length; q++) GE.seg(F, [path[q], path[q + 1]], { col: C.yel, w: 4, a: .55 });
+    walker(F, w);
+    return w;
+  }
+
+  K3.run({
+    no: '第6時', title: '多角形の外角の和は、何度になるだろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '05.html', label: '◀ 第5時' }, { href: '07.html', label: '第7時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '多角形の外角の和', q: '図1の五角形、図2の六角形で、各頂点の外角 a〜e、a〜f を求めて、外角の和を求めよう。外角の和について、気づいたことは？',
+        notes: ['① 自分の考え（3分）　外角を求めて、たそう。', '② ペアの考え（3分）'],
+        draw: function (D) { two(D, 0, false); } },
+      { tag: '今日の問い', q: '外角の和は？ 気づいたことは？', a: 'どちらも 360°', sub: '外角＝180°−内角。五角形 80°＋55°＋85°＋65°＋75°＝360°、六角形 50°＋70°＋55°＋65°＋60°＋60°＝360°', dur: 8,
+        b: { t: '五角形 80°＋55°＋85°＋65°＋75°＝<b>360°</b>、六角形 50°＋70°＋55°＋65°＋60°＋60°＝<b>360°</b>', col: C.yel },
+        draw: function (D) { two(D, D.ph ? D.t : 0, true); } },
+      { tag: 'ことば', bh: 'ことば', q: 'どの頂点でも、内角と外角の和は？ 多角形の外角の和は？ 正n角形の1つの外角は？', a: '内角＋外角＝180°。外角の和は 何角形でも 360°。正n角形の1つの外角は 360°÷n', sub: '正n角形の1つの内角は、180°−（1つの外角）でも求められる', dur: 6,
+        notes: ['スライダーで、n を変えられます。'],
+        sliders: [{ key: 'n', label: 'n（頂点の数）', min: 3, max: 12, step: 1, val: 5, anim: [5, 12], fmt: function (v) { return '正' + KN[Math.round(v)]; } }],
+        b: [{ t: 'どの頂点でも　内角＋外角＝<b>180°</b>', col: C.green }, { t: '多角形の外角の和は、何角形でも <b>360°</b>', col: C.green }, { t: '正n角形の1つの外角 … <b>360°÷n</b>', col: C.green }],
+        draw: function (D) {
+          var n = Math.round(D.V.n), P = reg(n, 3), F = fitP(D, CH.box(D, { l: .04, r: .04, t: .18, b: .06 }), P, .22), ev = 360 / n, f = function (v) { return Number.isInteger(v) ? String(v) : (Math.floor(v * 10) / 10) + '…'; };
+          outline(F, P, { fa: .08 }); extAll(F, P, { r: F.s * 1.2, lab: function (k) { return k === 0 ? f(ev) + '°' : null; }, L: 1.4 });
+          var s = ispan(P, 0); wedge(F, P.A, s[0], s[1], { col: C.chalk, r: F.s * 1.0, fill: .15 }); iLab(F, P, 0, f(180 - ev) + '°', { size: .75, k: 1.1 });
+          top(D, '正' + KN[n] + '：1つの外角 360°÷' + n + '＝' + f(ev) + '°', C.yel);
+          top(D, '1つの内角 180°−' + f(ev) + '°＝' + f(180 - ev) + '°', C.chalk, 1, 1);
+        } },
+      { tag: '例題', bh: '例題　外角を使う', q: '（1）正十二角形の1つの外角と、1つの内角を求めよう。（2）1つの外角が 40° である正多角形は、正何角形だろう。', a: '（1）外角 30°、内角 150°（2）正九角形', sub: '（1）360°÷12＝30°、180°−30°＝150°（2）360°÷40°＝9', dur: 7,
+        b: [{ t: '（1）外角 360°÷12＝<b>30°</b>、内角 180°−30°＝<b>150°</b>', col: C.pink }, { t: '（2）360°÷40°＝9 → <b>正九角形</b>', col: C.pink }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, nine = t >= .55, P = nine ? R9 : R12, F = fitP(D, CH.box(D, { l: .04, r: .04, t: .18, b: .06 }), P, .22), n = P.n, ev = 360 / n;
+          var a = nine ? CH.smooth(.55, .62, t) : 1 - (t > .5 ? CH.smooth(.5, .55, t) : 0);
+          outline(F, P, { fa: .08, a: a });
+          extAll(F, P, { r: F.s * 1.2, a: a, wa: function (k) { return k === 0 ? 1 : (D.ph ? .5 : .3); }, lab: function (k) { return k === 0 && (D.ph || nine) ? ev + '°' : null; }, line: true });
+          if (!nine && D.ph && t > .25) { var s = ispan(P, 0); wedge(F, P.A, s[0], s[1], { col: C.chalk, r: F.s * 1.0, fill: .2, a: CH.smooth(.25, .32, t) }); iLab(F, P, 0, '150°', { size: .8, k: 1.1, a: CH.smooth(.25, .32, t) }); }
+          if (!D.ph) top(D, '正十二角形', C.chalk);
+          else if (!nine) top(D, t < .25 ? '（1）外角の和 360° を 12 等分 → 360°÷12＝30°' : '内角＋外角＝180° → 内角 180°−30°＝150°', C.yel, CH.smooth(.04, .12, t));
+          else top(D, t < .75 ? '（2）1つの外角が 40° → 40° がいくつで 360°？' : '360°÷40°＝9 → 正九角形', C.pink, CH.smooth(.58, .65, t));
+        } },
+      { tag: '例題', bh: '例題2　∠x を求める', q: '図の五角形で、∠x の大きさを求めよう。（印の角は、外角）', a: '55°', sub: '外角の和は 360° だから　∠x＝360°−(75°＋65°＋80°＋85°)＝55°', dur: 4,
+        b: { t: '∠x＝360°−(75°＋65°＋80°＋85°)＝<b>55°</b>', col: C.pink },
+        draw: function (D) {
+          var P = Q5, F = fitP(D, CH.box(D, { l: .04, r: .04, t: .16, b: .06 }), P, .26), t = D.ph ? D.t : 0, lb = ['x', '75°', '65°', '80°', '85°'];
+          outline(F, P);
+          extAll(F, P, { lab: function (k) { return k ? lb[k] : (D.ph && t > .7 ? '55°' : 'x'); }, L: 1.5 });
+          GE.labels(F, keys(P), { a: .85 });
+          if (D.ph) top(D, '外角の和は 360° → ∠x＝360°−(75°＋65°＋80°＋85°)＝55°', C.yel, CH.smooth(.05, .2, t));
+        } },
+      { tag: '考えよう', q: '多角形の外角の和が 360° になるのは、なぜだろう。式と、動き、2通りで説明しよう。',
+        notes: ['① 式で：n角形で、「内角と外角の和」に目をつけて、外角の和を n を使った式で表そう。', '② 動きで：多角形のまわりを1周歩くとき、頂点で向きを変える角は、どの角にあたるだろう。', 'スライダーで、多角形のまわりを歩けます。'],
+        sliders: [{ key: 'u', label: '歩く', min: 0, max: 1, step: .005, val: 0, fmt: function (v) { return v >= 1 ? '1周' : ''; } }, { key: 'k', label: '多角形', min: 0, max: 1, step: 1, val: 0, fmt: function (v) { return v ? '六角形' : '五角形'; } }],
+        draw: function (D) {
+          var P = D.V.k ? P6 : P5, F = fitP(D, CH.box(D, { l: .04, r: .04, t: .06, b: .06 }), P, .3);
+          outline(F, P, { fa: .08 }); walkDraw(F, P, D.V.u);
+          GE.labels(F, keys(P), { a: .8 });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '正五角形 ABCDE の辺 BC と辺 ED を、C、D の方へのばした線の交点を F とする。∠CFD（∠x）を求めよう。', a: '36°', sub: '正五角形の1つの外角は 360°÷5＝72°。∠FCD、∠FDC は外角だから 72°。△FCD で ∠x＝180°−72°−72°＝36°', dur: 6,
+        notes: ['ヒント① 正五角形の 1つの外角は、何度かな。', 'ヒント② △FCD の ∠FCD と ∠FDC は、五角形の外角にあたるかな。'],
+        b: { t: '外角 360°÷5＝72° → ∠x＝180°−72°−72°＝<b>36°</b>', col: C.orange },
+        draw: function (D) {
+          var P = PC, F = GE.fit(D, CH.box(D, { l: .04, r: .04, t: .16, b: .06 }), P, { keys: ['A', 'B', 'C', 'D', 'E', 'F'], pad: .1 }), t = D.ph ? D.t : 0;
+          var h = D.ph ? CH.smooth(.45, .55, t) : 0;
+          if (h > 0) GE.poly(F, 'FCD', { col: C.orange, fa: .3 * h, stroke: false });
+          outline(F, P); GE.seg(F, ['C', 'F'], { w: 2.4 }); GE.seg(F, ['D', 'F'], { w: 2.4 });
+          'ABCDE'.split('').forEach(function (k, i) { GE.tick(F, [P[k], P['ABCDE'.charAt((i + 1) % 5)]], 1); });
+          var a1 = D.ph ? CH.smooth(.1, .3, t) : 0, dCD = dir(P.C, P.D), dCF = dir(P.C, P.F), dDF = dir(P.D, P.F), dDC = dir(P.D, P.C);
+          wedge(F, P.C, dCF, dCD, { col: C.pink, fill: .35, r: F.s * 1.4, a: a1 }); wedge(F, P.D, dDC, dDF, { col: C.blue, fill: .35, r: F.s * 1.4, a: a1 });
+          if (a1 > 0) { lab(F, P.C, 200, 2.0, '72°', { col: C.pink, a: a1, size: .85 }); lab(F, P.D, -20, 2.0, '72°', { col: C.blue, a: a1, size: .85 }); }
+          var dFC = dir(P.F, P.C), dFD = dir(P.F, P.D);
+          wedge(F, P.F, dFD, dFC, { col: C.orange, fill: .35, r: F.s * 1.3 }); lab(F, P.F, dFD + nd(dFC - dFD) / 2, 2.6, D.ph && t > .8 ? '36°' : 'x', { col: C.orange, size: .9 });
+          GE.labels(F, ['A', 'B', 'C', 'D', 'E', 'F'], { dir: { F: 's', C: 'nw', D: 'ne' } });
+          if (D.ph) top(D, t < .45 ? '正五角形の外角　360°÷5＝72°' : '△FCD で　∠x＝180°−72°−72°＝36°', t < .45 ? C.pink : C.orange, CH.smooth(.05, .12, t));
+        } }
+    ]
+  });
+
+  /* 今日の問いの2つの図。ans：答えの段（外角の大きさ → 多角形を縮めて、外角を1点に集める） */
+  function two(D, t, ans) {
+    var R = CH.box(D, { l: .02, r: .02, t: .12, b: .02 }), rs = CH.split(D, R, 2, .04), s = CH.fs(D);
+    [[P5, I5, '図1'], [P6, I6, '図2']].forEach(function (z, i) {
+      var P = z[0], r = rs[i], F = fitP(D, CH.rect(r.x0, r.y0 + s * 1.2, r.x1, r.y1), P, .2), n = P.n;
+      var sc = ans ? 1 - CH.ease(CH.smooth(.32, .82, t)) : 1, fa = ans ? 1 - CH.smooth(.3, .45, t) : 1;
+      CH.text(D, r.x0 + s * 1.2, r.y0 + s * .5, z[2], { size: s * 1.1 });
+      if (sc > .02) { var c = cen(P), Q = { n: n }; keys(P).forEach(function (k) { Q[k] = GE.lerpP(c, P[k], sc); }); outline(F, Q, { fa: .1 }); }
+      for (var k = 0; k < n; k++) if (fa > 0) iLab(F, P, k, z[1][k] + '°', { size: .72, a: fa, k: 1.05 });
+      extAll(F, P, { sc: sc, r: F.s * (1.5 + 1.3 * (1 - sc)), lk: 2.5 + 1.3 * (1 - sc), lab: function (k) { return ans && t > .08 ? (180 - z[1][k]) + '°' : 'abcdef'.charAt(k); }, la: function () { return ans && t > .08 ? CH.smooth(.08, .16, t) : 1; }, L: 1.3, line: sc > .05 });
+      if (ans && t > .85) { var c2 = cen(P); wedge(F, c2, 0, 359.9, { col: C.yel, r: F.s * 4.9, w: 3, a: CH.smooth(.85, .95, t) }); lab(F, c2, 0, 6.6, '360°', { col: C.yel, a: CH.smooth(.85, .95, t), size: .95 }); }
+    });
+    if (ans) top(D, t < .3 ? '外角＝180°−内角' : t < .85 ? '多角形を ちぢめていくと…' : '外角が 1点に集まって、ぴったり1回転 → 外角の和 360°', C.yel, CH.smooth(0, .06, t));
+  }
+})();
+</script>
+</body>
+</html>

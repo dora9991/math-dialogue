@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>代入法</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 連立方程式 第4時：式を式に代入して、文字を1つ消そう（ikkan の lesson_renritsu_new_04 と同じ流れ）。
+   色紙のテープ図（赤は 青の3倍より4枚多い）。② の「3y＋4」のカードが、① の x の場所にとんで入り、y だけの式になる。
+   ことばは、y＝2x−1 のカードが、3x＋2y＝19 の y の場所に かっこごと とんで入る（2y → 2(2x−1)）。
+   例題は、① の −3y が等号をこえて ＋3y になり（x＝3y−5）、そのカードが ② の x の場所へ。考えようは、y のスライダーで 2x と 2×3y−5 の値をくらべる道具（答えは出さない）。
+   チャレンジは、① の右辺 11 が、② の (x＋2y) の場所に入る。
+   数値は ikkan のまま（ことばの y＝2x−1、3x＋2y＝19 は自作）。答えは、ページの中で計算し直している（CH.check。代入した式は、x・y にいくつかの数を入れて、もとの式と同じ値になるかも確かめる）。データは自作。 */
+(function () {
+  /* ---- 道具（連立方程式の黒板 第1〜7時で共通。どのページにも同じものを入れてある。方程式の黒板（hotei/）の道具に、2つの文字・式を上下にそろえる形を足した） ---- */
+  var C = CH.C, S = CH.mnum, XC = C.blue, YC = C.green, NC = C.orange, OUT = 'rgba(20,40,30,.9)';
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function ha(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function ext(a, b) { for (var k in b) if (b[k] !== undefined) a[k] = b[k]; return a; }
+  /* 問い・答え・板書（HTML）の [1/2] を、たての分数に。
+     式のまとまり（12x＋5＝113 など）は、とちゅうで折り返さない */
+  function nb(s) { return String(s).split(/(<[^>]+>)/).map(function (p) { return p.charAt(0) === '<' ? p : p.replace(/[0-9A-Za-z.＋−＝×÷()\[\]\/]{3,}/g, function (m) { return /[＋−＝×÷]/.test(m) ? '<span style="white-space:nowrap">' + m + '</span>' : m; }); }).join(''); }
+  function hf(s) { return CH.fr(nb(s)); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = hf(s[k]); }); if (s.notes) s.notes = s.notes.map(hf); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = hf(b.t); }); }); return st; }
+  /* 図の中（canvas）の字。[x＋5/3] はたての分数。TW で幅、TX でかく */
+  function parse(s) {
+    var out = [], re = /\[([^\/\]]+)\/([^\]]+)\]/g, m, i = 0; s = String(s);
+    while ((m = re.exec(s))) { if (m.index > i) out.push({ t: s.slice(i, m.index) }); out.push({ n: m[1], d: m[2] }); i = re.lastIndex; }
+    if (i < s.length) out.push({ t: s.slice(i) });
+    return out;
+  }
+  function mw(D, t, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(t).width; g.restore(); return w; }
+  function segW(D, p, size) { var fz = size * .72; return p.t != null ? mw(D, p.t, size) : Math.max(mw(D, p.n, fz), mw(D, p.d, fz)) + fz * .4; }
+  function TW(D, s, size) { return parse(s).reduce(function (w, p) { return w + segW(D, p, size); }, 0); }
+  function hasFr(s) { return /\[[^\/\]]+\/[^\]]+\]/.test(String(s)); }
+  function TX(D, x, y, s, o) {
+    o = o || {}; var size = o.size || CH.fs(D), fz = size * .72, w = TW(D, s, size), x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    parse(s).forEach(function (p) {
+      var pw = segW(D, p, size);
+      if (p.t != null) CH.text(D, x0, y, p.t, ext({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + pw / 2; CH.text(D, cx, y - fz * .64, p.n, ext({ size: fz }, oo)); CH.text(D, cx, y + fz * .7, p.d, ext({ size: fz }, oo));
+        CH.line(D, x0 + fz * .14, y + fz * .03, x0 + pw - fz * .14, y + fz * .03, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += pw;
+    });
+    return w;
+  }
+  /* 色ちがいの字をつなげて：segs [[字, 色], …] */
+  function TS(D, x, y, segs, o) {
+    o = o || {}; var size = o.size || CH.fs(D), w = segs.reduce(function (s, g) { return s + TW(D, g[0], size); }, 0), x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2;
+    segs.forEach(function (g) { x0 += TX(D, x0, y, g[0], { size: size, col: g[1] || o.col, a: o.a, align: 'left', outline: o.outline }); });
+    return w;
+  }
+  /* {…} の中を、ちがう色（o.hc）で */
+  function strip(s) { return String(s).replace(/[{}]/g, ''); }
+  function TM(D, x, y, s, o) {
+    o = o || {}; var size = o.size || CH.fs(D), w = TW(D, strip(s), size), x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2;
+    String(s).split(/[{}]/).forEach(function (g, i) { if (g) x0 += TX(D, x0, y, g, { size: size, col: i % 2 ? (o.hc || C.yel) : o.col, a: o.a, align: 'left', outline: o.outline }); });
+    return w;
+  }
+  function fit(D, s, maxW, size) { var w = TW(D, s, size); return w > maxW ? size * maxW / w : size; }
+  /* 角の丸い四角 */
+  function rr(D, x0, y0, x1, y1, o) {
+    o = o || {}; var g = D.ctx, r = Math.max(0, Math.min(o.r == null ? 8 : o.r, Math.abs(y1 - y0) / 2, Math.abs(x1 - x0) / 2));
+    g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.beginPath();
+    g.moveTo(x0 + r, y0); g.arcTo(x1, y0, x1, y1, r); g.arcTo(x1, y1, x0, y1, r); g.arcTo(x0, y1, x0, y0, r); g.arcTo(x0, y0, x1, y0, r); g.closePath();
+    if (o.fill) { g.fillStyle = o.fill; g.fill(); }
+    if (o.stroke) { g.strokeStyle = o.stroke; g.lineWidth = o.sw || 2; if (o.dash) g.setLineDash([6, 5]); if (o.glow) { g.shadowColor = o.stroke; g.shadowBlur = 12; } g.stroke(); }
+    g.restore();
+  }
+  /* 波かっこ（x0〜x1。dir 1 で下に、−1 で上に）。o.lab：字 */
+  function brace(D, x0, x1, y, dir, o) {
+    o = o || {}; var g = D.ctx, h = o.h || 7, m = (x0 + x1) / 2, r = Math.min(h, (x1 - x0) / 4), s = o.size || CH.fs(D, .85);
+    g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2; g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath();
+    g.moveTo(x0, y); g.quadraticCurveTo(x0, y + dir * h, x0 + r, y + dir * h); g.lineTo(m - r, y + dir * h); g.quadraticCurveTo(m, y + dir * h, m, y + dir * h * 2);
+    g.moveTo(m, y + dir * h * 2); g.quadraticCurveTo(m, y + dir * h, m + r, y + dir * h); g.lineTo(x1 - r, y + dir * h); g.quadraticCurveTo(x1, y + dir * h, x1, y);
+    g.stroke(); g.restore();
+    if (o.lab) TX(D, m, y + dir * (h * 2 + s * (hasFr(o.lab) ? 1.3 : .85)), o.lab, { size: s, col: o.tcol || o.col || C.chalk, a: o.a });
+  }
+
+  /* ---- 式の値（検算用）。'2x＋3y'・'[x−1/2]'・'3(x−1)'・'0.3x' を、x・y・a・b の関数に ---- */
+  function fn(s) {
+    var e = strip(s).replace(/…[①-⑩]/g, '').replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '(($1)/($2))').replace(/＋/g, '+').replace(/−/g, '-').replace(/×/g, '*').replace(/÷/g, '/').replace(/\s/g, '')
+      .replace(/(\d|\)|[xyab])(?=[xyab(])/g, '$1*').replace(/\)(?=[\d.])/g, ')*');
+    return new Function('x', 'y', 'a', 'b', 'return (' + e + ');');
+  }
+  function near(a, b) { return Math.abs(a - b) < 1e-7 * Math.max(1, Math.abs(a), Math.abs(b)); }
+  /* 式 'A＝B'（＝ がいくつあってもよい）が、値 v＝{x, y, a, b} で成り立つか */
+  function holds(s, v) { v = v || {}; var p = strip(s).replace(/…[①-⑩]/g, '').split('＝'); if (p.length < 2) return false; var w = p.map(function (q) { return fn(q)(v.x, v.y, v.a, v.b); }); return w.every(function (z) { return isFinite(z) && near(z, w[0]); }); }
+  /* 式の行が、すべて v で成り立つか（解き方の各行を、まとめて確かめる） */
+  function all(L, v) { return L.every(function (s) { return holds(s, v); }); }
+  /* 'ax＋by＝c' の [a, b, c]（u・w は文字の名前。ふつう x と y）。1次式でなければ null */
+  function cf(s, u, w) {
+    u = u || 'x'; w = w || 'y'; var p = strip(s).split('＝'); if (p.length !== 2) return null;
+    var L = fn(p[0]), R = fn(p[1]), f = function (s1, s2) { var v = { x: 0, y: 0, a: 0, b: 0 }; v[u] = s1; v[w] = s2; return L(v.x, v.y, v.a, v.b) - R(v.x, v.y, v.a, v.b); };
+    var c0 = f(0, 0), a = f(1, 0) - c0, b = f(0, 1) - c0;
+    if (!near(f(3, -2), c0 + 3 * a - 2 * b) || !near(f(-2, 5), c0 - 2 * a + 5 * b)) return null;
+    return [a, b, -c0];
+  }
+  /* 2つの式の解（クラメルの公式）。1つに決まらなければ null */
+  function sol2(A, B, u, w) { var p = cf(A, u, w), q = cf(B, u, w); if (!p || !q) return null; var d = p[0] * q[1] - q[0] * p[1]; return Math.abs(d) < 1e-12 ? null : [(p[2] * q[1] - q[2] * p[1]) / d, (p[0] * q[2] - q[0] * p[2]) / d]; }
+  /* 連立方程式 A・B の解が (x, y) か。解き直して、もとの2つの式に代入して両方成り立つことも確かめる */
+  function sys(A, B, x, y, u, w) { u = u || 'x'; w = w || 'y'; var s = sol2(A, B, u, w), v = {}; v[u] = x; v[w] = y; return !!s && near(s[0], x) && near(s[1], y) && holds(A, v) && holds(B, v); }
+  /* 式 s が、p×(式 A)＋q×(式 B) と同じ式か（たしたりひいたり、何倍したりした式の検算） */
+  function lc(s, p, A, q, B, u, w) { var c = cf(s, u, w), a = cf(A, u, w), b = B ? cf(B, u, w) : [0, 0, 0]; return !!c && !!a && !!b && [0, 1, 2].every(function (i) { return near(c[i], p * a[i] + (q || 0) * b[i]); }); }
+  function val(s, v) { v = v || {}; return fn(s)(v.x, v.y, v.a, v.b); }
+
+  /* ---- 項のカード ---- */
+  /* 色：x の項は青、y の項は緑、数の項はオレンジ、かっこ・分数・いくつかの項のまとまりはむらさき（a・b は x・y と同じ色） */
+  function kcol(s) { s = strip(s); return /[(\[]/.test(s) || /[＋−]/.test(s.slice(1)) ? C.lav : /[xa]/.test(s) ? XC : /[yb]/.test(s) ? YC : NC; }
+  function card(D, x, y, w, h, s, o) {
+    o = o || {}; var g = D.ctx, sx = o.sx == null ? 1 : o.sx, col = o.col || kcol(s);
+    if (Math.abs(sx) < .02 || (o.a != null && o.a <= 0)) return;
+    g.save(); g.translate(x, y + (o.dy || 0)); g.scale(Math.abs(sx), 1);
+    rr(D, -w / 2, -h / 2, w / 2, h / 2, { r: Math.min(w, h) * .18, fill: o.fill || ha(col, o.fa == null ? .2 : o.fa), stroke: col, sw: o.sw || 2.2, a: o.a, glow: o.glow });
+    if (s != null && s !== '') { var sz = Math.min(hasFr(s) ? h * .58 : (o.size || h * .52), w * .84 / Math.max(.01, TW(D, s, 100) / 100)); TX(D, 0, 1, s, { size: sz, col: o.tcol || C.chalk, a: o.a }); }
+    g.restore();
+  }
+  /* 式のカード：'5x|＋3|＝|2x|−9' と id の配列から。記号（＝ など）は op */
+  function EQ(str, ids) { return str.split('|').map(function (s, i) { return { s: s, id: ids ? ids[i] : 'i' + i, op: /^[＝＋−×÷]$/.test(s) }; }); }
+  function itW(D, it, h) { return it.op ? Math.max(h * .55, TW(D, it.s, h * .6) + h * .12) : Math.max(h * .95, TW(D, it.s, h * .52) + h * (hasFr(it.s) ? .4 : .5)); }
+  function place(D, items, h, eqX) {
+    var gap = h * .14, ws = items.map(function (it) { return itW(D, it, h); }), ie = -1, x = 0, P = {};
+    items.forEach(function (it, i) { if (it.op && it.s === '＝') ie = i; });
+    if (ie >= 0) { var lw = 0; for (var i = 0; i < ie; i++) lw += ws[i] + gap; x = eqX - ws[ie] / 2 - lw; }
+    else x = eqX - (ws.reduce(function (a, b) { return a + b; }, 0) + gap * (items.length - 1)) / 2;
+    var mn = x;
+    items.forEach(function (it, i) { P[it.id] = { x: x + ws[i] / 2, w: ws[i], it: it }; x += ws[i] + gap; });
+    return { P: P, x0: mn, x1: x - gap };
+  }
+  /* カードの式の動き：A から B へ（k：0→1）。同じ id のカードは動く。B の項に jump があると弧をえがいてとび、字がかわる項はひっくり返る。
+     B の項の at:[t0, t1] で、動く時をずらせる。o：h（カードの高さ）、hl(id)→色（光らせる）、eqX */
+  function morph(D, R, y, A, B, k, o) {
+    o = o || {}; var h = o.h || CH.fs(D, 2.3);
+    function span(hh) { var a = place(D, A, hh, 0), b = B ? place(D, B, hh, 0) : a; return [Math.min(a.x0, b.x0), Math.max(a.x1, b.x1)]; }
+    var sp = span(h); if (sp[1] - sp[0] > R.w) { h *= R.w / (sp[1] - sp[0]); sp = span(h); }
+    var eqX = o.eqX != null ? o.eqX : R.cx - (sp[0] + sp[1]) / 2, PA = place(D, A, h, eqX).P, PB = B ? place(D, B, h, eqX).P : PA, ids = [], out = {};
+    A.forEach(function (it) { ids.push(it.id); }); (B || []).forEach(function (it) { if (!PA[it.id]) ids.push(it.id); });
+    ids.forEach(function (id) {
+      var pa = PA[id], pb = PB[id], it = (pb || pa).it, at = it.at || [0, 1], e = CH.ease(CH.smooth(at[0], at[1], k)), x, w, s, sx = 1, a = 1, dy = 0, glow = false;
+      if (pa && pb) {
+        x = CH.lerp(pa.x, pb.x, e); w = CH.lerp(pa.w, pb.w, e); s = e < .5 ? pa.it.s : pb.it.s;
+        if (pb.it.jump) dy = -Math.sin(Math.PI * e) * h * 1.35;
+        if (pa.it.s !== pb.it.s && pb.it.flip !== false) { sx = Math.cos(Math.PI * e); glow = e > .02 && e < .98; }
+      } else if (pa) { x = pa.x; w = pa.w; s = pa.it.s; a = 1 - e; dy = pa.it.up ? -e * h : 0; }
+      else { x = pb.x; w = pb.w; s = pb.it.s; a = e; }
+      var hl = o.hl ? o.hl(id) : null;
+      if (it.op) TX(D, x, y + dy, s, { size: h * .6, col: hl || C.chalk, a: a });
+      else card(D, x, y, w, h, s, { sx: sx, a: a, dy: dy, glow: glow || !!hl, col: glow ? C.pink : (hl || null), fa: hl ? .32 : null });
+      out[id] = { x: x, w: w, y: y + dy };
+    });
+    out.h = h; out.eqX = eqX;
+    return out;
+  }
+
+  /* いくつかの段階を、順に動かす（1回に1つずつ動かすと、カードが重ならない）。Ls：[A, M, B, …]、ts：[[t0, t1], …] 段階のあいだの動きの時。
+     大きさと '＝' の位置は、すべての段階で同じ */
+  function seq(D, R, y, Ls, ts, k, o) {
+    o = o || {}; var h = o.h || CH.fs(D, 2.3);
+    function sp(hh) { var mn = 1e9, mx = -1e9; Ls.forEach(function (L) { var p = place(D, L, hh, 0); mn = Math.min(mn, p.x0); mx = Math.max(mx, p.x1); }); return [mn, mx]; }
+    var s = sp(h); if (s[1] - s[0] > R.w) { h *= R.w / (s[1] - s[0]); s = sp(h); }
+    var oo = ext(ext({}, o), { h: h, eqX: R.cx - (s[0] + s[1]) / 2 });
+    for (var i = 0; i < ts.length; i++) { if (k < ts[i][0]) return morph(D, R, y, Ls[i], null, 0, oo); if (k <= ts[i][1]) return morph(D, R, y, Ls[i], Ls[i + 1], (k - ts[i][0]) / (ts[i][1] - ts[i][0]), oo); }
+    return morph(D, R, y, Ls[Ls.length - 1], null, 0, oo);
+  }
+
+  /* ---- 式の行（板書の形。'＝' をそろえる） ----
+     L：[{s, lab, col, lc, hc, txt}]（txt：'＝' でそろえない字の行。s の {…} は hc の色）。t：0〜1 で、行が順に出る。o：at（各行の出る時）、size、align、top、mark {行: ['×', 色]} */
+  function eqs(D, R, L, t, o) {
+    o = o || {}; var n = L.length, at = o.at ? [-1].concat(o.at) : L.map(function (_, i) { return i === 0 ? -1 : .04 + (i - 1) / Math.max(1, n - 1) * .86; });
+    var frc = L.some(function (l) { return hasFr(l.s); });
+    function parts(l) { if (l.txt) return null; var i = l.s.indexOf('＝'); return i < 0 ? null : [l.s.slice(0, i), l.s.slice(i + 1)]; }
+    function dims(z) {
+      var lw = 0, rw = 0, xw = 0, eq = mw(D, '＝', z);
+      L.forEach(function (l) { var p = parts(l), lb = l.lab ? TW(D, l.lab, z * .62) + z * .7 : 0, mk = o.mark && o.mark[L.indexOf(l)] ? z * 1.4 : 0; if (p) { lw = Math.max(lw, TW(D, strip(p[0]), z)); rw = Math.max(rw, TW(D, strip(p[1]), z) + lb + mk); } else xw = Math.max(xw, TW(D, strip(l.s), z) + lb + mk); });
+      return { lw: lw, rw: rw, eq: eq, w: Math.max(lw + eq + rw, xw) };
+    }
+    var z = o.size || CH.fs(D, 1.2), d = dims(z); if (d.w > R.w) { z *= R.w / d.w; d = dims(z); }
+    var k = frc ? 2.25 : 1.6, lh = z * k; if (lh * n > R.h) { lh = R.h / n; z = Math.min(z, lh / k); d = dims(z); }
+    var x0 = o.align === 'left' ? R.x0 : R.cx - d.w / 2, ex = x0 + d.lw, y0 = o.top ? R.y0 + lh / 2 : R.cy - lh * n / 2 + lh / 2, ys = [], xe = [];
+    L.forEach(function (l, i) {
+      var y = y0 + i * lh, a = at[i] < 0 ? 1 : CH.smooth(at[i], Math.min(at[i] + .1, 1), t), p = parts(l), col = l.col || C.chalk, x1; ys.push(y);
+      if (a <= 0) { xe.push(null); return; } a *= (o.a == null ? 1 : o.a);
+      if (p) { if (p[0]) TM(D, ex, y, p[0], { size: z, col: col, a: a, align: 'right', hc: l.hc }); TX(D, ex, y, '＝', { size: z, col: col, a: a, align: 'left' }); x1 = ex + d.eq + TM(D, ex + d.eq, y, p[1], { size: z, col: col, a: a, align: 'left', hc: l.hc }); }
+      else x1 = x0 + TM(D, x0, y, l.s, { size: z, col: col, a: a, align: 'left', hc: l.hc });
+      if (o.mark && o.mark[i]) { var mk = o.mark[i]; TX(D, x1 + z * .7, y, mk[0], { size: z * 1.05, col: mk[1] || C.pink, a: a * (mk[2] == null ? 1 : mk[2]) }); x1 += z * 1.4; }
+      if (l.lab) TX(D, x1 + z * .7, y, l.lab, { size: z * .62, col: l.lc || C.green, a: a, align: 'left' });
+      xe.push(x1);
+    });
+    return { z: z, lh: lh, ys: ys, ex: ex, x0: x0, xe: xe, w: d.w };
+  }
+  /* ---- 連立方程式（HTML の字の中）：左に { をつけて、式を2行に ---- */
+  function SY() {
+    var L = [].slice.call(arguments);
+    return '<span style="display:inline-flex;align-items:center;vertical-align:middle;margin:.12em .25em .12em .1em"><span style="font-size:' + (L.length * 1.05) + 'em;line-height:1;font-weight:400;margin-right:.12em;transform:scaleX(.75)">{</span><span style="display:inline-flex;flex-direction:column;line-height:1.35">' +
+      L.map(function (s) { return '<span style="white-space:nowrap">' + s + '</span>'; }).join('') + '</span></span>';
+  }
+  /* たての波かっこ {（x が とがった先、y0〜y1） */
+  function vbrace(D, x, y0, y1, o) {
+    o = o || {}; var g = D.ctx, w = o.w || Math.min(18, (y1 - y0) * .16), m = (y0 + y1) / 2, r = Math.min(w * .8, (y1 - y0) / 4);
+    g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.lw || 2.2; g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath();
+    g.moveTo(x + w, y0); g.quadraticCurveTo(x + w / 2, y0, x + w / 2, y0 + r); g.lineTo(x + w / 2, m - r); g.quadraticCurveTo(x + w / 2, m, x, m);
+    g.quadraticCurveTo(x + w / 2, m, x + w / 2, m + r); g.lineTo(x + w / 2, y1 - r); g.quadraticCurveTo(x + w / 2, y1, x + w, y1);
+    g.stroke(); g.restore();
+  }
+  /* 連立方程式を、{ をつけて（式の行は eqs と同じ）。返すもの：eqs の値と、{ の位置 bx */
+  function sysC(D, R, L, t, o) {
+    o = o || {}; var z = o.size || CH.fs(D, 1.25), E = eqs(D, CH.rect(R.x0 + z * .9, R.y0, R.x1, R.y1), L, t, o), n = L.length;
+    var bx = E.x0 - E.z * .75; vbrace(D, bx, E.ys[0] - E.lh * .42, E.ys[n - 1] + E.lh * .42, { a: o.a, w: E.z * .5, col: o.bcol });
+    E.bx = bx; return E;
+  }
+  /* 移る向きの矢印（弧） */
+  function hop(D, x0, x1, y, h, col, a, lab, o) {
+    o = o || {}; var g = D.ctx, mx = (x0 + x1) / 2, top = y - h, x2 = o.y1 == null ? x1 : x1, y2 = o.y1 == null ? y : o.y1;
+    g.save(); g.globalAlpha = D.ga * a; g.strokeStyle = col; g.lineWidth = 2.2; g.setLineDash([6, 5]); g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo(mx, top - h * .4, x2, y2); g.stroke(); g.restore();
+    var ang = Math.atan2(y2 - (top - h * .4), x2 - mx), hs = 10;
+    g.save(); g.globalAlpha = D.ga * a; g.fillStyle = col; g.beginPath(); g.moveTo(x2, y2); g.lineTo(x2 - hs * Math.cos(ang - .45), y2 - hs * Math.sin(ang - .45)); g.lineTo(x2 - hs * Math.cos(ang + .45), y2 - hs * Math.sin(ang + .45)); g.closePath(); g.fill(); g.restore();
+    if (lab) TX(D, mx, top - h * .35, lab, { size: o.size || CH.fs(D, .85), col: col, a: a, outline: OUT });
+  }
+  /* 光る輪（ここに注目） */
+  function ring(D, x, y, r, col, a) { if (a > 0) CH.circle(D, x, y, r * (1 + .08 * Math.sin(D.now * 5)), { stroke: col || C.yel, sw: 2.6, a: a * .8 }); }
+
+  /* ---- 式を上下にそろえる（筆算の形） ----
+     cols：列の名前の配列（'op' たす・ひくの記号、'x'、'y'、'='、'c'、'lab' 式の番号）。T：列ごとの、出てくる字（列の幅を決める）。n：行の数。
+     o：h（カードの高さのもと）、lh（行の間かく。h の何倍か）、top（上につめる）、align。返すもの：h・lh・X[列]・W[列]・Y(行)・x0・x1 */
+  function grid(D, R, cols, T, n, o) {
+    o = o || {}; var h0 = o.h || CH.fs(D, 2.1), lk = o.lh || 1.42, gp = .14;
+    function wd(c, hh) {
+      var L = T[c] || [];
+      if (c === 'op') return hh * (o.opw || .8);
+      if (c === '=') return hh * .62;
+      if (c === 'lab') return L.length ? Math.max.apply(null, L.map(function (s) { return TW(D, s, hh * .5); })) + hh * .2 : 0;
+      return Math.max.apply(null, [hh * .95].concat(L.map(function (s) { return itW(D, { s: s }, hh); })));
+    }
+    function tot(hh) { return cols.reduce(function (t, c) { return t + wd(c, hh); }, 0) + hh * gp * (cols.length - 1); }
+    var h = h0 * Math.min(1, R.w / tot(h0), R.h / (n * lk * h0)), W = tot(h), x = o.align === 'left' ? R.x0 : R.cx - W / 2, X = {}, Wc = {}, x0 = x;
+    cols.forEach(function (c) { var w = wd(c, h); X[c] = x + w / 2; Wc[c] = w; x += w + h * gp; });
+    var lh = h * lk, y0 = o.top ? R.y0 + lh / 2 : R.cy - n * lh / 2 + lh / 2;
+    return { h: h, lh: lh, X: X, W: Wc, x0: x0, x1: x0 + W, Y: function (i) { return y0 + i * lh; }, n: n, y1: y0 + (n - .5) * lh };
+  }
+  /* G の 行 i・列 c に、字 s。カードの列は同じ幅。o：a・hl（光らせる色）・dx・dy・flip [前の字, 進み 0→1]・col・sc（大きさ）・size（記号の字の大きさ） */
+  function gc(D, G, i, c, s, o) {
+    o = o || {}; if (s == null || s === '' || (o.a != null && o.a <= 0)) return;
+    var x = G.X[c] + (o.dx || 0), y = G.Y(i) + (o.dy || 0), h = G.h * (o.sc || 1);
+    if (c === 'op' || c === '=') { TX(D, x, y, s, { size: h * (o.size || .6), col: o.hl || o.col || C.chalk, a: o.a }); return; }
+    if (c === 'lab') { TX(D, G.X[c] - G.W[c] / 2, y, s, { size: h * (o.size || .5), col: o.col || 'rgba(242,240,230,.75)', a: o.a, align: 'left' }); return; }
+    var sx = 1, glow = !!o.hl, col = o.hl || o.col || null;
+    if (o.flip) { var e = CH.clamp(o.flip[1], 0, 1); sx = Math.cos(Math.PI * e); if (e < .5) s = o.flip[0]; if (e > .02 && e < .98) { glow = true; col = C.pink; } }
+    card(D, x, y, (o.w || G.W[c]) * (o.sc || 1), h, s, { sx: sx, a: o.a, glow: glow, col: col, fa: o.hl ? .32 : null });
+  }
+  /* 1行ぶん（R：{x, y, c, lab} の字）。o：列ごとの o（o.x など）と、全体の a */
+  function grow(D, G, i, R, o) {
+    o = o || {};
+    ['op', 'x', 'y', '=', 'c', 'lab'].forEach(function (c) {
+      var s = c === '=' ? (R.x || R.y ? '＝' : '') : R[c], oc = ext({ a: o.a }, o[c] || {});
+      if (o.a != null && oc.a != null && o[c] && o[c].a != null) oc.a = o.a * o[c].a;
+      if (G.X[c] != null) gc(D, G, i, c, s, oc);
+    });
+  }
+  /* たし算・ひき算の線（行 i の上） */
+  function rule(D, G, i, a, o) {
+    o = o || {}; if (a <= 0) return; var y = G.Y(i) - G.lh / 2, x0 = G.X.op != null ? G.X.op - G.W.op * .4 : G.x0, x1 = G.X.c + G.W.c / 2;
+    CH.line(D, x0, y, CH.lerp(x0, x1, CH.clamp(a * 1.4, 0, 1)), y, { w: 2.4, col: o.col || C.chalk, a: Math.min(1, a * 2) });
+  }
+  /* カードが、行 i1 から行 i2 へ（同じ列 c）。e：0→1 */
+  function travel(D, G, i1, i2, c, s, e, o) {
+    o = o || {}; var y = CH.lerp(G.Y(i1), G.Y(i2), e) - Math.sin(Math.PI * e) * (o.arc || 0) * G.h;
+    card(D, G.X[c], y, G.W[c], G.h, s, { a: o.a, glow: !!o.col, col: o.col || null, fa: o.col ? .32 : null });
+  }
+  /* 加減法：行 i1（A）と 行 i2（B）を、たす（sg '＋'）・ひく（'−'）。結果は 行 ir（res：{x, y, c}。null の列は 0 になって消える）。
+     k：0→1（〜.2 消える列が光る、.22〜.55 カードが下へ、.52〜.72 結果が出る）。o：hold（結果の行を書かない）、keep（上の2行を描かない）、noop（記号を描かない） */
+  function addRows(D, G, A, B, i1, i2, ir, sg, res, k, o) {
+    o = o || {};
+    var hlA = k > .03 && k < .62, gone = function (c) { return res[c] === null; };
+    if (!o.keep) [[i1, A], [i2, B]].forEach(function (p) {
+      var oo = {}; ['x', 'y', 'c'].forEach(function (c) { oo[c] = gone(c) ? (hlA ? { hl: C.pink } : { a: k >= .62 ? .45 : 1 }) : {}; });
+      grow(D, G, p[0], p[1], oo);
+    });
+    if (!o.noop) gc(D, G, i2, 'op', sg, { a: CH.smooth(0, .1, k), col: C.yel, size: .75 });
+    rule(D, G, ir, CH.smooth(.08, .22, k));
+    var m = CH.ease(CH.smooth(.22, .52, k)), fa = 1 - CH.smooth(.5, .6, k);
+    ['x', 'y', 'c'].forEach(function (c) {
+      if (k > .22 && k < .6) [[i1, A[c]], [i2, B[c]]].forEach(function (p) { if (p[1]) travel(D, G, p[0], ir, c, p[1], m, { a: .7 * fa, col: gone(c) ? C.pink : null }); });
+      if (gone(c)) {
+        var a0 = CH.smooth(.5, .58, k) * (1 - CH.smooth(.74, .88, k));
+        if (a0 > 0) { TX(D, G.X[c], G.Y(ir), '0', { size: G.h * .62, col: C.pink, a: a0 }); ring(D, G.X[c], G.Y(ir), G.h * .55 * (1 + CH.smooth(.6, .88, k)), C.pink, a0); }
+        if (o.word !== false) TX(D, G.X[c], G.Y(ir) + G.h * .95, '消える', { size: G.h * .38, col: C.pink, a: CH.smooth(.58, .7, k) * (o.wordStay ? 1 : 1 - CH.smooth(.9, 1, k)) });
+      } else if (!o.hold) gc(D, G, ir, c, res[c], { a: CH.smooth(.55, .72, k) });
+    });
+    if (!o.hold) gc(D, G, ir, '=', '＝', { a: CH.smooth(.55, .72, k) });
+    if (res.lab && G.X.lab != null) gc(D, G, ir, 'lab', res.lab, { a: CH.smooth(.6, .75, k), col: C.yel });
+  }
+  /* カードが、(x0, y0) から (x1, y1) へ 弧をえがいてとぶ。字は s0 → s1（とちゅうでひっくり返る）。w0・w1：はじめと終わりの幅 */
+  function fly(D, x0, y0, x1, y1, w0, w1, h, s0, s1, e, o) {
+    o = o || {}; e = CH.clamp(e, 0, 1); var q = CH.ease(e), x = CH.lerp(x0, x1, q), y = CH.lerp(y0, y1, q) - Math.sin(Math.PI * q) * (o.arc == null ? h * 1.4 : o.arc);
+    var f = s1 != null && s1 !== s0 ? CH.smooth(.55, .95, e) : 0, sx = f > 0 ? Math.cos(Math.PI * f) : 1, s = f < .5 ? s0 : s1;
+    card(D, x, y, CH.lerp(w0, w1, q), h, s, { sx: sx, a: o.a, glow: o.glow !== false, col: o.col || (f > .02 && f < .98 ? C.pink : null) });
+  }
+  /* 代入する値のチップ（x＝2 など）が、とんで入る */
+  /* 項の字：係数 c と文字 v（first なら ＋ をつけない）。'2x'・'−y'・'＋3y' */
+  function term(c, v, first) { if (!c) return ''; var m = Math.abs(c); return (c < 0 ? '−' : first ? '' : '＋') + (m === 1 && v ? '' : S(m)) + v; }
+  /* 'ax＋by＝c' の字 */
+  function eqT(a, b, c) { var l = term(a, 'x', true) + term(b, 'y', !a); return (l || '0') + '＝' + S(c); }
+  function chip(D, x, y, s, o) { o = o || {}; var z = o.size || CH.fs(D, .9), w = TW(D, s, z) + z * .8; rr(D, x - w / 2, y - z * .75, x + w / 2, y + z * .75, { r: z * .4, fill: ha(o.col || C.yel, .18), stroke: o.col || C.yel, sw: 2, a: o.a }); TX(D, x, y, s, { size: z, col: o.col || C.yel, a: o.a }); return w; }
+  /* ---- 数と検算 ---- */
+  /* 代入した式 s が、式 e の 文字 v に 式 ex を入れたものと同じか（いくつかの数で） */
+  function subOK(s, e, v, ex) {
+    var p = strip(s).split('＝'), q = strip(e).split('＝');
+    return [[0, 1], [1, -2], [2, 3], [-1, .5]].every(function (t) { var w = { x: t[0], y: t[1] }, w2 = { x: t[0], y: t[1] }; w2[v] = val(ex, w); return near(val(p[0], w) - val(p[1], w), val(q[0], w2) - val(q[1], w2)); });
+  }
+  var TA = 'x＋y＝40', TB = 'x＝3y＋4', TL = ['4y＋4＝40', '4y＝36', 'y＝9', 'x＝3×9＋4＝31'];
+  CH.check(sys(TA, TB, 31, 9) && subOK('(3y＋4)＋y＝40', TA, 'x', '3y＋4') && all(TL, { x: 31, y: 9 }) && 31 === 3 * 9 + 4, '今日の問い（赤 31枚、青 9枚）');
+  var WA = 'y＝2x−1', WB = '3x＋2y＝19', WL = ['3x＋4x−2＝19', '7x＝21', 'x＝3', 'y＝2×3−1＝5'];
+  CH.check(sys(WA, WB, 3, 5) && subOK('3x＋2(2x−1)＝19', WB, 'y', '2x−1') && all(WL, { x: 3, y: 5 }), 'ことば（x＝3、y＝5）');
+  var EA = 'x−3y＝−5', EB = '2x＋5y＝12', EL = ['6y−10＋5y＝12', '11y＝22', 'y＝2', 'x＝3×2−5＝1'];
+  CH.check(sys(EA, EB, 1, 2) && lc('x＝3y−5', 1, EA) && subOK('2(3y−5)＋5y＝12', EB, 'x', '3y−5') && all(EL, { x: 1, y: 2 }) && holds('1−3×2＝−5') && holds('2×1＋5×2＝12'), '例題（x＝1、y＝2）');
+  var CA = 'x＋2y＝11', CB = '3(x＋2y)−y＝31', CL = ['3×11−y＝31', '33−y＝31', 'y＝2', 'x＋4＝11', 'x＝7'];
+  CH.check(sys(CA, CB, 7, 2) && all(CL, { x: 7, y: 2 }) && lc('3x＋5y＝31', 1, CB), 'チャレンジ（x＝7、y＝2）');
+
+  /* カードの式の行：'x|＋y|＝|40' と id。ex：{id: {jump, at, flip}} */
+  function mk(str, ids, ex) { var L = EQ(str, ids); L.forEach(function (it) { if (ex && ex[it.id]) ext(it, ex[it.id]); }); return L; }
+  /* 2行のカードの式（'＝' の位置をそろえる）。返すもの：各行の位置 */
+  function rows2(D, R, y1, y2, A1, B1, k1, A2, B2, k2, o) {
+    o = o || {}; var h = o.h || Math.min(CH.fs(D, 2.1), R.h * .2);
+    function wd(L) { var p = place(D, L, h, 0); return [p.x0, p.x1]; }
+    var sp = [A1, B1, A2, B2].filter(Boolean).map(wd), mn = Math.min.apply(null, sp.map(function (q) { return q[0]; })), mx = Math.max.apply(null, sp.map(function (q) { return q[1]; })), lw = o.lab ? h * 1.4 : 0;
+    if (mx - mn + lw > R.w) { var f = R.w / (mx - mn + lw); h *= f; lw *= f; mn *= f; mx *= f; }
+    var eqX = R.cx - (mn + mx + lw) / 2 + lw;
+    var P1 = morph(D, R, y1, A1, B1, k1, ext({ h: h, eqX: eqX }, o.o1 || {})), P2 = morph(D, R, y2, A2, B2, k2, ext({ h: h, eqX: eqX }, o.o2 || {}));
+    if (o.lab) { TX(D, eqX + mn - h * .5, y1, o.lab[0], { size: h * .5, col: 'rgba(242,240,230,.8)', align: 'right' }); TX(D, eqX + mn - h * .5, y2, o.lab[1], { size: h * .5, col: 'rgba(242,240,230,.8)', align: 'right' }); }
+    return { P1: P1, P2: P2, h: h, eqX: eqX };
+  }
+
+  /* ---- 今日の問い：色紙のテープ図 ---- */
+  function tape(D, R, k) {
+    var s = CH.fs(D), lw = Math.min(R.w * .16, s * 3.6), x0 = R.x0 + lw, W = R.x1 - x0 - s * .4, U = W / 40, th = Math.min(s * 1.8, R.h * .17), y1 = R.y0 + th * .9, y2 = y1 + th * 1.9;
+    TX(D, x0 - s * .4, y1 + th / 2, '赤 x枚', { size: Math.min(s, lw / 3.4), align: 'right' });
+    TX(D, x0 - s * .4, y2 + th / 2, '青 y枚', { size: Math.min(s, lw / 3.4), align: 'right' });
+    var parts = [[0, 9, 'y'], [9, 18, 'y'], [18, 27, 'y'], [27, 31, '4']], sp = CH.smooth(.1, .5, k);
+    CH.fillRect(D, x0, y1, x0 + 31 * U, y1 + th, { fill: ha(XC, .3), stroke: XC, sw: 2, a: 1 - sp * .6 });
+    TX(D, x0 + 15.5 * U, y1 + th / 2, 'x', { size: th * .55, a: 1 - sp });
+    parts.forEach(function (p, i) { var a = CH.smooth(.1 + i * .08, .2 + i * .08, k); if (a <= 0) return; var c = p[2] === 'y' ? YC : NC; CH.fillRect(D, x0 + p[0] * U, y1 + th * .12, x0 + p[1] * U, y1 + th * .88, { fill: ha(c, .35), stroke: c, sw: 1.6, a: a }); TX(D, x0 + (p[0] + p[1]) / 2 * U, y1 + th / 2, p[2], { size: th * .45, a: a }); });
+    if (sp > 0) brace(D, x0, x0 + 31 * U, y1, -1, { h: th * .2, lab: '青の3倍より 4枚多い', size: s * .8, col: C.pink, a: sp });
+    CH.fillRect(D, x0, y2, x0 + 9 * U, y2 + th, { fill: ha(YC, .35), stroke: YC, sw: 2 }); TX(D, x0 + 4.5 * U, y2 + th / 2, 'y', { size: th * .5 });
+    brace(D, x0, x0 + 40 * U, y2 + th + s * .2, 1, { h: th * .2, lab: '赤と青で 40枚', size: s * .8, col: C.yel });
+    return y2 + th + s * 2.6;
+  }
+  function q1(D) {
+    var R = CH.box(D, { l: .03, r: .03, t: .06, b: .04 }), s = CH.fs(D), yb = tape(D, CH.rect(R.x0, R.y0 + s * 1.2, R.x1, R.y0 + R.h * .55), 1);
+    sysC(D, CH.rect(R.x0, yb, R.x1, R.y1), [{ s: 'x＋y＝40', lab: '…①' }, { s: 'x＝3y＋4', lab: '…②' }], 1, { size: s * 1.35 });
+  }
+  /* ---- 今日の問い（答え）：3y＋4 のカードが、① の x の場所へ ---- */
+  function q2(D, k) {
+    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .04 }), s = CH.fs(D), y1 = R.y0 + R.h * .1, y2 = R.y0 + R.h * .28, f = CH.smooth(.06, .32, k), m = CH.smooth(.3, .42, k);
+    var A = mk('x|＋y|＝|40', ['x', 'y', '=', 'c']), B = mk('(3y＋4)|＋y|＝|40', ['x', 'y', '=', 'c']), Q = mk('x|＝|3y＋4', ['x', '=', 'e']);
+    var P = rows2(D, R, y1, y2, A, m > 0 ? B : null, m, Q, null, 0, { lab: ['①', '②'], o2: { hl: function (id) { return id === 'e' && f > 0 && m < 1 ? C.yel : id === 'x' && f > 0 && m < 1 ? C.yel : null; } } });
+    if (f > 0 && m <= 0) { var a = P.P2.e, b = P.P1.x; fly(D, a.x, a.y, b.x, b.y, a.w, b.w * 1.6, P.h, '3y＋4', '(3y＋4)', f, { arc: P.h * 1.2 }); }
+    if (f > 0 && m < 1) TX(D, P.P1.x.x, y1 - P.h * 1.05, 'x と 3y＋4 は同じ数', { size: s * .85, col: C.yel, a: CH.smooth(.06, .14, k) });
+    eqs(D, CH.rect(R.x0, y2 + P.h * 1.1, R.x1, R.y1), [{ s: TL[0], lab: 'まとめる' }, { s: TL[1] }, { s: TL[2] }, { s: TL[3], lab: '② に代入', col: C.yel }], k, { size: s * 1.25, at: [.58, .68, .8], a: CH.smooth(.46, .54, k) });
+  }
+  /* ---- ことば：y＝2x−1 が、かっこごと y の場所へ ---- */
+  function word(D, k) {
+    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .04 }), s = CH.fs(D), y1 = R.y0 + R.h * .1, y2 = R.y0 + R.h * .28, f = CH.smooth(.04, .3, k), m = CH.smooth(.28, .4, k);
+    var Q = mk('y|＝|2x−1', ['y', '=', 'e']), A = mk('3x|＋2y|＝|19', ['x', 'y', '=', 'c']), B = mk('3x|＋2(2x−1)|＝|19', ['x', 'y', '=', 'c']);
+    var P = rows2(D, R, y1, y2, Q, null, 0, A, m > 0 ? B : null, m, { lab: ['①', '②'], o1: { hl: function (id) { return id === 'e' && f > 0 && m < 1 ? C.yel : null; } } });
+    if (f > 0 && m <= 0) { var a = P.P1.e, b = P.P2.y; fly(D, a.x, a.y, b.x, b.y, a.w, b.w * 1.5, P.h, '2x−1', '(2x−1)', f, { arc: -P.h * .2 }); }
+    if (m > 0) TX(D, P.P2.y.x, y2 + P.h * 1, 'かっこごと！', { size: s * .9, col: C.yel, a: CH.smooth(.38, .46, k) * (1 - CH.smooth(.9, 1, k) * .5) });
+    eqs(D, CH.rect(R.x0, y2 + P.h * 1.6, R.x1, R.y1), [{ s: WL[0], lab: 'かっこをはずす' }, { s: WL[1] }, { s: WL[2] }, { s: WL[3], lab: '① に代入', col: C.yel }], k, { size: s * 1.2, at: [.6, .7, .82], a: CH.smooth(.48, .56, k) });
+  }
+  /* ---- 例題：① を x＝… に直して、② に代入 ---- */
+  function ex1(D, k) {
+    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .04 }), s = CH.fs(D), y1 = R.y0 + R.h * .1, y2 = R.y0 + R.h * .28, t = D.ph ? k : 0;
+    var m1 = CH.smooth(.04, .22, t), f = CH.smooth(.28, .48, t), m2 = CH.smooth(.46, .56, t);
+    var A = mk('x|−3y|＝|−5', ['x', 'b', '=', 'c']), A2 = mk('x|＝|3y|−5', ['x', '=', 'b', 'c'], { b: { jump: true } }), A3 = mk('x|＝|3y−5', ['x', '=', 'e']);
+    var Bq = mk('2x|＋5y|＝|12', ['x', 'y', '=', 'c']), B2 = mk('2(3y−5)|＋5y|＝|12', ['x', 'y', '=', 'c']);
+    var top = m1 < 1 ? [A, A2, m1] : [A3, null, 0];
+    var P = rows2(D, R, y1, y2, top[0], top[1], top[2], Bq, m2 > 0 ? B2 : null, m2, { lab: [m1 >= 1 ? '③' : '①', '②'], o1: { hl: function (id) { return id === 'e' && f > 0 && m2 < 1 ? C.yel : null; } } });
+    if (t > .02 && m1 < 1) TX(D, R.cx, y1 - P.h * 1.1, '−3y を移項して、x＝… の形に', { size: fit(D, '−3y を移項して、x＝… の形に', R.w, s * .95), col: C.pink, a: CH.smooth(.02, .08, t) });
+    if (f > 0 && m2 <= 0) { var a = P.P1.e, b = P.P2.x; fly(D, a.x, a.y, b.x, b.y, a.w, b.w * 1.8, P.h, '3y−5', '(3y−5)', f, { arc: -P.h * .2 }); }
+    eqs(D, CH.rect(R.x0, y2 + P.h * 1.1, R.x1, R.y1), [{ s: EL[0], lab: 'かっこをはずす' }, { s: EL[1] }, { s: EL[2] }, { s: EL[3], lab: '③ に代入', col: C.yel }], t, { size: s * 1.2, at: [.68, .77, .87], a: CH.smooth(.58, .64, t) });
+  }
+  /* ---- 考えよう：2x と 2×3y−5 ---- */
+  function tool(D) {
+    var R = CH.box(D, { l: .04, r: .05, t: .05, b: .04 }), s = CH.fs(D), y = D.V.y, x = 3 * y - 5, v = [x, 2 * x, 2 * 3 * y - 5];
+    TS(D, R.cx, R.y0 + s * .7, [['y＝', C.chalk], [String(y), C.yel], [' のとき', C.chalk]], { size: s * 1.2 });
+    var L = [['x＝3y−5', '3×' + y + '−5＝' + S(v[0]), XC], ['2x', '2×(' + S(v[0]) + ')＝' + S(v[1]), C.lav], ['2×3y−5', '2×3×' + y + '−5＝' + S(v[2]), C.pink]];
+    var bx0 = R.x0 + R.w * .36, bx1 = R.x1 - s * 1, mn = -11, mx = 20, X = function (q) { return bx0 + (q - mn) / (mx - mn) * (bx1 - bx0); }, bh = Math.min(s * 1.7, R.h * .1), y0 = R.y0 + R.h * .2;
+    L.forEach(function (l, i) {
+      var yy = y0 + i * bh * 2.6;
+      TX(D, bx0 - s * .5, yy + bh / 2, l[0], { size: fit(D, l[0], R.w * .3, s * 1.05), col: l[2], align: 'right' });
+      CH.fillRect(D, X(Math.min(0, v[i])), yy, X(Math.max(0, v[i])), yy + bh, { fill: ha(l[2], .4), stroke: l[2], sw: 2 });
+      TX(D, X(Math.max(0, v[i])) + s * .3, yy + bh / 2, S(v[i]), { size: s, col: l[2], align: 'left' });
+      TX(D, bx0, yy + bh + s * .75, l[1], { size: s * .8, col: 'rgba(242,240,230,.8)', align: 'left' });
+    });
+    CH.line(D, X(0), y0 - 8, X(0), y0 + bh * 7.4, { w: 1.6 });
+    TX(D, X(0), y0 + bh * 7.4 + s * .6, '0', { size: s * .8 });
+  }
+  /* ---- チャレンジ：x＋2y を 11 におきかえる ---- */
+  function chal(D, k) {
+    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .04 }), s = CH.fs(D), y1 = R.y0 + R.h * .1, y2 = R.y0 + R.h * .28, t = D.ph ? k : 0, f = CH.smooth(.06, .3, t), m = CH.smooth(.3, .42, t);
+    var A = mk('x＋2y|＝|11', ['e', '=', 'c']), B = mk('3(x＋2y)|−y|＝|31', ['p', 'y', '=', 'c']), B2 = mk('3×11|−y|＝|31', ['p', 'y', '=', 'c']);
+    var hl = t > .02 && m < 1;
+    var P = rows2(D, R, y1, y2, A, null, 0, B, m > 0 ? B2 : null, m, { lab: ['①', '②'], o1: { hl: function (id) { return hl && id === 'e' ? C.yel : null; } }, o2: { hl: function (id) { return hl && id === 'p' ? C.yel : null; } } });
+    if (hl) TX(D, P.P1.e.x, y1 - P.h * 1.05, 'x＋2y は 11 と同じ', { size: s * .85, col: C.yel, a: CH.smooth(.02, .08, t) });
+    if (f > 0 && m <= 0) { var a = P.P1.c, b = P.P2.p; fly(D, a.x, a.y, b.x, b.y, a.w, b.w * .8, P.h, '11', '×11', f, { arc: -P.h * .2 }); }
+    eqs(D, CH.rect(R.x0, y2 + P.h * 1.1, R.x1, R.y1 - s * 2), [{ s: CL[1] }, { s: CL[2] }, { s: CL[3], lab: '① に代入' }, { s: CL[4], col: C.yel }], t, { size: s * 1.2, at: [.58, .68, .8], a: CH.smooth(.46, .52, t) });
+    var ab = '（別解）② のかっこをはずして 3x＋5y＝31 としてもよい';
+    TX(D, R.cx, R.y1 - s * .8, ab, { size: fit(D, ab, R.w, s * .9), col: C.green, a: CH.smooth(.9, .98, t) });
+  }
+
+  K3.run({
+    no: '第4時', title: '式を式に代入して、文字を1つ消そう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '03.html', label: '◀ 第3時' }, { href: '05.html', label: '第5時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: '色紙 40枚（赤と青）', q: '色紙が 40枚ある。赤は、青の 3倍より 4枚多い。赤を x枚、青を y枚とすると、連立方程式 ' + SY('x＋y＝40　…①', 'x＝3y＋4　…②') + ' ができる。② の式を使って、文字を1つ消す方法を考えよう。',
+        notes: ['① 自分の考え（3分）　文字を1つ消す方法と、解き方を書こう。', '② ペアの考え（3分）　自分とちがう考えを書こう。'],
+        draw: function (D) { q1(D); } },
+      { tag: '今日の問い', q: '② の式を使って、文字を1つ消すには？ 赤と青は何枚？', a: '① の x を 3y＋4 におきかえる。赤 31枚、青 9枚', sub: 'x と 3y＋4 は同じ数。(3y＋4)＋y＝40 → 4y＝36 → y＝9。② に代入して x＝3×9＋4＝31', dur: 9,
+        b: { t: '① の x に 3y＋4 を入れる → 4y＋4＝40 → <b>x＝31、y＝9</b>', col: C.yel },
+        draw: function (D) { q2(D, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: '式を式に代入して、文字を1つ消去する解き方を、何という？', a: '代入法', sub: 'y＝2x−1 を 3x＋2y＝19 の y に代入すると 3x＋2(2x−1)＝19。式は かっこごと入れる。x＝3、y＝5', dur: 9,
+        b: [{ t: '式を式に<b>代入</b>して消去する … <b>代入法</b>', col: C.green }, { t: '「x＝…」「y＝…」の形の式があると使いやすい。<b>かっこごと</b>入れる', col: C.green }],
+        draw: function (D) { word(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題　代入法で解く', q: '連立方程式 ' + SY('x−3y＝−5　…①', '2x＋5y＝12　…②') + ' を、代入法で解こう。', a: 'x＝1、y＝2', sub: '① を x＝3y−5 …③ に直す。③ を ② に代入して 2(3y−5)＋5y＝12、11y＝22、y＝2。③ に代入して x＝1。確かめ：① 1−3×2＝−5、② 2×1＋5×2＝12', dur: 10,
+        b: { t: 'x＝3y−5 …③ → 2(3y−5)＋5y＝12 → <b>x＝1、y＝2</b>', col: C.pink },
+        draw: function (D) { ex1(D, D.ph ? D.t : 0); } },
+      { tag: '考えよう', bh: '考えよう', q: 'x＝3y−5 を 2x に代入するとき、2(3y−5) と、かっこをつけて書く。かっこをつけずに 2×3y−5 と書くと、どうなるだろう。',
+        notes: ['y＝1、2、3 のとき、x＝3y−5・2x・2×3y−5 の値を表にして、くらべよう。', 'かっこをつけなくてもよい場合は、あるかな。例をあげて、数を入れて確かめよう。', 'スライダーで y の値を変えると、3つの値が見られます。'],
+        sliders: [{ key: 'y', label: 'y の値', min: 0, max: 4, step: 1, val: 1, fmt: function (v) { return 'y＝' + v; } }],
+        draw: tool },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '連立方程式 ' + SY('x＋2y＝11　…①', '3(x＋2y)−y＝31　…②') + ' を解こう。',
+        a: 'x＝7、y＝2', sub: '① より x＋2y は 11 と同じ。② の x＋2y に 11 を代入して 3×11−y＝31、y＝2。① に代入して x＋4＝11、x＝7', dur: 9,
+        b: { t: 'x＋2y に 11 を代入 → 33−y＝31 → <b>x＝7、y＝2</b>', col: C.orange },
+        draw: function (D) { chal(D, D.ph ? D.t : 0); } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

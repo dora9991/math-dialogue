@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>多角形の内角の和</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="js/geo.js"></script>
+<script>
+/* 平行と合同 第5時：多角形の内角の和は、どう求められるだろう（ikkan の lesson_heikou_new_05 と同じ流れ）。
+   図の形・数値は ikkan のワークシートと同じ（四角形〜七角形の内角、例題 八角形・1440°、五角形の ∠x＝105°、チャレンジ ∠A＝120°・∠B＝80° → 100°）。
+   多角形は、内角の大きさと辺の長さから座標を計算して描き、内角の和は、座標から測った角の合計で確かめる。 */
+(function () {
+  /* ---- このページの図の道具（角の印を、向きで描く） ---- */
+  var C = CH.C, RD = Math.PI / 180, OUT = 'rgba(20,40,30,.9)', NM = 'ABCDEFGHIJKL';
+  function nd(a) { return ((a % 360) + 360) % 360; }
+  function dir(p, q) { return Math.atan2(q[1] - p[1], q[0] - p[0]) / RD; }
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  /* 角の印：頂点 V（座標）で、向き a1 から a2 まで左まわり（度）。o：r（px）、col、fill、a、w */
+  function wedge(F, V, a1, a2, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(V), r = o.r || F.s * 1.1, col = o.col || C.chalk, d = nd(a2 - a1);
+    if (o.a === 0) return;
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a);
+    if (o.fill) { g.fillStyle = hexA(col, o.fill === true ? .35 : o.fill); g.beginPath(); g.moveTo(p[0], p[1]); g.arc(p[0], p[1], r, -a1 * RD, -(a1 + d) * RD, true); g.closePath(); g.fill(); }
+    g.strokeStyle = col; g.lineWidth = o.w || 2.4; g.beginPath(); g.arc(p[0], p[1], r, -a1 * RD, -(a1 + d) * RD, true); g.stroke(); g.restore();
+  }
+  function lab(F, p, deg, k, t, o) {
+    o = o || {}; var q = F.X(p), x = q[0] + Math.cos(deg * RD) * F.s * k, y = q[1] - Math.sin(deg * RD) * F.s * k, s = F.s * (o.size || .95);
+    if (o.t2 != null) { CH.text(F.D, x, y - s * .5, t, { col: o.col, size: s, a: o.a, outline: OUT }); CH.text(F.D, x, y + s * .55, o.t2, { col: o.col2 || o.col, size: s * .9, a: o.a, outline: OUT, num: true }); }
+    else CH.text(F.D, x, y, t, { col: o.col, size: s, a: o.a, outline: OUT, num: o.num });
+  }
+  /* 図の上の1行（はばに入らなければ、字を小さくする） */
+  function top(D, s, col, a, row) {
+    var B = CH.box(D, { t: 0, l: .02, r: .02 }), g = D.ctx, f0 = CH.fs(D, 1.05), fs = f0, w;
+    g.save(); g.font = '600 ' + fs + 'px "Klee One", sans-serif'; w = g.measureText(s).width; g.restore();
+    if (w > B.w) fs *= B.w / w;
+    CH.text(D, B.cx, B.y0 + f0 * (.75 + (row || 0) * 1.3), s, { col: col || C.yel, a: a, size: fs, outline: OUT });
+  }
+  function textIn(D, R, x, y, s, o) { var g = D.ctx, fs = o.size, w; g.save(); g.font = '600 ' + fs + 'px "Klee One", sans-serif'; w = g.measureText(s).width; g.restore(); if (w > R.w * .96) fs *= R.w * .96 / w; CH.text(D, x, y, s, Object.assign({}, o, { size: fs, outline: OUT })); }
+
+  /* ---- 凸多角形（左まわり）：内角 ints と辺の長さ lens（2つだけ null にして、閉じるように決める）、辺 AB の向き d0 から、頂点の座標を出す ---- */
+  function polyInt(ints, lens, d0) {
+    var n = ints.length, d = [d0], k;
+    for (k = 1; k < n; k++) d.push(d[k - 1] + 180 - ints[k]);
+    var u = d.map(function (a) { return GE.polar([0, 0], 1, a); }), un = [], sx = 0, sy = 0;
+    lens.forEach(function (l, i) { if (l == null) un.push(i); else { sx += l * u[i][0]; sy += l * u[i][1]; } });
+    var i = un[0], j = un[1], det = u[i][0] * u[j][1] - u[i][1] * u[j][0], L = lens.slice();
+    L[i] = (-sx * u[j][1] + sy * u[j][0]) / det; L[j] = (-u[i][0] * sy + u[i][1] * sx) / det;
+    var P = {}, p = [0, 0]; for (k = 0; k < n; k++) { P[NM[k]] = p; p = [p[0] + L[k] * u[k][0], p[1] + L[k] * u[k][1]]; }
+    P.n = n; return P;
+  }
+  /* 正 n 角形（辺 AB が下で横） */
+  function reg(n, R) { var P = { n: n }; for (var k = 0; k < n; k++) P[NM[k]] = GE.polar([0, 0], R, 270 - 180 / n + 360 * k / n); return P; }
+  function keys(P) { return NM.slice(0, P.n).split(''); }
+  function vp(P, k) { return P[NM[(k + P.n) % P.n]]; }
+  /* 頂点 k の内角の向き（次の頂点へ → 前の頂点へ、左まわり） */
+  function ispan(P, k) { var V = vp(P, k); return [dir(V, vp(P, k + 1)), dir(V, vp(P, k - 1))]; }
+  function ival(P, k) { var s = ispan(P, k); return nd(s[1] - s[0]); }
+  function iname(P, k) { return NM[(k - 1 + P.n) % P.n] + NM[k] + NM[(k + 1) % P.n]; }
+  function isum(P) { var s = 0; for (var k = 0; k < P.n; k++) s += GE.ang(P, iname(P, k)); return s; }
+  function convex(P) { for (var k = 0; k < P.n; k++) { var a = vp(P, k - 1), b = vp(P, k), c = vp(P, k + 1); if ((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]) <= 0) return false; } return true; }
+  function iArc(F, P, k, col, o) { o = o || {}; var s = ispan(P, k); wedge(F, vp(P, k), s[0], s[1], { col: col, fill: o.fill == null ? .25 : o.fill, r: o.r || F.s * 1.1, a: o.a }); }
+  function iLab(F, P, k, t, o) { o = o || {}; var s = ispan(P, k), w = nd(s[1] - s[0]); lab(F, vp(P, k), s[0] + w / 2, (o.k || 1) * (w < 80 ? 2.5 : 2.1), t, { col: o.col, size: o.size || .8, a: o.a, t2: o.t2 }); }
+  function outline(F, P, o) { o = o || {}; GE.poly(F, NM.slice(0, P.n), { col: o.col || C.blue, fa: o.fa == null ? .1 : o.fa, stroke: C.chalk, sw: 2.6, a: o.a }); }
+  var TC = [C.blue, C.green, C.yel, C.pink, C.orange, C.lav, C.blue, C.green, C.yel, C.pink];
+  /* 頂点 A から対角線（m 本目まで、k は途中の進み）。三角形に色 */
+  function fan(F, P, m, o) {
+    o = o || {}; var A = P.A;
+    for (var j = 0; j < P.n - 2; j++) { var al = CH.clamp(m - j, 0, 1); if (al > 0) GE.polyP(F, [A, vp(P, j + 1), vp(P, j + 2)], { col: TC[j], fa: .3 * al, a: 1 }); }
+    for (var i = 0; i < P.n - 3; i++) { var k = CH.clamp(m - i, 0, 1); if (k > 0) GE.seg(F, [A, GE.lerpP(A, vp(P, i + 2), k)], { col: C.yel, w: 2.4 }); }
+  }
+  function fitP(D, R, P, pad) { return GE.fit(D, R, P, { keys: keys(P), pad: pad == null ? .12 : pad }); }
+  var KN = ['', '', '', '三角形', '四角形', '五角形', '六角形', '七角形', '八角形', '九角形', '十角形', '十一角形', '十二角形'];
+
+  /* ---- 今日の問い：四角形〜七角形（ikkan と同じ内角） ---- */
+  var SH = [polyInt([100, 85, 95, 80], [3.4, 3.0, null, null], 0), polyInt([105, 110, 95, 120, 110], [3.0, 3.2, 2.8, null, null], 0),
+    polyInt([125, 110, 130, 115, 120, 120], [3.0, 3.0, 2.8, 3.2, null, null], 0), polyInt([130, 120, 135, 125, 140, 120, 130], [2.4, 2.6, 2.4, 2.5, 2.6, null, null], 0)];
+  SH.forEach(function (P) { CH.check(convex(P) && Math.abs(isum(P) - 180 * (P.n - 2)) < 1e-6, KN[P.n] + 'の内角の和（座標から）'); });
+  CH.check(180 * 2 === 360 && 180 * 3 === 540 && 180 * 4 === 720 && 180 * 5 === 900, '今日の問いの式');
+  /* ---- 例題：八角形 1080°、正八角形 135°、1440° → 十角形 ---- */
+  var R8 = reg(8, 3), R10 = reg(10, 3);
+  CH.check(Math.abs(isum(R8) - 1080) < 1e-6 && Math.abs(GE.ang(R8, 'HAB') - 135) < 1e-6 && 180 * (8 - 2) / 8 === 135, '例題（1）（2）');
+  var nn = []; for (var n = 3; n <= 20; n++) if (180 * (n - 2) === 1440) nn.push(n);
+  CH.check(nn.join() === '10' && Math.abs(isum(R10) - 1440) < 1e-6, '例題（3）');
+  /* ---- 例題2：五角形 ∠x、120°、90°、130°、95° → ∠x＝105° ---- */
+  var P5 = polyInt([105, 120, 90, 130, 95], [3.6, 3.4, 3.2, null, null], 0);
+  GE.verify(P5, '∠EAB＝105°、∠ABC＝120°、∠BCD＝90°、∠CDE＝130°、∠DEA＝95°', null, '例題2');
+  CH.check(convex(P5) && 540 - (120 + 90 + 130 + 95) === 105, '例題2の式');
+  /* ---- チャレンジ：四角形 ABCD、∠A＝120°、∠B＝80°。∠C・∠D の二等分線の交点 P → ∠CPD＝100° ---- */
+  function chQ(c) {
+    var P = polyInt([120, 80, c, 160 - c], [4.4, 4.6, null, null], 0), s1 = ispan(P, 2), s2 = ispan(P, 3);
+    P.P = GE.meet(P.C, GE.polar(P.C, 1, s1[0] + nd(s1[1] - s1[0]) / 2), P.D, GE.polar(P.D, 1, s2[0] + nd(s2[1] - s2[0]) / 2)); return P;
+  }
+  GE.verify(chQ(70), '∠DAB＝120°、∠ABC＝80°、∠BCP＝∠PCD＝35°、∠CDP＝∠PDA＝45°、∠PCD＋∠PDC＝80°、∠CPD＝100°', null, 'チャレンジ');
+  for (var cc = 50; cc <= 105; cc += 5) { var Q = chQ(cc); CH.check(convex(Q), 'チャレンジの四角形（∠C＝' + cc + '°）'); GE.verify(Q, '∠BCP＝∠PCD、∠CDP＝∠PDA、∠CPD＝100°', null, 'チャレンジ（∠C＝' + cc + '°）'); }
+  CH.check(360 - 120 - 80 === 160 && 160 / 2 === 80 && 180 - 80 === 100, 'チャレンジの式');
+
+  /* 2×2 のます */
+  function grid4(D, R) { var rr = CH.rows(R, 2, .05), out = []; rr.forEach(function (r) { CH.cols(r, 2, .05).forEach(function (q) { out.push(q); }); }); return out; }
+
+  K3.run({
+    no: '第5時', title: '多角形の内角の和は、どう求められるだろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '04.html', label: '◀ 第4時' }, { href: '06.html', label: '第6時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '多角形の内角の和', q: '1つの頂点 A から対角線をひいて三角形に分け、四角形〜七角形の内角の和を求めよう。三角形の数と、頂点の数の関係は？',
+        notes: ['① 自分の考え（3分）　図にかきこんで、求めよう。', '② ペアの考え（3分）'],
+        draw: function (D) { four(D, 0, false); } },
+      { tag: '今日の問い', q: '内角の和は？ 三角形の数と、頂点の数の関係は？', a: '三角形の数は（頂点の数−2）個。内角の和は 360°、540°、720°、900°', sub: '四角形 180°×2、五角形 180°×3、六角形 180°×4、七角形 180°×5', dur: 6,
+        b: { t: '四角形 <b>360°</b>、五角形 <b>540°</b>、六角形 <b>720°</b>、七角形 <b>900°</b>（三角形は 頂点の数−2 個）', col: C.yel },
+        draw: function (D) { four(D, D.ph ? D.t : 0, true); } },
+      { tag: 'ことば', bh: 'ことば', q: 'となりあわない2つの頂点を結ぶ線分を何という？ n角形の内角の和は？ 辺も角もすべて等しい多角形を何という？', a: '対角線。180°×(n−2)。正多角形', sub: '1つの頂点から対角線をひくと、n角形は (n−2)個の三角形に分かれる', dur: 6,
+        notes: ['スライダーで、n を変えられます。'],
+        sliders: [{ key: 'n', label: 'n（頂点の数）', min: 3, max: 12, step: 1, val: 5, anim: [4, 12], fmt: function (v) { return KN[Math.round(v)]; } }],
+        b: [{ t: '<b>対角線</b> … となりあわない2つの頂点を結ぶ線分', col: C.green }, { t: 'n角形の内角の和 … <b>180°×(n−2)</b>', col: C.green }, { t: '<b>正多角形</b> … 辺も角もすべて等しい多角形', col: C.green }],
+        draw: function (D) {
+          var n = Math.round(D.V.n), P = reg(n, 3), F = fitP(D, CH.box(D, { l: .04, r: .04, t: .16, b: .07 }), P, .06);
+          outline(F, P, { fa: 0 }); fan(F, P, n);
+          for (var k = 0; k < n; k++) iArc(F, P, k, C.chalk, { fill: .1, r: F.s * .9 });
+          GE.labels(F, ['A']);
+          top(D, KN[n] + '：三角形 ' + (n - 2) + '個 → 180°×' + (n - 2) + '＝' + 180 * (n - 2) + '°', C.yel);
+          top(D, '内角の和＝180°×(n−2)', C.green, 1, 1);
+        } },
+      { tag: '例題', bh: '例題　内角の和を使う', q: '（1）八角形の内角の和を求めよう。（2）正八角形の1つの内角を求めよう。（3）内角の和が 1440° の多角形は、何角形だろう。', a: '（1）1080°（2）135°（3）十角形', sub: '（1）180°×(8−2)＝1080°（2）1080°÷8＝135°（3）180°×(n−2)＝1440° → n−2＝8 → n＝10', dur: 9,
+        b: [{ t: '（1）180°×(8−2)＝<b>1080°</b>　（2）1080°÷8＝<b>135°</b>', col: C.pink }, { t: '（3）180°×(n−2)＝1440° → n−2＝8 → <b>十角形</b>', col: C.pink }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, ten = t >= .66, P = ten ? R10 : R8, F = fitP(D, CH.box(D, { l: .04, r: .04, t: .16, b: .07 }), P, .1), n = P.n;
+          var a = ten ? CH.smooth(.66, .72, t) : 1 - (t > .6 ? CH.smooth(.6, .66, t) : 0);
+          outline(F, P, { fa: .06, a: a });
+          if (D.ph) fan(F, P, ten ? CH.smooth(.7, .9, t) * (n - 2) : CH.smooth(.02, .25, t) * (n - 2));
+          if (!ten && t > .33) for (var k = 0; k < n; k++) { var aa = CH.smooth(.33 + k * .02, .4 + k * .02, t) * a; iArc(F, P, k, C.yel, { fill: .3, r: F.s * 1.1, a: aa }); iLab(F, P, k, '135°', { col: C.yel, a: aa, size: .75, k: 1.15 }); }
+          GE.labels(F, ['A'], { a: a });
+          if (!D.ph) top(D, '八角形', C.chalk);
+          else if (t < .33) top(D, '（1）三角形 6個 → 180°×6＝1080°', C.yel, CH.smooth(.15, .25, t));
+          else if (!ten) top(D, '（2）正八角形の1つの内角　1080°÷8＝135°', C.yel, CH.smooth(.33, .4, t));
+          else { top(D, '（3）180°×(n−2)＝1440°　n−2＝8　n＝10', C.pink, CH.smooth(.7, .78, t)); if (t > .9) top(D, '十角形（三角形 8個）', C.pink, CH.smooth(.9, .97, t), 1); }
+        } },
+      { tag: '例題', bh: '例題2　∠x を求める', q: '図の五角形で、∠x の大きさを求めよう。', a: '105°', sub: '五角形の内角の和は 180°×(5−2)＝540°。∠x＝540°−(120°＋90°＋130°＋95°)＝105°', dur: 5,
+        b: { t: '540°−(120°＋90°＋130°＋95°)＝<b>105°</b>', col: C.pink },
+        draw: function (D) {
+          var P = P5, F = fitP(D, CH.box(D, { l: .04, r: .04, t: .16, b: .07 }), P, .12), t = D.ph ? D.t : 0, lb = ['x', '120°', '90°', '130°', '95°'];
+          outline(F, P); if (D.ph) fan(F, P, CH.smooth(.02, .35, t) * 3);
+          for (var k = 0; k < 5; k++) { iArc(F, P, k, k ? C.chalk : C.orange, { fill: k ? .12 : .3 }); iLab(F, P, k, k ? lb[k] : (D.ph && t > .8 ? '105°' : 'x'), { col: k ? C.chalk : C.orange, size: .85 }); }
+          GE.labels(F, keys(P), { a: .9 });
+          if (D.ph) top(D, t < .45 ? '五角形 → 三角形 3個　180°×3＝540°' : '∠x＝540°−(120°＋90°＋130°＋95°)＝105°', t < .45 ? C.yel : C.orange, CH.smooth(.1, .2, t));
+        } },
+      { tag: '考えよう', q: '五角形の内角の和を、「1つの頂点から対角線をひく」とはちがう分け方で求めよう。どの分け方でも、同じ答えになるだろうか。n角形で、n を使った式で説明しよう。',
+        notes: ['分けた三角形の数と、よけいな角（たしすぎた角）に目をつけよう。', 'スライダーで、点 P の場所と、多角形を変えられます。'],
+        sliders: [{ key: 'p', label: '点 P の場所', min: 0, max: 2, step: 1, val: 2, fmt: function (v) { return ['頂点', '辺の上', '内部'][v]; } }, { key: 'n', label: '多角形', min: 4, max: 7, step: 1, val: 5, fmt: function (v) { return KN[v]; } }],
+        draw: function (D) {
+          var P = SH[D.V.n - 4], n = P.n, F = fitP(D, CH.box(D, { l: .04, r: .04, t: .06, b: .04 }), P, .1), ks = keys(P), c = [0, 0];
+          ks.forEach(function (k) { c[0] += P[k][0] / n; c[1] += P[k][1] / n; });
+          var pt = D.V.p === 0 ? P.A : D.V.p === 1 ? GE.mid(P.A, P.B) : c, j, pts = [];
+          for (j = 0; j < n; j++) pts.push(vp(P, j));
+          outline(F, P, { fa: .05 });
+          var tris = [];
+          if (D.V.p === 0) for (j = 1; j < n - 1; j++) tris.push([pt, pts[j], pts[j + 1]]);
+          else if (D.V.p === 1) { tris.push([pt, pts[1], pts[2]]); for (j = 2; j < n - 1; j++) tris.push([pt, pts[j], pts[j + 1]]); tris.push([pt, pts[n - 1], pts[0]]); }
+          else for (j = 0; j < n; j++) tris.push([pt, pts[j], pts[(j + 1) % n]]);
+          tris.forEach(function (q, i) { GE.polyP(F, q, { col: TC[i], fa: .25 }); });
+          for (j = 0; j < n; j++) if (D.V.p === 2 || (D.V.p === 1 && j !== 0 && j !== 1) || (D.V.p === 0 && j > 1 && j < n - 1)) GE.seg(F, [pt, pts[j]], { col: C.yel, w: 2.4 });
+          GE.dot(F, pt, { col: C.yel, r: F.s * .22 }); lab(F, pt, D.V.p === 1 ? 270 : D.V.p === 0 ? 225 : 90, 1, 'P', { col: C.yel, size: 1 });
+          GE.labels(F, ks.filter(function (k) { return !(D.V.p === 0 && k === 'A'); }), { a: .85 });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '四角形 ABCD で、∠A＝120°、∠B＝80° である。∠C の二等分線と ∠D の二等分線の交点を P とするとき、∠CPD（∠x）を求めよう。', a: '100°',
+        sub: '∠C＋∠D＝360°−(120°＋80°)＝160°。∠PCD＋∠PDC は その半分で 80°。△PCD で ∠x＝180°−80°＝100°', dur: 7,
+        notes: ['ヒント① 四角形の内角の和は何度か。∠C と ∠D の和は？', 'ヒント② ∠PCD と ∠PDC の和は？ △PCD で考えよう。', 'スライダーで、∠A・∠B はそのまま、∠C を変えられます。'],
+        sliders: [{ key: 'c', label: '∠C の大きさ', min: 50, max: 105, step: 1, val: 70, fmt: function (v) { return v + '°'; } }],
+        b: { t: '∠C＋∠D＝160° → ∠PCD＋∠PDC＝80° → ∠x＝<b>100°</b>', col: C.orange },
+        draw: function (D) {
+          var P = chQ(D.V.c), F = GE.fit(D, CH.box(D, { l: .04, r: .04, t: .16, b: .07 }), P, { keys: ['A', 'B', 'C', 'D'], pad: .1 }), t = D.ph ? D.t : 0, s2 = ispan(P, 2), s3 = ispan(P, 3), dCP = dir(P.C, P.P), dDP = dir(P.D, P.P);
+          var h = D.ph ? CH.smooth(.4, .5, t) : 0;
+          if (h > 0) GE.poly(F, 'PCD', { col: C.orange, fa: .25 * h, stroke: false });
+          outline(F, P); GE.seg(F, ['C', 'P'], { w: 2.4 }); GE.seg(F, ['D', 'P'], { w: 2.4 });
+          iArc(F, P, 0, C.yel, { fill: .3, r: F.s * 1.4 }); iLab(F, P, 0, '120°', { col: C.yel, size: .85, k: 1.1 });
+          iArc(F, P, 1, C.yel, { fill: .3, r: F.s * 1.4 }); iLab(F, P, 1, '80°', { col: C.yel, size: .85, k: 1.1 });
+          wedge(F, P.C, s2[0], dCP, { col: C.pink, r: F.s * 1.5, fill: .2 }); wedge(F, P.C, dCP, s2[1], { col: C.pink, r: F.s * 1.5, fill: .2 });
+          lab(F, P.C, s2[0] + nd(dCP - s2[0]) / 2, 2.4, '●', { col: C.pink, size: .8 }); lab(F, P.C, dCP + nd(s2[1] - dCP) / 2, 2.4, '●', { col: C.pink, size: .8 });
+          wedge(F, P.D, s3[0], dDP, { col: C.blue, r: F.s * 1.5, fill: .2 }); wedge(F, P.D, dDP, s3[1], { col: C.blue, r: F.s * 1.5, fill: .2 });
+          lab(F, P.D, s3[0] + nd(dDP - s3[0]) / 2, 2.4, '○', { col: C.blue, size: 1 }); lab(F, P.D, dDP + nd(s3[1] - dDP) / 2, 2.4, '○', { col: C.blue, size: 1 });
+          var dPC = dir(P.P, P.C), dPD = dir(P.P, P.D), xv = Math.round(GE.ang(P, 'CPD'));
+          wedge(F, P.P, dPC, dPD, { col: C.orange, r: F.s * 1.4, fill: .35 }); lab(F, P.P, dPC + nd(dPD - dPC) / 2, 2.6, D.ph && t > .85 ? xv + '°' : 'x', { col: C.orange, size: .95 });
+          GE.labels(F, ['A', 'B', 'C', 'D'], { a: .9 }); lab(F, P.P, dPC + nd(dPD - dPC) / 2 + 180, 1.1, 'P', { size: 1 });
+          if (D.ph) { var msg = t < .4 ? ['∠C＋∠D＝360°−(120°＋80°)＝160°', C.chalk] : t < .7 ? ['●＋○＝160°÷2＝80°', C.pink] : ['△PCD で　∠x＝180°−80°＝100°', C.orange]; top(D, msg[0], msg[1], CH.smooth(0, .05, t)); }
+        } }
+    ]
+  });
+
+  /* 今日の問いの4つの図（t：答えの動きの進み） */
+  function four(D, t, ans) {
+    var R = CH.box(D, { l: .02, r: .02, t: .04, b: .02 }), cs = grid4(D, R), s = CH.fs(D);
+    SH.forEach(function (P, i) {
+      var q = cs[i], n = P.n, F = fitP(D, CH.rect(q.x0, q.y0 + s * 1.3, q.x1, q.y1 - s * 2.1), P, .12);
+      outline(F, P, { fa: .06 });
+      if (ans) fan(F, P, CH.smooth(.05, .7, t) * (n - 2));
+      GE.labels(F, ['A'], { dir: { A: 'w' } });
+      textIn(D, q, q.cx, q.y0 + s * .6, KN[n] + '（頂点 ' + n + '個）', { col: C.chalk, size: s * .95 });
+      if (ans && t > .72) textIn(D, q, q.cx, q.y1 - s * .55, '三角形 ' + (n - 2) + '個 → 180°×' + (n - 2) + '＝' + 180 * (n - 2) + '°', { col: C.yel, a: CH.smooth(.72, .85, t), size: s * .9 });
+    });
+  }
+})();
+</script>
+</body>
+</html>

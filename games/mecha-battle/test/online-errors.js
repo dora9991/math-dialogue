@@ -55,6 +55,22 @@ const PORT = 9102;
     const s = await st(p);
     check('4もじでないと進まない', s.state === 'joinInput' && !!s.msg, s);
   }
+  console.log('● バージョンがちがう相手とは、つないだあとにはじく（物理を変えたのに古いページのまま、を防ぐ）');
+  {
+    const A = await mk('A', PORT), B = await mk('B', PORT);
+    await ev(A, () => window.__mecha.Game.go('online')); await sleep(200); await tap(A, 'Enter');
+    await A.waitForFunction(() => window.__mecha.SceneOnline.state === 'hosting', null, { timeout: 15000 });
+    const code = await ev(A, () => window.__mecha.SceneOnline.code);
+    // ゲストを「ひとつ古いバージョン」のふりにする（hello のバージョン番号だけ書き換える）
+    await ev(B, () => { const N = window.__mecha.Net, send = N.send; N.send = function (m) { if (m && m.t === 'hello') m = Object.assign({}, m, { v: m.v - 1 }); return send.call(this, m); }; });
+    await ev(B, () => window.__mecha.Game.go('online')); await sleep(200); await tap(B, 'ArrowDown'); await tap(B, 'Enter');
+    await B.fill('#roomCode', code); await B.click('#roomGo');
+    await A.waitForFunction(() => window.__mecha.SceneOnline.state === 'error', null, { timeout: 15000 }).catch(() => {});
+    const s = await st(A);
+    check('ホストが「バージョンが ちがいます」で止まる', s.state === 'error' && /バージョン/.test(s.msg) && /さいよみこみ/.test(s.msg), s);
+    check('キャラ選択には進まない', (await ev(A, () => window.__mecha.Game.sceneName)) === 'online');
+    await A.screenshot({ path: ROOT + '/shots/oe3_version.png', clip: await A.locator('#screen').boundingBox() });
+  }
   console.log('● 途中で相手が切れる（キャラ選択中・対戦中）');
   for (const phase of ['select', 'fight']) {
     const A = await mk('A', PORT), B = await mk('B', PORT);

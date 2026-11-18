@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>箱ひげ図で判断する</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* データの比較（箱ひげ図） 第4時：複数のデータをくらべて、根拠をあげて判断しよう（ikkan の lesson_hako_04 と同じ流れ）。
+   3つのバス路線の箱ひげ図をならべ、中央値で選ぶと Y、「確実に 25分以内」なら 25分の線をこえない X（目的で結論が変わる）。
+   例題は、表に中央値・四分位範囲・範囲を書きこむ／100m走で「確実に」と「速い記録をねらう」で選ぶ人が変わる。
+   考えようは、乗る時刻の線と、15日の記録（ドット）を出す道具。チャレンジは本の冊数（6冊の線）。
+   データは自作（バスの 15日間の記録は ikkan（授業ナビ）と同じ。ほかも ikkan の数値）。5つの値・平均値は ページの中で計算し直して照らし合わせている（CH.check）。
+   四分位数は教科書の求め方（中央値で前半・後半に分け、それぞれの中央値。個数が奇数のとき、中央値は前半・後半に入れない）。 */
+(function () {
+  var C = CH.C;
+  /* ---- 四分位数（教科書の求め方） ---- */
+  function md(a) { var m = a.length; return m % 2 ? a[(m - 1) / 2] : (a[m / 2 - 1] + a[m / 2]) / 2; }
+  function Q5(d) {
+    var s = d.slice().sort(function (a, b) { return a - b; }), n = s.length, h = Math.floor(n / 2);
+    var r = { s: s, n: n, min: s[0], q1: md(s.slice(0, h)), med: md(s), q3: md(s.slice(n - h)), max: s[n - 1] };
+    r.f = [r.min, r.q1, r.med, r.q3, r.max]; r.iqr = r.q3 - r.q1; r.rng = r.max - r.min; return r;
+  }
+  function eq5(d, f) { var r = Q5(d); return f.every(function (v, i) { return CH.near(r.f[i], v); }); }
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+
+  var BX = [15, 16, 17, 17, 17, 18, 18, 18, 19, 19, 20, 20, 21, 21, 22], BY = [12, 12, 13, 13, 14, 14, 15, 15, 17, 20, 22, 24, 26, 29, 32], BZ = [18, 19, 19, 19, 20, 20, 20, 20, 20, 21, 21, 21, 22, 22, 23];
+  var FX = [15, 17, 18, 20, 22], FY = [12, 13, 15, 24, 32], FZ = [18, 19, 20, 21, 23], RT = [[BX, FX, 'X', C.blue], [BY, FY, 'Y', C.orange], [BZ, FZ, 'Z', C.green]];
+  var FD = [14.2, 14.6, 14.8, 15.1, 15.9], FE = [14.5, 14.7, 14.9, 15, 15.2], LA = [1, 4, 6, 9, 14], LB = [0, 2, 4, 6, 20];
+  var TB = RT.map(function (r) { var q = Q5(r[0]); return [q.med, q.iqr, q.rng]; });
+  CH.check(eq5(BX, FX) && eq5(BY, FY) && eq5(BZ, FZ) && CH.sum(BX) === 278 && CH.sum(BY) === 278 && CH.f1(CH.mean(BX)) === '18.5' && CH.f1(CH.mean(BZ)) === '20.3', '今日の問い（5つの値・平均値）');
+  CH.check(TB.map(function (r) { return r.join(); }).join(' ') === '18,3,7 15,11,20 20,2,5', '例題（中央値・四分位範囲・範囲の表）');
+  CH.check(FX[4] <= 25 && FZ[4] <= 25 && FY[4] > 25 && FX[2] < FZ[2] && FY[2] < FX[2], '今日の問い（確実に 25分以内）');
+  CH.check(FE[4] <= 15.2 && FD[4] > 15.2 && FD[0] < 14.5 && !(FE[0] < 14.5), '例題（100m走）');
+  CH.check(LB[4] > LA[4] && LA[2] === 6 && LB[3] === 6, 'チャレンジ');
+
+  var QC = [C.pink, C.yel, C.green];
+  /* 箱ひげ図。X（値 → 横の位置）、cy、bh、f（5つの値）。o：col、a、w */
+  function boxplot(D, X, cy, bh, f, o) {
+    o = o || {}; var col = o.col || C.chalk, a = o.a == null ? 1 : o.a, w = o.w || 2.4, x = f.map(X), e = bh * .3;
+    CH.line(D, x[0], cy, x[1], cy, { col: col, w: w, a: a }); CH.line(D, x[3], cy, x[4], cy, { col: col, w: w, a: a });
+    CH.line(D, x[0], cy - e, x[0], cy + e, { col: col, w: w, a: a }); CH.line(D, x[4], cy - e, x[4], cy + e, { col: col, w: w, a: a });
+    CH.fillRect(D, x[1], cy - bh / 2, x[3], cy + bh / 2, { fill: hexA(col, .18), stroke: col, sw: w, a: a }); CH.line(D, x[2], cy - bh / 2, x[2], cy + bh / 2, { col: col, w: w + 1, a: a });
+  }
+  function brace(D, x0, x1, y, txt, col, a, o) {
+    o = o || {}; var s = CH.fs(D), d = o.down ? -1 : 1, lo = { col: col, w: 2.2, a: a };
+    CH.line(D, x0, y, x1, y, lo); CH.line(D, x0, y, x0, y + 7 * d, lo); CH.line(D, x1, y, x1, y + 7 * d, lo);
+    if (txt) CH.text(D, (x0 + x1) / 2, y - s * .72 * d, txt, { col: col, a: a, size: o.size || s * .85, outline: 'rgba(24,52,38,.9)' });
+  }
+  function tag(D, x, y, txt, col, a, o) { o = o || {}; CH.text(D, x, y, txt, { col: col, a: a, size: o.size || CH.fs(D, .85), align: o.align, outline: 'rgba(24,52,38,.9)' }); }
+  /* 箱ひげ図を縦にならべる。G：[[データ, 5つの値, 名前, 色]]、o：min・max・lab・unit・l・t・b・box（R をわたす） */
+  function stack(D, G, o) {
+    var R = o.R || CH.box(D, { l: o.l || .12, r: .08, t: o.t == null ? .08 : o.t, b: o.b == null ? .1 : o.b }), s = CH.fs(D);
+    var X = CH.numline(D, R, o.min, o.max, o.step || 1, { lab: o.lab, unit: o.unit, fmt: o.fmt });
+    var rows = CH.rows(CH.rect(R.x0, R.y0, R.x1, R.y1 - s * .6), G.length, o.gap == null ? .3 : o.gap), bh = Math.min(s * 2, rows[0].h * .62);
+    return { R: R, X: X, rows: rows, bh: bh, s: s };
+  }
+  function label(D, L, k, txt, col, a) { CH.text(D, L.R.x0 - L.s * .7, L.rows[k].cy, txt, { col: col, align: 'right', size: L.s, a: a }); }
+  function routes(D, o) {
+    o = o || {}; var L = stack(D, RT, { min: 10, max: 35, lab: 5, unit: '（分）', t: o.t, b: o.b, R: o.R });
+    RT.forEach(function (r, k) { var a = o.a ? o.a(k) : 1; label(D, L, k, r[2], r[3], a); if (!o.nobox) boxplot(D, L.X, L.rows[k].cy, L.bh, r[1], { col: r[3], a: a }); });
+    return L;
+  }
+
+  K3.run({
+    no: '第4時', title: '複数のデータをくらべて、根拠をあげて判断しよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '03.html', label: '◀ 第3時' }, { href: '05.html', label: '第5時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: 'バスの 3つの路線（15日間の所要時間）', q: '学校から駅までのバスには、X・Y・Z の 3つの路線がある。15日間の所要時間の箱ひげ図。平均値は X と Y が 約18.5分、Z が 約20.3分。電車が出る 25分前に乗って、確実に間に合いたい。どの路線を使うのがよいだろう。',
+        notes: ['① 自分の考え（3分）　選ぶ路線と、そのわけを 数で。', '② ペアの考え（3分）　自分とちがう考えと、そのわけを。'],
+        draw: function (D) { routes(D); } },
+      { tag: '今日の問い', q: '中央値で くらべると、いちばん速く着きそうな路線は？', a: 'Y（中央値 15分）', sub: '中央値 X 18分・Y 15分・Z 20分。Y は、半分の日が 15分以内に着いている', dur: 3,
+        b: { t: '中央値 … X 18分・<b>Y 15分</b>・Z 20分', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, L = routes(D, { a: function (k) { return k === 1 ? 1 : 1 - .45 * CH.smooth(.7, .9, t); } });
+          RT.forEach(function (r, k) { var a = CH.smooth(k * .2, k * .2 + .25, t); if (a <= 0) return; var x = L.X(r[1][2]), q = L.rows[k];
+            CH.line(D, x, q.cy - L.bh / 2 - 2, x, q.cy + L.bh / 2 + 2, { col: C.yel, w: 4.5, a: a }); tag(D, x, q.cy - L.bh / 2 - L.s * .7, r[1][2] + '分', C.yel, a); });
+        } },
+      { tag: '今日の問い', q: 'でも、確実に（どの日も）25分以内に着きたい。それなら、どの路線？', a: 'X',
+        sub: '最大値 X 22分・Z 23分 は 25分以内。Y は 最大値が 32分で、25分をこえる日がある。X と Z では、中央値が小さい X（18分）のほうが 速く着く日が多い', dur: 5,
+        b: { t: '確実に 25分以内 … 最大値 X 22分・Z 23分（Y は 32分）→ 中央値も小さい <b>X</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, la = CH.smooth(0, .3, t), ya = CH.smooth(.32, .5, t), ma = CH.smooth(.5, .68, t), xa = CH.smooth(.75, .95, t);
+          var L = routes(D, { a: function (k) { return k === 0 ? 1 : 1 - .45 * xa; } }), s = L.s;
+          if (la > 0) { var x25 = L.X(CH.lerp(35, 25, CH.ease(la))); CH.fillRect(D, x25, L.R.y0, L.X(35), L.R.y1, { fill: 'rgba(255,157,178,.1)' }); CH.line(D, x25, L.R.y0 - s * .2, x25, L.R.y1, { col: C.pink, w: 2.4, dash: [6, 5] }); if (la >= 1) tag(D, x25, L.R.y0 - s * .75, '25分', C.pink, 1); }
+          if (ya > 0) { var q = L.rows[1]; CH.line(D, L.X(25), q.cy, L.X(32), q.cy, { col: C.pink, w: 5, a: ya }); tag(D, L.X(32), q.cy - L.bh / 2 - s * .6, '32分', C.pink, ya); }
+          if (ma > 0) [0, 2].forEach(function (k) { var q = L.rows[k], x = L.X(RT[k][1][4]); tag(D, x, q.cy + L.bh / 2 + s * .65, RT[k][1][4] + '分 ✓', RT[k][3], ma); });
+          if (xa > 0) { var q0 = L.rows[0]; CH.fillRect(D, L.R.x0 - s * 1.8, q0.cy - L.bh * .9, L.X(25) - 4, q0.cy + L.bh * .9, { stroke: C.yel, sw: 2.4, fill: 'rgba(255,226,122,.08)', a: xa }); }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '箱ひげ図を くらべるとき、どこを見るとよいだろう。', a: 'まん中は 中央値、散らばりは 箱の長さ（四分位範囲）と ひげの端から端（範囲）、「確実に」なら 最大値などの端の値',
+        sub: '目的に合わせて 見るところを決め、読み取った数を 根拠 にして説明する。目的がちがえば、結論もちがってよい', dur: 4,
+        b: [{ t: 'まん中 … <b>中央値</b>　散らばり … <b>四分位範囲</b>（箱の長さ）・<b>範囲</b>（ひげの端から端）', col: C.green }, { t: '「確実に」… <b>最大値</b>など端の値。読み取った数を <b>根拠</b> に説明する', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .08, r: .08, t: .2, b: .14 }), s = CH.fs(D), t = D.ph ? D.t : 0, X = CH.numline(D, R, 10, 35, 1, { lab: 5, unit: '（分）' });
+          var bh = Math.min(s * 2.6, R.h * .2), cy = R.y1 - R.h * .42, x = FY.map(X);
+          CH.text(D, R.x0, R.y0 - s * .6, 'Y の箱ひげ図', { col: C.orange, align: 'left' });
+          boxplot(D, X, cy, bh, FY, { col: C.orange });
+          var a1 = CH.smooth(0, .2, t), a2 = CH.smooth(.25, .45, t), a3 = CH.smooth(.5, .7, t), a4 = CH.smooth(.75, .95, t);
+          if (a1 > 0) { CH.line(D, x[2], cy - bh / 2 - 3, x[2], cy + bh / 2 + 3, { col: C.yel, w: 4.5, a: a1 }); tag(D, x[2], cy - bh / 2 - s * .7, '中央値（まん中）', C.yel, a1); }
+          if (a2 > 0) brace(D, x[1], x[3], cy - bh / 2 - s * 2, '四分位範囲（箱の長さ）', C.pink, a2);
+          if (a3 > 0) brace(D, x[0], x[4], cy + bh / 2 + s * .8, '範囲（ひげの端から端）', C.green, a3, { down: true });
+          if (a4 > 0) { CH.circle(D, x[4], cy, s * .35, { fill: C.lav, a: a4 }); tag(D, x[4], cy - bh / 2 - s * .7, '最大値（「確実に」）', C.lav, a4, { align: 'right' }); }
+        } },
+      { tag: '例題', bh: '例題　3つの路線を表にまとめる', q: '3つの路線の 中央値・四分位範囲・範囲を 読み取って、表にまとめよう。（X の中央値は見本）', a: 'X 18・3・7、Y 15・11・20、Z 20・2・5（分）',
+        sub: '四分位範囲 X 20−17、Y 24−13、Z 21−19。範囲 X 22−15、Y 32−12、Z 23−18。Z は散らばりがいちばん小さく、Y はいちばん大きい', dur: 5,
+        b: { t: '中央値・四分位範囲・範囲 … X 18・3・7　Y 15・11・20　Z 20・2・5', col: C.blue },
+        draw: function (D) {
+          var R0 = CH.box(D, { l: .12, r: .08, t: .04, b: .06 }), s = CH.fs(D), t = D.ph ? D.t : 0;
+          routes(D, { R: CH.rect(R0.x0, R0.y0, R0.x1, R0.y0 + R0.h * .52) });
+          var TR = CH.rect(R0.x0 - R0.w * .06, R0.y0 + R0.h * .66, R0.x1, R0.y1), k = 0, order = {};
+          [[1, 2], [1, 3], [2, 1], [2, 2], [2, 3], [3, 1], [3, 2], [3, 3]].forEach(function (rc) { order[rc.join()] = k++; });
+          CH.table(D, TR, ['', '中央値', '四分位範囲', '範囲'], RT.map(function (r, i) { return [r[2]].concat(TB[i]); }), { fw: .16, top: true,
+            show: function (r, c) { if (r === 0 || c === 0 || (r === 1 && c === 1)) return 1; var j = order[r + ',' + c]; return CH.smooth(j * .11, j * .11 + .1, t); },
+            hl: function (r, c) { return r > 0 && c === 0 ? RT[r - 1][3] : r === 1 && c === 1 ? C.yel : null; } });
+        } },
+      { tag: '例題', q: 'D さん・E さんの 100m走の記録（20回ずつ）。① 確実に 15.2秒以内で走ってほしい。② 14.5秒より速い記録を ねらいたい。それぞれ どちらを選ぶ？', a: '① E さん　② D さん',
+        sub: '① E さんは 最大値が 15.2秒で、どの回も 15.2秒以内。D さんは 15.9秒の回もある。② D さんは 最小値 14.2秒で、14.5秒より速い回がある。E さんの最小値は 14.5秒。目的がちがえば、選ぶ人もちがう', dur: 6,
+        b: { t: '① 確実に 15.2秒以内 → <b>E さん</b>（最大値 15.2）　② 14.5秒より速く → <b>D さん</b>（最小値 14.2）', col: C.pink },
+        draw: function (D) {
+          var G = [[null, FD, 'D さん', C.blue], [null, FE, 'E さん', C.orange]], L = stack(D, G, { min: 14, max: 16, step: .1, lab: .5, unit: '（秒）', l: .16, t: .14, b: .12 }), s = L.s, t = D.ph ? D.t : 0;
+          var a1 = CH.smooth(0, .2, t), a2 = CH.smooth(.22, .4, t), b1 = CH.smooth(.5, .7, t), b2 = CH.smooth(.72, .9, t);
+          if (a1 > 0) { var x = L.X(15.2); CH.fillRect(D, x, L.R.y0, L.R.x1, L.R.y1, { fill: 'rgba(255,157,178,.1)', a: a1 }); CH.line(D, x, L.R.y0 - s * .2, x, L.R.y1, { col: C.pink, w: 2.4, dash: [6, 5], a: a1 }); tag(D, x, L.R.y0 - s * .75, '① 15.2秒', C.pink, a1); }
+          if (b1 > 0) { var x2 = L.X(14.5); CH.fillRect(D, L.R.x0, L.R.y0, x2, L.R.y1, { fill: 'rgba(169,240,176,.1)', a: b1 }); CH.line(D, x2, L.R.y0 - s * .2, x2, L.R.y1, { col: C.green, w: 2.4, dash: [6, 5], a: b1 }); tag(D, x2, L.R.y0 - s * .75, '② 14.5秒', C.green, b1); }
+          G.forEach(function (g, k) { var q = L.rows[k]; label(D, L, k, g[2], g[3]); boxplot(D, L.X, q.cy, L.bh, g[1], { col: g[3] }); });
+          if (a2 > 0) { var q0 = L.rows[0], q1 = L.rows[1]; CH.line(D, L.X(15.2), q0.cy, L.X(15.9), q0.cy, { col: C.pink, w: 5, a: a2 }); tag(D, L.X(15.9), q0.cy - L.bh / 2 - s * .55, '15.9', C.pink, a2); tag(D, L.X(15.2) + s * .3, q1.cy - L.bh / 2 - s * .55, '15.2 ✓', C.orange, a2, { align: 'left' }); }
+          if (b2 > 0) { var p0 = L.rows[0], p1 = L.rows[1]; CH.line(D, L.X(14.2), p0.cy, L.X(14.5), p0.cy, { col: C.green, w: 5, a: b2 }); tag(D, L.X(14.2), p0.cy + L.bh / 2 + s * .6, '14.2 ✓', C.blue, b2); tag(D, L.X(14.5) + s * .2, p1.cy + L.bh / 2 + s * .6, '14.5', C.orange, b2, { align: 'left' }); }
+        } },
+      { tag: '考えよう', q: 'バスの 3つの路線の箱ひげ図だけでは、わからないことが まだある。もっとよい判断をするために、ほかに 何を調べたいだろう。',
+        notes: ['① この図だけでは、わからないこと　② ほかに、調べたいこと', '何分前に乗るかで、選ぶ路線は 変わるだろうか。', 'スライダーで、乗る時刻（電車の何分前）と、表し方を変えられます。'],
+        sliders: [{ key: 'm', label: '電車の何分前', min: 15, max: 35, step: 1, val: 25, fmt: function (x) { return x + '分前'; } },
+          { key: 'v', label: '表し方', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? '15日の記録も' : '箱ひげ図'; } }],
+        draw: function (D) {
+          var L = routes(D, { a: function () { return D.V.v ? .35 : 1; } }), s = L.s, x = L.X(D.V.m);
+          if (D.V.v) RT.forEach(function (r, k) { var q = L.rows[k]; CH.dots(D, L.X, q.cy + L.bh / 2, r[0], { col: function () { return r[3]; }, r: Math.min(CH.fs(D, .34), (L.X(1) - L.X(0)) * .42) }); });
+          CH.line(D, x, L.R.y0 - s * .2, x, L.R.y1, { col: C.pink, w: 2.4, dash: [6, 5] }); tag(D, x, L.R.y0 - s * .75, D.V.m + '分', C.pink, 1);
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'A 中学校と B 中学校の 2年生（どちらも 40人）が 1か月に読んだ本の冊数。① 「A 中の生徒は、みんな B 中の生徒より多く読んでいる」は正しい？ ② 6冊以上読んだ生徒は、それぞれ およそ何％以上？', a: '① 正しくない　② A 中 約 50％以上、B 中 約 25％以上',
+        sub: '① B 中の最大値 20冊は、A 中の最大値 14冊より多い。② A 中は 中央値が 6冊 → 上の半分（20人）は 6冊以上。B 中は 第3四分位数が 6冊 → 上の 1/4（10人）は 6冊以上', dur: 6,
+        b: { t: '① 正しくない（B 中の最大値 20冊 ＞ A 中の 14冊）　② A 中 約<b>50％</b>以上・B 中 約<b>25％</b>以上', col: C.orange },
+        draw: function (D) {
+          var G = [[null, LA, 'A 中', C.blue], [null, LB, 'B 中', C.orange]], L = stack(D, G, { min: 0, max: 20, lab: 2, unit: '（冊）', l: .14, t: .14, b: .12 }), s = L.s, t = D.ph ? D.t : 0;
+          var a1 = CH.smooth(0, .3, t), a2 = CH.smooth(.4, .6, t), a3 = CH.smooth(.62, .85, t);
+          if (a2 > 0) { var x6 = L.X(6); CH.line(D, x6, L.R.y0 - s * .2, x6, L.R.y1, { col: C.yel, w: 2.4, dash: [6, 5], a: a2 }); tag(D, x6, L.R.y0 - s * .75, '6冊', C.yel, a2); }
+          G.forEach(function (g, k) { var q = L.rows[k]; label(D, L, k, g[2], g[3]); boxplot(D, L.X, q.cy, L.bh, g[1], { col: g[3] }); });
+          if (a1 > 0) { var q1 = L.rows[1]; CH.line(D, L.X(14), q1.cy, L.X(20), q1.cy, { col: C.pink, w: 5, a: a1 }); tag(D, L.X(20), q1.cy - L.bh / 2 - s * .6, '20冊', C.pink, a1); tag(D, L.X(14), L.rows[0].cy - L.bh / 2 - s * .6, '14冊', C.blue, a1); }
+          if (a3 > 0) [[0, 2, '約50％'], [1, 3, '約25％']].forEach(function (p) { var q = L.rows[p[0]], g = G[p[0]][1], x0 = L.X(g[p[1]]), x1 = L.X(g[4]); CH.fillRect(D, x0, q.cy - L.bh * .62, x1, q.cy + L.bh * .62, { fill: 'rgba(255,226,122,.22)', a: a3 }); tag(D, (x0 + x1) / 2, q.cy + L.bh * .62 + s * .65, p[2] + '以上', C.yel, a3); });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

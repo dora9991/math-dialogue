@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>a の値とグラフの開き方</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 関数 y＝ax² 第4時：a の値を変えると、グラフはどう変わるだろう（a＞0）（ikkan の lesson_kansu_04 と同じ流れ）。
+   y＝x² の点が上へ 2倍にのびて、曲線が y＝2x² に変わる。下へ半分にちぢんで y＝[1/2]x² に。x＝2 の線で 8・4・2・1 と読む。
+   考えようは a をスライダーで 0.1〜10 まで変えて、開きぐあいを見る。チャレンジは a が動いて、点 A(−4, 8) を通るところで止まる。
+   数値は ikkan のまま（y＝2x²・y＝[1/2]x²、例題 y＝[1/4]x²、考えよう y＝10x²・y＝[1/10]x²、チャレンジ A(−4, 8)）。図は自作。表・答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, OUT = 'rgba(20,40,30,.92)';
+  /* ---- 分数入りの字（[2/3] をたての分数に）。canvas 用と、右の板書（HTML）用 ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+  /* ---- 座標平面：方眼（xs・ys）と目もりの字（xl・yl）の間かくを、x と y で変えられる ----
+     P は四角（まわりに字のすきまをとる）。o：x・y（範囲）、fit（false で縦と横の1目もりを別の長さに）、m（すきま l・r・t・b を字の大きさの何倍か） */
+  function PL(D, P, o) {
+    var s = CH.fs(D, .72), m = Object.assign({ l: .6, r: 2, t: 1.7, b: 1.4 }, o.m || {}), g = D.ctx, a = o.a, i;
+    var Pl = CH.plane(D, CH.rect(P.x0 + s * m.l, P.y0 + s * m.t, P.x1 - s * m.r, P.y1 - s * m.b), { x: o.x, y: o.y, fit: o.fit, grid: false, nums: false, a: a, size: s });
+    var xs = o.xs || 1, ys = o.ys || 1, xl = o.xl || xs, yl = o.yl || ys, ox = CH.clamp(0, o.x[0], o.x[1]), oy = CH.clamp(0, o.y[0], o.y[1]), x, y;
+    g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.strokeStyle = 'rgba(242,240,230,.12)'; g.lineWidth = 1; g.beginPath();
+    for (i = Math.ceil(o.x[0] / xs - 1e-9); i * xs <= o.x[1] + 1e-9; i++) { g.moveTo(Pl.X(i * xs), Pl.R.y0); g.lineTo(Pl.X(i * xs), Pl.R.y1); }
+    for (i = Math.ceil(o.y[0] / ys - 1e-9); i * ys <= o.y[1] + 1e-9; i++) { g.moveTo(Pl.R.x0, Pl.Y(i * ys)); g.lineTo(Pl.R.x1, Pl.Y(i * ys)); }
+    g.stroke(); g.restore();
+    if (o.nums !== false) {
+      for (i = Math.ceil(o.x[0] / xl - 1e-9); i * xl <= o.x[1] + 1e-9; i++) { x = i * xl; if (!i || (o.skipX && o.skipX(x))) continue; CH.line(D, Pl.X(x), Pl.Y(oy) - 4, Pl.X(x), Pl.Y(oy) + 4, { w: 1.4, a: a }); CH.text(D, Pl.X(x), Pl.Y(oy) + s, S(x), { size: s, num: true, a: a, outline: OUT }); }
+      for (i = Math.ceil(o.y[0] / yl - 1e-9); i * yl <= o.y[1] + 1e-9; i++) { y = i * yl; if (!i || (o.skipY && o.skipY(y))) continue; CH.line(D, Pl.X(ox) - 4, Pl.Y(y), Pl.X(ox) + 4, Pl.Y(y), { w: 1.4, a: a }); CH.text(D, Pl.X(ox) - s * .6, Pl.Y(y), S(y), { size: s, num: true, align: 'right', a: a, outline: OUT }); }
+    }
+    Pl.s = s; return Pl;
+  }
+  /* 放物線 y＝ax²（平面の中だけ）。o.x0・o.x1（変域）、o.mid（頂点から左右へのびる。o.t といっしょに）、そのほかは CH.fn と同じ */
+  function par(D, Pl, a, o) {
+    o = Object.assign({}, o || {}); var lim = Math.sqrt(Math.max(0, (a > 0 ? Pl.yr[1] : Pl.yr[0]) / a)), f = function (x) { return a * x * x; };
+    var x0 = Math.max(o.x0 == null ? Pl.xr[0] : o.x0, -lim), x1 = Math.min(o.x1 == null ? Pl.xr[1] : o.x1, lim);
+    if (x1 <= x0) return;
+    if (o.mid && x0 < 0 && x1 > 0) { CH.fn(D, Pl, f, Object.assign({}, o, { x0: 0, x1: x1 })); CH.fn(D, Pl, f, Object.assign({}, o, { x0: 0, x1: x0 })); return; }
+    o.x0 = x0; o.x1 = x1; CH.fn(D, Pl, f, o);
+  }
+  function lab(D, Pl, x, y, txt, col, o) { o = o || {}; TX(D, Pl.X(x) + (o.dx || 0), Pl.Y(y) + (o.dy || 0), txt, { col: col, size: o.size || CH.fs(D, .9), align: o.align || 'left', outline: OUT, a: o.a }); }
+  /* ---- 数（ikkan と同じ）と検算 ---- */
+  var XS = [-3, -2, -1, 0, 1, 2, 3];
+  CH.check(XS.map(function (x) { return x * x; }).join() === '9,4,1,0,1,4,9' && XS.map(function (x) { return 2 * x * x; }).join() === '18,8,2,0,2,8,18' && XS.map(function (x) { return x * x / 2; }).join() === '4.5,2,0.5,0,0.5,2,4.5', '今日の問いの表');
+  CH.check(XS.every(function (x) { return 2 * x * x === 2 * (x * x) && x * x / 2 === .5 * (x * x); }), 'y 座標は 2倍・1/2 倍');
+  var XE = [-6, -4, -2, 0, 2, 4, 6], YE = XE.map(function (x) { return x * x / 4; });
+  CH.check(YE.join() === '9,4,1,0,1,4,9' && 6 * 6 / 4 === 3 * 3, '例題（y＝1/4x²）');
+  var AS = [2, 1, .5, .25];
+  CH.check(AS.map(function (a) { return a * 2 * 2; }).join() === '8,4,2,1' && AS.every(function (a, i) { return !i || AS[i - 1] > a; }), '例題（2）開き方の順（x＝2 で 8・4・2・1）');
+  CH.check(CH.near(10 * .25, 2.5) && CH.near(64 / 10, 6.4), '考えよう（ここで確かめるだけ）');
+  var CA = 8 / 16, CBy = CA * 2 * 2, CS = (CBy - 8) / (2 - (-4)), CI = CBy - CS * 2;
+  CH.check(CA === .5 && CBy === 2 && CS === -1 && CI === 4 && CS * -4 + CI === 8, 'チャレンジ（a＝1/2、B(2, 2)、y＝−x＋4）');
+  var AL = [.1, .25, .5, 1, 2, 4, 10], AF = ['[1/10]', '[1/4]', '[1/2]', '1', '2', '4', '10'], AH = ['1/10', '1/4', '1/2', '1', '2', '4', '10'];
+
+  function lay(D) {
+    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .03 }), k = D.W > D.H * .9 ? .3 : .36;
+    return { T: CH.rect(R.x0, R.y0 + R.h * .1, R.x0 + R.w * k, R.y1 - R.h * .1), P: CH.rect(R.x0 + R.w * (k + .02), R.y0, R.x1, R.y1) };
+  }
+  function base(D, P, xr) { return PL(D, P, { x: xr || [-4, 4], y: [-1, 10], xl: xr ? 2 : 1, yl: 1 }); }
+  /* 表（たて）：x、x²、2x²、[1/2]x² */
+  function table(D, L, o) {
+    o = o || {}; var T = CH.table(D, L.T, ['x', 'x²', '2x²', ''], XS.map(function (x) { return [S(x), S(x * x), S(2 * x * x), S(x * x / 2)]; }), { fw: .22, size: CH.fs(D, .85), rh: CH.fs(D) * 2.1, hl: o.hl });
+    var h = T.cell(0, 3); TX(D, h.cx, h.cy, '[1/2]x²', { size: CH.fs(D, .75), col: (o.hl && o.hl(0, 3)) || 'rgba(242,240,230,.8)' });
+    return T;
+  }
+  /* 曲線の名前：上の はしの上に（はしが横のふちなら、その右に） */
+  function tag(D, Pl, a, side, txt, col, o) {
+    o = o || {}; var s = CH.fs(D), x = side * Math.sqrt(Pl.yr[1] / a);
+    if (Math.abs(x) > Pl.xr[1]) {
+      x = side * Pl.xr[1]; var sz = o.size || s * .85, w = TX(D, 0, 0, txt, { size: sz, a: 0 }), px = Pl.X(x) + side * s * .35, py = Pl.Y(a * x * x);
+      if (px + w > D.W - 4 || px - w < 4) { px = Pl.X(x) - side * s * .2; py -= sz * 1.1; side = -side; }
+      TX(D, px, py, txt, { size: sz, col: col, align: side > 0 ? 'left' : 'right', outline: OUT, a: o.a });
+    }
+    else TX(D, Pl.X(x), Pl.Y(Pl.yr[1]) - s * .65, txt, { size: o.size || s * .85, col: col, outline: OUT, a: o.a });
+  }
+
+  K3.run({
+    no: '第4時', title: 'a の値を変えると、グラフはどう変わるだろう（a＞0）', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '03.html', label: '◀ 第3時' }, { href: '05.html', label: '第5時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: 'y＝x²、y＝2x²（ア）、y＝[1/2]x²（イ）', q: '図に、y＝x² のグラフがかいてある。a の値を 2 や [1/2] に変えて、y＝2x²（ア）、y＝[1/2]x²（イ）にすると、グラフは、どう変わるだろう。表の値を使って調べよう。',
+        notes: ['① 自分の考え（3分）　どう変わるか書こう。', '② ペアの考え（3分）　ちがう気づきを書こう。'],
+        draw: function (D) {
+          var L = lay(D); table(D, L); var Pl = base(D, L.P);
+          par(D, Pl, 1, { col: C.yel, w: 3 }); tag(D, Pl, 1, -1, 'y＝x²', C.yel);
+          XS.forEach(function (x) { CH.pt(D, Pl, x, x * x, { col: C.yel, r: CH.fs(D, .24) }); });
+        } },
+      { tag: '今日の問い', q: 'y＝2x²（ア）のグラフは、y＝x² とくらべて、どうなる？', a: '同じ x で、y 座標が 2倍になる。開き方が小さくなる', sub: 'x＝1 で 1 → 2、x＝2 で 4 → 8。どの点も、上へ 2倍にのびる', dur: 6,
+        b: { t: 'ア y＝2x² … y 座標が y＝x² の <b>2倍</b>（開き方が小さい）', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, k = CH.ease(CH.smooth(.15, .7, t)), a = 1 + k;
+          table(D, L, { hl: function (r, c) { return D.ph && c === 2 ? C.orange : c === 1 ? C.yel : null; } });
+          var Pl = base(D, L.P);
+          par(D, Pl, 1, { col: C.yel, w: 2.4, a: D.ph ? .45 : 1 }); tag(D, Pl, 1, -1, 'y＝x²', C.yel);
+          if (D.ph) {
+            [-2, -1, 1, 2].forEach(function (x) { if (k > .05) CH.pseg(D, Pl, [x, x * x], [x, a * x * x], { col: C.orange, w: 2.2, arrow: k > .3, head: 7 }); });
+            par(D, Pl, a, { col: C.orange, w: 3.2, glow: t > .7 });
+            XS.forEach(function (x) { if (a * x * x <= 10) CH.pt(D, Pl, x, a * x * x, { col: C.orange, r: CH.fs(D, .24) }); });
+            tag(D, Pl, 2, 1, 'ア y＝2x²', C.orange, { a: CH.smooth(.7, .85, t) });
+          }
+          XS.forEach(function (x) { CH.pt(D, Pl, x, x * x, { col: C.yel, r: CH.fs(D, .2), a: D.ph ? .6 : 1 }); });
+        } },
+      { tag: '今日の問い', q: 'y＝[1/2]x²（イ）のグラフは、どうなる？', a: 'y 座標が [1/2] 倍になる。開き方が大きくなる', sub: 'x＝2 で 4 → 2、x＝3 で 9 → 4.5。どの点も、下へ半分にちぢむ', dur: 6,
+        b: { t: 'イ y＝[1/2]x² … y 座標が y＝x² の <b>[1/2] 倍</b>（開き方が大きい）', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, k = CH.ease(CH.smooth(.15, .7, t)), a = 1 - k / 2;
+          table(D, L, { hl: function (r, c) { return D.ph && c === 3 ? C.blue : c === 1 ? C.yel : null; } });
+          var Pl = base(D, L.P);
+          par(D, Pl, 2, { col: C.orange, w: 2.2, a: .45 }); tag(D, Pl, 2, 1, 'ア', C.orange, { a: .7 });
+          par(D, Pl, 1, { col: C.yel, w: 2.4, a: D.ph ? .45 : 1 }); tag(D, Pl, 1, -1, 'y＝x²', C.yel);
+          if (D.ph) {
+            [-3, -2, -1, 1, 2, 3].forEach(function (x) { if (k > .05) CH.pseg(D, Pl, [x, x * x], [x, a * x * x], { col: C.blue, w: 2.2, arrow: k > .3, head: 7 }); });
+            par(D, Pl, a, { col: C.blue, w: 3.2, glow: t > .7 });
+            XS.forEach(function (x) { CH.pt(D, Pl, x, a * x * x, { col: C.blue, r: CH.fs(D, .24) }); });
+            tag(D, Pl, .5, 1, 'イ y＝[1/2]x²', C.blue, { a: CH.smooth(.7, .85, t) });
+          }
+          XS.forEach(function (x) { CH.pt(D, Pl, x, x * x, { col: C.yel, r: CH.fs(D, .2), a: D.ph ? .6 : 1 }); });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: 'y＝ax²（a＞0）のグラフは、どちらに開く？ a が大きいほど、開き方はどうなる？', a: '上に開く。a が大きいほど、開き方は小さい', sub: 'x が同じなら、y 座標は y＝x² の a 倍。グラフは放物線で、軸は y 軸、頂点は原点', dur: 4,
+        b: [{ t: 'y＝ax²（a＞0）のグラフは、<b>上</b> に開く放物線', col: C.green }, { t: 'a が大きいほど、開き方は <b>小さい</b>（y 座標は y＝x² の a 倍）', col: C.green }],
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D), Pl = base(D, L.P), cs = [[2, C.orange, 'ア', 1, 'ア　a＝2'], [1, C.yel, 'y＝x²', -1, '　　a＝1'], [.5, C.blue, 'イ', 1, 'イ　a＝[1/2]']];
+          cs.forEach(function (c) { par(D, Pl, c[0], { col: c[1], w: 3 }); tag(D, Pl, c[0], c[3], c[2], c[1]); });
+          var T = L.T, fz = Math.min(s * 1.1, T.w / 6.5), g = fz * 2.5, y0 = T.y0 + T.h * .15;
+          cs.forEach(function (c, i) { TX(D, T.x0 + fz * .2, y0 + i * g, c[4], { size: fz, col: c[1], align: 'left' }); });
+          if (!D.ph) return;
+          var a1 = CH.smooth(0, .3, t), a2 = CH.smooth(.4, .7, t), ax = T.x0 + fz * 6;
+          [-3.4, 3.4].forEach(function (x) { CH.arrow(D, Pl.X(x), Pl.Y(3.2), Pl.X(x), Pl.Y(6.2), { col: C.green, w: 3, head: 11, a: a1 }); });
+          CH.text(D, Pl.X(-3.4), Pl.Y(2.4), '上に開く', { size: s * .85, col: C.green, a: a1, outline: OUT });
+          CH.arrow(D, ax, y0 - fz * .3, ax, y0 + g * 2 + fz * .3, { col: C.green, w: 2.4, a: a2 });
+          CH.text(D, T.x0 + fz * .2, y0 + g * 3, 'a が大きいほど', { size: fz * .9, col: C.green, align: 'left', a: a2 });
+          CH.text(D, T.x0 + fz * .2, y0 + g * 3 + fz * 1.4, '開き方は小さい', { size: fz * .9, col: C.green, align: 'left', a: a2 });
+        } },
+      { tag: '例題', bh: '例題', q: 'y＝[1/4]x²（ウ）の表をうめて、グラフをかこう。', a: '9、4、1、0、1、4、9', sub: 'x＝−6、−4、−2、0、2、4、6 のとき。x が 2倍のところで y＝x² と同じ値（(6, 9) と (3, 9)）', dur: 7,
+        b: { t: 'ウ y＝[1/4]x² … x＝−6、−4、−2、0、2、4、6 → <b>9、4、1、0、1、4、9</b>', col: C.pink },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D);
+          function k(i) { return CH.clamp((t - .04 - i * .09) / .1, 0, 1); }
+          var T = CH.table(D, CH.rect(L.T.x0 + L.T.w * .12, L.T.y0, L.T.x1 - L.T.w * .12, L.T.y1), ['x', ''], XE.map(function (x, i) { return [S(x), S(YE[i])]; }), { fw: .45, size: CH.fs(D, .9), rh: s * 2.1,
+            show: function (r, c) { return r > 0 && c === 1 ? (D.ph ? CH.smooth(0, .3, k(r - 1)) : 0) : 1; }, hl: function (r, c) { return D.ph && r > 0 && c === 1 && k(r - 1) > 0 && k(r - 1) < 1 ? C.pink : null; } });
+          var h = T.cell(0, 1); TX(D, h.cx, h.cy, '[1/4]x²', { size: CH.fs(D, .8), col: 'rgba(242,240,230,.8)' });
+          var Pl = base(D, L.P, [-6, 6]);
+          par(D, Pl, 1, { col: C.yel, w: 2.2, a: .5 }); tag(D, Pl, 1, -1, 'y＝x²', C.yel, { a: .7 });
+          XE.forEach(function (x, i) {
+            var e = CH.ease(k(i)); if (!D.ph || e <= 0) return; var q = T.cell(i + 1, 1);
+            CH.circle(D, CH.lerp(q.cx, Pl.X(x), e), CH.lerp(q.cy, Pl.Y(YE[i]), e) - Math.sin(e * Math.PI) * s * 2, CH.fs(D, .26), { fill: C.pink, stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
+          });
+          if (D.ph && t > .72) { par(D, Pl, .25, { col: C.pink, w: 3, mid: true, t: CH.smooth(.72, .92, t) }); tag(D, Pl, .25, 1, 'ウ', C.pink, { a: CH.smooth(.9, 1, t) }); }
+          if (D.ph && t > .9) { var a = CH.smooth(.9, 1, t); CH.pseg(D, Pl, [3, 9], [6, 9], { col: C.green, w: 2, dash: [5, 5], a: a, arrow: true, head: 7 }); lab(D, Pl, 4.5, 9.2, '×2', C.green, { a: a, size: s * .8, align: 'center', dy: -s * .4 }); }
+        } },
+      { tag: '例題', q: 'y＝2x²、y＝x²、y＝[1/2]x²、y＝[1/4]x² を、グラフの開き方が小さい順にならべよう。', a: '2x²、x²、[1/2]x²、[1/4]x²', sub: 'a が大きい順にならぶ。x＝2 のとき、y は 8、4、2、1', dur: 6,
+        b: { t: '開き方が小さい順 … <b>2x²、x²、[1/2]x²、[1/4]x²</b>（a の大きい順）', col: C.pink },
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .02, b: .02 }), t = D.ph ? D.t : 0, s = CH.fs(D), Pl = base(D, R, [-6, 6]);
+          var cs = [[2, C.orange, 'ア 2x²', 1], [1, C.yel, 'y＝x²', -1], [.5, C.blue, 'イ [1/2]x²', 1], [.25, C.pink, 'ウ [1/4]x²', 1]];
+          cs.forEach(function (c) { par(D, Pl, c[0], { col: c[1], w: 2.8 }); tag(D, Pl, c[0], c[3], c[2], c[1]); });
+          if (!D.ph) return;
+          CH.pseg(D, Pl, [2, -.5], [2, 9.5], { col: C.green, w: 1.8, dash: [5, 5], a: CH.smooth(0, .15, t) });
+          cs.forEach(function (c, i) { var a = CH.smooth(.15 + i * .18, .27 + i * .18, t), y = c[0] * 4; CH.pt(D, Pl, 2, y, { col: c[1], r: CH.fs(D, .3), a: a }); lab(D, Pl, 2, y, String(y), c[1], { dx: -s * .5, dy: -s * .3, align: 'right', a: a }); });
+        } },
+      { tag: '考えよう', q: 'y＝10x² や y＝[1/10]x² のグラフは、y＝x² のグラフとくらべて、どんな形になるだろう。a を、とても大きく・とても小さくすると、どうなるだろう。',
+        notes: ['x の値を自分で決めて、点をとって調べよう。', 'a をもっと大きくすると？ もっと 0 に近づけると？', 'スライダーで、a の値を変えられます。'],
+        sliders: [{ key: 'k', label: 'a の値', min: 0, max: 6, step: 1, val: 3, fmt: function (x) { return 'a＝' + AH[x]; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .03, r: .03, t: .02, b: .02 }), s = CH.fs(D), a = AL[D.V.k], Pl = PL(D, R, { x: [-8, 8], y: [-1, 10], xl: 2 });
+          par(D, Pl, 1, { col: C.yel, w: 2, dash: [7, 6], a: .7 }); tag(D, Pl, 1, -1, 'y＝x²', C.yel, { a: .8 });
+          par(D, Pl, a, { col: C.orange, w: 3.4, glow: true });
+          TX(D, Pl.X(7.8), Pl.Y(9.2), 'y＝' + (a === 1 ? '' : AF[D.V.k]) + 'x²', { size: s * 1.2, col: C.orange, align: 'right', outline: OUT });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'y＝ax²（a＞0）のグラフが、点 A(−4, 8) を通る。① a の値を求めよう。② グラフ上で、x 座標が 2 の点 B の座標を求めよう。③ 直線 AB の式を求めよう。',
+        a: '① a＝[1/2]　② B(2, 2)　③ y＝−x＋4', sub: '① 8＝a×(−4)²、16a＝8　② [1/2]×2²＝2　③ 傾き [2−8/2−(−4)]＝−1、y＝−x＋b に B を代入して b＝4', dur: 8,
+        b: { t: 'a＝[1/2]、B(2, 2)、傾き −1 → <b>y＝−x＋4</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .06, r: .06, t: .02, b: .02 }), t = D.ph ? D.t : 0, s = CH.fs(D), Pl = PL(D, R, { x: [-5, 5], y: [-1, 10] });
+          var a = D.ph ? CH.lerp(.2, .5, CH.ease(CH.smooth(.02, .3, t))) : 0;
+          if (D.ph) { par(D, Pl, a, { col: C.yel, w: 3, glow: t > .3 }); TX(D, Pl.X(4.8), Pl.Y(9.2), 'a＝' + (t >= .3 ? '[1/2]' : CH.f2(a)), { size: s * 1.05, col: C.yel, align: 'right', outline: OUT }); }
+          CH.pt(D, Pl, -4, 8, { col: C.pink, r: CH.fs(D, .32), lab: 'A(−4, 8)', dir: 'nw' });
+          if (!D.ph) return;
+          if (t > .34) { var kb = CH.ease(CH.smooth(.34, .48, t)); CH.pseg(D, Pl, [2, 0], [2, 2 * kb], { col: C.blue, w: 1.6, dash: [4, 5] }); CH.pt(D, Pl, 2, 2 * kb, { col: C.blue, r: CH.fs(D, .32), lab: kb > .99 ? 'B(2, 2)' : 'B', dir: 'se' }); }
+          if (t > .52) CH.lin(D, Pl, -1, 4, { col: C.orange, w: 3, t: CH.smooth(.52, .68, t), x0: -5, x1: 5 });
+          if (t > .7) CH.slopeTri(D, Pl, -1, 4, -4, 6, { col: C.pink, a: CH.smooth(.7, .82, t), lx: '＋6', ly: '−6' });
+          if (t > .85) { var aa = CH.smooth(.85, .97, t); CH.pt(D, Pl, 0, 4, { col: C.green, r: CH.fs(D, .3), a: aa }); lab(D, Pl, 0, 4, '(0, 4)', C.green, { dx: s * .5, dy: -s * .55, a: aa, size: s * .8 }); }
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>コンテンツ一覧ブラウザ</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%231d4f91%22/%3E%3Crect x=%226%22 y=%227%22 width=%2214%22 height=%226%22 rx=%221.5%22 fill=%22%23fff%22/%3E%3Crect x=%226%22 y=%2216%22 width=%226%22 height=%229%22 rx=%221.5%22 fill=%22%23fff%22/%3E%3Crect x=%2215%22 y=%2216%22 width=%2211%22 height=%229%22 rx=%221.5%22 fill=%22%23fff%22 fill-opacity=%22.7%22/%3E%3C/svg%3E">
+<style>
+/* contents：コンテンツ一覧ブラウザ。つくった道具を探す・開く・配るための、一覧の画面。 */
+:root{
+  --ui:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic UI","Meiryo",sans-serif;
+  --bg:#f4f2ec;--panel:#fff;--ink:#1f2933;--ink2:#52606d;--ink3:#667382;--line:#d9d5c8;
+  --acc:#1d5fbf;--acc-soft:#e8f0fc;--on-acc:#fff;
+  --ok:#2a7048;--ok-soft:#e3f3ea;--warn:#8a5200;--warn-soft:#fbefd9;--lock:#a32a2a;--lock-soft:#fdecec;--mute:#52606d;--mute-soft:#eceae2;
+  --top1:#1d4f91;--top2:#2a70c2;
+  --c-learn:#2f7bd0;--c-teach:#2f8f5f;--c-event:#8a5cbf;--c-basket:#c7650a;--c-self:#1f8a8a;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14181d;--panel:#1d2329;--ink:#e6e9ec;--ink2:#a9b3bd;--ink3:#8a96a2;--line:#2f3841;
+    --acc:#7db2ff;--acc-soft:#1e2e45;--on-acc:#10233f;
+    --ok:#6fcf97;--ok-soft:#1d3329;--warn:#f0b35a;--warn-soft:#3a2f1c;--lock:#ff8a8a;--lock-soft:#3a2224;--mute:#a9b3bd;--mute-soft:#262d34;
+    --top1:#16314f;--top2:#1f4d85;
+    --c-learn:#7db2ff;--c-teach:#6fcf97;--c-event:#c3a1f0;--c-basket:#f0a35a;--c-self:#6fd3d3;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14181d;--panel:#1d2329;--ink:#e6e9ec;--ink2:#a9b3bd;--ink3:#8a96a2;--line:#2f3841;
+  --acc:#7db2ff;--acc-soft:#1e2e45;--on-acc:#10233f;
+  --ok:#6fcf97;--ok-soft:#1d3329;--warn:#f0b35a;--warn-soft:#3a2f1c;--lock:#ff8a8a;--lock-soft:#3a2224;--mute:#a9b3bd;--mute-soft:#262d34;
+  --top1:#16314f;--top2:#1f4d85;
+  --c-learn:#7db2ff;--c-teach:#6fcf97;--c-event:#c3a1f0;--c-basket:#f0a35a;--c-self:#6fd3d3;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);-webkit-text-size-adjust:100%}
+body{line-height:1.6}
+button,input{font:inherit;color:inherit}
+a{color:var(--acc)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+
+/* 左右の余白は 16px 以上（スマホの端のバーもよける） */
+.wrap{max-width:1080px;margin:0 auto;padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* ---- 上の帯 ---- */
+.top{background:linear-gradient(135deg,var(--top1),var(--top2));color:#fff}
+.top .wrap{padding-block:22px 20px}
+.top h1{margin:0;font-size:26px;letter-spacing:.04em;line-height:1.3}
+.top .lede{margin:6px 0 0;font-size:15px;opacity:.95}
+.top .count{margin:12px 0 0;font-size:14px;opacity:.92;display:flex;flex-wrap:wrap;gap:6px 14px}
+.top .count b{font-size:20px;font-weight:700}
+
+/* ---- 絞りこみ ---- */
+.controls{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:4px}
+.search input{width:100%;min-height:48px;padding:10px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel);font-size:16px}
+.search input::placeholder{color:var(--ink3)}
+.group{display:flex;align-items:center;gap:8px}
+.group .label{font-size:13px;color:var(--ink2);min-width:5.5em}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:6px 14px;border:1.5px solid var(--line);border-radius:999px;background:var(--panel);cursor:pointer;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.chip .n{font-size:12px;color:var(--ink3)}
+.chip:hover{border-color:var(--acc)}
+.chip[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--on-acc);font-weight:700}
+.chip[aria-pressed="true"] .n{color:inherit;opacity:.85}
+.result{margin:14px 0 8px;font-size:14px;color:var(--ink2)}
+
+/* ---- カード ---- */
+.grid{list-style:none;margin:0;padding:0;display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr))}
+.card{--c:var(--acc);background:var(--panel);border:1px solid var(--line);border-top:5px solid var(--c);border-radius:14px;padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.card[data-cat="learn"]{--c:var(--c-learn)}
+.card[data-cat="teach"]{--c:var(--c-teach)}
+.card[data-cat="event"]{--c:var(--c-event)}
+.card[data-cat="basket"]{--c:var(--c-basket)}
+.card[data-cat="self"]{--c:var(--c-self)}
+.card .cat{margin:0;font-size:12px;font-weight:700;color:var(--ink2);letter-spacing:.04em}
+.card h2{margin:0;font-size:18px;line-height:1.4}
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.badge{font-size:12px;font-weight:700;line-height:1;padding:5px 9px;border-radius:999px;background:var(--mute-soft);color:var(--mute)}
+.badge.s-use{background:var(--ok-soft);color:var(--ok)}
+.badge.s-wip{background:var(--warn-soft);color:var(--warn)}
+.badge.s-sample{background:var(--acc-soft);color:var(--acc)}
+.badge.a-limited{background:var(--lock-soft);color:var(--lock)}
+.badge.who{font-weight:400;background:transparent;border:1px solid var(--line);color:var(--ink2)}
+.summary{margin:0;font-size:14.5px;color:var(--ink)}
+.tags{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;color:var(--ink3)}
+.how{font-size:13.5px;color:var(--ink2)}
+.how summary{cursor:pointer;min-height:32px;display:flex;align-items:center;color:var(--acc);font-weight:700}
+.how p{margin:4px 0 0}
+.note{margin:0;font-size:13px;color:var(--lock);background:var(--lock-soft);border-radius:8px;padding:8px 10px}
+.note.personal{color:var(--mute);background:var(--mute-soft)}
+.actions{margin-top:auto;padding-top:4px;display:flex;flex-wrap:wrap;gap:8px}
+.btn{min-height:44px;padding:8px 16px;border-radius:10px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);text-decoration:none;font-size:14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.btn:hover{border-color:var(--acc)}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:var(--on-acc)}
+.btn.primary:hover{filter:brightness(1.08)}
+
+.empty{padding:28px 16px;text-align:center;color:var(--ink2);background:var(--panel);border:1px dashed var(--line);border-radius:14px}
+.empty button{margin-top:10px}
+
+/* ---- このページについて ---- */
+.about{margin-top:28px;font-size:14px;color:var(--ink2);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:4px 16px}
+.about summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:var(--ink)}
+.about ul{margin:0 0 10px;padding-left:1.3em}
+.about li{margin:4px 0}
+.about code{font-size:12.5px;background:var(--mute-soft);padding:1px 5px;border-radius:4px;word-break:break-all}
+footer.wrap{font-size:12.5px;color:var(--ink2);padding-bottom:max(28px,env(safe-area-inset-bottom,0px))}
+
+@media (max-width:640px){
+  .top h1{font-size:22px}
+  /* スマホでは、チップを横スクロールの1行にして、1画面目にカードが見えるようにする */
+  .controls{gap:8px}
+  .group{display:block}
+  .group .label{display:block;min-width:0;margin-bottom:2px;font-size:12.5px}
+  .chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .card{transition:box-shadow .15s ease,transform .15s ease}
+  .card:hover{box-shadow:0 4px 14px rgba(0,0,0,.10);transform:translateY(-1px)}
+}
+
+</style>
+</head>
+<body>
+<div id="app"><noscript><p style="padding:16px">この一覧は JavaScript で動きます。ブラウザの設定で JavaScript を有効にしてください。</p></noscript></div>
+<script>
+/* ---- data/items.js ---- */
+/* コンテンツ一覧のデータ。ここに1ブロック足すだけで、一覧に増える。
+   足したら： node contents/tools/check.cjs   （リンク先・書き忘れ・載せ忘れを調べる）
+              node contents/tools/bundle.cjs  （1ファイル版を作り直す）
+
+   項目の書き方（* は必須）
+     id*       半角の英数字とハイフン（重複しない）
+     title*    カードの見出し
+     summary*  1〜2文（120字まで）。READMEに書いてあること以上は言わない
+     cat*      分類（下の cats の key）
+     who*      だれが使う：kids（生徒・こども）／teacher（先生・コーチ）／me（自分）
+     status*   use=使える形／wip=育成中／sample=例・サンプル／legacy=旧版
+     access*   open=公開／limited=限定配布／personal=自分用
+     live      ウェブの公開先（pages のあとの道すじ。'adlib/'）。
+               ※ limited・personal には書かない（生徒に配るURLを一覧に出さないため）
+     file      1ファイル版（リポジトリの中の道すじ）。ダウンロードしてダブルクリックで開ける
+     dir*      ソースのフォルダ（リポジトリの中の道すじ。'' ならリポジトリのいちばん上）。
+               「ソース」を開くと、GitHub がフォルダの README を下に出してくれる
+     how*      開き方の短い説明（カードの「開き方」に出る）
+     tags      検索に使うことば */
+window.CB = {
+  pages: 'https://dora9991.github.io/math-dialogue/',
+  repo: 'https://github.com/dora9991/math-dialogue/',
+  branch: 'main',
+
+  cats: [
+    { key: 'learn', label: '生徒の学びを作る' },
+    { key: 'teach', label: '先生の負担を減らす' },
+    { key: 'event', label: '体験・あそび' },
+    { key: 'basket', label: 'バスケ' },
+    { key: 'self', label: '暮らしと創作' },
+  ],
+  who: [
+    { key: 'kids', label: '生徒・こども' },
+    { key: 'teacher', label: '先生・コーチ' },
+    { key: 'me', label: '自分用' },
+  ],
+  status: [
+    { key: 'use', label: '使える形' },
+    { key: 'wip', label: '育成中' },
+    { key: 'sample', label: '例・サンプル' },
+    { key: 'legacy', label: '旧版' },
+  ],
+  access: [
+    { key: 'open', label: '公開' },
+    { key: 'limited', label: '限定配布' },
+    { key: 'personal', label: '自分用' },
+  ],
+
+  // 一覧に載せないフォルダ（アプリではないもの）。check.cjs の「載せ忘れ」の検査から外す
+  skip: ['docs', 'public', 'scripts', 'src', 'node_modules', 'dist', 'contents'],
+
+  items: [
+    // ───────── 生徒の学びを作る ─────────
+    {
+      id: 'math-labo',
+      title: '数学ラボ（ゲーム学習＋AIと対話する授業）',
+      summary: '中学数学のゲーム学習（タイムアタック・間違いノート）と、AI先生と発問でやり取りする対話授業（中1全7章・122授業）。このリポジトリの本体。',
+      cat: 'learn', who: ['kids'], status: 'wip', access: 'open',
+      live: '/', dir: '',
+      how: 'ターミナルで npm install → npm run dev。表示されたURLをブラウザで開く。',
+      tags: ['数学', 'ゲーム', 'AI', '対話', '発問', '中学'],
+    },
+    {
+      id: 'tangocho',
+      title: '計算単語帳（1分トレーニング）',
+      summary: '頭の中で計算できる力を、1分ずつきたえる単語帳。ひとりでも、ペア学習でも。画面で使うことも、紙に印刷して配ることもできる。',
+      cat: 'learn', who: ['kids', 'teacher'], status: 'use', access: 'open',
+      file: 'tangocho/tangocho-all-in-one.html', dir: 'tangocho',
+      how: '1ファイル版をダウンロードして、ダブルクリックでブラウザで開く（印刷もできる）。すぐ印刷するなら pdf/ のPDF。',
+      tags: ['計算', '印刷', 'ペア学習', 'PDF'],
+    },
+    {
+      id: 'hs-board',
+      title: '高校数学 黒板解説',
+      summary: '黒板に1行ずつ書きながら解説するブラウザ教材（数学Ⅰ・A・Ⅱ・B・Ⅲ・C、共通テストと難関大の類題）。途中に発問と「考えてみよう」が入る。',
+      cat: 'learn', who: ['kids', 'teacher'], status: 'use', access: 'open',
+      live: 'hs-board/', dir: 'hs-board',
+      how: '手元では python3 -m http.server 8830 --directory hs-board。index.html を直接開いても動く。',
+      tags: ['高校', '数学', '黒板', '共通テスト', '入試'],
+    },
+    {
+      id: 'applied',
+      title: '応用チャレンジ（1年4章 比例と反比例）',
+      summary: 'ワークシートの各めあてに対応した、入試・実力レベルの応用問題にQRコードから挑戦するツール。記述式は数式を同値判定する。',
+      cat: 'learn', who: ['kids', 'teacher'], status: 'use', access: 'limited',
+      dir: 'applied',
+      how: '先生が index.html を投影し、めあてのQRを生徒が読みとる。結果は先生用ダッシュボード（PIN）で見る。',
+      tags: ['QR', '応用', '比例', '反比例', '中1'],
+    },
+    {
+      id: 'home',
+      title: '家庭学習ノート（試作）',
+      summary: '家でやった数学の自主学習を「見える化」するツール。数式キーボードで解き、解いた数・チャレンジ・やり直し・学習時間を記録する。',
+      cat: 'learn', who: ['kids', 'teacher'], status: 'sample', access: 'limited',
+      dir: 'home',
+      how: '生徒は index.html、先生・保護者は analyze.html（PIN）。',
+      tags: ['家庭学習', '自主学習', '記録', '比例'],
+    },
+
+    // ───────── 先生の負担を減らす ─────────
+    {
+      id: 'hyojun-navi',
+      title: '授業ナビ 標準版',
+      summary: '中1〜中3の授業297時間ぶんの年間計画と教材（授業構想・板書計画・ワークシート・演習プリント・小テスト・スライド）。',
+      cat: 'teach', who: ['teacher'], status: 'wip', access: 'open',
+      dir: 'hyojun-navi',
+      how: 'python3 serve.py → http://127.0.0.1:8811/ （index.html を直接開いても動く）。',
+      tags: ['年間計画', '授業構想', '板書', 'ワークシート', 'スライド', '印刷'],
+    },
+    {
+      id: 'ikkan',
+      title: '数学ワークシート（板書型）ikkan',
+      summary: '黒板に書く授業のためのワークシート。問題の下は空欄にして、「解答を表示」で教師が板書する内容が赤で出る。',
+      cat: 'teach', who: ['teacher', 'kids'], status: 'use', access: 'open',
+      live: 'ikkan/', file: 'ikkan/ikkan-all-in-one.html', dir: 'ikkan',
+      how: 'ウェブで開く。または1ファイル版をダウンロードして、ダブルクリック。',
+      tags: ['板書', 'ワークシート', 'スライド', '印刷', '一次関数', '平行と合同'],
+    },
+    {
+      id: 'lesson-live',
+      title: '授業ライブ',
+      summary: '授業中に生徒の端末をつないだままにする、小テスト・振り返り・授業の反応ボタンのひとまとめ（中1全7章・小テスト45回）。',
+      cat: 'teach', who: ['teacher', 'kids'], status: 'use', access: 'limited',
+      dir: 'lesson-live',
+      how: '生徒は index.html、先生は teacher.html、投影は screen.html。先生が授業を始めるとつながる。',
+      tags: ['小テスト', '振り返り', '反応', '投影', 'リアルタイム'],
+    },
+    {
+      id: 'quiz',
+      title: '数学小テスト・振り返り（1年4章）',
+      summary: '先生のQRから小テストを開いて解答し、結果がアカウントIDごとに蓄積される。氏名は保存しない。授業ライブの前身。',
+      cat: 'teach', who: ['teacher', 'kids'], status: 'legacy', access: 'limited',
+      dir: 'quiz',
+      how: '先生のQRから小テストへ。先生用は teacher.html（PIN）。',
+      tags: ['小テスト', 'QR', '比例', '反比例'],
+    },
+    {
+      id: 'sekigae',
+      title: '座席ルーレット',
+      summary: '席替えのルーレット。優先席（目が悪い生徒）や、エアコン回避などの列の希望に対応。マクロ不要。',
+      cat: 'teach', who: ['teacher'], status: 'use', access: 'open',
+      live: 'sekigae/', dir: 'public/sekigae',
+      how: 'ウェブで開く。名前を入力 → 優先席・列の希望・固定席を決めて、ルーレットを回す。',
+      tags: ['席替え', '座席', '学級'],
+    },
+    {
+      id: 'seitoshido-navi',
+      title: '生徒指導 対応ナビ',
+      summary: '生徒指導の場面で迷ったときの「分かれ道の地図」。問いに答えると、対応の手順・声かけの例・避けたい言葉・連携先・記録が出る。各校に合わせて直して使う「例」。',
+      cat: 'teach', who: ['teacher'], status: 'sample', access: 'open',
+      live: 'seitoshido-navi/', file: 'seitoshido-navi/seitoshido-navi-all-in-one.html', dir: 'seitoshido-navi',
+      how: 'ウェブで開く。または1ファイル版をダウンロードして、ダブルクリック。場面を選ぶか、ことばで探す。',
+      tags: ['生徒指導', '声かけ', 'いじめ', '連携', '記録'],
+    },
+
+    // ───────── 体験・あそび ─────────
+    {
+      id: 'event-voices',
+      title: '感想ひろば（体育大会・宿泊研修・文化発表会）',
+      summary: '学校行事の感想を、その行事らしい背景の中で動き回るイラスト人間として表示。タップすると、感想がふきだしで出る。名前・番号は持たない。',
+      cat: 'event', who: ['kids', 'teacher'], status: 'use', access: 'limited',
+      dir: 'event-voices',
+      how: '行事ごとのページ。URLは校内限定で、QRコードで配る運用。',
+      tags: ['行事', '感想', '体育大会', '宿泊研修', '文化発表会', 'QR'],
+    },
+    {
+      id: 'mecha-battle',
+      title: 'きょうだいメカバトル',
+      summary: 'ジョイメカファイト風の対戦格闘ゲーム。ロボ8体で、ひとり／2人／CPU／ネット対戦（部屋コード）。',
+      cat: 'event', who: ['kids'], status: 'use', access: 'open',
+      live: 'mecha-battle/', dir: 'games/mecha-battle',
+      how: 'ウェブで開く。ネット対戦は、部屋コードを相手に伝える。',
+      tags: ['ゲーム', '格闘', '対戦', 'ドット絵'],
+    },
+
+    // ───────── バスケ ─────────
+    {
+      id: 'basket-tap',
+      title: 'バスケ タップ記録',
+      summary: '試合を見ながら、だれが・何をしたかをタップで記録。時刻つきなので、バスケ得点クリップに動画と一緒に読み込める。',
+      cat: 'basket', who: ['teacher'], status: 'use', access: 'open',
+      live: 'basket-tap/', dir: 'basket-tap',
+      how: 'ウェブで開く。iPhoneは「共有」→「ホーム画面に追加」で画面いっぱいに。記録はその端末の中だけに保存。',
+      tags: ['バスケ', '記録', 'スタッツ', 'iPhone'],
+    },
+    {
+      id: 'basket-clips',
+      title: 'バスケ得点クリップ',
+      summary: '試合動画から、点を入れた場面・入れられた場面を5秒ずつ切り出す。続けて再生したり、1本のMP4に書き出したりできる。',
+      cat: 'basket', who: ['teacher'], status: 'use', access: 'open',
+      live: 'basket-clips/', dir: 'basket-clips',
+      how: 'ウェブで開く → 試合動画を開く（ゴールは自動で探す）。タップ記録の読み込みもできる。',
+      tags: ['バスケ', '動画', '切り出し', 'MP4', '得点'],
+    },
+    {
+      id: 'basket-coach',
+      title: 'バスケ・グロウ',
+      summary: '小学生・中学生が、自分で使って上達していくバスケのアプリ。毎日のメニューで経験値がたまり、動画で動きをチェックでき、ケガの手当てとテーピングも見られる。',
+      cat: 'basket', who: ['kids'], status: 'use', access: 'open',
+      live: 'basket-coach/', file: 'basket-coach/basket-coach-all-in-one.html', dir: 'basket-coach',
+      how: 'ウェブで開く（スマホは「共有」→「ホーム画面に追加」）。または1ファイル版をダブルクリック。',
+      tags: ['バスケ', '練習', 'メニュー', '動画分析', 'テーピング', '小学生', '中学生'],
+    },
+    {
+      id: 'minibasket',
+      title: 'ミニバス スコアシート分析',
+      summary: '公式スコアシート（JBA形式）の写真から、得点・フリースロー・ファウル・出場を読み取り、試合ごと・通算で分析する。',
+      cat: 'basket', who: ['teacher'], status: 'use', access: 'open',
+      file: 'minibasket/minibasket-all-in-one.html', dir: 'minibasket',
+      how: 'Claudeのアーティファクトとして公開して使う。または1ファイル版で手動読み取り（ChatGPT・Geminiにも対応）。',
+      tags: ['ミニバス', 'スコアシート', '分析', '写真'],
+    },
+
+    // ───────── 暮らしと創作 ─────────
+    {
+      id: 'adlib',
+      title: 'アドリブ・ラボ',
+      summary: 'コードを打ちこむと伴奏が鳴り、コードの役割がわかり、合うリックが楽譜と音で出てくる、アドリブ練習アプリ。音はブラウザの中で合成。',
+      cat: 'self', who: ['me'], status: 'use', access: 'open',
+      live: 'adlib/', file: 'adlib/adlib-all-in-one.html', dir: 'adlib',
+      how: 'ウェブで開く（インストール不要）。または1ファイル版をダブルクリック。',
+      tags: ['音楽', 'ジャズ', 'アドリブ', 'コード', '楽譜'],
+    },
+    {
+      id: 'hibi',
+      title: 'ひびの手帳',
+      summary: '予定・リマインダー・メモ・写真・PDFを日付ごとに見る、自分用の手帳。毎朝Claudeが受信箱を整理して、「今日」の画面に届ける。',
+      cat: 'self', who: ['me'], status: 'use', access: 'personal',
+      dir: 'hibi',
+      how: 'Googleのスクリプトを裏側に置いて、iPhoneのホーム画面に追加して使う。手元では node hibi/tools/serve.cjs。',
+      tags: ['手帳', '予定', 'メモ', 'iPhone', 'Claude'],
+    },
+    {
+      id: 'startup-kit',
+      title: 'みせびらき（起業ツール一式）',
+      summary: '一人で事業を始める人のための、ブラウザだけで動くツール一式。ホームページ・動画・集客・SNS・見積書・請求書・カレンダー・開業ロードマップ。',
+      cat: 'self', who: ['me', 'teacher'], status: 'use', access: 'open',
+      live: 'startup-kit/', file: 'startup-kit/startup-kit-all-in-one.html', dir: 'startup-kit',
+      how: 'ウェブで開く（データは開いた人のブラウザの中だけ）。または1ファイル版をダブルクリック。',
+      tags: ['起業', 'ホームページ', '見積書', '請求書', 'カレンダー'],
+    },
+  ],
+};
+
+</script>
+<script>
+/* ---- js/app.js ---- */
+/* contents：コンテンツ一覧ブラウザの画面。data/items.js の window.CB を読んで、カードを並べる。
+   外部ライブラリ・通信なし（file:// で開いても動く）。絞りこみは URL の # に残す（共有・戻るで同じ見た目になる）。 */
+(function () {
+  'use strict';
+  const CB = window.CB;
+  const app = document.getElementById('app');
+
+  // ---- 小さな道具 ----
+  const h = (tag, props, ...kids) => {
+    const el = document.createElement(tag);
+    Object.keys(props || {}).forEach((k) => {
+      if (k === 'text') el.textContent = props[k];
+      else el.setAttribute(k, props[k]);
+    });
+    kids.forEach((c) => { if (c) el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return el;
+  };
+  const norm = (s) => String(s).normalize('NFKC').toLowerCase();
+  const labelOf = (list, key) => (list.find((x) => x.key === key) || { label: key }).label;
+  const pagesUrl = (p) => CB.pages + p.replace(/^\//, '');
+  const treeUrl = (p) => (p ? CB.repo + 'tree/' + CB.branch + '/' + p : CB.repo);
+  const blobUrl = (p) => CB.repo + 'blob/' + CB.branch + '/' + p;
+
+  // ---- 絞りこみの状態（# と同期）----
+  const state = { q: '', cat: 'all', who: 'all', access: 'all' };
+  const FACETS = [
+    { key: 'cat', label: '分類', list: CB.cats, test: (it, v) => it.cat === v },
+    { key: 'who', label: 'だれが使う', list: CB.who, test: (it, v) => it.who.indexOf(v) >= 0 },
+    { key: 'access', label: '配りかた', list: CB.access, test: (it, v) => it.access === v },
+  ];
+  const readHash = () => {
+    const p = new URLSearchParams(location.hash.replace(/^#/, ''));
+    state.q = p.get('q') || '';
+    FACETS.forEach((f) => {
+      const v = p.get(f.key);
+      state[f.key] = v && f.list.some((x) => x.key === v) ? v : 'all';
+    });
+  };
+  const writeHash = () => {
+    const p = new URLSearchParams();
+    if (state.q) p.set('q', state.q);
+    FACETS.forEach((f) => { if (state[f.key] !== 'all') p.set(f.key, state[f.key]); });
+    const s = p.toString();
+    try { history.replaceState(null, '', s ? '#' + s : location.pathname + location.search); } catch (e) { /* file:// で使えない環境は、# なしで動かす */ }
+  };
+
+  const haystack = CB.items.map((it) => norm([it.title, it.summary, (it.tags || []).join(' '), labelOf(CB.cats, it.cat), it.who.map((w) => labelOf(CB.who, w)).join(' '), it.id].join(' ')));
+  // skip に指定した絞りこみ以外が合うか（チップの件数を「いま絞っている中での件数」にするため）
+  const matches = (it, i, skip) => {
+    if (!FACETS.every((f) => f.key === skip || state[f.key] === 'all' || f.test(it, state[f.key]))) return false;
+    return norm(state.q).split(/\s+/).filter(Boolean).every((w) => haystack[i].indexOf(w) >= 0);
+  };
+
+  // ---- 上の帯 ----
+  const counts = {};
+  CB.items.forEach((it) => { counts[it.status] = (counts[it.status] || 0) + 1; });
+  const top = h('header', { class: 'top' },
+    h('div', { class: 'wrap' },
+      h('h1', { text: 'コンテンツ一覧ブラウザ' }),
+      h('p', { class: 'lede', text: 'つくった道具を、探す・開く・配る。' }),
+      h('p', { class: 'count' },
+        h('span', {}, h('b', { text: String(CB.items.length) }), ' 個の道具'),
+        ...CB.status.filter((s) => counts[s.key]).map((s) => h('span', { text: s.label + ' ' + counts[s.key] })))));
+
+  // ---- 絞りこみの部品 ----
+  const input = h('input', { type: 'search', id: 'q', placeholder: 'ことばで探す（例：バスケ、QR）', autocomplete: 'off', enterkeyhint: 'search' });
+  const chipBtns = {};
+  const groups = FACETS.map((f) => {
+    const chips = h('div', { class: 'chips' });
+    [{ key: 'all', label: 'すべて' }].concat(f.list).forEach((opt) => {
+      const n = h('span', { class: 'n' });
+      const b = h('button', { type: 'button', class: 'chip', 'aria-pressed': 'false' }, opt.label, n);
+      b.addEventListener('click', () => { state[f.key] = opt.key; update(); });
+      chipBtns[f.key + ':' + opt.key] = { b, n };
+      chips.appendChild(b);
+    });
+    return h('div', { class: 'group', role: 'group', 'aria-label': f.label }, h('span', { class: 'label', text: f.label }), chips);
+  });
+  const controls = h('section', { class: 'controls', 'aria-label': '絞りこみ' },
+    h('label', { class: 'search', for: 'q' }, h('span', { class: 'sr', text: 'ことばで探す' }), input), ...groups);
+  const result = h('p', { class: 'result', 'aria-live': 'polite' });
+  const grid = h('ul', { class: 'grid' });
+  const empty = h('div', { class: 'empty', hidden: '' });
+
+  // ---- カード ----
+  const btn = (text, href, primary, hint) => {
+    const a = h('a', { class: 'btn' + (primary ? ' primary' : ''), href, target: '_blank', rel: 'noopener noreferrer' }, text + ' ↗', h('span', { class: 'sr', text: '（新しいタブで開く）' }));
+    if (hint) a.setAttribute('title', hint);
+    return a;
+  };
+  const card = (it) => {
+    const web = it.access === 'open' && typeof it.live === 'string';
+    const acts = [];
+    if (web) acts.push(btn('開く', pagesUrl(it.live), true));
+    if (it.file) acts.push(btn(web ? '1ファイル版' : '1ファイル版を入手', blobUrl(it.file), !web, 'GitHub で開いて、右上のダウンロードボタンで保存します'));
+    acts.push(btn('ソース', treeUrl(it.dir), !acts.length));
+    return h('li', { class: 'card', 'data-cat': it.cat },
+      h('p', { class: 'cat', text: labelOf(CB.cats, it.cat) }),
+      h('h2', { text: it.title }),
+      h('div', { class: 'badges' },
+        h('span', { class: 'badge s-' + it.status, text: labelOf(CB.status, it.status) }),
+        h('span', { class: 'badge a-' + it.access, text: labelOf(CB.access, it.access) }),
+        ...it.who.map((w) => h('span', { class: 'badge who', text: labelOf(CB.who, w) }))),
+      h('p', { class: 'summary', text: it.summary }),
+      it.access === 'limited' ? h('p', { class: 'note', text: '生徒に配る道具なので、公開URLはここに載せていません（ソースだけ見られます）。' }) : null,
+      it.access === 'personal' ? h('p', { class: 'note personal', text: '自分用の道具です。公開URLはありません。' }) : null,
+      (it.tags || []).length ? h('ul', { class: 'tags', 'aria-label': 'タグ' }, ...it.tags.map((t) => h('li', { text: '#' + t }))) : null,
+      h('details', { class: 'how' }, h('summary', { text: '開き方' }), h('p', { text: it.how })),
+      h('div', { class: 'actions' }, ...acts));
+  };
+
+  // ---- 画面を更新 ----
+  const anyFilter = () => !!state.q || FACETS.some((f) => state[f.key] !== 'all');
+  const clear = () => { state.q = ''; input.value = ''; FACETS.forEach((f) => { state[f.key] = 'all'; }); update(); };
+  const update = () => {
+    FACETS.forEach((f) => [{ key: 'all' }].concat(f.list).forEach((opt) => {
+      const c = chipBtns[f.key + ':' + opt.key];
+      c.b.setAttribute('aria-pressed', String(state[f.key] === opt.key));
+      const n = CB.items.filter((it, i) => matches(it, i, f.key) && (opt.key === 'all' || f.test(it, opt.key))).length;
+      c.n.textContent = String(n);
+    }));
+    const shown = CB.items.filter((it, i) => matches(it, i));
+    grid.textContent = '';
+    shown.forEach((it) => grid.appendChild(card(it)));
+    result.textContent = anyFilter() ? shown.length + ' 件が見つかりました（全 ' + CB.items.length + ' 件）' : '全 ' + CB.items.length + ' 件';
+    if (anyFilter()) {
+      const b = h('button', { type: 'button', class: 'chip', text: '絞りこみを解除' });
+      b.addEventListener('click', clear);
+      result.appendChild(document.createTextNode(' '));
+      result.appendChild(b);
+    }
+    empty.textContent = '';
+    if (!shown.length) {
+      empty.removeAttribute('hidden');
+      const b = h('button', { type: 'button', class: 'chip', text: '絞りこみを解除する' });
+      b.addEventListener('click', clear);
+      empty.appendChild(h('p', { text: '合う道具が見つかりませんでした。ことばを短くするか、絞りこみをゆるめてみてください。' }));
+      empty.appendChild(b);
+    } else empty.setAttribute('hidden', '');
+    writeHash();
+  };
+  input.addEventListener('input', () => { state.q = input.value; update(); });
+
+  // ---- このページについて ----
+  const about = h('details', { class: 'about' },
+    h('summary', { text: 'このページの見かた・足しかた' }),
+    h('ul', {},
+      h('li', { text: '「使える形」＝READMEに使い方まで書いてある／「育成中」＝作者の読み直しや授業での試用がこれから／「例・サンプル」＝各校・各自に合わせて直して使う／「旧版」＝あとの版に発展したもの。' }),
+      h('li', { text: '「限定配布」は、生徒にQRなどで配る道具です。URLを広げない運用なので、公開URLは載せていません。' }),
+      h('li', { text: '「開く」の先は、公開ブランチ（gh-pages）に実際に入っているものだけです。開けないときは「ソース」から。' }),
+      h('li', {}, '足すとき：', h('code', { text: 'contents/data/items.js' }), ' に1ブロック足して、', h('code', { text: 'node contents/tools/check.cjs' }), ' → ', h('code', { text: 'node contents/tools/bundle.cjs' }), ' → ', h('code', { text: 'node contents/tools/publish-pages.cjs' }), '。')));
+
+  app.appendChild(top);
+  app.appendChild(h('main', { class: 'wrap' }, controls, result, grid, empty, about));
+  app.appendChild(h('footer', { class: 'wrap', text: 'データ：contents/data/items.js' }));
+
+  readHash();
+  input.value = state.q;
+  update();
+  window.addEventListener('hashchange', () => { readHash(); input.value = state.q; update(); });
+})();
+
+</script>
+</body>
+</html>

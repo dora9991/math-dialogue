@@ -7,7 +7,7 @@
    ============================================================ */
 const NET_PREFIX = 'kmbt1-';
 const NET_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // 見まちがえやすい I O 0 1 は使わない
-const NET_PROTOCOL = 1;
+const NET_PROTOCOL = 2;   // 対戦の動き（物理など）を変えたら +1 する。ちがうバージョンどうしは、つなぐ前にはじく（ズレたまま遊ばないように）
 
 const Net = {
   peer: null, conn: null, role: null, code: '', status: 'idle', rtt: 0, session: null,
@@ -48,7 +48,7 @@ const Net = {
       case 'webrtc': return 'つうしんの じゅんびに しっぱいしました';
       case 'timeout': return 'じかんぎれ（つうしんが ブロックされているかも）';
       case 'nopeer': return 'このページでは オンラインが つかえません';
-      case 'version': return 'あいてと バージョンが ちがいます';
+      case 'version': return 'あいてと バージョンが ちがいます\nページを さいよみこみ してね';
       default: return 'つながりませんでした' + (e && e.message ? '（' + String(e.message).slice(0, 24) + '）' : '');
     }
   },

@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>罫線で線分を等分する</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 相似な図形 第13時：ノートの罫線だけで、線分を等分しよう（ikkan の lesson_souji_13 と同じ流れ）。
+   図・数値は ikkan のデータ（自作）をもとにした。罫線は y＝0、−1、−2、…（間かく 1）。テープ AB の A を 0本目、B を n本目の罫線に合わせると、
+   罫線との交点で n等分される（区切られた長さが等しいことは、ページを開くと座標で確かめる）。チャレンジの台形は GE.verify で確かめる。 */
+(function () {
+  var C = CH.C, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  /* ---- このページの道具 ---- */
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), w = tw(D, s, size); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({ outline: OUT }, o, { size: size })); }
+  /* 図の四角（fig）と、字の四角（side）。よこ長ならみぎ、たて長なら下 */
+  function lay(D, k, kh) {
+    var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
+    if (B.w > B.h * 1.15 && B.w > 560) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .1, B.x1, B.y1 - B.h * .05), wide: true }; }
+    var h = B.h * (kh || .3); return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .04, B.y1 - h + 6, B.x1 - B.w * .02, B.y1), wide: false };
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする）。list：[{ t, col, a }] */
+  function rows(D, R, list, o) {
+    o = o || {}; list = list.filter(Boolean); if (!list.length) return;
+    var nc = R.w > R.h * 2.2 && list.length > 3 ? 2 : 1, per = Math.ceil(list.length / nc), cw = R.w / nc;   // 下の帯では 2列
+    var s = Math.min(o.size || CH.fs(D, .92), R.h / (per * 1.55));
+    list.forEach(function (r, i) {
+      if (r.a === 0) return; var c = Math.floor(i / per), j = i % per, w = tw(D, r.t, s), sz = w > cw - 8 ? s * (cw - 8) / w : s;
+      CH.text(D, R.x0 + c * cw, R.y0 + s * .8 + j * s * 1.55, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left', outline: OUT });
+    });
+  }
+  /* 辺 ab のそばの字（ref から遠ざかる向き。ref がなければ図の中心から）。pos：a からの位置（0〜1） */
+  function len(F, a, b, t, o) {
+    o = o || {}; var p = F.X(a), q = F.X(b), u = o.pos == null ? .5 : o.pos, m = [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u];
+    var d = [q[0] - p[0], q[1] - p[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L], r = F.X(o.ref || F.c);
+    if ((m[0] - r[0]) * n[0] + (m[1] - r[1]) * n[1] < 0) n = [-n[0], -n[1]];
+    var sz = F.s * (o.size || .85), w = tw(F.D, t, sz), k = (o.k || .45) * F.s + Math.abs(n[0]) * w / 2 + Math.abs(n[1]) * sz / 2;
+    CH.text(F.D, m[0] + n[0] * k, m[1] + n[1] * k, t, { col: o.col || C.chalk, size: sz, a: o.a, outline: OUT });
+  }
+  /* 寸法線：線分 ab にそって、外がわへ k ずらした線（両はしに短い線）と字 */
+  function dim(F, a, b, o) {
+    o = o || {}; var p = F.X(a), q = F.X(b), d = [q[0] - p[0], q[1] - p[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L], r = F.X(o.ref || F.c), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    if ((m[0] - r[0]) * n[0] + (m[1] - r[1]) * n[1] < 0) n = [-n[0], -n[1]];
+    var k = (o.k || 1) * F.s, h = F.s * .32, P0 = [p[0] + n[0] * k, p[1] + n[1] * k], Q0 = [q[0] + n[0] * k, q[1] + n[1] * k];
+    CH.line(F.D, P0[0], P0[1], Q0[0], Q0[1], { col: o.col, w: 3, a: o.a, glow: true });
+    [P0, Q0].forEach(function (z) { CH.line(F.D, z[0] - n[0] * h, z[1] - n[1] * h, z[0] + n[0] * h, z[1] + n[1] * h, { col: o.col, w: 2.4, a: o.a }); });
+    if (o.t) { var sz = F.s * .85, w = tw(F.D, o.t, sz), kk = k + F.s * .4 + Math.abs(n[0]) * w / 2 + Math.abs(n[1]) * sz / 2; CH.text(F.D, m[0] + n[0] * kk, m[1] + n[1] * kk, o.t, { col: o.col, size: sz, a: o.a, outline: OUT }); }
+  }
+  function glow(F, ss, col, a) { if (a > 0) ss.split(' ').forEach(function (s) { GE.seg(F, s, { col: col, w: 5, glow: true, a: a }); }); }
+  function tri(ab, ac, bc) { var x = (ab * ab - ac * ac + bc * bc) / (2 * bc); return { A: [x, Math.sqrt(ab * ab - x * x)], B: [0, 0], C: [bc, 0] }; }
+  function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+  function ratio(a, b) { var g = gcd(a, b); return a / g + '：' + b / g; }
+  function nf(x) { return String(Math.round(x * 10) / 10); }
+  /* ---- 罫線とテープの道具 ---- */
+  var X0 = .5, YT = 1.8;
+  /* テープ（長さ L）：k＝0 で罫線の上で横向き、k＝1 で A が 0本目、B が n本目の罫線の上 */
+  function tapePts(L, n, k) {
+    var th = Math.asin(n / L), k1 = CH.ease(CH.smooth(0, .45, k)), k2 = CH.ease(CH.smooth(.5, 1, k)), A = [X0, YT * (1 - k1)], ang = -th * k2;
+    return { A: A, B: [A[0] + L * Math.cos(ang), A[1] + L * Math.sin(ang)] };
+  }
+  /* 罫線と B の交点が、テープを n等分しているか（座標で確かめる） */
+  function cuts(L, n) { var p = tapePts(L, n, 1), out = []; for (var j = 0; j <= n; j++) out.push(GE.meet(p.A, p.B, [0, -j], [1, -j])); return out; }
+  function equalCuts(L, n) { var q = cuts(L, n), d0 = GE.len({}, [q[0], q[1]]); return q.slice(1).every(function (p, i) { return GE.near(GE.len({}, [q[i], p]), d0); }) && GE.near(d0 * n, L); }
+  CH.check([2, 3, 4, 5, 6, 7, 8].every(function (n) { return equalCuts(9, n); }) && [4, 6, 10, 12].every(function (n) { return equalCuts(13, n); }), '罫線との交点で n等分');
+  function nbFit(D, R, L, nl) { return GE.fit(D, R, { a: [X0 - .9, YT + .5], b: [X0 + L + 1.6, -nl - .2] }, { pad: .03 }); }
+  /* ノートの罫線（0〜nl本目）。num で、右はしに番号 */
+  function notebook(F, L, nl, o) {
+    o = o || {};
+    for (var k = 0; k <= nl; k++) {
+      var p = F.X([X0 - .9, -k]), q = F.X([X0 + L + .9, -k]);
+      CH.line(F.D, p[0], p[1], q[0], q[1], { col: 'rgba(154,216,255,.55)', w: 1.6 });
+      if (o.num) CH.text(F.D, q[0] + F.s * .8, q[1], String(k), { size: F.s * .75, col: o.hi === k ? C.pink : 'rgba(242,240,230,.75)', num: true });
+    }
+  }
+  /* 紙テープ（帯）と、はしの点 A、B */
+  function tape(F, A, B, o) {
+    o = o || {}; var a = F.X(A), b = F.X(B), d = [b[0] - a[0], b[1] - a[1]], Lp = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / Lp * F.s * .42, d[0] / Lp * F.s * .42];
+    CH.poly(F.D, [[a[0] + n[0], a[1] + n[1]], [b[0] + n[0], b[1] + n[1]], [b[0] - n[0], b[1] - n[1]], [a[0] - n[0], a[1] - n[1]]], { fill: 'rgba(255,246,220,.13)', stroke: 'rgba(242,240,230,.7)', sw: 1.4 });
+    CH.line(F.D, a[0], a[1], b[0], b[1], { col: C.chalk, w: 2.6 });
+    GE.dot(F, A); GE.dot(F, B);
+    var u = [d[0] / Lp, d[1] / Lp];
+    CH.text(F.D, a[0] - u[0] * F.s * 1.1 - n[0] * 1.2, a[1] - u[1] * F.s * 1.1 - n[1] * 1.2, 'A', { size: F.s, outline: OUT });
+    CH.text(F.D, b[0] + u[0] * F.s * 1.1 + n[0] * 1.2, b[1] + u[1] * F.s * 1.1 + n[1] * 1.2, 'B', { size: F.s, outline: OUT });
+    if (o.t) CH.text(F.D, (a[0] + b[0]) / 2 - n[0] * 2.4, (a[1] + b[1]) / 2 - n[1] * 2.4, o.t, { size: F.s * .85, outline: OUT });
+  }
+  /* テープを n等分する点（1〜n−1本目の罫線との交点）。upto：いくつ目まで出すか（0〜1）、parts：区切りを色分け */
+  function marks(F, A, B, n, o) {
+    o = o || {}; var up = o.upto == null ? 1 : o.upto;
+    if (o.parts) for (var j = 0; j < n; j++) GE.seg(F, [GE.lerpP(A, B, j / n), GE.lerpP(A, B, (j + 1) / n)], { col: j % 2 ? C.pink : C.yel, w: 5, glow: true, a: o.parts });
+    for (var i = 1; i < n; i++) { var a = CH.clamp(up * n - i + 1, 0, 1); if (a > 0) GE.dot(F, GE.lerpP(A, B, i / n), { col: (o.col && o.col(i)) || C.pink, r: F.s * .24, a: a }); }
+    if (o.ticks) for (var j2 = 0; j2 < n; j2++) GE.tick(F, [GE.lerpP(A, B, j2 / n), GE.lerpP(A, B, (j2 + 1) / n)], 1, { col: C.chalk, a: o.ticks });
+  }
+
+  /* ---- 例題：14cm を 3：4 に。B は 7本目、P は 3本目。AP＝6 ---- */
+  CH.check(3 + 4 === 7 && 14 * 3 / 7 === 6 && 14 * 4 / 7 === 8 && equalCuts(9, 7), '例題（7等分、AP＝6cm）');
+
+  /* ---- チャレンジ：台形 ABCD（AD∥BC、AD＝4、BC＝10）。AE：EB＝1：2、EF∥BC。A を通り DC に平行な線で P、Q ---- */
+  var P8 = { A: [2, 4], D: [6, 4], B: [0, 0], C: [10, 0] }; P8.E = GE.lerpP(P8.A, P8.B, 1 / 3); P8.F = GE.meet(P8.E, GE.add(P8.E, [1, 0]), P8.D, P8.C);
+  P8.P = GE.meet(P8.A, GE.add(P8.A, GE.sub(P8.C, P8.D)), P8.E, P8.F); P8.Q = GE.meet(P8.A, GE.add(P8.A, GE.sub(P8.C, P8.D)), P8.B, P8.C);
+  GE.verify(P8, 'AD＝4、BC＝10、AE：EB＝1：2、AD∥BC、EF∥BC、AQ∥DC、PF＝QC＝AD＝4、BQ＝6、EP：BQ＝AE：AB＝1：3、EP＝2、EF＝6', null, 'チャレンジの台形');
+
+  var steps = [
+    { tag: '今日の問い', bh: '紙テープとノートの罫線', q: '紙テープ AB を、ものさしを使わずに、ノートの罫線とえんぴつだけで 5等分しよう。どうすればよいだろう。',
+      notes: ['① 自分の考え（3分）　やってみて、方法を書こう。', '② ペアの考え（3分）　自分とちがうやり方や、気づいたことは？', 'ノートの罫線は、平行で、間かくが等しい。'],
+      b: { t: '紙テープ AB を、罫線だけで 5等分したい', col: C.blue },
+      draw: function (D) { var F = nbFit(D, CH.box(D, { l: .05, r: .05, t: .08, b: .08 }), 9, 7), p = tapePts(9, 5, 0); notebook(F, 9, 7); tape(F, p.A, p.B); } },
+    { tag: '今日の問い', q: 'どうすれば、テープを 5等分できる？', a: 'A を 1本の罫線に、B を 5本先の罫線に合わせて、ななめに置く', sub: '間の 4本の罫線と交わるところに印をつけると、テープが 5つの等しい長さに区切られる', dur: 6,
+      b: { t: 'A を罫線に、B を 5本先の罫線に合わせて置く → 間の罫線との交点で <b>5等分</b>', col: C.yel },
+      draw: function (D) {
+        var F = nbFit(D, CH.box(D, { l: .05, r: .05, t: .08, b: .08 }), 9, 7), t = D.ph ? D.t : 0, k1 = CH.smooth(0, .5, t), k2 = CH.smooth(.55, .8, t), k3 = CH.smooth(.84, .98, t), p = tapePts(9, 5, k1);
+        notebook(F, 9, 7, { num: D.ph && k1 >= 1, hi: 5 });
+        tape(F, p.A, p.B);
+        if (k1 >= 1) marks(F, p.A, p.B, 5, { upto: k2, parts: k3, ticks: k3 });
+      } },
+    { tag: '今日の問い', q: '何等分でもできるだろうか。B を合わせる罫線を変えて調べよう。', a: 'B を n 本先の罫線に合わせると、n 等分できる', sub: '2等分なら 2本先、3等分なら 3本先、…。テープが短いと、合わせられる罫線には限りがある', dur: 5,
+      notes: ['スライダーで、B を合わせる罫線（A から何本先か）を変えられます。'],
+      sliders: [{ key: 'n', label: 'B を合わせる罫線', min: 2, max: 8, step: 1, val: 5, anim: [2, 8], fmt: function (v) { return Math.round(v) + '本先'; } }],
+      b: { t: 'B を <b>n 本先</b> の罫線に合わせると　→　<b>n 等分</b>', col: C.yel },
+      draw: function (D) {
+        var n = Math.round(D.V.n), L = lay(D, .28, .2), F = nbFit(D, L.fig, 9, 8), p = tapePts(9, n, 1);
+        notebook(F, 9, 8, { num: true, hi: n }); tape(F, p.A, p.B); marks(F, p.A, p.B, n, { parts: 1, ticks: 1 });
+        rows(D, L.side, [{ t: 'B を ' + n + '本先の罫線に' }, { t: '→ ' + n + '等分', col: C.yel }]);
+      } },
+    { tag: 'ことば', bh: 'ことば', q: '間かくが等しい平行線に、線分をななめに置くと、どうなる？ また、線分を m：n に分けるには、どう考えればよい？',
+      a: '線分は等分される。m：n に分けるときは、全体を m＋n 等分して考える', sub: '平行線と線分の比の定理（第12時）：平行線で区切られた線分の比は等しい', dur: 4,
+      b: [{ t: '平行線に 2つの直線が交わるとき、線分の <b>比</b> は等しい', col: C.green }, { t: '間かくが等しい平行線は、ななめの線分を <b>等分</b> する', col: C.green }, { t: '線分を m：n に分ける → 全体を <b>m＋n 等分</b> して考える', col: C.green }],
+      draw: function (D) {
+        var F = nbFit(D, CH.box(D, { l: .05, r: .05, t: .08, b: .08 }), 9, 7), t = D.ph ? D.t : 0, k1 = CH.smooth(.05, .45, t), k2 = CH.smooth(.5, .9, t), p = tapePts(9, 5, 1);
+        notebook(F, 9, 7); tape(F, p.A, p.B); marks(F, p.A, p.B, 5, { parts: 1 });
+        /* 罫線の間かく（左はし）と、テープの区切り：どちらも等しい */
+        for (var j = 0; j < 5; j++) { var a = F.X([X0 - .5, -j]), b = F.X([X0 - .5, -j - 1]); CH.line(D, a[0], a[1] + 3, b[0], b[1] - 3, { col: j % 2 ? C.pink : C.yel, w: 4, a: k1 }); }
+        marks(F, p.A, p.B, 5, { ticks: k2 });
+        if (D.ph) say(D, F.R.cx, F.R.y0 + F.s * .2, k2 > .3 ? '間かくが等しい → 区切られた長さも等しい' : '罫線の間かくは、どこも等しい', { size: F.s * .9, col: C.yel, maxW: F.R.w });
+      } },
+    { tag: '例題', bh: '例題　3：4 に分ける', q: '長さ 14cm の紙テープ AB を、罫線を使って 3：4 に分ける点 P を求めよう。全体を何等分と考えるか、P は何本目の罫線の上か、AP の長さも答えよう。',
+      a: '7等分。B を 7本目、P は 3本目の罫線の上。AP＝6cm', sub: '3＋4＝7 だから 7等分。AP は 7つのうちの 3つ分なので 14×3/7＝6', dur: 6,
+      b: { t: '3＋4＝7 → <b>7等分</b>（B は 7本目）　P は <b>3本目</b>　AP＝14×3/7＝<b>6cm</b>', col: C.pink },
+      draw: function (D) {
+        var L = lay(D, .3, .26), F = nbFit(D, L.fig, 9, 7), t = D.ph ? D.t : 0, k1 = CH.smooth(0, .45, t), k2 = CH.smooth(.5, .7, t), k3 = CH.smooth(.74, .9, t), k4 = CH.smooth(.92, 1, t), p = tapePts(9, 7, k1);
+        notebook(F, 9, 7, { num: k1 >= 1, hi: 7 });
+        tape(F, p.A, p.B, { t: k1 < .05 ? 'AB＝14cm' : null });
+        if (k1 >= 1) {
+          var Pp = GE.lerpP(p.A, p.B, 3 / 7);
+          GE.seg(F, [p.A, Pp], { col: C.yel, w: 5, glow: true, a: k3 }); GE.seg(F, [Pp, p.B], { col: C.blue, w: 5, glow: true, a: k3 });
+          marks(F, p.A, p.B, 7, { upto: k2, col: function (i) { return i === 3 ? C.pink : 'rgba(242,240,230,.8)'; } });
+          if (k3) { GE.dot(F, Pp, { col: C.pink, r: F.s * .32 }); var q = F.X(Pp); CH.text(D, q[0] - F.s * .9, q[1] - F.s * .9, 'P', { size: F.s, col: C.pink, outline: OUT, a: k3 }); }
+        }
+        rows(D, L.side, D.ph ? [{ t: '3＋4＝7 → 7等分', a: k1 }, { t: 'B を 7本目に合わせる', a: k1 }, { t: 'P は 3本目の罫線の上', col: C.pink, a: k3 }, { t: 'AP は 3つ分、PB は 4つ分', a: k3 }, { t: 'AP＝14×3/7＝6（cm）', col: C.yel, a: k4 }]
+          : [{ t: 'AB＝14cm' }, { t: 'AP：PB＝3：4' }, { t: 'P は どこ？', col: C.pink }]);
+      } },
+    { tag: '考えよう', q: '線分 AB の B を、A から 10本目の罫線に合わせて置いた。罫線との交点で 10個に区切られる。何本ごとに印をつければ、AB を 2等分、3等分、4等分、5等分、6等分できるだろう。（できないときは ×）',
+      notes: ['表にまとめよう：等分したい数 2・3・4・5・6 と、何本ごとに印をつけるか。', 'B を 12本目に合わせたときも、調べて確かめよう。気づいたことは？', 'スライダーで、B を合わせる罫線と、印をつける間かくを変えられます。'],
+      sliders: [{ key: 'N', label: 'B を合わせる罫線', min: 4, max: 12, step: 1, val: 10, fmt: function (v) { return v + '本目'; } },
+        { key: 'k', label: '印をつける間かく', min: 1, max: 6, step: 1, val: 3, fmt: function (v) { return v + '本ごと'; } }],
+      draw: function (D) {
+        var N = D.V.N, k = D.V.k, F = nbFit(D, CH.box(D, { l: .04, r: .04, t: .05, b: .05 }), 13, 12), p = tapePts(13, N, 1), cut = [0];
+        for (var j = k; j < N; j += k) cut.push(j); cut.push(N);
+        notebook(F, 13, 12, { num: true, hi: N }); tape(F, p.A, p.B);
+        cut.slice(1).forEach(function (c, i) { GE.seg(F, [GE.lerpP(p.A, p.B, cut[i] / N), GE.lerpP(p.A, p.B, c / N)], { col: i % 2 ? C.pink : C.yel, w: 5, glow: true }); });
+        marks(F, p.A, p.B, N, { col: function () { return 'rgba(242,240,230,.7)'; } });
+        cut.slice(1, -1).forEach(function (c) { GE.dot(F, GE.lerpP(p.A, p.B, c / N), { col: C.pink, r: F.s * .3 }); });
+      } },
+    { tag: 'チャレンジ', bh: 'チャレンジ', q: 'AD∥BC の台形 ABCD で、AD＝4cm、BC＝10cm である。辺 AB 上に AE：EB＝1：2 となる点 E をとる。E を通り BC に平行な直線が、辺 DC と交わる点を F とする。EF の長さを求めよう。',
+      notes: ['ヒント① 点 A を通って、辺 DC に平行な直線をひくと、どんな図形ができるかな。', 'ヒント② 長さが AD と等しい線分は、ほかにどこにあるかな。'],
+      a: 'EF＝6cm', sub: 'A を通り DC に平行な直線と EF、BC の交点を P、Q。四角形 APFD、PQCF は平行四辺形だから PF＝QC＝AD＝4、BQ＝10−4＝6。△ABQ で EP∥BQ、AE：AB＝1：3 だから EP＝6×1/3＝2。EF＝2＋4＝6', dur: 7,
+      b: { t: 'A を通り DC に平行な線 → PF＝QC＝4、BQ＝6、EP＝6×1/3＝2 → <b>EF＝6cm</b>', col: C.orange },
+      draw: function (D) {
+        var L = lay(D, .36, .28), F = GE.fit(D, L.fig, P8, { pad: .1 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.03, .22, t), k2 = CH.smooth(.26, .48, t), k3 = CH.smooth(.52, .76, t), k4 = CH.smooth(.8, .96, t);
+        if (D.ph) { GE.poly(F, 'APFD', { col: C.green, fa: .2 * k2, stroke: false }); GE.poly(F, 'PQCF', { col: C.green, fa: .12 * k2, stroke: false }); GE.poly(F, 'ABQ', { col: C.blue, fa: .2 * k3, stroke: false }); }
+        GE.figure(F, { segs: ['AB', 'BC', 'CD', 'DA', 'EF'], dots: ['E', 'F'], labels: ['A', 'B', 'C', 'D', 'E', 'F'], dir: { A: 'nw', B: 'sw', C: 'se', D: 'ne', E: 'w', F: 'e' } });
+        GE.par(F, 'AD', 1); GE.par(F, 'BC', 1); len(F, 'A', 'D', '4cm'); len(F, 'B', 'C', '10cm', { a: 1 - k3 });
+        if (D.ph) {
+          if (k1) { GE.seg(F, ['A', GE.lerpP(P8.A, P8.Q, k1)], { col: C.yel, w: 2.6, dash: [8, 6] }); }
+          if (k1 >= 1) { GE.dot(F, 'P', { col: C.yel }); GE.dot(F, 'Q', { col: C.yel }); GE.labels(F, ['P', 'Q'], { dir: { P: 'ne', Q: 'se' }, col: { P: C.yel, Q: C.yel } }); }
+          glow(F, 'PF QC', C.green, k2 * (1 - k4 * .5)); len(F, 'P', 'F', '4', { col: C.green, a: k2, ref: 'A' }); len(F, 'Q', 'C', '4', { col: C.green, a: k2, ref: 'A' });
+          glow(F, 'BQ', C.blue, k3); glow(F, 'EP', C.pink, k3); len(F, 'B', 'Q', '6', { col: C.blue, a: k3, ref: 'A', k: 1.3 }); len(F, 'E', 'P', '2', { col: C.pink, a: k3, ref: 'A' });
+        }
+        rows(D, L.side, D.ph ? [{ t: 'A を通り DC に平行な線', col: C.yel, a: k1 }, { t: 'PF＝QC＝AD＝4', col: C.green, a: k2 }, { t: 'BQ＝10−4＝6', col: C.blue, a: k3 }, { t: 'EP＝6×1/3＝2', col: C.pink, a: k3 }, { t: 'EF＝2＋4＝6（cm）', col: C.orange, a: k4 }]
+          : [{ t: 'AD∥BC、EF∥BC' }, { t: 'AD＝4cm　BC＝10cm' }, { t: 'AE：EB＝1：2' }, { t: 'EF＝？', col: C.pink }]);
+      } }
+  ];
+
+  K3.run({
+    no: '第13時', title: 'ノートの罫線だけで、線分を等分しよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '12.html', label: '◀ 第12時' }, { href: '14.html', label: '第14時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

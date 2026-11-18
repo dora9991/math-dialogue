@@ -1,0 +1,6 @@
+{
+  "name": "lesson-live",
+  "private": true,
+  "type": "commonjs",
+  "scripts": { "test": "node test/run-all.js" }
+}

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>表面積と体積の練習</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+<script src="js/k3.js"></script>
+<script>
+/* 空間図形 第13時：表面積と体積を、たしかに求められるようになろう（ikkan の lesson_kukan_new_13 と同じ流れ）。
+   円錐（半径 6・高さ 8・母線 10）で、どの長さを どの式に使うかを、色で分けて見せる。 */
+(function () {
+  var C = K3.COL, v = K3.v, DEG = v.DEG, K = K3, PI = Math.PI;
+  var R = 6, H = 8, L = 10, FR = K.frame([0, 0, 3.6], 7.4);
+  function camOf(m) { var w = v.mul(m, -1); return { th: Math.atan2(w[1], w[0]) / DEG, ps: Math.asin(w[2]) / DEG }; }
+  var FIN = K.coneNet(R, H, 1, 1), CV = { th: camOf(FIN.m).th, ps: camOf(FIN.m).ps, fov: 6, R: L * 1.2, target: v.lerp3([0, 0, H], v.centroid(FIN.side.V.concat(FIN.base.V)), .8) };
+  function cone(D, o) {
+    o = o || {}; D.mesh(K.cone(R, H), { col: C.pink, a: o.a == null ? .55 : o.a });
+    var hl = o.hl || {};
+    D.seg([0, 0, H], [0, 0, 0], { col: hl.h ? C.yel : C.chalk, w: D.lw * (hl.h ? 2.6 : 1), dash: !hl.h, glow: !!hl.h });
+    D.seg([0, 0, 0], [0, -R, 0], { col: hl.r ? C.blue : C.chalk, w: D.lw * (hl.r ? 2.6 : 1), glow: !!hl.r });
+    D.seg([0, 0, H], [0, -R, 0], { col: hl.l ? C.orange : C.chalk, w: D.lw * (hl.l ? 2.6 : 1), glow: !!hl.l });
+    D.label([0, 0, H / 2], 'h 8', { col: hl.h ? C.yel : C.chalk, dx: 1 }); D.label([0, -R / 2, 0], 'r 6', { col: hl.r ? C.blue : C.chalk, dy: .9 }); D.label([0, -R / 2, H / 2], 'ℓ 10', { col: hl.l ? C.orange : C.chalk, dx: -1.3 });
+  }
+
+  K.run({
+    no: '第13時', title: '表面積と体積を、たしかに求められるようになろう',
+    model: FR, view: { th: -40, ps: 14 },
+    links: [{ href: 'index.html', label: '目次' }, { href: '12.html', label: '◀ 第12時' }, { href: '14.html', label: '第14時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '円錐（半径 6cm・高さ 8cm・母線 10cm）', q: '底面の半径 6cm、高さ 8cm、母線 10cm の円錐の、表面積と体積を求めよう。3つの長さは、それぞれ どちらの式に使うだろう。',
+        notes: ['① 自分の考え（3分）　使った長さも書こう。', '② ペアの考え（3分）'],
+        draw: function (D) { cone(D); } },
+      { tag: '今日の問い', q: '体積に使う長さは？ 体積は？', a: '半径 と 高さ　→　96π cm³', sub: '1/3 × π × 6² × 8 ＝ 96π（母線は使わない）', dur: 1,
+        b: { t: '体積 … 半径・高さ　1/3×π×6²×8＝<b>96π cm³</b>', col: C.yel },
+        draw: function (D) { cone(D, { hl: D.ph ? { r: 1, h: 1 } : {} }); } },
+      { tag: '今日の問い', q: '表面積に使う長さは？ 表面積は？', a: '半径 と 母線　→　96π cm²', sub: '側面積 π × 10² × 12π/20π ＝ 60π、底面積 36π、60π ＋ 36π ＝ 96π（高さは使わない）', dur: 4,
+        model: K.frame([0, 0, 4], 12), view: function (s) { return s.ph && s.t > .2 ? CV : { th: -40, ps: 14, R: 7.4, target: [0, 0, 3.6] }; },
+        b: { t: '表面積 … 半径・母線　60π＋36π＝<b>96π cm²</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0;
+          if (t < .2) { cone(D, { hl: D.ph ? { r: 1, l: 1 } : {} }); return; }
+          var n = K.coneNet(R, H, v.ease(v.clamp((t - .2) / .5, 0, 1)), v.ease(v.clamp((t - .2) / .5, 0, 1)));
+          D.mesh(n.side, { col: C.pink, two: true }); D.mesh(n.base, { col: C.blue, two: true });
+          if (t > .8) { D.label(v.centroid(n.side.V), '60π', { plain: true, col: '#2a2017', size: 1.2 }); D.label(n.base.ctr, '36π', { plain: true, col: '#2a2017', size: 1.2 }); }
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '式を書く前に、たしかめることは？', a: '柱・錐・球のどれか、半径か直径か、高さか母線か', dur: 1, spin: true,
+        b: [{ t: '柱 V＝Sh　錐 V＝1/3 Sh　球 V＝4/3 πr³　S＝4πr²', col: C.green }, { t: '円錐の体積は<b>高さ</b>、側面積は<b>母線</b>', col: C.green }],
+        draw: function (D) {
+          var g = D.grid(3, { cols: [3, 1] }), F2 = K.frame([0, 0, 1.6], 2.4);
+          [['柱', K.cylinder(1.5, 3), C.blue, [0, 0, 0]], ['錐', K.cone(1.5, 3), C.pink, [0, 0, 0]], ['球', K.sphere(1.5), C.orange, [0, 0, 1.5]]].forEach(function (x, i) {
+            var p = g.pos[i], S = D.sub(p.cx, p.cy, g.size / 2, F2); S.mesh(x[1], { col: x[2], at: x[3] }); D.text(p.cx, p.ly, x[0], { size: 1.1 });
+          });
+        } },
+      { tag: '例題', bh: '例題　円柱（半径 3cm・高さ 5cm）＋ 半球（半径 3cm）', model: K.frame([0, 0, 4], 5.6), view: { th: -60, ps: 16 },
+        q: '円柱の上に半球をのせた立体の、体積と表面積は？', a: '体積 63π cm³、表面積 57π cm²',
+        sub: '体積 円柱 45π ＋ 半球 18π。表面積 曲面 18π ＋ 側面 30π ＋ 底面 9π（はり合わせた面は ふくめない）', dur: 4,
+        banner: function (s) { if (!s.ph) return ''; return s.t < .5 ? '外から見える面だけ' : 'はり合わせた面は ふくめない'; },
+        b: [{ t: '体積 45π ＋ 18π ＝ <b>63π cm³</b>', col: C.blue }, { t: '表面積 18π ＋ 30π ＋ 9π ＝ <b>57π cm²</b>', col: C.orange }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, gap = 1.6 * v.smooth(.45, .65, t) * (1 - v.smooth(.85, 1, t));
+          D.mesh(K.cylinder(3, 5), { col: C.blue });
+          D.mesh(K.hemisphere(3), { at: [0, 0, 5 + gap], col: C.orange });
+          if (gap > .1) { D.circle([0, 0, 5], [1, 0, 0], [0, 1, 0], 3, { col: C.pink, a: .55, stroke: C.pink }); D.circle([0, 0, 5 + gap], [1, 0, 0], [0, 1, 0], 3, { col: C.pink, a: .55, stroke: C.pink }); D.label([3.2, 0, 5 + gap / 2], 'ふくめない', { col: C.pink, align: 'left', dx: .5 }); }
+        } },
+      { tag: '考えよう', q: 'ア〜オは、よくあるまちがいをした答えである。どこがまちがいか見つけて、正しく直そう。',
+        notes: ['ア 円錐（半径 3・高さ 4）の体積　π×3²×4＝36π', 'イ 円柱（半径 2・高さ 5）の表面積　2π×2×5＋π×2²＝24π', 'ウ 球（直径 6）の体積　4/3π×6³＝288π', 'エ 円錐（半径 3・高さ 4・母線 5）の側面積　π×4²×6π/8π＝12π', 'オ 半球（半径 3）の表面積　4π×3²×1/2＝18π', 'まちがえやすいところと、コツをまとめよう。'],
+        draw: function (D) {
+          var g = D.grid(5, { cols: [5, 3] }), F2 = K.frame([0, 0, 1.5], 2.4);
+          [['ア', K.cone(1.5, 2.2), C.pink, [0, 0, 0]], ['イ', K.cylinder(1.2, 2.8), C.blue, [0, 0, 0]], ['ウ', K.sphere(1.5), C.orange, [0, 0, 1.5]], ['エ', K.cone(1.6, 2.2), C.lav, [0, 0, 0]], ['オ', K.hemisphere(1.6), C.green, [0, 0, .4]]].forEach(function (x, i) {
+            var p = g.pos[i], S = D.sub(p.cx, p.cy, g.size / 2, F2); S.mesh(x[1], { col: x[2], at: x[3] }); D.text(p.cx, p.ly, x[0], { size: 1.1 });
+          });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: K.frame([0, 0, 6], 7.2), view: { th: -90, ps: 12 },
+        q: '底面の半径 4cm の円柱の水そうに、深さ 10cm まで水が入っている。底面の半径 3cm、高さ 8cm の円錐のおもりを、完全にしずめると、水面は何 cm 上がるか。',
+        a: '3/2 cm（1.5cm）', sub: '上がった水の体積 ＝ おもりの体積 24π。π × 4² × □ ＝ 24π　→　□ ＝ 3/2', dur: 5,
+        b: { t: 'π×4²×□ ＝ 1/3×π×3²×8 ＝ 24π → □ ＝ <b>3/2 cm</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, sink = v.ease(v.clamp(t / .6, 0, 1)), z = v.lerp(12.5, 0, sink), rise = 1.5 * v.smooth(.3, .6, t);
+          D.mesh(K.cylinder(4 * .995, 10 + rise), { col: '#5aa9e6', a: .55, edges: false });
+          D.mesh(K.revolve([[0, 0, 'b'], [3, 0, 's'], [0, 8]]), { at: [0, 0, z], col: C.orange });
+          D.mesh(K.cylinder(4, 14), { col: '#d8e6ef', a: .14, edgeCol: 'rgba(242,240,230,.8)', ew: 1.2 });
+          D.seg([4.2, 0, 10], [5, 0, 10], { col: C.chalk, w: D.lw }); D.label([5, 0, 10], '10cm', { align: 'left', dx: .3 });
+          if (rise > .05) { D.seg([4.2, 0, 10 + rise], [5, 0, 10 + rise], { col: C.yel, w: D.lw * 1.5 }); D.label([5, 0, 10 + rise], '＋□', { col: C.yel, align: 'left', dx: .3 }); }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

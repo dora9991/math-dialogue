@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>角柱と円柱の表面積</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+<script src="js/k3.js"></script>
+<script>
+/* 空間図形 第9時：角柱と円柱の表面積を、展開図を使って求めよう（ikkan の lesson_kukan_new_09 と同じ流れ）。
+   三角柱（底面は 3・4・5 の直角三角形、高さ 6）を、側面のいちばん大きい面を動かさずに開く（K3.unfold）。
+   面の面積は、開いた形から計算して、書いた答えと照らし合わせる。 */
+(function () {
+  var C = K3.COL, v = K3.v, DEG = v.DEG, K = K3, PI = Math.PI;
+  /* 底面は x-z 平面の直角三角形（直角は原点。4cm が x、3cm が z）、高さ（奥行き）6cm は y */
+  var TP = K.polyhedron([[0, 0, 0], [4, 0, 0], [0, 0, 3], [0, 6, 0], [4, 6, 0], [0, 6, 3]], [[0, 1, 2], [3, 4, 5], [0, 1, 4, 3], [0, 2, 5, 3], [1, 2, 5, 4]]);
+  var FCOL = [C.blue, C.blue, C.orange, C.yel, C.pink], FNAME = ['エ', 'オ', 'イ', 'ア', 'ウ'];
+  function area(P) { var n = [0, 0, 0]; for (var i = 0; i < P.length; i++) n = v.add(n, v.cross(P[i], P[(i + 1) % P.length])); return v.len(n) / 2; }
+  var AREA = TP.F.map(function (f) { return area(f.v.map(function (k) { return TP.V[k]; })); });
+  (function () { var want = [6, 6, 24, 18, 30]; AREA.forEach(function (a, i) { if (Math.abs(a - want[i]) > 1e-9 && window.console) console.error('面積がちがう', i, a); }); })();
+  var NET = K.unfold(TP, 2, 1), NC = v.centroid(NET.V);
+  var TPF = K.frame([2, 3, 1.5], 4.2), NETF = K.frame(NC, 7.6);
+  var NV = { th: -90, ps: 89, fov: 8 };
+  function faceAt(net, fi) { for (var i = 0; i < net.F.length; i++) if (net.F[i].fi === fi) return net.F[i]; }
+  function netLabels(D, net, fn, o) {
+    TP.F.forEach(function (f, fi) { var g = faceAt(net, fi); if (!g) return; var c = v.centroid(g.v.map(function (k) { return net.V[k]; })); D.label(c, fn(fi), o); });
+  }
+  function drawTP(D, t, o) {
+    o = o || {}; var net = K.unfold(TP, 2, t);
+    D.mesh(net, { two: true, lit: 'both', faceCol: function (f) { return FCOL[f.fi]; }, faceA: o.faceA ? function (f) { return o.faceA(f.fi); } : null });
+    return net;
+  }
+  var CYL = { r: 4, h: 10 };
+
+  K.run({
+    no: '第9時', title: '角柱と円柱の表面積を、展開図を使って求めよう',
+    model: TPF, view: { th: -58, ps: 24 },
+    links: [{ href: 'index.html', label: '目次' }, { href: '08.html', label: '◀ 第8時' }, { href: '10.html', label: '第10時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '三角柱（底面は直角三角形 3cm・4cm・5cm、高さ 6cm）',
+        q: '三角柱の、すべての面の面積の和は、どうすれば求められるだろう。展開図をもとに考えよう。',
+        notes: ['① 自分の考え（3分）　展開図をもとに、式を書いて。', '② ペアの考え（3分）'],
+        draw: function (D) {
+          drawTP(D, 0);
+          D.dim([0, 0, 0], [4, 0, 0], '4cm', { off: [0, 0, -.5], dy: .7 }); D.dim([0, 0, 0], [0, 0, 3], '3cm', { off: [-.5, 0, 0], dx: -1.2 });
+          D.dim([4, 0, 0], [0, 0, 3], '5cm', { dx: 1, dy: -.6 }); D.dim([4, 0, 0], [4, 6, 0], '6cm', { off: [.5, 0, 0], dx: 1.2 });
+        } },
+
+      { tag: '今日の問い', q: '三角柱を、展開図に開くと？', a: '長方形 3つと、三角形 2つ', sub: '側面は、横が底面の辺・縦が高さの長方形', dur: 4.5,
+        model: NETF, view: function (s) { return s.ph && s.t > .2 ? NV : { th: -58, ps: 24, R: 5.5, target: [2, 3, 1.5] }; },
+        draw: function (D) {
+          var net = drawTP(D, D.ph ? v.ease(v.clamp((D.t - .1) / .8, 0, 1)) : 0);
+          if (D.ph && D.t > .9) netLabels(D, net, function (fi) { return FNAME[fi]; }, { size: 1.1, plain: true, col: '#2a2017' });
+        } },
+
+      { tag: '今日の問い', q: 'それぞれの面の面積は？', a: 'ア 18、イ 24、ウ 30、エ・オ 6', sub: 'ア 3×6　イ 4×6　ウ 5×6　エ・オ 1/2×3×4（cm²）', dur: 1.2, model: NETF, view: NV,
+        b: [{ t: '側面　ア 3×6＝18　イ 4×6＝24　ウ 5×6＝30', col: C.yel }, { t: '底面　エ・オ 1/2×3×4＝6', col: C.blue }],
+        draw: function (D) {
+          var net = drawTP(D, 1);
+          netLabels(D, net, function (fi) { return D.ph ? FNAME[fi] + ' ' + AREA[fi] : FNAME[fi]; }, { size: 1, plain: true, col: '#2a2017' });
+        } },
+
+      { tag: '今日の問い', q: '表面積は？', a: '84cm²', sub: '側面 18＋24＋30＝72、底面 6×2＝12、あわせて 72＋12＝84', dur: 2.4, model: NETF, view: NV,
+        b: { t: '表面積　72 ＋ 6 × 2 ＝ <b>84cm²</b>', col: C.yel },
+        banner: function (s) { return s.ph ? (s.t < .5 ? '側面 18＋24＋30 ＝ 72' : '底面 6 × 2 ＝ 12') : ''; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 1.5, net = drawTP(D, 1, { faceA: function (fi) { if (t > 1) return 1; var side = fi >= 2; return t < .5 ? (side ? 1 : .25) : (side ? .35 : 1); } });
+          netLabels(D, net, function (fi) { return FNAME[fi] + ' ' + AREA[fi]; }, { size: 1, plain: true, col: '#2a2017' });
+        } },
+
+      { tag: 'ことば', bh: 'ことば', q: '側面全体の面積・1つの底面の面積・すべての面の面積の和を、それぞれ何という？', a: '側面積・底面積・表面積',
+        sub: '角柱・円柱をまとめて <b>柱体</b>。柱体の表面積 ＝ 側面積 ＋ 底面積 × 2', dur: 1.2, model: NETF, view: NV,
+        b: { t: '<b>柱体の表面積 ＝ 側面積 ＋ 底面積 × 2</b>', col: C.green },
+        draw: function (D) {
+          var net = drawTP(D, 1);
+          var side = [2, 3, 4].map(function (fi) { var g = faceAt(net, fi); return g.v.map(function (k) { return net.V[k]; }); });
+          var P = []; side.forEach(function (q) { P = P.concat(q); });
+          var xs = P.map(function (p) { return p[0]; }), ys = P.map(function (p) { return p[1]; });
+          var bx = [[Math.min.apply(null, xs), Math.min.apply(null, ys), 0], [Math.max.apply(null, xs), Math.min.apply(null, ys), 0], [Math.max.apply(null, xs), Math.max.apply(null, ys), 0], [Math.min.apply(null, xs), Math.max.apply(null, ys), 0]];
+          if (D.ph) D.poly(bx, { stroke: C.yel, sa: 1, sw: D.lw * 2.2 });
+          if (D.ph) D.label(bx[3], '側面積（長方形 1つ分）', { col: C.yel, align: 'left', dy: -.9 });
+          netLabels(D, net, function (fi) { return fi < 2 ? '底面' : ''; }, { size: 1, plain: true, col: '#2a2017' });
+        } },
+
+      { tag: '例題', bh: '例題　円柱（半径 4cm・高さ 10cm）', model: K.frame([0, -4, 5], 13), view: function (s) { return s.ph && s.t > .1 ? { th: -90, ps: 0, fov: 6 } : { th: -60, ps: 18, R: 8, target: [0, 0, 5] }; },
+        q: '底面の半径 4cm、高さ 10cm の円柱の表面積は？', a: '112π cm²', sub: '横 ＝ 円周 8π、側面積 8π × 10 ＝ 80π、底面積 π × 4² ＝ 16π、80π ＋ 16π × 2 ＝ 112π', dur: 5,
+        b: { t: '側面積 8π×10＝80π ＋ 底面積 16π×2 ＝ <b>112π cm²</b>', col: C.orange },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .6 ? '開くと…' : '横 ＝ 底面の円周 2π × 4 ＝ 8π'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, t1 = v.ease(v.clamp((t - .05) / .45, 0, 1)), t2 = v.ease(v.clamp((t - .45) / .15, 0, 1)), n = K.cylNet(CYL.r, CYL.h, t1, t2);
+          D.mesh(n.side, { col: C.orange, two: true }); D.mesh(n.top, { col: C.blue, two: true }); D.mesh(n.bot, { col: C.blue, two: true });
+          if (t > .62) {
+            var w = PI * CYL.r, a = v.smooth(.62, .75, t);
+            D.dim([-w, -CYL.r, 0], [w, -CYL.r, 0], '8π cm', { off: [0, 0, -1.1], dy: 1, col: C.yel, a: a });
+            D.dim([w, -CYL.r, 0], [w, -CYL.r, CYL.h], '10cm', { off: [1.1, 0, 0], dx: 1.6, a: a });
+            D.label(n.top.ctr, '16π', { plain: true, col: '#2a2017', a: a }); D.label(n.bot.ctr, '16π', { plain: true, col: '#2a2017', a: a });
+            D.label([0, -CYL.r, CYL.h / 2], '80π', { plain: true, col: '#2a2017', a: a, size: 1.3 });
+          }
+          if (t < .05) { D.dim([0, 0, CYL.h], [CYL.r, 0, CYL.h], '4cm', { dy: -.8 }); D.dim([CYL.r, 0, 0], [CYL.r, 0, CYL.h], '10cm', { off: [1, 0, 0], dx: 1.5 }); }
+        } },
+
+      { tag: '考えよう', model: K.frame([0, -4, 8], 14), view: { th: -90, ps: 0, fov: 6 },
+        q: '円柱の高さだけを 2倍（10cm → 20cm）にする。表面積は、2倍になるだろうか。',
+        notes: ['表を完成させて、くらべよう（高さ 10cm と 20cm）。', '気づいたこと', 'なぜそうなるのか、展開図や式で説明しよう。', 'スライダーで高さを変えると、展開図がのびます。'],
+        sliders: [{ key: 'h', label: '高さ', min: 5, max: 20, step: 1, val: 10, fmt: function (x) { return x + 'cm'; } }],
+        draw: function (D) {
+          var h = D.V.h, n = K.cylNet(CYL.r, h, 1, 1);
+          D.mesh(n.side, { col: C.orange, two: true }); D.mesh(n.top, { col: C.blue, two: true }); D.mesh(n.bot, { col: C.blue, two: true });
+          D.dim([PI * CYL.r, -CYL.r, 0], [PI * CYL.r, -CYL.r, h], h + 'cm', { off: [1.1, 0, 0], dx: 1.6 });
+        } },
+
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: K.frame([0, 0, 0], 8.5), view: { th: -58, ps: 26 },
+        q: '1辺 10cm の立方体に、半径 2cm の穴を まっすぐ つらぬいた立体の表面積は？', a: '600 ＋ 32π（cm²）',
+        sub: '立方体 600 から 円 2つ分 8π を引き、穴の内側（長方形 横 4π・縦 10）40π を足す　600 − 8π ＋ 40π', dur: 5,
+        b: { t: '600 − π×2²×2 ＋ 2π×2×10 ＝ <b>600 ＋ 32π</b>', col: C.orange },
+        banner: function (s) { if (!s.ph) return ''; return s.t < .45 ? 'なくなる面 … 円 2つ（8π）' : 'ふえる面 … 穴の内側（40π）'; },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, box = K.prism([[-5, -5], [5, -5], [5, 5], [-5, 5]], 10), hole = K.cylinder(2, 10);
+          D.mesh(box, { col: C.lav, a: .55, at: [0, 0, -5] });
+          D.mesh(hole, { col: '#2b2340', a: .95, at: [0, 0, -5], edges: false });
+          D.circle([0, 0, 5], [1, 0, 0], [0, 1, 0], 2, { col: '#1d1830', a: .95, stroke: C.chalk, sa: .9 });
+          if (D.ph) {
+            var a1 = v.smooth(.05, .2, t) * (1 - v.smooth(.42, .5, t)), a2 = v.smooth(.5, .65, t);
+            D.circle([0, 0, 5], [1, 0, 0], [0, 1, 0], 2, { col: C.pink, a: .7 * a1, stroke: C.pink, sa: a1 });
+            D.circle([0, 0, -5], [1, 0, 0], [0, 1, 0], 2, { col: C.pink, a: .5 * a1, stroke: C.pink, sa: a1, dash: true });
+            if (a2 > 0) { D.mesh(hole, { col: C.yel, a: .75 * a2, at: [0, 0, -5], edges: false }); D.label([3.2, -2, 0], '横 4π・縦 10 の長方形', { col: C.yel, a: a2, align: 'left' }); }
+          }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>平行線と線分の比</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 相似な図形 第12時：平行な直線にはさまれた線分の比を調べよう（ikkan の lesson_souji_12 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。平行線 ℓ、m、n は y＝一定の直線。証明の行（AB：BC＝AG：GH など）は GE.proof が座標で確かめ、長さは GE.verify・CH.check で計算し直す。
+   2本目の直線 DF を動かしても、DE：EF は AB：BC と同じ 2：3。A を通り DF に平行な直線をひくと、三角形と比の定理が使える。 */
+(function () {
+  var C = CH.C, FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif', OUT = 'rgba(20,40,30,.9)';
+  /* ---- このページの道具 ---- */
+  function tw(D, s, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(s).width; g.restore(); return w; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), w = tw(D, s, size); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({ outline: OUT }, o, { size: size })); }
+  /* 図の四角（fig）と、字の四角（side）。よこ長ならみぎ、たて長なら下 */
+  function lay(D, k, kh) {
+    var B = CH.box(D, { l: .03, r: .03, t: .04, b: .04 });
+    if (B.w > B.h * 1.15 && B.w > 560) { var w = B.w * (k || .36); return { fig: CH.rect(B.x0, B.y0, B.x1 - w, B.y1), side: CH.rect(B.x1 - w + B.w * .02, B.y0 + B.h * .1, B.x1, B.y1 - B.h * .05), wide: true }; }
+    var h = B.h * (kh || .3); return { fig: CH.rect(B.x0, B.y0, B.x1, B.y1 - h), side: CH.rect(B.x0 + B.w * .04, B.y1 - h + 6, B.x1 - B.w * .02, B.y1), wide: false };
+  }
+  /* 字の行（四角の幅に入るよう、字を小さくする）。list：[{ t, col, a }] */
+  function rows(D, R, list, o) {
+    o = o || {}; list = list.filter(Boolean); if (!list.length) return;
+    var nc = R.w > R.h * 2.2 && list.length > 3 ? 2 : 1, per = Math.ceil(list.length / nc), cw = R.w / nc;   // 下の帯では 2列
+    var s = Math.min(o.size || CH.fs(D, .92), R.h / (per * 1.55));
+    list.forEach(function (r, i) {
+      if (r.a === 0) return; var c = Math.floor(i / per), j = i % per, w = tw(D, r.t, s), sz = w > cw - 8 ? s * (cw - 8) / w : s;
+      CH.text(D, R.x0 + c * cw, R.y0 + s * .8 + j * s * 1.55, r.t, { col: r.col || C.chalk, a: r.a, size: sz, align: 'left', outline: OUT });
+    });
+  }
+  /* 辺 ab のそばの字（ref から遠ざかる向き。ref がなければ図の中心から）。pos：a からの位置（0〜1） */
+  function len(F, a, b, t, o) {
+    o = o || {}; var p = F.X(a), q = F.X(b), u = o.pos == null ? .5 : o.pos, m = [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u];
+    var d = [q[0] - p[0], q[1] - p[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L], r = F.X(o.ref || F.c);
+    if ((m[0] - r[0]) * n[0] + (m[1] - r[1]) * n[1] < 0) n = [-n[0], -n[1]];
+    var sz = F.s * (o.size || .85), w = tw(F.D, t, sz), k = (o.k || .45) * F.s + Math.abs(n[0]) * w / 2 + Math.abs(n[1]) * sz / 2;
+    CH.text(F.D, m[0] + n[0] * k, m[1] + n[1] * k, t, { col: o.col || C.chalk, size: sz, a: o.a, outline: OUT });
+  }
+  /* 寸法線：線分 ab にそって、外がわへ k ずらした線（両はしに短い線）と字 */
+  function dim(F, a, b, o) {
+    o = o || {}; var p = F.X(a), q = F.X(b), d = [q[0] - p[0], q[1] - p[1]], L = Math.hypot(d[0], d[1]) || 1, n = [-d[1] / L, d[0] / L], r = F.X(o.ref || F.c), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    if ((m[0] - r[0]) * n[0] + (m[1] - r[1]) * n[1] < 0) n = [-n[0], -n[1]];
+    var k = (o.k || 1) * F.s, h = F.s * .32, P0 = [p[0] + n[0] * k, p[1] + n[1] * k], Q0 = [q[0] + n[0] * k, q[1] + n[1] * k];
+    CH.line(F.D, P0[0], P0[1], Q0[0], Q0[1], { col: o.col, w: 3, a: o.a, glow: true });
+    [P0, Q0].forEach(function (z) { CH.line(F.D, z[0] - n[0] * h, z[1] - n[1] * h, z[0] + n[0] * h, z[1] + n[1] * h, { col: o.col, w: 2.4, a: o.a }); });
+    if (o.t) { var sz = F.s * .85, w = tw(F.D, o.t, sz), kk = k + F.s * .4 + Math.abs(n[0]) * w / 2 + Math.abs(n[1]) * sz / 2; CH.text(F.D, m[0] + n[0] * kk, m[1] + n[1] * kk, o.t, { col: o.col, size: sz, a: o.a, outline: OUT }); }
+  }
+  function glow(F, ss, col, a) { if (a > 0) ss.split(' ').forEach(function (s) { GE.seg(F, s, { col: col, w: 5, glow: true, a: a }); }); }
+  function tri(ab, ac, bc) { var x = (ab * ab - ac * ac + bc * bc) / (2 * bc); return { A: [x, Math.sqrt(ab * ab - x * x)], B: [0, 0], C: [bc, 0] }; }
+  function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+  function ratio(a, b) { var g = gcd(a, b); return a / g + '：' + b / g; }
+  function nf(x) { return String(Math.round(x * 10) / 10); }
+  /* 平行線 ℓ、m、n（y＝ys の横線）。xr：線のはし（図の座標）。右はしに名前、近くに平行の印 */
+  function rules(F, ys, xr, names, o) {
+    o = o || {};
+    ys.forEach(function (y, i) {
+      var p = F.X([xr[0], y]), q = F.X([xr[1], y]);
+      CH.line(F.D, p[0], p[1], q[0], q[1], { col: 'rgba(242,240,230,.55)', w: 1.8, a: o.a });
+      CH.text(F.D, q[0] + F.s * .8, q[1], names[i], { size: F.s * 1.05, col: C.chalk, a: o.a, outline: OUT });
+      GE.par(F, [[xr[1] - 1.6, y], [xr[1] - .4, y]], 1, { a: o.a });
+    });
+  }
+  /* 平行線に 2直線が交わる図（ikkan と同じ作り）。L1：1つ目の直線の線分の長さ、L2：2つ目、s1：1つ目の傾き（sin）、dx：2つ目の上の点のずれ */
+  function parN(L1, L2, s1, dx, n1, n2) {
+    var c1 = Math.sqrt(1 - s1 * s1), h = L1.map(function (l) { return l * s1; }), s2 = h[0] / L2[0], c2 = Math.sqrt(1 - s2 * s2), P = {}, y = h.reduce(function (a, b) { return a + b; }, 0), a = 0, d = dx;
+    P[n1[0]] = [a, y]; P[n2[0]] = [d, y];
+    L1.forEach(function (l, i) { y -= h[i]; a -= l * c1; d -= L2[i] * c2; P[n1[i + 1]] = [a, y]; P[n2[i + 1]] = [d, y]; });
+    return P;
+  }
+
+  /* ---- 今日の問い：AB＝4、BC＝6、DE＝5、EF＝7.5（ℓ：y＝8、m：y＝4.8、n：y＝0） ---- */
+  var PW = parN([4, 6], [5, 7.5], .8, 8, ['A', 'B', 'C'], ['D', 'E', 'F']), YS = [8, 4.8, 0], NM = ['ℓ', 'm', 'n'];
+  PW.G = GE.add(PW.A, GE.sub(PW.E, PW.D)); PW.H = GE.add(PW.G, GE.sub(PW.F, PW.E));
+  GE.verify(PW, 'AB＝4、BC＝6、DE＝5、EF＝7.5、AB：BC＝DE：EF＝2：3、AG∥DE、GH∥EF、BG∥CH、AB：BC＝AG：GH、AG＝DE、GH＝EF', null, '今日の問いの図');
+  /* 2本目の直線（D は ℓ 上、F は n 上）を動かす。E は m との交点 */
+  function line2(dx, fx) { var P = { A: PW.A, B: PW.B, C: PW.C, D: [dx, 8], F: [fx, 0] }; P.E = GE.meet(P.D, P.F, [0, 4.8], [1, 4.8]); return P; }
+  [[8, -1.6], [4, 9], [12, 2], [3, -1], [10, 10]].forEach(function (q) { GE.verify(line2(q[0], q[1]), 'AB：BC＝DE：EF＝2：3、AB：AC＝DE：DF', null, '直線 DF を動かした図（' + q + '）'); });
+  var XR = [-11, 10.6];
+  function fit1(D, R) { return GE.fit(D, R, PW, { keys: ['A', 'B', 'C', 'D', 'E', 'F'], bounds: [[-8, 0], [XR[1], 8]], pad: .06 }); }
+  function lens1(F, a) { len(F, 'A', 'B', '4cm', { ref: 'D', a: a }); len(F, 'B', 'C', '6cm', { ref: 'E', a: a }); len(F, 'D', 'E', '5cm', { ref: 'A', a: a }); len(F, 'E', 'F', '7.5cm', { ref: 'B', a: a }); }
+  var DIRW = { A: 'nw', B: 'se', C: 'nw', D: 'ne', E: 'ne', F: 'ne' };
+  var def1 = {
+    id: '第12時 今日の問い', lv: 1, ttl: '平行線と線分の比の証明', P: PW,
+    q: 'ℓ∥m∥n のとき、AB：BC＝DE：EF であることを証明しよう。',
+    fig: { segs: ['AC', 'DF'], dots: ['A', 'B', 'C', 'D', 'E', 'F'], labels: ['A', 'B', 'C', 'D', 'E', 'F'], dir: DIRW },
+    hyp: 'ℓ∥m∥n', goal: 'AB：BC＝DE：EF',
+    plan: { q: 'AB：BC と DE：EF を、1つの三角形の中で考えるには、どんな線をひくとよい？', a: 'A を通り、DF に平行な直線', sub: 'm、n との交点を G、H とすると、△ACH ができる（BG∥CH）',
+      b: '補助線 … A を通り DF に平行な直線（m、n との交点を G、H）' },
+    L: [{ t: 'AB：BC＝AG：GH', r: '△ACH で、BG∥CH だから、三角形と比の定理', n: 1 },
+      { t: 'AG＝DE、GH＝EF', r: '四角形 AGED、GHFE は平行四辺形', n: 2 },
+      { t: 'AB：BC＝DE：EF', r: '①②より' }],
+    point: { a: '平行な線を 1本ひいて、三角形と比の定理が使える形にする', sub: '平行線で区切られた線分の比は、どの 2直線でも等しい' }
+  };
+  var PP = GE.proof(def1, { tag: '今日の問い', box: { l: .05, r: .07, t: .08, b: .1 }, draw: function (D, F, info) {
+    rules(F, YS, XR, NM);
+    if (info.i < 1) return;
+    GE.poly(F, 'ACH', { col: C.blue, fa: .15, stroke: false }); GE.seg(F, 'AH', { col: C.yel, w: 2.6, dash: [8, 6] }); GE.dot(F, 'G', { col: C.yel }); GE.dot(F, 'H', { col: C.yel });
+    GE.labels(F, ['G', 'H'], { dir: { G: 'nw', H: 'nw' }, col: { G: C.yel, H: C.yel } });
+  } }).slice(1);
+
+  /* ---- 例題：AB＝6、BC＝9、DE＝8、EF＝x（12）。AC：DF＝15：20＝3：4 ---- */
+  var PT = parN([6, 9], [8, 12], .7, 11, ['A', 'B', 'C'], ['D', 'E', 'F']), YT = [PT.A[1], PT.B[1], 0];
+  GE.verify(PT, 'AB＝6、BC＝9、DE＝8、EF＝12、AB：BC＝DE：EF、AC：DF＝3：4、AC＝15、DF＝20', null, '例題の図');
+  CH.check(6 * 12 === 9 * 8 && (6 + 9) * 4 === (8 + 12) * 3, '例題の計算（x＝12、AC：DF＝3：4）');
+
+  /* ---- 考えよう：2直線が m 上の点 B で交わる（ℓ：y＝3.2、m：y＝0、n：y＝−4.8）。AB＝4、BC＝6。DF の向き θ ---- */
+  var Y7 = [3.2, 0, -4.8];
+  function cross7(th) { var r = th * Math.PI / 180, c = Math.cos(r) / Math.sin(r); return { A: [-2.4, 3.2], B: [0, 0], C: [3.6, -4.8], D: [3.2 * c, 3.2], F: [-4.8 * c, -4.8] }; }
+  var th6 = Math.asin(3.2 / 6) * 180 / Math.PI;
+  CH.check(GE.verify(cross7(th6), 'AB＝4、BC＝6、DB＝6、BF＝9、AB：BC＝DB：BF') && [30, 60, 90, 110].every(function (t) { return GE.verify(cross7(t), 'AB：BC＝DB：BF'); }), '考えよう（BF＝9。ここで確かめるだけ）');
+
+  /* ---- チャレンジ：AB＝15、AC＝21、BC＝18。D、E は AB の 3等分点、DF∥EG∥BC ---- */
+  var P8 = tri(15, 21, 18); P8.D = GE.lerpP(P8.A, P8.B, 1 / 3); P8.E = GE.lerpP(P8.A, P8.B, 2 / 3); P8.F = GE.lerpP(P8.A, P8.C, 1 / 3); P8.G = GE.lerpP(P8.A, P8.C, 2 / 3);
+  GE.verify(P8, 'AD＝DE＝EB、DF∥BC、EG∥BC、AF＝FG＝GC、CG＝7、EG：BC＝AE：AB＝2：3、EG＝12', null, 'チャレンジ');
+
+  var steps = [
+    { tag: '今日の問い', bh: '平行な 3本の直線 ℓ、m、n', q: 'ℓ∥m∥n である。2つの直線が、図のように ℓ、m、n と交わっている。AB：BC と DE：EF には、どんな関係があるだろう。わけも考えよう。',
+      notes: ['① 自分の考え（3分）　見つけた関係と、そのわけを書こう。', '② ペアの考え（3分）　自分とちがう考え方は？'],
+      b: { t: 'ℓ∥m∥n　AB＝4cm、BC＝6cm、DE＝5cm、EF＝7.5cm', col: C.blue },
+      draw: function (D) { var F = fit1(D, CH.box(D, { l: .05, r: .07, t: .08, b: .1 })); rules(F, YS, [-8, XR[1]], NM); GE.figure(F, def1.fig); lens1(F); } },
+    { tag: '今日の問い', q: 'AB：BC と DE：EF には、どんな関係がありそう？ 直線 DF を動かして調べよう。', a: 'AB：BC＝DE：EF（どちらも 2：3）',
+      sub: '4：6＝2：3、5：7.5＝2：3。直線 DF の向きや位置を変えても、DE：EF は 2：3 のまま', dur: 5,
+      notes: ['スライダーで、D と F の位置を変えられます（長さは小数第1位まで）。'],
+      sliders: [{ key: 'd', label: 'D の位置', min: 3, max: 12, step: .2, val: 8, anim: [8, 4], fmt: function (v) { return nf(v); } },
+        { key: 'f', label: 'F の位置', min: -1.6, max: 10, step: .2, val: -1.6, anim: [-1.6, 9], fmt: function (v) { return CH.mnum(Math.round(v * 10) / 10); } }],
+      b: { t: 'AB：BC＝<b>DE：EF</b>（4：6＝5：7.5＝2：3）。直線を動かしても、比は同じ', col: C.yel },
+      draw: function (D) {
+        var P = line2(D.V.d, D.V.f), L = lay(D, .3, .24), F = GE.fit(D, L.fig, P, { keys: ['A', 'C'], bounds: [[-6.5, 0], [12.5, 8]], pad: .07 }), de = GE.len(P, 'DE'), ef = GE.len(P, 'EF');
+        rules(F, YS, [-7, 12.5], NM);
+        glow(F, 'AB DE', C.yel, 1); glow(F, 'BC EF', C.pink, 1);
+        GE.figure(F, def1.fig);
+        len(F, 'A', 'B', '4', { ref: 'D', col: C.yel }); len(F, 'B', 'C', '6', { ref: 'E', col: C.pink }); len(F, 'D', 'E', nf(de), { ref: 'A', col: C.yel }); len(F, 'E', 'F', nf(ef), { ref: 'B', col: C.pink });
+        rows(D, L.side, [{ t: 'AB：BC＝4：6＝2：3' }, { t: 'DE＝' + nf(de) + 'cm', col: C.yel }, { t: 'EF＝' + nf(ef) + 'cm', col: C.pink }, { t: 'DE：EF＝' + nf(de) + '：' + nf(ef) }, { t: '　＝' + (GE.near(de * 3, ef * 2) ? '2：3' : '？') }]);
+      } }
+  ].concat(PP).concat([
+    { tag: 'ことば', bh: 'ことば', q: '平行な 3つの直線に、2つの直線が交わるとき、どんな比が等しい？ 2通りで言おう。',
+      a: 'AB：BC＝DE：EF、AB：AC＝DE：DF', sub: '平行線と線分の比の定理。平行線で区切られた線分の比は、どの 2直線でも等しい', dur: 4,
+      b: [{ t: '<b>平行線と線分の比の定理</b>　ℓ∥m∥n ならば', col: C.green }, { t: '① AB：BC＝DE：EF　② AB：AC＝DE：DF', col: C.green }],
+      draw: function (D) {
+        var L = lay(D, .3, .22), F = GE.fit(D, L.fig, PW, { keys: ['A', 'B', 'C', 'D', 'E', 'F'], bounds: [[-7, 0], [10.6, 8]], pad: .06 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.05, .4, t), k2 = CH.smooth(.5, .9, t);
+        rules(F, YS, [-7, 10.6], NM);
+        if (D.ph) { glow(F, 'AB DE', C.yel, k1 * (1 - k2)); glow(F, 'BC EF', C.pink, k1 * (1 - k2)); dim(F, 'A', 'B', { col: C.yel, a: k2, k: 1.1, ref: 'D' }); dim(F, 'A', 'C', { col: C.blue, a: k2, k: 2.2, ref: 'D' }); dim(F, 'D', 'E', { col: C.yel, a: k2, k: 1.1, ref: 'A' }); dim(F, 'D', 'F', { col: C.blue, a: k2, k: 2.2, ref: 'A' }); }
+        GE.figure(F, def1.fig);
+        rows(D, L.side, [{ t: 'ℓ∥m∥n ならば' }, { t: '① AB：BC＝DE：EF', col: C.yel, a: D.ph ? k1 : 0 }, { t: '② AB：AC＝DE：DF', col: C.blue, a: D.ph ? k2 : 0 }]);
+      } },
+    { tag: '例題', bh: '例題　平行線と線分の比', q: 'ℓ∥m∥n のとき、EF＝x の値と、AC：DF を求めよう。',
+      a: 'x＝12、AC：DF＝3：4', sub: '6：9＝8：x より 6x＝72。AC＝6＋9＝15、DF＝8＋12＝20 だから 15：20＝3：4', dur: 4.5,
+      b: { t: '6：9＝8：x　<b>x＝12</b>　AC：DF＝15：20＝<b>3：4</b>', col: C.pink },
+      draw: function (D) {
+        var L = lay(D, .32, .26), F = GE.fit(D, L.fig, PT, { bounds: [[PT.C[0] - 1, 0], [PT.D[0] + 2.4, YT[0]]], pad: .06 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.04, .3, t), k2 = CH.smooth(.36, .6, t), k3 = CH.smooth(.66, .94, t);
+        rules(F, YT, [PT.C[0] - 1, PT.D[0] + 2.4], NM);
+        glow(F, 'AB DE', C.yel, k1); glow(F, 'BC EF', C.pink, k1 * (1 - k3));
+        if (D.ph) { dim(F, 'A', 'C', { col: C.blue, a: k3, k: 1.2, ref: 'D', t: '15cm' }); dim(F, 'D', 'F', { col: C.blue, a: k3, k: 1.2, ref: 'A', t: '20cm' }); }
+        GE.figure(F, def1.fig);
+        len(F, 'A', 'B', '6cm', { ref: 'D', a: 1 - k3 }); len(F, 'B', 'C', '9cm', { ref: 'E', a: 1 - k3 }); len(F, 'D', 'E', '8cm', { ref: 'A', a: 1 - k3 }); len(F, 'E', 'F', k2 > .5 ? '12cm' : 'x', { ref: 'B', col: C.pink, a: 1 - k3 });
+        rows(D, L.side, D.ph ? [{ t: 'AB：BC＝DE：EF', col: C.yel, a: k1 }, { t: '6：9＝8：x', a: k1 }, { t: '6x＝72　x＝12', col: C.pink, a: k2 }, { t: 'AC：DF＝15：20', col: C.blue, a: k3 }, { t: '　　　＝3：4', col: C.pink, a: k3 }]
+          : [{ t: 'AB＝6cm　BC＝9cm' }, { t: 'DE＝8cm　EF＝x' }, { t: 'x と AC：DF は？', col: C.pink }]);
+      } },
+    { tag: '考えよう', q: 'ℓ∥m∥n で、2つの直線が m 上の点 B で交わっている。AB＝4cm、BC＝6cm、DB＝6cm のとき、BF の長さを予想して、そのわけを考えよう。',
+      notes: ['直線が平行線の間で交わっていても、比は等しいといえるかな。', 'どの三角形と、どの三角形に目をつけるとよいかな。', 'スライダーで、直線 DF の向きを変えたり、長さをはかったりできます。'],
+      sliders: [{ key: 'th', label: '直線 DF の向き', min: 25, max: 112, step: 1, val: 60, fmt: function (v) { return v + '°'; } },
+        { key: 'm', label: 'DB、BF の長さ', min: 0, max: 1, step: 1, val: 0, fmt: function (v) { return v ? 'はかる' : 'かくす'; } }],
+      draw: function (D) {
+        var P = cross7(D.V.th), L = lay(D, .3, .22), F = GE.fit(D, L.fig, P, { keys: ['B'], bounds: [[-9, -4.8], [8, 3.2]], pad: .06 });
+        rules(F, Y7, [-9, 8], NM);
+        GE.figure(F, { segs: ['AC', 'DF'], dots: ['A', 'B', 'C', 'D', 'F'], labels: ['A', 'B', 'C', 'D', 'F'], dir: { A: 'n', B: 'e', C: 's', D: 'n', F: 's' } });
+        len(F, 'A', 'B', '4cm', { ref: 'D' }); len(F, 'B', 'C', '6cm', { ref: 'F' });
+        if (D.V.m) { len(F, 'D', 'B', nf(GE.len(P, 'DB')) + 'cm', { ref: 'A', col: C.yel }); len(F, 'B', 'F', nf(GE.len(P, 'BF')) + 'cm', { ref: 'C', col: C.yel }); }
+        rows(D, L.side, [{ t: 'AB＝4cm　BC＝6cm' }, { t: 'DB＝' + (D.V.m ? nf(GE.len(P, 'DB')) + 'cm' : '？'), col: C.yel }, { t: 'BF＝' + (D.V.m ? nf(GE.len(P, 'BF')) + 'cm' : '？'), col: C.yel }]);
+      } },
+    { tag: 'チャレンジ', bh: 'チャレンジ', q: '△ABC の辺 AB を 3等分する点を、A に近いほうから D、E とする。D、E を通り BC に平行な直線が、辺 AC と交わる点を F、G とする。BC＝18cm、AC＝21cm のとき、EG、CG の長さを求めよう。',
+      notes: ['ヒント① 平行な 3直線に、AB、AC が交わるね。AD：DE：EB は？', 'ヒント② EG は、どの三角形の辺として考えられるかな。'],
+      a: 'CG＝7cm、EG＝12cm', sub: 'AD：DE：EB＝1：1：1 だから AF：FG：GC＝1：1：1、CG＝21÷3＝7。△ABC で EG∥BC、AE：AB＝2：3 だから EG：BC＝2：3、EG＝18×2/3＝12', dur: 6,
+      b: { t: 'AF：FG：GC＝1：1：1 → <b>CG＝7cm</b>　EG：BC＝AE：AB＝2：3 → <b>EG＝12cm</b>', col: C.orange },
+      draw: function (D) {
+        var L = lay(D, .36, .28), F = GE.fit(D, L.fig, P8, { pad: .1 }), t = D.ph ? D.t : 0, k1 = CH.smooth(.03, .25, t), k2 = CH.smooth(.3, .5, t), k3 = CH.smooth(.56, .8, t), k4 = CH.smooth(.84, .97, t);
+        if (D.ph) GE.poly(F, 'AEG', { col: C.blue, fa: .2 * k3, stroke: false });
+        GE.figure(F, { segs: ['AB', 'BC', 'CA', 'DF', 'EG'], ticks: [['AD', 1], ['DE', 1], ['EB', 1]], dots: ['D', 'E', 'F', 'G'], dir: { A: 'n', B: 'sw', C: 'se', D: 'w', E: 'w', F: 'e', G: 'e' } });
+        GE.par(F, 'DF', 1); GE.par(F, 'EG', 1); GE.par(F, 'BC', 1);
+        len(F, 'B', 'C', '18cm');
+        if (D.ph) {
+          glow(F, 'AD DE EB', C.yel, k1 * (1 - k3)); GE.tick(F, 'AF', 2, { col: C.pink, a: k2 }); GE.tick(F, 'FG', 2, { col: C.pink, a: k2 }); GE.tick(F, 'GC', 2, { col: C.pink, a: k2 });
+          len(F, 'G', 'C', '7cm', { col: C.pink, a: k2 });
+          glow(F, 'EG', C.blue, k3); glow(F, 'BC', C.blue, k3 * .6); len(F, 'E', 'G', '12cm', { col: C.blue, a: k4, ref: 'A' });
+        }
+        rows(D, L.side, D.ph ? [{ t: 'AD：DE：EB＝1：1：1', col: C.yel, a: k1 }, { t: '→ AF：FG：GC＝1：1：1', col: C.pink, a: k2 }, { t: 'CG＝21÷3＝7（cm）', col: C.pink, a: k2 }, { t: 'EG：BC＝AE：AB＝2：3', col: C.blue, a: k3 }, { t: 'EG＝18×2/3＝12（cm）', col: C.blue, a: k4 }]
+          : [{ t: 'AD＝DE＝EB' }, { t: 'BC＝18cm　AC＝21cm' }, { t: 'EG、CG は？', col: C.pink }]);
+      } }
+  ]);
+
+  K3.run({
+    no: '第12時', title: '平行な直線にはさまれた線分の比を調べよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '11.html', label: '◀ 第11時' }, { href: '13.html', label: '第13時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

@@ -10,10 +10,10 @@ Claudeの使い方を、**使いながら学ぶ**練習場。段階（レベル�
 ## 開き方
 
 ```bash
-python3 -m http.server 8793 --directory claude-lab
+python3 -m http.server 8798 --directory claude-lab
 ```
 
-→ http://127.0.0.1:8793/
+→ http://127.0.0.1:8798/
 
 ## いまあるもの
 

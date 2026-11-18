@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>球の表面積と体積</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+<script src="js/k3.js"></script>
+<script>
+/* 空間図形 第12時：球の表面積と体積を求めよう（ikkan の lesson_kukan_new_12 と同じ流れ）。
+   半径 r の球が、ちょうど入る円柱（底面の半径 r、高さ 2r）。半球の容器の水を、円柱に 3回うつす。
+   半球の容器に水が f（体積の割合）入っているときの水面の高さ y は、y²(3r − y) ＝ 2r³f をみたす（ここでは数値で解く）。 */
+(function () {
+  var C = K3.COL, v = K3.v, DEG = v.DEG, K = K3, PI = Math.PI;
+  var R = 2, X1 = -3.4, X2 = 3.4, WATER = '#5aa9e6';
+  var FR = K.frame([0, 0, 2.5], 5.6);
+  function bowl(r) { return K.revolve(K.arcPts(0, r, r, -PI / 2, 0, 16, 'b').concat([[0, r]]), { seg: 48 }); }
+  function capH(f) { var lo = 0, hi = R; for (var i = 0; i < 40; i++) { var m = (lo + hi) / 2; if (m * m * (3 * R - m) < 2 * R * R * R * f) lo = m; else hi = m; } return lo; }
+  function bowlWater(D, at, f) {
+    if (f <= .002) return; var y = capH(f), a = Math.acos(v.clamp((R - y) / R, -1, 1));
+    D.mesh(K.revolve(K.arcPts(0, R, R, -PI / 2, -PI / 2 + a, 12, 'w').concat([[0, y]]), { seg: 48 }), { at: at, col: WATER, a: .85, edges: false });
+  }
+  function glassBowl(D, at) { D.mesh(bowl(R), { at: at, col: '#d8e6ef', a: .22, edgeCol: 'rgba(242,240,230,.8)', ew: 1.2 }); }
+  function glassCyl(D, at) { D.mesh(K.cylinder(R, 2 * R), { at: at, col: '#d8e6ef', a: .22, edgeCol: 'rgba(242,240,230,.8)', ew: 1.2 }); }
+  function cylWater(D, at, f) { if (f <= .002) return; D.mesh(K.cylinder(R * .995, 2 * R * f), { at: at, col: WATER, a: .85, edges: false }); }
+  function pour(D, t) {
+    var k = Math.min(2, Math.floor(t * 3)), u = t * 3 - k, fill = t >= 1 ? 1 : (k + v.smooth(.25, .85, u)) / 3, bf = t >= 1 ? 0 : 1 - v.smooth(.25, .85, u);
+    var sw = Math.sin(PI * v.clamp(u / .95, 0, 1)), at = t >= 1 ? [X1, 0, 0] : [X1 + (X2 - X1 - R * 1.6) * sw * .55, 0, sw * 2.6], tilt = v.smooth(.15, .3, u) * (1 - v.smooth(.85, .98, u));
+    glassCyl(D, [X2, 0, 0]); cylWater(D, [X2, 0, 0], fill);
+    bowlWater(D, at, bf); glassBowl(D, at);
+    if (tilt > .02) D.seg(v.add(at, [R * .9, 0, R]), [X2 - R * .3, 0, 2 * R * fill + .1], { col: WATER, w: D.lw * 3 * tilt, a: .9 });
+    for (var j = 1; j < 3; j++) D.seg([X2 + R, 0, 2 * R * j / 3], [X2 + R + .5, 0, 2 * R * j / 3], { col: C.chalk, w: D.lw });
+  }
+
+  K.run({
+    no: '第12時', title: '球の表面積と体積を求めよう',
+    model: FR, view: { th: -62, ps: 18 },
+    links: [{ href: 'index.html', label: '目次' }, { href: '11.html', label: '◀ 第11時' }, { href: '13.html', label: '第13時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '球と、ちょうど入る円柱（半径 r・高さ 2r）',
+        q: '半径 r の球が、ちょうど入る円柱（底面の半径 r、高さ 2r）がある。球の体積は、この円柱の体積の 何分のいくつだろう。',
+        notes: ['① 自分の考え（3分）　予想と、そう思ったわけ。', '② ペアの考え（3分）'], model: K.frame([0, 0, 2], 3.4), spin: true,
+        draw: function (D) { D.mesh(K.sphere(R), { at: [0, 0, R], col: C.orange }); D.mesh(K.cylinder(R, 2 * R), { col: '#d8e6ef', a: .2, edgeCol: 'rgba(242,240,230,.8)' }); D.dim([0, 0, 0], [0, 0, 2 * R], '2r', { off: [R + .6, 0, 0], dx: 1 }); D.dim([0, 0, 2 * R], [R, 0, 2 * R], 'r', { dy: -.7 }); } },
+      { tag: '今日の問い', q: '半球の容器の水を、円柱にうつすと？', a: '3ばいで いっぱい', sub: '半球は 円柱の 1/3。球は 半球 2つ分だから、円柱の 2/3', dur: 9, view: { th: -90, ps: 14 },
+        b: { t: '半球 3ばいで 円柱がいっぱい → 球は 円柱の <b>2/3</b>', col: C.blue },
+        banner: function (s) { if (!s.ph) return ''; return s.t >= 1 ? '3ばいで いっぱい！' : (Math.floor(s.t * 3) + 1) + 'はい目'; },
+        draw: function (D) { if (D.ph) pour(D, D.t); else { glassCyl(D, [X2, 0, 0]); glassBowl(D, [X1, 0, 0]); bowlWater(D, [X1, 0, 0], 1); } } },
+      { tag: 'ことば', bh: 'ことば', q: '球の体積の公式は？', a: 'V ＝ 4/3 πr³', sub: '円柱の体積 πr² × 2r ＝ 2πr³ の 2/3　→　2πr³ × 2/3 ＝ 4/3 πr³', dur: 1, model: K.frame([0, 0, 2], 3.4),
+        b: { t: '<b>球の体積 V ＝ 4/3 πr³</b>（円柱 2πr³ の 2/3）', col: C.green },
+        draw: function (D) { D.mesh(K.cylinder(R, 2 * R), { col: C.blue, a: .25 }); D.mesh(K.sphere(R), { at: [0, 0, R], col: C.orange }); } },
+      { tag: 'ことば', q: '球の表面積は、円柱の どこの面積と等しい？', a: '円柱の側面積　S ＝ 4πr²', sub: '側面積 ＝ 円周 2πr × 高さ 2r ＝ 4πr²', dur: 4, model: K.frame([1.6, -2, 2], 8.6),
+        view: function (s) { return s.ph && s.t > .2 ? { th: -90, ps: 0, fov: 8 } : { th: -62, ps: 18 }; },
+        b: { t: '<b>球の表面積 S ＝ 4πr²</b>（円柱の側面積 2πr × 2r）', col: C.green },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, n = K.cylNet(R, 2 * R, v.ease(v.clamp((t - .1) / .6, 0, 1)), 0);
+          var sx = PI * R + R + 1.2 * v.smooth(.1, .5, t) * 2;
+          D.mesh(n.side, { col: C.blue, a: .8, two: true, lit: 'both' });
+          D.mesh(K.sphere(R), { at: [t > .1 ? sx : 0, t > .1 ? -R : 0, R], col: C.orange });
+          if (t > .75) D.label([sx, -R, -.3], '球の表面積', { col: C.orange, dy: 1, a: v.smooth(.75, .9, t) });
+          if (t > .75) { D.dim([-PI * R, -R, 0], [PI * R, -R, 0], '2πr', { off: [0, 0, -.6], dy: .8, col: C.yel }); D.dim([PI * R, -R, 0], [PI * R, -R, 2 * R], '2r', { off: [.6, 0, 0], dx: 1, col: C.yel }); }
+        } },
+      { tag: '例題', bh: '例題', q: '（1）半径 3cm の球の、表面積と体積は？', a: '表面積 36π cm²、体積 36π cm³', sub: '4π × 3² ＝ 36π、4/3 π × 3³ ＝ 36π', dur: 1, model: K.frame([0, 0, 0], 3.4),
+        b: { t: '（1）4π×3²＝<b>36π</b>　4/3π×3³＝<b>36π</b>', col: C.orange },
+        draw: function (D) { D.mesh(K.sphere(3), { col: C.orange }); D.dim([0, 0, 0], [3, 0, 0], '3cm', { dy: -.7 }); D.dot([0, 0, 0], { r: 1.6 }); } },
+      { tag: '例題', q: '（2）直径 10cm の球の、表面積と体積は？', a: '表面積 100π cm²、体積 500/3 π cm³', sub: '先に r ＝ 10 ÷ 2 ＝ 5 を決める　4π × 5² ＝ 100π、4/3 π × 5³ ＝ 500/3 π', dur: 1, model: K.frame([0, 0, 0], 5.6),
+        b: { t: '（2）r＝5　4π×5²＝<b>100π</b>　4/3π×5³＝<b>500/3 π</b>', col: C.orange },
+        draw: function (D) { D.mesh(K.sphere(5), { col: C.orange, a: .9 }); D.dim([-5, 0, 0], [5, 0, 0], '10cm', { dy: -.7 }); if (D.ph) D.seg([0, 0, 0], [0, -5, 0], { col: C.yel, w: D.lw * 2.4 }); } },
+      { tag: '考えよう', model: K.frame([0, 0, 0], 9.6),
+        q: '半径 3cm の球では、表面積も体積も 36π になった。「表面積と体積は等しい」といってよいだろうか。半径をかえて調べよう。',
+        notes: ['半径 6cm、9cm でも計算してみよう。', '気づいたこと', '「表面積と体積は等しい」といってよいか。理由も。'],
+        sliders: [{ key: 'r', label: '半径', min: 1, max: 9, step: 1, val: 3, fmt: function (x) { return x + 'cm'; } }],
+        draw: function (D) { D.mesh(K.sphere(D.V.r), { col: C.orange, a: .9 }); D.dim([0, 0, 0], [D.V.r, 0, 0], D.V.r + 'cm', { dy: -.7 }); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', model: K.frame([0, 0, 3], 6.5), view: { th: -70, ps: 18 },
+        q: '半径 3cm の円柱 ア（高さ 6cm）、同じ底面・高さの円錐 イ、半径 3cm の球 ウ。① ア〜ウの体積は？ ② イ：ウ：ア を、もっとも簡単な整数の比で。',
+        a: '① ア 54π、イ 18π、ウ 36π　② 1：2：3', sub: '円錐 18π を 1 とすると、球は 2、円柱は 3', dur: 1,
+        b: { t: '円錐：球：円柱 ＝ 18π：36π：54π ＝ <b>1：2：3</b>', col: C.orange },
+        draw: function (D) {
+          D.mesh(K.cone(3, 6), { at: [-7, 0, 0], col: C.pink }); D.mesh(K.sphere(3), { at: [0, 0, 3], col: C.orange }); D.mesh(K.cylinder(3, 6), { at: [7, 0, 0], col: C.blue });
+          [['イ 円錐', -7, '18π'], ['ウ 球', 0, '36π'], ['ア 円柱', 7, '54π']].forEach(function (x) { D.label([x[1], 0, 0], x[0], { dy: 1.2 }); if (D.ph) D.label([x[1], 0, 6.6], x[2], { col: C.yel, size: 1.2 }); });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

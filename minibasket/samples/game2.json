@@ -1,0 +1,212 @@
+{
+  "meta": {
+    "event": "練習試合",
+    "date": "2026-01-10",
+    "venue": "○○体育館",
+    "time": "10:10",
+    "gameNo": "2"
+  },
+  "teams": [
+    {
+      "side": "A",
+      "name": "相手チームA",
+      "uniform": "白",
+      "finalScore": 17,
+      "quarterScores": [6, 3, 6, 2],
+      "timeouts": [
+        { "box": 2, "minute": 4 },
+        { "box": 3, "minute": 3 },
+        { "box": 4, "minute": 5 }
+      ],
+      "teamFouls": [0, 1, 0, 0],
+      "players": [
+        {
+          "no": "4",
+          "marks": ["/", "", "", ""],
+          "fouls": []
+        },
+        {
+          "no": "8",
+          "marks": ["/", "", "/", "/"],
+          "fouls": []
+        },
+        {
+          "no": "9",
+          "marks": ["/", "", "", ""],
+          "fouls": []
+        },
+        {
+          "no": "13",
+          "marks": ["/", "", "", ""],
+          "fouls": []
+        },
+        {
+          "no": "18",
+          "marks": ["/", "", "/", "/"],
+          "fouls": []
+        },
+        {
+          "no": "2",
+          "marks": ["", "/", "/", "/"],
+          "fouls": []
+        },
+        {
+          "no": "7",
+          "marks": ["", "/", "/", "/"],
+          "fouls": []
+        },
+        {
+          "no": "15",
+          "marks": ["", "/", "", ""],
+          "fouls": []
+        },
+        {
+          "no": "25",
+          "marks": ["", "/", "", ""],
+          "fouls": []
+        },
+        {
+          "no": "28",
+          "marks": ["", "/", "/", "/"],
+          "fouls": [
+            { "type": "P", "ft": 2, "ink": "black" }
+          ]
+        }
+      ],
+      "running": [
+        { "total": 2, "mark": "slash", "player": "18" },
+        { "total": 3, "mark": "dot", "player": "8" },
+        { "total": 4, "mark": "dot", "player": "13" },
+        { "total": 6, "mark": "slash", "player": "13", "qEnd": true },
+        { "total": 8, "mark": "slash", "player": "28" },
+        { "total": 9, "mark": "dot", "player": "28", "qEnd": true },
+        { "total": 11, "mark": "slash", "player": "28" },
+        { "total": 12, "mark": "dot", "player": "28" },
+        { "total": 14, "mark": "slash", "player": "7" },
+        { "total": 15, "mark": "dot", "player": "7", "qEnd": true },
+        { "total": 16, "mark": "dot", "player": "18" },
+        { "total": 17, "mark": "dot", "player": "18", "qEnd": true }
+      ]
+    },
+    {
+      "side": "B",
+      "name": "サンプルクラブ",
+      "uniform": "濃",
+      "finalScore": 39,
+      "quarterScores": [14, 2, 10, 13],
+      "timeouts": [
+        { "box": 1, "minute": 3 }
+      ],
+      "teamFouls": [4, 4, 4, 3],
+      "players": [
+        {
+          "no": "4",
+          "marks": ["/", "", "/", "/"],
+          "fouls": []
+        },
+        {
+          "no": "5",
+          "marks": ["", "/", "/", "/"],
+          "fouls": [
+            { "type": "P", "ft": 0, "ink": "black" },
+            { "type": "P", "ft": 2, "ink": "black" },
+            { "type": "P", "ft": 2, "ink": "black" },
+            { "type": "P", "ft": 0, "ink": "red" }
+          ]
+        },
+        {
+          "no": "6",
+          "marks": ["", "", "", ""],
+          "fouls": []
+        },
+        {
+          "no": "7",
+          "marks": ["/", "", "/", "/"],
+          "fouls": [
+            { "type": "P", "ft": 0, "ink": "red" },
+            { "type": "P", "ft": 1, "ink": "red" },
+            { "type": "P", "ft": 0, "ink": "black" }
+          ]
+        },
+        {
+          "no": "8",
+          "marks": ["", "", "", ""],
+          "fouls": []
+        },
+        {
+          "no": "9",
+          "marks": ["", "/", "/", "/"],
+          "fouls": [
+            { "type": "P", "ft": 0, "ink": "red" },
+            { "type": "P", "ft": 0, "ink": "red" },
+            { "type": "P", "ft": 0, "ink": "black" },
+            { "type": "P", "ft": 0, "ink": "black" }
+          ]
+        },
+        {
+          "no": "10",
+          "marks": ["/", "", "", ""],
+          "fouls": [
+            { "type": "P", "ft": 2, "ink": "red" },
+            { "type": "P", "ft": 2, "ink": "red" }
+          ]
+        },
+        {
+          "no": "11",
+          "marks": ["", "/", "/", ""],
+          "fouls": [
+            { "type": "P", "ft": 1, "ink": "black" },
+            { "type": "P", "ft": 1, "ink": "red" }
+          ]
+        },
+        {
+          "no": "12",
+          "marks": ["/", "/", "", "/"],
+          "fouls": [
+            { "type": "P", "ft": 2, "ink": "red" },
+            { "type": "P", "ft": 0, "ink": "black" }
+          ]
+        },
+        {
+          "no": "13",
+          "marks": ["/", "", "", ""],
+          "fouls": [
+            { "type": "P", "ft": 2, "ink": "red" },
+            { "type": "P", "ft": 2, "ink": "red" }
+          ]
+        },
+        {
+          "no": "14",
+          "marks": ["", "/", "", ""],
+          "fouls": []
+        },
+        {
+          "no": "15",
+          "marks": ["", "", "", ""],
+          "fouls": []
+        }
+      ],
+      "running": [
+        { "total": 2, "mark": "slash", "player": "4" },
+        { "total": 4, "mark": "slash", "player": "4" },
+        { "total": 6, "mark": "slash", "player": "4" },
+        { "total": 8, "mark": "slash", "player": "4" },
+        { "total": 10, "mark": "slash", "player": "4" },
+        { "total": 12, "mark": "slash", "player": "12" },
+        { "total": 14, "mark": "slash", "player": "10", "qEnd": true },
+        { "total": 16, "mark": "slash", "player": "5", "qEnd": true },
+        { "total": 18, "mark": "slash", "player": "5" },
+        { "total": 20, "mark": "slash", "player": "4" },
+        { "total": 22, "mark": "slash", "player": "4" },
+        { "total": 24, "mark": "slash", "player": "5" },
+        { "total": 26, "mark": "slash", "player": "9", "qEnd": true },
+        { "total": 28, "mark": "slash", "player": "4" },
+        { "total": 30, "mark": "slash", "player": "5" },
+        { "total": 32, "mark": "slash", "player": "7" },
+        { "total": 35, "mark": "slash", "player": "4", "playerCircled": true },
+        { "total": 37, "mark": "slash", "player": "9" },
+        { "total": 39, "mark": "slash", "player": "4", "qEnd": true }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>加法・減法の練習</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 正の数・負の数 第9時：加法・減法を、速く正確にできるようになろう（ikkan の lesson_seifu_09 と同じ流れ）。
+   整数・小数・分数のたし算を、3本の数直線の矢印でくらべる（−9＋4 と −0.9＋0.4 は、目もりを10倍にすると同じ形）。
+   4−11＋6−8 が項のカードに分かれ、正の項・負の項に集まる。例題は「符号が先 → 絶対値」の順に書き、数直線の矢印で確かめる。
+   考えようは、まちがい探し（はじめの数・たす数のスライダーで、矢印を確かめる道具。答えは出さない）。
+   数値は ikkan のまま（ことばの 4−11＋6−8 は演習プリント（4））。自作の数はない。答えはページの中で計算し直している（CH.check）。 */
+(function () {
+  var C = CH.C, S = CH.mnum, NEG = C.pink, POS = C.blue;
+  /* ---- 道具（正負の数の黒板 第9〜16時で共通。どのページにも同じものを入れてある） ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function ha(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function ext(a, b) { for (var k in b) if (b[k] !== undefined) a[k] = b[k]; return a; }
+  /* 字：[2/3] はたての分数、^2 は指数。問い・答え・板書（HTML）用 */
+  function fr(s) { return CH.fr(s).replace(/\^(\d+)/g, '<sup>$1</sup>'); }
+  /* 式のとちゅうで行がかわらないように（問い・答え・ノート） */
+  function nw(s) { return String(s).replace(/([アイウエ])[ 　](?=[−＋(（\d\[□])/g, '$1\u00a0').replace(/[0-9\(\)（）\[\]\/\.×÷＋−＝{}^□]{2,}/g, function (m) { return m.split(/(?=＝)/).map(function (q) { return '<span style="white-space:nowrap">' + q + '</span>'; }).join(''); }); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub'].forEach(function (k) { if (s[k]) s[k] = fr(nw(s[k])); }); if (s.bh) s.bh = fr(s.bh); if (s.notes) s.notes = s.notes.map(function (t) { return fr(nw(t)); }); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+  /* 図の中（canvas）の字。TW で幅、TX でかく */
+  function parse(s) {
+    var out = [], re = /\[([^\/\]]+)\/([^\]]+)\]|\^(\d+)/g, m, i = 0; s = String(s);
+    while ((m = re.exec(s))) { if (m.index > i) out.push({ t: s.slice(i, m.index) }); out.push(m[3] ? { p: m[3] } : { n: m[1], d: m[2] }); i = re.lastIndex; }
+    if (i < s.length) out.push({ t: s.slice(i) });
+    return out;
+  }
+  function mw(D, t, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(t).width; g.restore(); return w; }
+  function segW(D, p, size) { var fz = size * .72; return p.t != null ? mw(D, p.t, size) : p.p ? mw(D, p.p, size * .6) + size * .1 : Math.max(mw(D, p.n, fz), mw(D, p.d, fz)) + fz * .4; }
+  function TW(D, s, size) { return parse(s).reduce(function (w, p) { return w + segW(D, p, size); }, 0); }
+  function hasFr(s) { return /\[[^\/\]]+\/[^\]]+\]/.test(String(s)); }
+  function TX(D, x, y, s, o) {
+    o = o || {}; var size = o.size || CH.fs(D), fz = size * .72, w = TW(D, s, size), x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    parse(s).forEach(function (p) {
+      var pw = segW(D, p, size);
+      if (p.t != null) CH.text(D, x0, y, p.t, ext({ size: size, align: 'left' }, oo));
+      else if (p.p) CH.text(D, x0 + size * .05, y - size * .42, p.p, ext({ size: size * .6, align: 'left' }, oo));
+      else {
+        var cx = x0 + pw / 2; CH.text(D, cx, y - fz * .64, p.n, ext({ size: fz }, oo)); CH.text(D, cx, y + fz * .7, p.d, ext({ size: fz }, oo));
+        CH.line(D, x0 + fz * .14, y + fz * .03, x0 + pw - fz * .14, y + fz * .03, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += pw;
+    });
+    return w;
+  }
+  /* 幅 maxW に入る大きさ */
+  function fit(D, s, maxW, size) { var w = TW(D, s, size); return w > maxW ? size * maxW / w : size; }
+  /* 角の丸い四角 */
+  function rr(D, x0, y0, x1, y1, o) {
+    o = o || {}; var g = D.ctx, r = Math.max(0, Math.min(o.r == null ? 8 : o.r, Math.abs(y1 - y0) / 2, Math.abs(x1 - x0) / 2));
+    g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.beginPath();
+    g.moveTo(x0 + r, y0); g.arcTo(x1, y0, x1, y1, r); g.arcTo(x1, y1, x0, y1, r); g.arcTo(x0, y1, x0, y0, r); g.arcTo(x0, y0, x1, y0, r); g.closePath();
+    if (o.fill) { g.fillStyle = o.fill; g.fill(); }
+    if (o.stroke) { g.strokeStyle = o.stroke; g.lineWidth = o.sw || 2; if (o.dash) g.setLineDash([6, 5]); if (o.glow) { g.shadowColor = o.stroke; g.shadowBlur = 12; } g.stroke(); }
+    g.restore();
+  }
+  /* 数の色：正は青、負は赤（ピンク）、0 は白 */
+  function vcol(v) { return v < 0 ? NEG : v > 0 ? POS : C.chalk; }
+  function scol(s) { return /^\(?[−-]/.test(String(s)) ? NEG : POS; }
+  /* カード（分数も書ける）。o.sx：横の縮み（ひっくり返る動き）、o.dy：上下のずれ */
+  function card(D, x, y, w, h, s, o) {
+    o = o || {}; var g = D.ctx, sx = o.sx == null ? 1 : o.sx, col = o.col || C.blue;
+    if (Math.abs(sx) < .02 || (o.a != null && o.a <= 0)) return;
+    g.save(); g.translate(x, y + (o.dy || 0)); g.scale(Math.abs(sx), 1);
+    rr(D, -w / 2, -h / 2, w / 2, h / 2, { r: Math.min(w, h) * .18, fill: o.fill || ha(col, o.fa == null ? .2 : o.fa), stroke: col, sw: o.sw || 2.2, a: o.a, glow: o.glow });
+    if (s != null && s !== '') { var sz = Math.min(o.size || h * .5, w * .84 / Math.max(.01, TW(D, s, 100) / 100)); TX(D, 0, 1, s, { size: sz, col: o.tcol || C.chalk, a: o.a }); }
+    g.restore();
+  }
+  /* カードと記号のならび。items：[{s, op（記号なら true）, col, sx, a, dy, glow}]。それぞれの位置を返す */
+  function itemW(D, it, h) { var sz = h * .5; return it.op ? Math.max(h * .5, TW(D, it.s, sz * 1.1) + h * .08) : Math.max(h * (it.minW || .95), TW(D, it.s, sz) + h * .45); }
+  function crowW(D, items, h) { var gap = h * .14; return items.reduce(function (w, it, i) { return w + (i ? gap : 0) + itemW(D, it, h); }, 0); }
+  /* 位置だけ（かかない） */
+  function crowPos(D, cx, items, h, o) {
+    o = o || {}; if (o.maxW) { var w0 = crowW(D, items, h); if (w0 > o.maxW) h *= o.maxW / w0; }
+    var gap = h * .14, out = [], x = (o.align === 'left' ? cx : cx - crowW(D, items, h) / 2);
+    items.forEach(function (it) { var w = itemW(D, it, h); out.push({ x0: x, x1: x + w, cx: x + w / 2, w: w }); x += w + gap; });
+    out.h = h; return out;
+  }
+  function crow(D, cx, y, items, h, o) {
+    var out = crowPos(D, cx, items, h, o), sz = out.h * .5;
+    items.forEach(function (it, i) {
+      var p = out[i];
+      if (it.op) { if (it.a == null || it.a > 0) TX(D, p.cx, y + (it.dy || 0), it.s, { size: sz * 1.1, col: it.col || C.chalk, a: it.a }); }
+      else card(D, p.cx, y, p.w, out.h, it.s, { col: it.col || scol(it.s), sx: it.sx, a: it.a, dy: it.dy, glow: it.glow, tcol: it.tcol, size: sz });
+    });
+    return out;
+  }
+  /* 数直線（右に矢印）。o：step（目もり）、major（字を書く間かく）、fmt(v)→字（'' で書かない） */
+  function NL(D, x0, x1, y, min, max, o) {
+    o = o || {}; var X = function (v) { return x0 + (v - min) / (max - min) * (x1 - x0); }, s = o.size || CH.fs(D, .8), st = o.step || 1, mj = o.major || st, n = Math.round((max - min) / st);
+    CH.arrow(D, x0 - s * .5, y, x1 + s * 1.3, y, { w: 2, head: 9, a: o.a });
+    for (var k = 0; k <= n; k++) {
+      var v = min + k * st, q = v / mj, big = Math.abs(q - Math.round(q)) < 1e-6;
+      CH.line(D, X(v), y - (big ? 7 : 4), X(v), y + (big ? 7 : 4), { w: big ? 1.8 : 1.2, a: o.a });
+      if (big && o.lab !== false) { var L = o.fmt ? o.fmt(v) : S(Math.round(v * 1e6) / 1e6); if (L != null && L !== '') TX(D, X(v), y + (hasFr(L) ? Math.max(s * 1.7, 7 + s * 1.25) : Math.max(s * 1.25, 7 + s * .75)), L, { size: s, a: o.a, col: Math.abs(v) < 1e-9 ? C.yel : C.chalk }); }
+    }
+    return X;
+  }
+  /* 数直線の上の矢印（a から b へ。k は 0〜1 の のび）。lab は上に書く字 */
+  function arw(D, X, y, a, b, col, k, lab, o) {
+    o = o || {}; k = CH.clamp(k, 0, 1); if (k <= 0) return; var x0 = X(a), x1 = X(a + (b - a) * k), s = o.size || CH.fs(D, .8);
+    CH.circle(D, x0, y, 3.4, { fill: col, a: o.a });
+    if (Math.abs(x1 - x0) > 2) CH.arrow(D, x0, y, x1, y, { col: col, w: o.w || 3, head: Math.min(11, Math.abs(x1 - x0) * .6), a: o.a });
+    if (lab && k >= 1) TX(D, (x0 + x1) / 2, y - s * (hasFr(lab) ? 1.35 : .95), lab, { size: s, col: col, a: o.a, outline: 'rgba(20,40,30,.9)' });
+  }
+  /* 弧の矢印（x0 から x1 へ。o.h：高さ（負なら下へ）、o.lab：字、k：0〜1 ののび） */
+  function arc(D, x0, x1, y, col, k, o) {
+    o = o || {}; k = CH.clamp(k == null ? 1 : k, 0, 1); if (k <= 0) return; var g = D.ctx, s = o.size || CH.fs(D, .8), h = o.h == null ? Math.min(Math.abs(x1 - x0) * .4, s * 1.8) : o.h, mx = (x0 + x1) / 2, N = 30, m = Math.max(1, Math.round(N * k));
+    function P(u) { return [(1 - u) * (1 - u) * x0 + 2 * (1 - u) * u * mx + u * u * x1, y - 2 * (1 - u) * u * h * 2]; }
+    g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = col; g.lineWidth = o.w || 2.4; g.lineCap = 'round'; g.beginPath();
+    for (var i = 0; i <= m; i++) { var p = P(i / N); if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }
+    g.stroke(); g.restore();
+    if (k >= 1 && o.head !== false) { var p1 = P(.84), hd = o.hd || Math.min(10, Math.abs(x1 - x0) * .3 + 4); CH.arrow(D, p1[0], p1[1], x1, y, { col: col, w: o.w || 2.4, head: hd, a: o.a }); }
+    if (o.lab && k >= 1) TX(D, mx, y - h - (h >= 0 ? 1 : -1) * s * (hasFr(o.lab) ? 1.1 : .75), o.lab, { size: s, col: o.tcol || col, a: o.a, outline: 'rgba(20,40,30,.9)' });
+  }
+  /* 数直線の上の点 */
+  function dot(D, x, y, col, lab, o) {
+    o = o || {}; var s = o.size || CH.fs(D, .8);
+    CH.circle(D, x, y, o.r || s * .36, { fill: col, stroke: 'rgba(20,30,24,.85)', sw: 1.4, a: o.a });
+    if (lab) TX(D, x, y + (o.up ? -1 : 1) * s * (hasFr(lab) ? 1.9 : 1.5) * (o.k || 1), lab, { size: s, col: col, a: o.a, outline: 'rgba(20,40,30,.9)' });
+  }
+  /* 式を1行ずつ計算していく（板書の形）。L：['10−【(−2)^2】×3', '＝10−〔4〕×3', …]
+     【 】…次に計算するところ（光る）、〔 〕…いま計算した値。labs：その行をつくった計算の名前。t：0〜1 で行が順に出る */
+  function chain(D, R, L, t, o) {
+    o = o || {}; var n = L.length, cols = o.cols || [C.pink, C.orange, C.blue, C.green, C.lav], labs = o.labs || [];
+    var P = L.map(function (e) { var segs = [], cur = '', h = 0, v = 0, M = { '【': ['h', 1], '】': ['h', 0], '〔': ['v', 1], '〕': ['v', 0] }; function push() { if (cur) segs.push({ t: cur, h: h, v: v }); cur = ''; } for (var i = 0; i < e.length; i++) { var c = e.charAt(i), m = M[c]; if (m) { push(); if (m[0] === 'h') h = m[1]; else v = m[1]; } else cur += c; } push(); return segs; });
+    L = L.map(function (e) { return e.replace(/[【】〔〕]/g, ''); });
+    var fr_ = L.some(hasFr), eqW = function (z) { return mw(D, '＝', z); };
+    function lineW(segs, z) { return segs.reduce(function (w, sg) { return w + TW(D, sg.t, z); }, 0); }
+    function blockW(z) { var mx = 0, lw = 0; P.forEach(function (segs, i) { mx = Math.max(mx, lineW(segs, z) - (L[i].charAt(0) === '＝' ? eqW(z) : 0)); if (labs[i]) lw = Math.max(lw, TW(D, labs[i], z * .62) + z * .9); }); return eqW(z) + mx + lw; }
+    var z = o.size || CH.fs(D, 1.25), bw = blockW(z); if (bw > R.w) { z *= R.w / bw; bw = blockW(z); }
+    var k = fr_ ? 2.5 : 1.85, lh = z * k; if (lh * n > R.h) { lh = R.h / n; z = lh / k; bw = blockW(z); }
+    var xL = o.align === 'left' ? R.x0 : R.cx - bw / 2, base = xL + eqW(z), y0 = o.top ? R.y0 + lh / 2 : R.cy - lh * n / 2 + lh / 2, U = Math.max(1, n - 1), ys = [];
+    P.forEach(function (segs, i) {
+      var la = i === 0 ? 1 : CH.smooth(.45, .85, t * U - (i - 1)), hA = i < n - 1 ? CH.smooth(0, .35, t * U - i) : 0, y = y0 + i * lh; ys.push(y);
+      if (la <= 0) return; la *= (o.a == null ? 1 : o.a);
+      var x = L[i].charAt(0) === '＝' ? base - eqW(z) : base, xs = [], hc = cols[i % cols.length];
+      segs.forEach(function (sg) { var w = TW(D, sg.t, z); xs.push([x, x + w]); x += w; });
+      if (hA > 0) segs.forEach(function (sg, j) {
+        if (!sg.h || (j > 0 && segs[j - 1].h)) return; var e = j; while (e + 1 < segs.length && segs[e + 1].h) e++;
+        var fr2 = segs.slice(j, e + 1).some(function (q) { return hasFr(q.t); }), hh = z * (fr2 ? 1.05 : .72);
+        rr(D, xs[j][0] - z * .06, y - hh, xs[e][1] + z * .06, y + hh, { fill: ha(hc, .2), stroke: hc, sw: 2.2, a: hA * la, glow: true });
+      });
+      segs.forEach(function (sg, j) {
+        var col = sg.v ? cols[(i - 1 + cols.length) % cols.length] : sg.h && hA > .5 ? hc : (i === n - 1 && o.last ? o.last : C.chalk);
+        TX(D, xs[j][0], y, sg.t, { size: z, col: col, a: la, align: 'left' });
+      });
+      if (labs[i] && i > 0) TX(D, x + z * .7, y, labs[i], { size: z * .62, col: cols[(i - 1) % cols.length], a: la, align: 'left' });
+    });
+    return { z: z, lh: lh, ys: ys, x0: xL, w: bw };
+  }
+  /* 分数（有理数）の計算：F(n, d) */
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var r = a % b; a = b; b = r; } return a || 1; }
+  function F(n, d) { d = d == null ? 1 : d; if (d < 0) { n = -n; d = -d; } var g = gcd(n, d); return { n: n / g, d: d / g }; }
+  function fadd(a, b) { return F(a.n * b.d + b.n * a.d, a.d * b.d); }
+  function fsub(a, b) { return F(a.n * b.d - b.n * a.d, a.d * b.d); }
+  function fmul(a, b) { return F(a.n * b.n, a.d * b.d); }
+  function fdiv(a, b) { return b.n === 0 ? null : F(a.n * b.d, a.d * b.n); }
+  function feq(a, n, d) { var b = F(n, d); return !!a && a.n === b.n && a.d === b.d; }
+  function ftx(a) { return a.d === 1 ? S(a.n) : (a.n < 0 ? '−' : '') + '[' + Math.abs(a.n) + '/' + a.d + ']'; }
+
+  /* ---- 数（ikkan と同じ）と検算 ---- */
+  function near(a, b) { return Math.abs(a - b) < 1e-9; }
+  CH.check(-9 + 4 === -5 && near(-0.9 + 0.4, -0.5) && feq(fadd(F(-1, 2), F(1, 3)), -1, 6) && -3 + 2 === -1, '今日の問い ア〜ウ');
+  CH.check(4 - 11 + 6 - 8 === -9 && 4 + 6 === 10 && -11 - 8 === -19 && 10 - 19 === -9, 'ことば（項の和）');
+  CH.check(near(-2.4 + 0.9, -1.5) && 2.4 > 0.9 && near(2.4 - 0.9, 1.5), '例題（1）');
+  CH.check(feq(fsub(F(1, 4), F(5, 6)), -7, 12) && 10 - 3 === 7 && 5 / 6 > 1 / 4, '例題（2）');
+  CH.check(-5 - 3 === -8 && -5 + 3 === -2 && 6 - (-2) === 8 && 6 - 2 === 4, '考えよう（ここで確かめるだけ）');
+  var X0 = fadd(F(-5, 6), F(2, 3));
+  CH.check(feq(X0, -1, 6) && feq(fsub(X0, F(2, 3)), -5, 6) && feq(fadd(X0, F(2, 3)), 1, 2), 'チャレンジ');
+
+  /* ---- 3本の数直線（整数・小数・分数） ---- */
+  function sixth(v) { var k = Math.round(v * 6); return k % 6 === 0 ? S(k / 6) : (k < 0 ? '−' : '') + '[' + Math.abs(k) + '/6]'; }
+  var E = [
+    { k: 'ア', e: '−9＋4', a: -9, b: 4, min: -10, max: 2, step: 1, la: '−9', lb: '＋4', r: '−5' },
+    { k: 'イ', e: '−0.9＋0.4', a: -.9, b: .4, min: -1, max: .2, step: .1, la: '−0.9', lb: '＋0.4', r: '−0.5' },
+    { k: 'ウ', e: '−[1/2]＋[1/3]', a: -3 / 6, b: 2 / 6, min: -1, max: 2 / 6, step: 1 / 6, la: '−[3/6]', lb: '＋[2/6]', r: '−[1/6]', e2: '＝−[3/6]＋[2/6]', fmt: sixth }
+  ];
+  /* 字が重ならない、目もりの字の間かく */
+  function major(D, x0, x1, e, s) { var u = (x1 - x0) / ((e.max - e.min) / e.step), w = Math.max(TW(D, e.fmt ? '−[5/6]' : S(e.min), s), TW(D, S(Math.round((e.min + e.step) * 1e6) / 1e6), s)) * 1.25; return u >= w ? e.step : e.step * Math.ceil(w / u); }
+  function trio(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .03, b: .05 }), rs = CH.rows(R, 3, .04);
+    E.forEach(function (e, k) {
+      var r = rs[k], s = Math.min(CH.fs(D, .8), r.h / 9), u = CH.clamp(t * 3 - k, 0, 1), ka = CH.smooth(0, .4, u), kb = CH.smooth(.45, .8, u), kr = CH.smooth(.82, 1, u);
+      var ly = r.y0 + s * 1.1, y = r.y1 - s * (e.fmt ? 2.6 : 2.0), x0 = r.x0 + s * .8, x1 = r.x1 - s * 1.8;
+      var w = TX(D, r.x0, ly, e.k + '　' + e.e, { size: s * 1.2, align: 'left' });
+      if (kr > 0) TX(D, r.x0 + w, ly, (e.e2 || '') + '＝' + e.r, { size: s * 1.2, align: 'left', col: C.yel, a: kr });
+      var X = NL(D, x0, x1, y, e.min, e.max, { step: e.step, major: major(D, x0, x1, e, s), size: s, fmt: e.fmt });
+      if (kr > 0) CH.line(D, X(e.a + e.b), y - s * 3.3, X(e.a + e.b), y, { col: C.yel, dash: [4, 4], a: kr });
+      arw(D, X, y - s * 1.3, 0, e.a, NEG, ka, e.la, { size: s });
+      arw(D, X, y - s * 3.3, e.a, e.a + e.b, POS, kb, e.lb, { size: s });
+      if (kr > 0) dot(D, X(e.a + e.b), y, C.yel, null, { a: kr, size: s });
+    });
+  }
+
+  /* ---- 項のカード：4−11＋6−8 ---- */
+  var TM = [4, -11, 6, -8];
+  function terms(D, t) {
+    var R = CH.box(D, { l: .05, r: .05, t: .06, b: .08 }), s = CH.fs(D), h = Math.min(s * 2.8, R.w / 6.2), cw = h * 1.35, z = Math.min(s * 1.6, R.w / 9);
+    var yA = R.y0 + R.h * .1, yA2 = R.y0 + R.h * .25, yB = R.y0 + R.h * .45, yC = R.y0 + R.h * .72, yD = R.y0 + R.h * .93;
+    TX(D, R.cx, yA, '4−11＋6−8', { size: z });
+    var a1 = CH.smooth(.03, .18, t), a2 = CH.smooth(.15, .3, t), mv = CH.ease(CH.smooth(.38, .68, t)), a3 = CH.smooth(.66, .78, t), a4 = CH.smooth(.8, .95, t);
+    if (a1 > 0) TX(D, R.cx, yA2, '＝(＋4)＋(−11)＋(＋6)＋(−8)', { size: fit(D, '＝(＋4)＋(−11)＋(＋6)＋(−8)', R.w, z * .72), col: C.chalk, a: a1 });
+    if (a2 <= 0) return;
+    var gap = h * .3, row0 = R.cx - (4 * cw + 3 * gap) / 2, gl = R.x0 + R.w * .27, gr = R.x0 + R.w * .73, ip = 0, ineg = 0;
+    if (mv < .02) TX(D, row0 - s * .4, yB, '項', { size: s * .9, col: C.green, a: a2, align: 'right' });
+    TM.forEach(function (v, i) {
+      var x0 = row0 + cw / 2 + i * (cw + gap), j = v > 0 ? ip++ : ineg++, x1 = (v > 0 ? gl : gr) + (j - .5) * (cw + gap * .6);
+      card(D, CH.lerp(x0, x1, mv), CH.lerp(yB, yC, mv), cw, h, (v > 0 ? '＋' : '') + S(v), { col: vcol(v), a: a2 });
+    });
+    if (a3 > 0) {
+      TX(D, gl, yC + h * .95, '正の項　＋10', { size: s * .95, col: POS, a: a3 });
+      TX(D, gr, yC + h * .95, '負の項　−19', { size: s * .95, col: NEG, a: a3 });
+    }
+    if (a4 > 0) TX(D, R.cx, yD, '(＋10)＋(−19)＝−9', { size: Math.min(z, fit(D, '(＋10)＋(−19)＝−9', R.w, z)), col: C.yel, a: a4 });
+  }
+
+  /* ---- 例題：上に「符号 → 絶対値」の行、下に数直線の矢印 ---- */
+  function ex(D, t, o) {
+    var R = CH.box(D, { l: .05, r: .05, t: .04, b: .06 }), s = CH.fs(D), top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .6), n = o.lines.length;
+    var z = Math.min(s * 1.15, top.h / n / (o.frac ? 2.3 : 1.7)), lh = top.h / n;
+    o.lines.forEach(function (L, i) {
+      var a = i === 0 ? 1 : CH.smooth(o.at[i - 1], o.at[i - 1] + .12, t), zz = fit(D, L[0], top.w, i === 0 ? z * 1.25 : z);
+      if (a > 0) TX(D, top.x0, top.y0 + lh * (i + .5), L[0], { size: zz, col: L[1] || C.chalk, a: a, align: 'left' });
+    });
+    var sn = CH.fs(D, .8), y = R.y1 - sn * 2.2, x0 = R.x0 + sn, x1 = R.x1 - sn * 1.8, nl = o.nl;
+    var X = NL(D, x0, x1, y, nl.min, nl.max, { step: nl.step, major: nl.major, fmt: nl.fmt, size: sn });
+    var kr = CH.smooth(.9, 1, t);
+    if (kr > 0) CH.line(D, X(o.a + o.b), y - sn * 3.4, X(o.a + o.b), y, { col: C.yel, dash: [4, 4], a: kr });
+    arw(D, X, y - sn * 1.3, 0, o.a, vcol(o.a), CH.smooth(.6, .75, t), o.la, { size: sn });
+    arw(D, X, y - sn * 3.4, o.a, o.a + o.b, vcol(o.b), CH.smooth(.77, .9, t), o.lb, { size: sn });
+    if (kr > 0) dot(D, X(o.a + o.b), y, C.yel, o.dl, { a: kr, size: sn });
+  }
+  var EX1 = { lines: [['−2.4＋0.9'], ['① 符号 … 絶対値は 2.4 ＞ 0.9 → −', C.pink], ['② 絶対値 … 2.4−0.9＝1.5', C.orange], ['③ 答え … −1.5', C.yel]], at: [.05, .25, .45],
+    a: -2.4, b: .9, la: '−2.4', lb: '＋0.9', nl: { min: -3, max: 1, step: .1, major: .5 } };
+  var EX2 = { frac: true, lines: [['[1/4]−[5/6]'], ['① 通分 … ＝[3/12]−[10/12]', C.blue], ['② 符号 … [10/12] のほうが大きい → −', C.pink], ['③ 絶対値 … [10/12]−[3/12]＝[7/12]', C.orange], ['④ 答え … −[7/12]', C.yel]], at: [.04, .2, .36, .5],
+    a: 3 / 12, b: -10 / 12, la: '＋[3/12]', lb: '−[10/12]', dl: '−[7/12]', nl: { min: -1, max: .5, step: 1 / 12, major: 1 / 12, fmt: function (v) { return Math.abs(v - Math.round(v)) < 1e-9 ? S(Math.round(v)) : ''; } } };
+
+  /* ---- 考えよう：まちがいカードと、たし算の矢印の道具 ---- */
+  function tool(D) {
+    var R = CH.box(D, { l: .04, r: .04, t: .04, b: .04 }), s = CH.fs(D), a = D.V.a, b = D.V.b, h = Math.min(s * 2.4, R.h * .2);
+    var cs = [['ア　−5−3＝−2'], ['イ　6−(−2)＝4']], cw = Math.min(R.w * .46, s * 11);
+    cs.forEach(function (c, i) {
+      var cx = R.cx + (i - .5) * (cw + R.w * .04);
+      rr(D, cx - cw / 2, R.y0, cx + cw / 2, R.y0 + h, { fill: 'rgba(242,240,230,.06)', stroke: C.chalk, sw: 1.6 });
+      TX(D, cx - s * .4, R.y0 + h / 2, c[0], { size: fit(D, c[0], cw * .72, s * 1.05) });
+      TX(D, cx + cw / 2 - s * .35, R.y0 + h / 2, '？', { size: s * 1.1, col: C.pink, align: 'right' });
+    });
+    var sn = CH.fs(D, .78), y = R.y1 - sn * 2, x0 = R.x0 + sn, x1 = R.x1 - sn * 1.8, e = { min: -12, max: 12, step: 1 };
+    var X = NL(D, x0, x1, y, -12, 12, { step: 1, major: major(D, x0, x1, e, sn), size: sn });
+    var eq = S(a) + '＋' + (b < 0 ? '(' + S(b) + ')' : S(b)) + '＝' + S(a + b);
+    TX(D, R.cx, R.y0 + h + (y - sn * 4.6 - R.y0 - h) / 2, eq, { size: Math.min(s * 1.4, (y - R.y0 - h) * .3), col: C.yel });
+    if (a !== 0) arw(D, X, y - sn * 1.3, 0, a, vcol(a), 1, (a > 0 ? '＋' : '') + S(a), { size: sn });
+    if (b !== 0) arw(D, X, y - sn * 3.3, a, a + b, vcol(b), 1, (b > 0 ? '＋' : '') + S(b), { size: sn });
+    dot(D, X(a + b), y, C.yel, null, { size: sn });
+  }
+
+  /* ---- チャレンジ：まちがえた計算を、もどってから正しく ---- */
+  function chal(D, t) {
+    var R = CH.box(D, { l: .05, r: .05, t: .04, b: .06 }), s = CH.fs(D), top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .5);
+    if (D.ph) chain(D, top, ['□−[2/3]＝−[5/6]', '□＝−[5/6]＋[2/3]＝−[1/6]', '正しい答え　−[1/6]＋[2/3]＝[1/2]'], CH.smooth(0, .75, t), { size: s * 1.05, align: 'left', cols: [C.orange, C.blue, C.yel] });
+    var sn = CH.fs(D, .8), y = R.y1 - sn * 2.6, x0 = R.x0 + sn, x1 = R.x1 - sn * 1.8;
+    var X = NL(D, x0, x1, y, -1, 1, { step: 1 / 6, major: 1 / 6, size: sn, fmt: function (v) { return Math.abs(v - Math.round(v)) < 1e-9 ? S(Math.round(v)) : ''; } });
+    var k0 = D.ph ? CH.smooth(0, .12, t) : 0, k1 = CH.smooth(.15, .4, t), k2 = CH.smooth(.5, .78, t), k3 = CH.smooth(.8, .95, t);
+    dot(D, X(-5 / 6), y, C.pink, '−[5/6]', { size: sn, a: D.ph ? 1 : 0 });
+    if (D.ph) TX(D, X(-5 / 6), y - sn * 1.2, 'まちがえた答え', { size: sn * .85, col: C.pink, a: k0 * (1 - k1) });
+    arw(D, X, y - sn * 1.3, -5 / 6, -1 / 6, C.orange, k1, '＋[2/3]（もどす）', { size: sn });
+    if (k1 >= 1) dot(D, X(-1 / 6), y, C.orange, '□', { size: sn, k: .8 });
+    arw(D, X, y - sn * 3.6, -1 / 6, 1 / 2, C.blue, k2, '＋[2/3]', { size: sn });
+    if (k3 > 0) { CH.line(D, X(.5), y - sn * 3.6, X(.5), y, { col: C.yel, dash: [4, 4], a: k3 }); dot(D, X(.5), y, C.yel, '[1/2]', { size: sn, a: k3 }); }
+  }
+
+  K3.run({
+    no: '第9時', title: '加法・減法を、速く正確にできるようになろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '08.html', label: '◀ 第8時' }, { href: '10.html', label: '第10時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: 'ア 整数　イ 小数　ウ 分数', q: '次の3つの計算をして、計算のしかたの、同じところとちがうところを見つけよう。　ア −9＋4　イ −0.9＋0.4　ウ −[1/2]＋[1/3]',
+        notes: ['① 自分の考え（3分）　同じところ・ちがうところを書こう。', '② ペアの考え（3分）　自分とちがう気づきを、教え合おう。'],
+        draw: function (D) { trio(D, 0); } },
+      { tag: '今日の問い', q: '3つの答えは？ 計算のしかたの、同じところ・ちがうところは？', a: 'ア −5　イ −0.5　ウ −[1/6]', sub: '同じ … 答えの符号は、絶対値の大きいほうの符号（−）。ちがう … 分数は、通分してから計算する（−[3/6]＋[2/6]）', dur: 6,
+        b: [{ t: 'ア −9＋4＝<b>−5</b>　イ −0.9＋0.4＝<b>−0.5</b>', col: C.yel }, { t: 'ウ −[1/2]＋[1/3]＝−[3/6]＋[2/6]＝<b>−[1/6]</b>（分数は <b>通分</b>）', col: C.yel }],
+        draw: function (D) { trio(D, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: '4−11＋6−8 のように、加法と減法の混じった式は、どう見ると計算しやすい？ 答えの符号は、いつ決める？', a: '項の和とみる。符号を先に決める',
+        sub: '(＋4)＋(−11)＋(＋6)＋(−8) の和。正の項 ＋10 と 負の項 −19 をまとめて −9。答えの符号は、絶対値の大きいほうの符号', dur: 5,
+        b: [{ t: '混じった式は、<b>加法だけ</b>の式に直し、<b>項</b>の和とみる', col: C.green }, { t: '正の項・負の項を、それぞれ <b>まとめて</b> 計算する', col: C.green }, { t: '答えの <b>符号</b> を先に決めて、絶対値を計算する。分数は <b>通分</b>', col: C.green }],
+        draw: function (D) { terms(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題　符号を先に決める', q: '（1）−2.4＋0.9 を計算しよう。答えの符号を先に決めてから、絶対値を計算しよう。', a: '−1.5', sub: '絶対値は 2.4 のほうが大きいから、符号は −。絶対値は 2.4−0.9＝1.5', dur: 5,
+        b: { t: '（1）符号 −、2.4−0.9＝1.5 → <b>−1.5</b>', col: C.pink },
+        draw: function (D) { ex(D, D.ph ? D.t : 0, EX1); } },
+      { tag: '例題', q: '（2）[1/4]−[5/6] を計算しよう。', a: '−[7/12]', sub: '通分して [3/12]−[10/12]。[10/12] のほうが大きいから、符号は −。10−3＝7', dur: 6,
+        b: { t: '（2）[3/12]−[10/12] → 符号 −、[10/12]−[3/12] → <b>−[7/12]</b>', col: C.pink },
+        draw: function (D) { ex(D, D.ph ? D.t : 0, EX2); } },
+      { tag: '考えよう', bh: '考えよう', q: 'ある人が、ア −5−3＝−2、イ 6−(−2)＝4 と計算した。どこでまちがえたのだろう。正しい答えと、まちがいの理由を説明しよう。',
+        notes: ['まちがえないための、くふうも書こう。', 'ひき算は、たし算に直してから、数直線で確かめよう。', 'スライダーで、はじめの数と たす数を変えると、矢印で確かめられます。'],
+        sliders: [{ key: 'a', label: 'はじめの数', min: -6, max: 6, step: 1, val: -5, fmt: S }, { key: 'b', label: 'たす数', min: -6, max: 6, step: 1, val: 0, fmt: S }],
+        draw: tool },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'ある数に [2/3] をたすところを、まちがえてひいてしまったので、答えが −[5/6] になった。正しい答えを求めよう。', a: '[1/2]',
+        sub: 'ある数を □ とすると □−[2/3]＝−[5/6]。□＝−[5/6]＋[4/6]＝−[1/6]。正しい答えは −[1/6]＋[4/6]＝[3/6]＝[1/2]', dur: 6,
+        b: { t: '□＝−[5/6]＋[2/3]＝−[1/6] → −[1/6]＋[2/3]＝<b>[1/2]</b>', col: C.orange },
+        draw: function (D) { chal(D, D.ph ? D.t : 0); } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

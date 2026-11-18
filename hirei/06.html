@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>比例のグラフ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 比例と反比例 第6時：比例のグラフは、どんな形になるだろう（ikkan の lesson_hirei_06 と同じ流れ）。
+   y＝2x の表の数が1つずつ座標平面の点になる。x を 0.5 きざみ・0.1 きざみにすると点がふえて、すきまがうまり、原点を通る直線になる。
+   例題は y＝−3/2x（右下がり）。考えようは、比例定数 a のスライダーで直線が原点のまわりに回る（なぞった線がうすく残る）。
+   チャレンジは (−4, 6) を通る直線の上の、x・y がどちらも整数の点を、左から順に数える。
+   数値は ikkan のまま（y＝2x の x＝−3〜3、例題 y＝−3/2x、考えよう a、チャレンジ (−4, 6)・−10＜x＜10）。点・答えはページの中で計算し直している。 */
+(function () {
+  var C = CH.C, S = CH.mnum, OUT = 'rgba(20,40,30,.92)';
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  /* ---- 分数入りの字（[3/2] をたての分数に）。canvas 用 ---- */
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = CH.fr(s[k]); }); if (s.notes) s.notes = s.notes.map(CH.fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = CH.fr(b.t); }); }); return st; }
+  /* a を字に（分数は [1/2] の形） */
+  function atxt(a) { var n = Math.round(a * 2); return n % 2 === 0 ? S(n / 2) : (n < 0 ? '−' : '') + '[' + Math.abs(n) + '/2]'; }
+  function eqtxt(a) { return 'y＝' + (a === 1 ? '' : a === -1 ? '−' : atxt(a)) + 'x'; }
+
+  /* ---- 数と検算 ---- */
+  var XS = [-3, -2, -1, 0, 1, 2, 3], YS = XS.map(function (x) { return 2 * x; });
+  CH.check(YS.join() === '-6,-4,-2,0,2,4,6', '今日の問いの表（y＝2x）');
+  var H = []; for (var i = -6; i <= 6; i++) H.push(i * .5);
+  CH.check(H.filter(function (x) { return x !== 0; }).every(function (x) { return CH.near(2 * x / x, 2); }), '0.5 きざみの点も y÷x＝2（一直線）');
+  var EX = [-4, -2, 0, 2, 4], EY = EX.map(function (x) { return -3 * x / 2; });
+  CH.check(EY.join() === '6,3,0,-3,-6', '例題（y＝−3/2x の表）');
+  var AS = [-3, -2, -1.5, -1, -.5, .5, 1, 1.5, 2, 3];
+  CH.check(AS.every(function (a) { return a * 0 === 0 || a * 0 === -0; }) && AS.indexOf(0) < 0, '考えよう（a は 0 でない。ここで確かめるだけ）');
+  var CA = 6 / -4, CI = []; for (var x = -9; x <= 9; x++) if (Number.isInteger(CA * x)) CI.push(x);
+  CH.check(CA === -1.5 && CI.join() === '-8,-6,-4,-2,0,2,4,6,8' && CI.length === 9, 'チャレンジ（9個）');
+
+  /* ---- 座標平面と表 ---- */
+  function plane(D, P, xr, yr, o) { var s = CH.fs(D, .72); return CH.plane(D, CH.rect(P.x0 + s * .4, P.y0 + s * 1.6, P.x1 - s * 1.8, P.y1 - s * .4), Object.assign({ x: xr, y: yr }, o || {})); }
+  function lab(D, Pl, x, y, txt, col, o) { o = o || {}; TX(D, Pl.X(x) + (o.dx || 0), Pl.Y(y) + (o.dy || 0), txt, { col: col, size: o.size || CH.fs(D, .95), align: o.align || 'left', outline: OUT, a: o.a }); }
+  function lay(D) {
+    var R = CH.box(D, { l: .03, r: .03, t: .04, b: .04 }), k = D.W > D.H * .9 ? .3 : .34;
+    return { T: CH.rect(R.x0, R.y0 + R.h * .06, R.x0 + R.w * k, R.y1 - R.h * .06), P: CH.rect(R.x0 + R.w * (k + .03), R.y0, R.x1, R.y1) };
+  }
+  function base(D, L) { return plane(D, L.P, [-4, 4], [-7, 7], { lab: D.W > D.H * .9 ? 1 : 2 }); }
+  /* たての表。xs・ys、o.show(i)、o.hl(i) */
+  function vtab(D, R, xs, ys, yname, o) {
+    o = o || {};
+    var T = CH.table(D, R, ['x', yname], xs.map(function (x, i) { return [S(x), S(ys[i])]; }), { fw: .4, size: CH.fs(D, .85), show: function (r, c) { return r > 0 && c === 1 && o.show ? o.show(r - 1) : 1; }, hl: function (r, c) { return r > 0 && o.hl ? o.hl(r - 1, c) : null; } });
+    return function (i) { return T.cell(i + 1, 1); };
+  }
+
+  /* ---- 考えよう：なぞった a ---- */
+  var trail = { V: null, seen: {} };
+
+  K3.run({
+    no: '第6時', title: '比例のグラフは、どんな形になるだろう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '05.html', label: '◀ 第5時' }, { href: '07.html', label: '第7時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: 'y＝2x の点', q: 'y＝2x の表の、x と y の値の組を座標とする点を、図にかき入れよう。x の値を 0.5 きざみ、0.1 きざみ … と細かくしていくと、点の集まりは、どんな形になっていくだろう。',
+        notes: ['① 自分の考え（3分）　点の集まりは、どうなるか。', '② ペアの考え（3分）'],
+        draw: function (D) { var L = lay(D); vtab(D, L.T, XS, YS, 'y＝2x'); base(D, L); } },
+      { tag: '今日の問い', q: '表の x、y の組を座標とする点を、図にかき入れよう。点は、どのようにならぶ？', a: '一直線にならぶ', sub: '(−3, −6)、(−2, −4)、(−1, −2)、(0, 0)、(1, 2)、(2, 4)、(3, 6)。原点も通る', dur: 7,
+        b: { t: '(−3, −6) … (3, 6) の点は <b>一直線</b> にならぶ（原点も通る）', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D);
+          function k(i) { return CH.clamp((t - .04 - i * .12) / .12, 0, 1); }
+          var cell = vtab(D, L.T, XS, YS, 'y＝2x', { hl: function (i) { return D.ph && k(i) > 0 && k(i) < 1 ? C.yel : null; } }), Pl = base(D, L);
+          XS.forEach(function (x, i) {
+            if (!D.ph) return; var e = k(i); if (e <= 0) return;
+            var q = cell(i), ee = CH.ease(e), cx = CH.lerp(q.cx, Pl.X(x), ee), cy = CH.lerp(q.cy, Pl.Y(YS[i]), ee) - Math.sin(ee * Math.PI) * s * 2;
+            CH.circle(D, cx, cy, CH.fs(D, .26), { fill: C.yel, stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
+          });
+        } },
+      { tag: '今日の問い', q: 'x の値を 0.5 きざみ、0.1 きざみ … と細かくしていくと、点の集まりは、どうなる？', a: '点と点の間がうまって、原点を通る直線になる', sub: 'x を細かくとるほど、点と点のすきまがなくなる', dur: 8,
+        b: { t: '点を細かくとると、すきまがうまって <b>原点を通る直線</b> になる', col: C.yel },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D); vtab(D, L.T, XS, YS, 'y＝2x');
+          var Pl = base(D, L), j, x;
+          if (t > .78) CH.lin(D, Pl, 2, 0, { col: C.yel, w: 3.4, glow: true, x0: -3.5, x1: 3.5, t: CH.smooth(.78, .95, t) });
+          var n1 = Math.floor(14 * CH.smooth(.04, .3, t)), n2 = Math.floor(71 * CH.smooth(.38, .7, t));
+          for (j = 0; j < n2; j++) { x = -3.5 + j * .1; CH.circle(D, Pl.X(x), Pl.Y(2 * x), CH.fs(D, .12), { fill: C.green }); }
+          for (j = 0; j < n1; j++) { x = -3.5 + j * .5; CH.circle(D, Pl.X(x), Pl.Y(2 * x), CH.fs(D, .2), { fill: C.orange, stroke: OUT, sw: 1 }); }
+          XS.forEach(function (x, i) { CH.circle(D, Pl.X(x), Pl.Y(YS[i]), CH.fs(D, .26), { fill: C.yel, stroke: 'rgba(20,30,24,.8)', sw: 1.2 }); });
+          var msg = t > .78 ? '直線になる' : t > .38 ? '0.1 きざみ' : t > .04 ? '0.5 きざみ' : '', col = t > .78 ? C.yel : t > .38 ? C.green : C.orange;
+          if (msg) CH.text(D, Pl.X(-3.8), Pl.Y(6), msg, { col: col, size: s * 1.1, align: 'left', outline: OUT });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '関数の x と y の値の組を座標とする点の集まりを、何という？ 比例のグラフは、どんな線？', a: 'グラフ。比例のグラフは、原点を通る直線', sub: 'y＝2x のように、比例定数が正の数（a＞0）のときは、右上がりの直線', dur: 5,
+        b: [{ t: '点の集まり … 関数の <b>グラフ</b>', col: C.green }, { t: '比例 y＝ax のグラフは、<b>原点</b>を通る<b>直線</b>', col: C.green }],
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D); vtab(D, L.T, XS, YS, 'y＝2x');
+          var Pl = base(D, L);
+          CH.lin(D, Pl, 2, 0, { col: C.yel, w: 3.4, x0: -3.5, x1: 3.5 });
+          lab(D, Pl, 1.7, 5.6, 'y＝2x', C.yel);
+          if (D.ph) {
+            var a1 = CH.smooth(.05, .3, t), a2 = CH.smooth(.35, .6, t), a3 = CH.smooth(.65, .9, t);
+            CH.circle(D, Pl.X(0), Pl.Y(0), s * .6, { stroke: C.green, sw: 3, a: a1 }); CH.text(D, Pl.X(.5), Pl.Y(-2), '原点を通る', { col: C.green, size: s, align: 'left', outline: OUT, a: a1 });
+            lab(D, Pl, .5, -5, 'グラフ（直線）', C.green, { a: a2, size: s * .9 });
+            CH.arrow(D, Pl.X(1.3), Pl.Y(.6), Pl.X(2.5), Pl.Y(3), { col: C.orange, w: 3, head: 11, a: a3 }); lab(D, Pl, 2.6, 1.2, '右上がり', C.orange, { a: a3, size: s * .9 });
+          }
+        } },
+      { tag: '例題', bh: '例題　y＝−[3/2]x のグラフ', q: 'y＝−[3/2]x のグラフをかこう。まず、x＝−4、−2、0、2、4 のときの y の値を求めて、点をとろう。', a: '6、3、0、−3、−6。原点を通る右下がりの直線', sub: 'y＝2x は右上がり、y＝−[3/2]x は右下がり。比例定数が負の数だと右下がり', dur: 7,
+        b: { t: 'y＝−[3/2]x … 6・3・0・−3・−6 → 原点を通る <b>右下がり</b> の直線（a＞0 は右上がり、a＜0 は右下がり）', col: C.pink },
+        draw: function (D) {
+          var L = lay(D), t = D.ph ? D.t : 0, s = CH.fs(D);
+          function k(i) { return CH.clamp((t - .03 - i * .12) / .12, 0, 1); }
+          var cell = vtab(D, L.T, EX, EY, 'y', { show: function (i) { return D.ph ? CH.smooth(0, .3, k(i)) : 0; }, hl: function (i) { return D.ph && k(i) > 0 && k(i) < 1 ? C.pink : null; } });
+          var Pl = base(D, L);
+          CH.lin(D, Pl, 2, 0, { col: C.yel, w: 2.4, a: .35 }); lab(D, Pl, 1.9, 5.6, 'y＝2x', C.yel, { a: .5 });
+          if (t > .68) CH.lin(D, Pl, -1.5, 0, { col: C.pink, w: 3.4, t: CH.smooth(.68, .86, t) });
+          EX.forEach(function (x, i) {
+            if (!D.ph) return; var e = k(i); if (e <= 0) return;
+            var q = cell(i), ee = CH.ease(e), cx = CH.lerp(q.cx, Pl.X(x), ee), cy = CH.lerp(q.cy, Pl.Y(EY[i]), ee) - Math.sin(ee * Math.PI) * s * 2;
+            CH.circle(D, cx, cy, CH.fs(D, .26), { fill: C.pink, stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
+          });
+          if (t > .86) { lab(D, Pl, .3, -5.2, 'y＝−[3/2]x', C.pink, { a: CH.smooth(.86, 1, t) }); lab(D, Pl, 2.5, -2.3, '右下がり', C.pink, { a: CH.smooth(.86, 1, t), size: s * .9 }); }
+        } },
+      { tag: '考えよう', bh: '考えよう', q: 'y＝ax で、a の値を変えて、いろいろなグラフをかこう。a＝1、2、−1、−2、[1/2] などを試して、グラフと比例定数 a の関係を調べよう。',
+        notes: ['どんな a でも、グラフがかならず原点を通るのは、なぜだろう。', 'a は、グラフのどこにあらわれているだろう。', 'スライダーで、比例定数 a を変えられます（ためした直線は、うすく残ります）。'],
+        sliders: [{ key: 'k', label: '比例定数 a', min: 0, max: 9, step: 1, val: 6, fmt: function (v) { var n = Math.round(AS[Math.round(v)] * 2); return n % 2 ? (n < 0 ? '−' : '') + Math.abs(n) + '/2' : S(n / 2); } }],
+        draw: function (D) {
+          if (trail.V !== D.V) { trail.V = D.V; trail.seen = {}; }
+          var R = CH.box(D, { l: .08, r: .06, t: .02, b: .03 }), Pl = plane(D, R, [-5, 5], [-5, 5]), a = AS[Math.round(D.V.k)], s = CH.fs(D);
+          trail.seen[a] = 1;
+          Object.keys(trail.seen).forEach(function (k) { var b = +k; if (b !== a) CH.lin(D, Pl, b, 0, { col: b > 0 ? C.yel : C.pink, w: 2, a: .25 }); });
+          CH.lin(D, Pl, a, 0, { col: a > 0 ? C.yel : C.pink, w: 3.6, glow: true });
+          var xe = Math.min(4.6, 4.6 / Math.abs(a)), ye = a * xe;
+          lab(D, Pl, xe, ye, eqtxt(a), a > 0 ? C.yel : C.pink, { dx: a > 0 ? -s * .4 : s * .4, dy: a > 0 ? -s * .9 : s * .9, align: a > 0 ? 'right' : 'left' });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'y＝ax のグラフが、点 (−4, 6) を通る。このグラフの上の点で、x 座標も y 座標も整数で、−10＜x＜10 のものは、何個ある？',
+        a: '9個', sub: '6＝−4a から a＝−[3/2]。y が整数になるのは x が偶数のとき。x＝−8、−6、−4、−2、0、2、4、6、8', dur: 9,
+        b: { t: 'a＝−[3/2]　x が偶数のとき y が整数 → x＝−8、−6、…、8 の <b>9個</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .08, r: .06, t: .02, b: .03 }), t = D.ph ? D.t : 0, s = CH.fs(D);
+          var Pl = plane(D, R, [-11, 11], [-13, 13], { labX: 2, labY: 3, stepX: 1, stepY: 1 });
+          CH.pseg(D, Pl, [-10, -13], [-10, 13], { col: C.blue, w: 1.6, dash: [6, 6], a: .7 }); CH.pseg(D, Pl, [10, -13], [10, 13], { col: C.blue, w: 1.6, dash: [6, 6], a: .7 });
+          CH.pt(D, Pl, -4, 6, { col: C.chalk, r: CH.fs(D, .3), lab: '(−4, 6)', dir: 'ne', size: CH.fs(D, .8) });
+          if (!D.ph) return;
+          CH.lin(D, Pl, CA, 0, { col: C.orange, w: 2.6, t: CH.smooth(.02, .15, t) });
+          if (t > .12) lab(D, Pl, 1.2, 9.5, 'y＝−[3/2]x', C.orange, { a: CH.smooth(.12, .2, t) });
+          var xr = -9 + 18 * CH.smooth(.22, .9, t), n = 0;
+          for (var x = -9; x <= 9; x++) {
+            if (x > xr + 1e-9) break;
+            var y = CA * x;
+            if (Number.isInteger(y)) { n++; CH.pt(D, Pl, x, y, { col: C.yel, r: CH.fs(D, .28) }); }
+            else CH.circle(D, Pl.X(x), Pl.Y(y), CH.fs(D, .2), { stroke: C.pink, sw: 1.8, a: .8 });
+          }
+          CH.text(D, Pl.X(10.6), Pl.Y(11.5), n + ' 個', { col: C.yel, size: s * 1.3, align: 'right', outline: OUT });
+          CH.text(D, Pl.X(-10.6), Pl.Y(-11.5), '○ … y が整数でない', { col: C.pink, size: CH.fs(D, .75), align: 'left', outline: OUT });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

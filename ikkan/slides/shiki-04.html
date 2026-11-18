@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>式の計算　第4時　文字式どうしのかけ算・わり算を、考えて計算しよう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:3px solid #2b3647;padding:6px 14px}   /* 表の罫線は、色ではなく、はっきりした濃い線（プロジェクターでも見える） */
+#deck th{background:#eceff4}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="s04-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第3時の重要語句から、1人1問ずつ、言葉を選んで出題する。<br>聞かれた人は、その言葉の意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">分配法則</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">逆数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">通分</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">分数の形の式</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">式の計算　第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+<aside>【導入 3分】前時（第3時）の重要語句を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="s04-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:30px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+</div>
+<h2 style="font-size:60px;font-weight:700;line-height:1.3;color:#1E3A5F">文字式どうしのかけ算・わり算を、考えて計算しよう</h2>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:28px 48px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:46px;font-weight:500;line-height:1.4">① 縦が 3<i>a</i> cm、横が 2<i>b</i> cm の長方形の面積を、式で表そう。</p>
+</div>
+<p style="font-size:46px;font-weight:500;line-height:1.4">② 面積が 12<i>ab</i> cm² で、縦が 3<i>a</i> cm の長方形の、<br>　横の長さを式で表そう。</p>
+<div style="display:flex;flex-direction:row;justify-content:center">
+<img src="img/shiki-04_f1_q.png" alt="縦3a cm・横2b cmの長方形で面積が？（①）と、縦3a cm・面積12ab cm²の長方形で横が？ cm（②）" style="width:1560px;height:235px;object-fit:contain">
+</div>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#1F2A37">【自分の考え】①②の計算のしかたを、図や式で書こう。ペアと見くらべよう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+<aside>【解説 4分・学習課題】めあてを書く。長方形の面積（縦 3a・横 2b）と、横の長さ（面積 12ab・縦 3a）を、式で表す。個人→ペア。発問：3a×2b は、何と何をかけている？／12ab÷3a は、どうすれば求められるだろう。　想定される反応：小さな長方形が 6個／順を入れかえる／□×3a＝12ab の □、など。</aside>
+</section>
+<section id="s04-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#6B7480">① 面積を表す式　② 横の長さを表す式</p>
+<div style="display:flex;flex-direction:row;gap:28px;align-items:stretch">
+<div style="display:flex;flex-direction:column;gap:6px;flex:1;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 36px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">①　縦 3<i>a</i> cm、横 2<i>b</i> cm</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">3<i>a</i>×2<i>b</i>＝3×<i>a</i>×2×<i>b</i></p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">　＝(3×2)×(<i>a</i>×<i>b</i>)</p>
+<p style="font-size:48px;font-weight:700;line-height:1.4;color:#C0392B">　＝6<i>ab</i>（cm²）</p>
+<p style="font-size:38px;line-height:1.4;color:#C0392B">係数どうし、文字どうしを、<br>それぞれかける。</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;flex:1;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 36px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">②　面積 12<i>ab</i> cm²、縦 3<i>a</i> cm</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:8px">
+<p style="font-size:44px;line-height:1.4;color:#C0392B">12<i>ab</i>÷3<i>a</i>＝</p>
+<div style="display:flex;flex-direction:column;padding:0px 6px"><p style="font-size:44px;line-height:1.2;text-align:center;color:#C0392B">12<i>ab</i></p><div style="border-top:3px solid #C0392B"><p style="font-size:44px;line-height:1.2;text-align:center;color:#C0392B">3<i>a</i></p></div></div>
+</div>
+<p style="font-size:48px;font-weight:700;line-height:1.4;color:#C0392B">＝4<i>b</i>（cm）</p>
+<p style="font-size:38px;line-height:1.4;color:#C0392B">分数の形にして、約分する。<br>（□×3<i>a</i>＝12<i>ab</i> の □ を考えてもよい）</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;border-left:8px solid #C0392B;padding:0px 0px 0px 32px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">（例）ペアの考え</p>
+<p style="font-size:40px;line-height:1.4;color:#C0392B">縦 <i>a</i>・横 <i>b</i> の小さな長方形が 6個　　3<i>a</i>×4<i>b</i>＝12<i>ab</i> だから　横は 4<i>b</i></p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+<aside>【解説 4分・学習課題のまとめ】いくつかのペアの考えを聞いて、板書にまとめる。乗法は、係数どうし、文字どうしをかける。除法は、分数の形にして約分する（□×3a＝12ab の □ を考えてもよい）。小さな長方形が 6個、という見方も取り上げる。赤い字は、先生の板書。</aside>
+</section>
+<section id="s04-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:32px 56px">
+<p style="font-size:46px;line-height:1.4">単項式の乗法 … <u>　　　　　</u>の積に、<u>　　　　　</u>の積をかける。</p>
+<p style="font-size:46px;line-height:1.4">　　3<i>a</i>×2<i>b</i>＝(3×2)×(<i>a</i>×<i>b</i>)＝6<i>ab</i></p>
+<p style="font-size:46px;line-height:1.4">単項式の除法 … <u>　　　　　</u>の形にして、<u>　　　　　</u>する。</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:8px">
+<p style="font-size:46px;line-height:1.4">　　12<i>ab</i>÷3<i>a</i>＝</p>
+<div style="display:flex;flex-direction:column;padding:0px 6px"><p style="font-size:44px;line-height:1.2;text-align:center">12<i>ab</i></p><div style="border-top:3px solid #1F2A37"><p style="font-size:44px;line-height:1.2;text-align:center">3<i>a</i></p></div></div>
+<p style="font-size:46px;line-height:1.4">＝4<i>b</i></p>
+</div>
+<p style="font-size:46px;line-height:1.4">　　または、わる式の <u>　　　　　</u> をかけて計算する。</p>
+<p style="font-size:46px;line-height:1.4">同じ文字のかけ算は、<u>　　　　　</u>で表す。　<i>a</i>×<i>a</i>＝<i>a</i>²</p>
+<p style="font-size:46px;line-height:1.4">「÷2<i>x</i>」は、2<i>x</i> 全体でわることを表す。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+<aside>【解説 3分・ことば】乗法「係数の積×文字の積」、除法「分数の形にして約分」「逆数をかける」を押さえる。「÷2x」は 2x 全体でわる。空欄は、先生が言ってから書かせる。発問：わる式は、分数の分子と分母のどちらに書くだろう。　想定される反応：空欄に書き込む。</aside>
+</section>
+<section id="s04-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:32px 56px">
+<p style="font-size:46px;line-height:1.4">単項式の乗法 … <span style="color:#C0392B"><b>係数</b></span>の積に、<span style="color:#C0392B"><b>文字</b></span>の積をかける。</p>
+<p style="font-size:46px;line-height:1.4">　　3<i>a</i>×2<i>b</i>＝(3×2)×(<i>a</i>×<i>b</i>)＝6<i>ab</i></p>
+<p style="font-size:46px;line-height:1.4">単項式の除法 … <span style="color:#C0392B"><b>分数</b></span>の形にして、<span style="color:#C0392B"><b>約分</b></span>する。</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:8px">
+<p style="font-size:46px;line-height:1.4">　　12<i>ab</i>÷3<i>a</i>＝</p>
+<div style="display:flex;flex-direction:column;padding:0px 6px"><p style="font-size:44px;line-height:1.2;text-align:center">12<i>ab</i></p><div style="border-top:3px solid #1F2A37"><p style="font-size:44px;line-height:1.2;text-align:center">3<i>a</i></p></div></div>
+<p style="font-size:46px;line-height:1.4">＝4<i>b</i></p>
+</div>
+<p style="font-size:46px;line-height:1.4">　　または、わる式の <span style="color:#C0392B"><b>逆数</b></span> をかけて計算する。</p>
+<p style="font-size:46px;line-height:1.4">同じ文字のかけ算は、<span style="color:#C0392B"><b>累乗</b></span>で表す。　<i>a</i>×<i>a</i>＝<i>a</i>²</p>
+<p style="font-size:46px;line-height:1.4">「÷2<i>x</i>」は、2<i>x</i> 全体でわることを表す。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。乗法は「係数の積×文字の積」。除法は、わる式を分数の分母に書いて約分する。または、逆数をかける。「÷2x」は 2x 全体でわる（2 でわって、さらに x をかけるのではない）。</aside>
+</section>
+<section id="s04-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+</div>
+<p style="font-size:52px;font-weight:500;line-height:1.5">次の計算をしよう。</p>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:3px solid #1B7F5C;border-radius:20px;padding:32px 56px">
+<p style="font-size:56px;line-height:1.5">（1）<u>　　</u><i>x</i>×(−<u>　　</u><i>y</i>)</p>
+<p style="font-size:56px;line-height:1.5">（2）(−<u>　　</u><i>a</i>)²</p>
+<p style="font-size:56px;line-height:1.5">（3）<u>　　</u><i>x</i>²÷<u>　　</u><i>x</i></p>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#6B7480">【乗法】（1）（2）　　【除法】（3）を、分数の形にして約分する。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+<aside>【解説 5分・例題】乗法・累乗・除法を1問ずつ解く。除法は、分数の形にして約分して見せる。わる式が数のときは、逆数をかける書き方も見せる。空欄の数は、先生が言ってから書かせる。発問：(−2a)² は、−2a を何回かけるだろう。／約分すると、文字はどうなるだろう。　想定される反応：(−2a)×(−2a) と書き直す。約分で文字が消える。</aside>
+</section>
+<section id="s04-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:32px 56px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">乗法</p>
+<p style="font-size:54px;line-height:1.4;color:#C0392B">（1）4<i>x</i>×(−3<i>y</i>)＝4×(−3)×<i>x</i>×<i>y</i>＝<b>−12<i>xy</i></b></p>
+<p style="font-size:54px;line-height:1.4;color:#C0392B">（2）(−2<i>a</i>)²＝(−2<i>a</i>)×(−2<i>a</i>)＝<b>4<i>a</i>²</b></p>
+<p style="font-size:34px;font-weight:700;color:#6B7480">除法</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:8px">
+<p style="font-size:54px;line-height:1.4;color:#C0392B">（3）6<i>x</i>²÷2<i>x</i>＝</p>
+<div style="display:flex;flex-direction:column;padding:0px 6px"><p style="font-size:52px;line-height:1.2;text-align:center;color:#C0392B">6<i>x</i>²</p><div style="border-top:3px solid #C0392B"><p style="font-size:52px;line-height:1.2;text-align:center;color:#C0392B">2<i>x</i></p></div></div>
+<p style="font-size:54px;line-height:1.4;color:#C0392B">＝<b>3<i>x</i></b></p>
+</div>
+<p style="font-size:40px;line-height:1.4;color:#C0392B">（わる式が数のときは、逆数をかけてもよい）　12<i>x</i>÷4＝12<i>x</i>×1⁄4＝3<i>x</i></p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。（1）係数どうし、文字どうしをかける。（2）累乗は、同じものを2回かける形に書き直してから計算する。（3）分数の形にして約分する。わる式が数のときは、逆数をかけてもよい。</aside>
+</section>
+<section id="s04-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:6px">
+<p style="font-size:46px;font-weight:700;line-height:1.35">8<i>ab</i>÷(−</p>
+<div style="display:flex;flex-direction:column;padding:0px 4px"><p style="font-size:38px;font-weight:700;line-height:1.15;text-align:center">2</p><div style="border-top:3px solid #1F2A37"><p style="font-size:38px;font-weight:700;line-height:1.15;text-align:center">3</p></div></div>
+<p style="font-size:46px;font-weight:700;line-height:1.35"><i>a</i>) を、「−</p>
+<div style="display:flex;flex-direction:column;padding:0px 4px"><p style="font-size:38px;font-weight:700;line-height:1.15;text-align:center">3</p><div style="border-top:3px solid #1F2A37"><p style="font-size:38px;font-weight:700;line-height:1.15;text-align:center">2</p></div></div>
+<p style="font-size:46px;font-weight:700;line-height:1.35"><i>a</i> をかける」として計算した人がいた。</p>
+</div>
+<p style="font-size:46px;font-weight:700;line-height:1.35">この計算は、正しいだろうか。確かめて、正しい計算のしかたを説明しよう。</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:10px 28px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">①</p>
+<p style="font-size:44px;line-height:1.4">この計算は、正しいだろうか。どうやって確かめたか、書こう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:10px 28px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">②</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:6px">
+<p style="font-size:44px;line-height:1.4">8<i>ab</i>÷(−</p>
+<div style="display:flex;flex-direction:column;padding:0px 4px"><p style="font-size:38px;line-height:1.15;text-align:center">2</p><div style="border-top:3px solid #1F2A37"><p style="font-size:38px;line-height:1.15;text-align:center">3</p></div></div>
+<p style="font-size:44px;line-height:1.4"><i>a</i>) を、正しく計算しよう。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:10px 28px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">③</p>
+<p style="font-size:44px;line-height:1.4">まちがえないための、くふうを書こう。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:10px 28px">
+<p style="font-size:34px;font-weight:700;color:#D9730D;white-space:nowrap">発展<br>（解き終わった人は）</p>
+<p style="font-size:34px;line-height:1.4">単項式×単項式の次数は、もとの 2つの単項式の次数と、<br>どんな関係があるだろう。例をいくつか計算して、考えよう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">式の計算　第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+<aside>【演習 23分・考えよう】進め方：基礎（個人、5分）→ 終わった人から考えようへ。立ち歩きOK。解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。標準は、考えようと合わせて学び合い（14分）。ヒントを出す順：1）a＝3、b＝2 を代入して、8ab÷(−(2/3)a) の値を求める。2）「−(3/2)a をかける」計算の値と、くらべる。3）逆数は、かけて 1 になる式。−(2/3)a にかけて 1 になる式を、さがす。判断：確かめ方で止まる→ヒント1／逆数で止まる→ヒント2・3／残り5分→指名で説明。答えは言わない。方向性（最後に一言）：「自分の考えを、数を入れて確かめてみよう。次の時間は、かけ算とわり算が混じった式を、まとめて計算するよ。」</aside>
+</section>
+<section id="s04-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">文字式どうしのかけ算・わり算を、考えて計算しよう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">係数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">累乗</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">約分</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">逆数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">分数の形</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">式の計算　第4時　文字式どうしのかけ算・わり算を、考えて計算しよう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。口で言う。ワークシートと演習プリントを回収（未完成でも出す）。今日の小テストは、次時のはじめ用。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>
