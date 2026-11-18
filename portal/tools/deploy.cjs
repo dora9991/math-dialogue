@@ -13,7 +13,7 @@
      /portal/             生徒の入口（index.html）・先生用（teacher.html）
      /quiz/ /applied/ /home/   これまでのツール（中身はそのまま。生徒画面にだけ「← 数学ポータル」を足す）
      robots.txt・_headers  検索に出ないようにする
-   README・schema.sql・tools は出さない。
+   README・SQL・tools は出さない。
 
    公開先の URL：https://math-portal.pages.dev/（生徒）／ https://math-portal.pages.dev/portal/teacher.html（先生） */
 const fs = require('fs');
@@ -24,7 +24,9 @@ const { spawnSync } = require('child_process');
 const PROJECT = 'math-portal';
 const root = path.resolve(__dirname, '..', '..');
 const TOOLS = ['portal', 'quiz', 'applied', 'home'];
-const SKIP = new Set(['README.md', 'schema.sql', 'tools', '.DS_Store']);
+// 各ツールの一番上にある README・SQL（schema.sql や quiz/security_patch.sql）と tools は出さない
+const SKIP = new Set(['tools', '.DS_Store']);
+const skipTop = name => SKIP.has(name) || /\.(md|sql)$/.test(name);
 // 生徒が使う画面にだけ「← 数学ポータル」を足す（../portal/back.js を読み込ませる）
 const BACK_LINK = ['quiz/index.html', 'applied/challenge.html', 'home/index.html'];
 
@@ -46,7 +48,7 @@ if (outArg) {
 function copyDir(src, dst, top) {
   fs.mkdirSync(dst, { recursive: true });
   for (const name of fs.readdirSync(src)) {
-    if (SKIP.has(name) && (top || name === '.DS_Store')) continue;
+    if (top ? skipTop(name) : name === '.DS_Store') continue;
     const s = path.join(src, name), d = path.join(dst, name);
     if (fs.statSync(s).isDirectory()) copyDir(s, d, false);
     else fs.copyFileSync(s, d);

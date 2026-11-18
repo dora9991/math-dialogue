@@ -62,9 +62,9 @@ Classi のような「ログインすれば、今日やることが全部見え�
 
 リポジトリのいちばん上で（portal は `../quiz` などを読むため）:
 ```bash
-python3 -m http.server 8793
+python3 -m http.server 8798
 ```
-→ `http://localhost:8793/portal/`（生徒）／ `.../portal/teacher.html`（先生）。
+→ `http://localhost:8798/portal/`（生徒）／ `.../portal/teacher.html`（先生）。
 「← 数学ポータル」のリンクは、公開用に組み立てたときだけ出る。組み立てた中身は `node portal/tools/deploy.cjs --out <フォルダ>` で見られる。
 ※ config.js は本番の Supabase につながっている（ほかのツールと同じ）。
 
