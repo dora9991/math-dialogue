@@ -1,0 +1,2030 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>体育館よやく</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%230a6f50%22/%3E%3Crect x=%225%22 y=%229%22 width=%2222%22 height=%2214%22 rx=%221.5%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%221.8%22/%3E%3Cpath d=%22M16 9v14%22 stroke=%22%23fff%22 stroke-width=%221.8%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%223%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%221.8%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap">
+<style>
+/* 体育館よやく：見た目。
+   レイアウト：上に画面の切りかえと「きょう」。その下に、体育館の床とコートラインを思わせる細い帯。
+   本体は、日付を行・時間帯を列にした時間割。スマホでは日付ごとに縦に積む。
+   色：コートラインから。緑＝使える・確定、黄＝申込・確定待ち、紺＝定期枠・土曜、赤＝違反・取り消し・日曜。 */
+:root {
+  --paper: #edf1ef;
+  --card: #ffffff;
+  --ink: #16202a;
+  --ink2: #4e5d69;
+  --rule: #d2d9d6;
+  --rule2: #e4e9e7;
+  --court: #0a6f50;
+  --court-ink: #ffffff;
+  --court-soft: #dcefe6;
+  --gold: #976400;
+  --gold-soft: #faedcc;
+  --navy: #26467c;
+  --navy-soft: #e2e9f5;
+  --red: #b3372a;
+  --red-soft: #f8e3df;
+  --floor: #d9b47e;
+  --shadow: rgb(16 32 26 / .14);
+  --f-disp: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  --f-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic", Meiryo, system-ui, sans-serif;
+  --f-data: "BIZ UDGothic", ui-monospace, Menlo, Consolas, monospace;
+  --rad: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #10161a; --card: #182027; --ink: #e3e9ed; --ink2: #9ba9b4; --rule: #2c3741; --rule2: #222c34;
+    --court: #3cbf90; --court-ink: #06140f; --court-soft: #163a2e; --gold: #e2b143; --gold-soft: #3a2f16;
+    --navy: #93b4ec; --navy-soft: #1c2a41; --red: #f0806f; --red-soft: #3c201c; --floor: #7a5c35; --shadow: rgb(0 0 0 / .45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #10161a; --card: #182027; --ink: #e3e9ed; --ink2: #9ba9b4; --rule: #2c3741; --rule2: #222c34;
+  --court: #3cbf90; --court-ink: #06140f; --court-soft: #163a2e; --gold: #e2b143; --gold-soft: #3a2f16;
+  --navy: #93b4ec; --navy-soft: #1c2a41; --red: #f0806f; --red-soft: #3c201c; --floor: #7a5c35; --shadow: rgb(0 0 0 / .45);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.75 var(--f-body); }
+body.locked { overflow: hidden; }
+button, input, select, textarea { font: inherit; color: inherit; }
+h1, h2, h3 { font-family: var(--f-disp); text-wrap: balance; margin: 0; }
+h2 { font-size: 19px; font-weight: 700; line-height: 1.45; }
+h3 { font-size: 16px; font-weight: 700; line-height: 1.5; }
+p { margin: 0; }
+small, .small { font-size: 13px; }
+.muted { color: var(--ink2); }
+.mono, code { font-family: var(--f-data); font-variant-numeric: tabular-nums; }
+code { background: var(--rule2); padding: 1px 6px; border-radius: 4px; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--court) 55%, transparent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---- 上の帯 ---- */
+.top { background: var(--card); border-bottom: 1px solid var(--rule); }
+.top-in, .clock-in, .wrap {
+  max-width: 1160px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.top-in { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding-block: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
+.brand .name { font: 900 20px/1.2 var(--f-disp); letter-spacing: .02em; }
+.brand .sub { font-size: 12px; color: var(--ink2); }
+.logo { width: 40px; height: 26px; flex: none; fill: var(--court-soft); stroke: var(--court); stroke-width: 1.6; }
+.logo path, .logo line, .logo circle { fill: none; }
+.views { display: flex; gap: 3px; padding: 3px; background: var(--rule2); border-radius: 10px; }
+.view { border: 0; background: transparent; padding: 6px 14px; border-radius: 7px; font-weight: 700; color: var(--ink2); cursor: pointer; }
+.view.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px var(--shadow); }
+.clock { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.clock .k { font-size: 12px; color: var(--ink2); }
+.floor { height: 6px; background: linear-gradient(var(--court) 0 2px, var(--floor) 2px); }
+.clock-panel { border-top: 1px solid var(--rule2); background: var(--paper); }
+.clock-in { padding-block: 14px; display: grid; gap: 12px; }
+.reset { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--red); font-size: 13px; }
+
+/* ---- 本体 ---- */
+.wrap { padding-block: 20px 72px; display: grid; gap: 16px; }
+.wrap > * { min-width: 0; }
+.card { background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card > *, .sec > *, .hot-slot > *, .kuji > *, .block > * { min-width: 0; }
+.card.attn { border-color: var(--gold); box-shadow: inset 4px 0 0 var(--gold); }
+.grid2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); align-items: start; }
+.grid2 > * { min-width: 0; }
+.subbar { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 20px; border-bottom: 1px solid var(--rule); }
+.subbar .tabs { border-bottom: 0; }
+.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.tab { border: 0; background: none; padding: 10px 12px; border-bottom: 3px solid transparent; font-weight: 700; color: var(--ink2); white-space: nowrap; cursor: pointer; }
+.tab.on { color: var(--ink); border-color: var(--court); }
+.pick { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink2); padding-bottom: 8px; min-width: 0; }
+.pick select { max-width: min(78vw, 420px); }
+select, input:not([type="checkbox"]):not([type="radio"]), textarea {
+  background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 8px; min-width: 0; max-width: 100%;
+}
+textarea { width: 100%; font-family: var(--f-data); font-size: 12px; line-height: 1.5; resize: vertical; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.toolbar .pick { padding-bottom: 0; }
+.seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--rule2); border-radius: 9px; flex-wrap: wrap; }
+.seg button { border: 0; background: transparent; padding: 4px 12px; border-radius: 6px; font-weight: 700; font-size: 14px; color: var(--ink2); cursor: pointer; }
+.seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px var(--shadow); }
+.num-badge { display: inline-block; min-width: 1.6em; padding: 0 5px; border-radius: 999px; background: var(--red); color: var(--card); font-size: 11px; line-height: 1.6; text-align: center; }
+
+/* ---- ボタン・印 ---- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--court); background: var(--court); color: var(--court-ink); font-weight: 700; line-height: 1.4; cursor: pointer; text-align: center; }
+.btn.ghost { background: transparent; color: var(--court); }
+.btn.warn { background: transparent; color: var(--red); border-color: var(--red); }
+.btn.sm { padding: 4px 10px; font-size: 13px; }
+.btn.stack { flex-direction: column; gap: 0; }
+.btn.stack small { font-weight: 400; font-size: 11px; color: var(--ink2); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn .court { width: 20px; height: 13px; }
+.row-btn { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pill { display: inline-flex; align-items: center; padding: 0 9px; border-radius: 999px; font-size: 12px; line-height: 1.7; background: var(--rule2); color: var(--ink2); white-space: nowrap; font-weight: 700; }
+.pill.ok { background: var(--court-soft); color: var(--court); }
+.pill.wait { background: var(--gold-soft); color: var(--gold); }
+.pill.reg { background: var(--navy-soft); color: var(--navy); }
+.pill.bad { background: var(--red-soft); color: var(--red); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.court { width: 26px; height: 16px; vertical-align: -3px; flex: none; }
+.court .bg { fill: none; stroke: currentColor; stroke-width: 1.4; }
+.court .on { fill: currentColor; opacity: .28; }
+.court line, .court circle { fill: none; stroke: currentColor; stroke-width: 1.2; }
+.warn { color: var(--red); }
+.okmsg { color: var(--court); font-weight: 700; }
+.badmsg { color: var(--red); font-weight: 700; }
+.callout { background: var(--court-soft); border-radius: var(--rad); padding: 10px 14px; }
+.banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; background: var(--gold-soft); border: 1px solid var(--gold); border-radius: 10px; padding: 10px 14px; }
+.phase { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 14px; border-radius: var(--rad); background: var(--card); border: 1px solid var(--rule); }
+.phase.wait { border-color: var(--gold); }
+.phase.ok { border-color: var(--court); }
+
+/* ---- しくみ ---- */
+.hero { display: grid; gap: 14px; padding-block: 12px 4px; max-width: 760px; }
+.eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .14em; color: var(--court); }
+.hero h1 { font-size: clamp(27px, 5.2vw, 42px); font-weight: 900; line-height: 1.28; letter-spacing: .01em; }
+.lead { font-size: 16px; line-height: 1.9; max-width: 42em; }
+.block { display: grid; gap: 14px; padding-block: 20px; border-top: 1px solid var(--rule); }
+.block.two { grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 20px 32px; align-items: start; }
+.block.two > div { display: grid; gap: 12px; min-width: 0; }
+.block p, .block li { max-width: 46em; }
+.layers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 12px; }
+.layer { background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; display: grid; gap: 6px; align-content: start; position: relative; overflow: hidden; }
+.layer::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--court); }
+.layer:nth-child(2)::before { background: var(--gold); }
+.layer:nth-child(3)::before { background: var(--navy); }
+.step { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--ink2); }
+.example { background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; }
+.facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.facts li { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: baseline; }
+.facts li b { font-size: 26px; line-height: 1.1; color: var(--court); min-width: 1.5em; text-align: right; }
+.facts li span { grid-column: 2; font-size: 14px; color: var(--ink2); }
+.facts.row { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.dots { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.note { color: var(--ink2); }
+
+/* ---- 日程（流れ） ---- */
+.tl { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 6px; }
+.tl li { position: relative; padding: 10px 12px 10px; border-radius: var(--rad); background: var(--card); border: 1px solid var(--rule); display: grid; gap: 2px; }
+.tl li b { font-size: 14px; }
+.tl li span { font-size: 13px; color: var(--ink2); }
+.tl li.done { background: transparent; border-style: dashed; color: var(--ink2); }
+.tl li.now { border-color: var(--court); box-shadow: inset 0 3px 0 var(--court); }
+.tl li em { font-style: normal; font-size: 11px; font-weight: 700; color: var(--court-ink); background: var(--court); border-radius: 4px; padding: 0 6px; justify-self: start; }
+
+/* ---- 時間割 ---- */
+.legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--ink2); }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.legend .u.reg { color: var(--navy); font-weight: 700; }
+.legend .u.pend { color: var(--gold); font-weight: 700; }
+.sw { width: 16px; height: 12px; border-radius: 3px; border: 1px solid var(--rule); display: inline-block; }
+.cal { display: grid; gap: 4px; }
+.cal .row { display: grid; grid-template-columns: 5.2em repeat(var(--cols), minmax(0, 1fr)); gap: 4px; }
+.cal .row.head { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--paper); padding-block: 4px; font-size: 13px; font-weight: 700; color: var(--ink2); }
+.cal .row.past { opacity: .62; }
+.dc { display: flex; flex-direction: column; justify-content: center; padding: 2px 6px; line-height: 1.3; }
+.dc b { font-size: 19px; }
+.dc span { font-size: 12px; }
+.dc i { font-style: normal; font-size: 11px; font-weight: 700; color: var(--court-ink); background: var(--court); border-radius: 4px; padding: 0 5px; align-self: flex-start; margin-top: 2px; }
+.dc.sat { color: var(--navy); }
+.dc.sun { color: var(--red); }
+.closed-msg { grid-column: 2 / -1; display: flex; align-items: center; padding: 8px 12px; border-radius: 6px; background: var(--rule2); color: var(--ink2); font-size: 13px; }
+.cell { display: flex; flex-direction: column; gap: 3px; min-height: 66px; min-width: 0; padding: 6px 8px; text-align: left; border-radius: 6px; border: 1px solid var(--rule); background: var(--card); cursor: pointer; line-height: 1.35; }
+.cell:hover { border-color: var(--ink2); }
+.cell.none { visibility: hidden; }
+.cell .tm { display: flex; gap: 6px; font-size: 11px; color: var(--ink2); }
+.cell .tm b { display: none; }
+.cell .ls { display: grid; gap: 1px; min-width: 0; }
+.cell .u { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell .u i { font-style: normal; font-family: var(--f-data); font-size: 10px; display: inline-block; width: 1.5em; color: var(--ink2); }
+.cell .u.open { color: var(--court); }
+.cell .u.reg { color: var(--navy); }
+.cell .u.pend { color: var(--gold); font-weight: 700; }
+.cell .u.mine { font-weight: 700; }
+.cell .bd { display: flex; flex-wrap: wrap; gap: 3px; margin-top: auto; }
+.cnt, .me { font-size: 11px; font-weight: 700; border-radius: 4px; padding: 0 5px; background: var(--rule2); color: var(--ink2); }
+.cnt.hot { background: var(--red-soft); color: var(--red); }
+.me { background: var(--gold-soft); color: var(--gold); }
+.me.ok { background: var(--court-soft); color: var(--court); }
+.me.lost { background: var(--rule2); color: var(--ink2); }
+.t-can { border-color: var(--court); background: var(--court-soft); }
+.t-applied { border: 1.5px dashed var(--gold); background: var(--gold-soft); }
+.t-mine { border-color: var(--court); background: var(--court); color: var(--court-ink); }
+.t-mine .u, .t-mine .u.reg, .t-mine .u.open, .t-mine .tm, .t-mine .u i { color: var(--court-ink); }
+.t-pend { border: 1.5px solid var(--gold); background: var(--gold-soft); }
+.t-full { background: var(--rule2); }
+.t-block { background: repeating-linear-gradient(135deg, var(--rule2) 0 6px, transparent 6px 12px), var(--card); color: var(--ink2); }
+.t-reg { background: var(--navy-soft); border-color: var(--navy); }
+@media (max-width: 720px) {
+  .cal .row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cal .row.head { display: none; }
+  .dc { grid-column: 1 / -1; flex-direction: row; align-items: baseline; gap: 8px; padding: 8px 2px 0; }
+  .closed-msg { grid-column: 1 / -1; }
+  .cell.none { display: none; }
+  .cell .tm b { display: inline; color: var(--ink); }
+  .t-mine .tm b { color: var(--court-ink); }
+}
+
+/* ---- 表・数字 ---- */
+.tw { overflow-x: auto; max-width: 100%; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 7px 10px; border-bottom: 1px solid var(--rule2); text-align: left; white-space: nowrap; vertical-align: middle; }
+thead th { font-size: 12px; color: var(--ink2); font-weight: 700; border-bottom-color: var(--rule); }
+td.wrap { white-space: normal; min-width: 14em; font-size: 13px; color: var(--ink2); }
+.num { text-align: right; font-family: var(--f-data); font-variant-numeric: tabular-nums; }
+table.plain td, table.plain th { padding: 6px 8px; }
+.checks { display: flex; flex-wrap: wrap; gap: 4px 12px; white-space: normal; }
+.checks label { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; }
+.tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.tile { background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 12px 16px; display: grid; }
+.tile span { font-size: 13px; color: var(--ink2); }
+.tile b { font-size: 30px; line-height: 1.2; }
+.tile small { color: var(--ink2); }
+.tile.ok b { color: var(--court); }
+.heat td { text-align: center; background: color-mix(in srgb, var(--red) calc(var(--v, 0) * 1%), var(--card)); min-width: 5.2em; }
+.heat td b { display: block; font-size: 16px; }
+.heat td small { display: block; font-size: 11px; color: var(--ink2); font-family: var(--f-data); }
+.heat td.hot, .heat td.hot small { color: #ffffff; }
+.heat td.na { background: transparent; color: var(--ink2); }
+.heat th[scope="row"] { font-size: 13px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; }
+.kv dt { color: var(--ink2); font-size: 13px; }
+.kv dd { margin: 0; min-width: 0; }
+.meter { display: inline-block; width: 80px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--red) calc(var(--v) * 1%), var(--rule2) 0); vertical-align: middle; }
+.months, .rows, .notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.months li { display: grid; gap: 6px; padding: 10px 0; border-bottom: 1px solid var(--rule2); justify-items: start; }
+.months li:last-child { border-bottom: 0; }
+.rows li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--rule2); }
+.rows li small { display: block; color: var(--ink2); }
+.notes li { display: grid; grid-template-columns: 3.4em 1fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--rule2); font-size: 14px; }
+.notes li span { color: var(--ink2); }
+.notes li:last-child, .rows li:last-child { border-bottom: 0; }
+
+/* ---- フォーム ---- */
+.form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 14px; }
+.form label, .inline label { display: grid; gap: 4px; font-size: 13px; color: var(--ink2); min-width: 0; }
+.form label.grow { flex: 1 1 220px; }
+.form label.grow input, .form label.grow select, .form label.grow textarea { width: 100%; }
+.inline { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; }
+.nums { display: grid; gap: 8px; }
+.num-in { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 12px; font-size: 14px; padding: 4px 0; border-bottom: 1px dashed var(--rule2); }
+.num-in > span:last-child { display: flex; align-items: center; gap: 6px; color: var(--ink2); }
+.num-in input[type="number"] { width: 5.2em; text-align: right; font-family: var(--f-data); }
+
+/* ---- くじ ---- */
+.kuji { display: grid; gap: 6px; margin-top: 4px; }
+.kuji .track { position: relative; padding-top: 8px; }
+.kuji .bar { display: flex; min-height: 44px; border-radius: 6px; overflow: hidden; border: 1px solid var(--rule); }
+.kuji .seg { flex-basis: 0; min-width: 0; padding: 3px 6px; background: var(--rule2); border-right: 1px solid var(--card); display: flex; flex-direction: column; justify-content: center; font-size: 11px; line-height: 1.3; }
+.kuji .seg:last-child { border-right: 0; }
+.kuji .seg b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kuji .seg.win { background: var(--court); color: var(--court-ink); }
+.kuji .pin { position: absolute; top: 0; bottom: -4px; width: 2px; margin-left: -1px; background: var(--ink); }
+.kuji .pin::before { content: ""; position: absolute; top: 0; left: -5px; border: 6px solid transparent; border-top-color: var(--ink); border-bottom: 0; }
+.kuji .cap { font-size: 13px; }
+.kuji.demo .bar { min-height: 52px; }
+.kuji1 { font-size: 14px; color: var(--ink2); }
+.hot-slot { display: grid; gap: 4px; padding: 10px 0; border-top: 1px solid var(--rule2); }
+
+/* ---- コマの詳しい画面 ---- */
+.sheet-bg { position: fixed; inset: 0; z-index: 20; background: rgb(8 16 13 / .5); }
+.sheet {
+  position: fixed; z-index: 21; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(600px, calc(100vw - 32px)); max-height: calc(100% - 48px); overflow: auto;
+  background: var(--card); border-radius: 14px; padding: 18px 20px 22px; display: grid; gap: 12px; box-shadow: 0 18px 50px var(--shadow);
+}
+.sheet-h { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.sheet-h h2 { font-size: 20px; }
+.sheet-h h2:focus { outline: none; }
+.sheet-h p { font-size: 13px; color: var(--ink2); margin-top: 2px; }
+.x { border: 0; background: var(--rule2); width: 36px; height: 36px; border-radius: 50%; font-size: 20px; line-height: 1; cursor: pointer; flex: none; }
+.sec { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--rule2); }
+.sec.act { gap: 10px; }
+.units { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.units li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.units .ul { display: inline-flex; align-items: center; gap: 6px; min-width: 5.6em; font-size: 13px; color: var(--ink2); }
+.blockmsg { padding: 10px 12px; border-radius: 6px; background: repeating-linear-gradient(135deg, var(--rule2) 0 6px, transparent 6px 12px); }
+.why { margin: 0; padding-left: 1.2em; font-size: 13px; color: var(--red); display: grid; gap: 2px; }
+@media (max-width: 640px) {
+  .sheet {
+    left: 0; right: 0; bottom: 0; top: auto; transform: none; width: auto; max-height: 88%;
+    border-radius: 16px 16px 0 0;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ---- お知らせ（下に出る） ---- */
+.toast {
+  position: fixed; z-index: 40; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px);
+  max-width: min(560px, calc(100vw - 32px)); padding: 10px 16px; border-radius: 10px; background: var(--ink); color: var(--paper);
+  font-size: 14px; box-shadow: 0 8px 24px var(--shadow); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.bad { background: var(--red); color: #ffffff; }
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ---- js/rules.js ---- */
+/* 体育館よやく：ルールの計算（日付・祝日・日程・くじの本数・空き区画・申込や予約ができるか）。画面を持たない。
+   ブラウザでは window.GB に入る。Node では require すると同じものが返る（tools/test.cjs で検査する）。 */
+(function (G) {
+  'use strict';
+  const GB = G.GB = G.GB || {};
+
+  /* ---- 日付（'YYYY-MM-DD' の文字列であつかう。時差に左右されないよう UTC で計算する） ---- */
+  const pad = n => String(n).padStart(2, '0');
+  const utc = s => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
+  const ymd = t => { const d = new Date(t); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
+  const D = GB.date = {
+    pad,
+    add: (s, n) => ymd(utc(s) + n * 864e5),
+    diff: (a, b) => Math.round((utc(a) - utc(b)) / 864e5),            // a − b（日）
+    wd: s => new Date(utc(s)).getUTCDay(),                             // 0＝日 … 6＝土
+    ym: s => s.slice(0, 7),
+    addMonths: (ym, n) => { const t = +ym.slice(0, 4) * 12 + +ym.slice(5, 7) - 1 + n; return `${Math.floor(t / 12)}-${pad(t % 12 + 1)}`; },
+    days: ym => new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5, 7), 0)).getUTCDate(),
+    on: (ym, d) => `${ym}-${pad(Math.min(d, D.days(ym)))}`,            // その月の d 日（月末をこえたら月末）
+    list: ym => Array.from({ length: D.days(ym) }, (_, i) => `${ym}-${pad(i + 1)}`),
+    WD: ['日', '月', '火', '水', '木', '金', '土'],
+  };
+  GB.md = s => `${+s.slice(5, 7)}/${+s.slice(8, 10)}`;
+  GB.mdw = s => `${GB.md(s)}（${D.WD[D.wd(s)]}）`;
+  GB.ymLabel = ym => `${+ym.slice(5, 7)}月分`;
+
+  /* ---- 祝日（内閣府の決まりどおりに計算する。春分・秋分は 1980〜2099 年の近似式） ---- */
+  const holCache = {};
+  function holidays(y) {
+    if (holCache[y]) return holCache[y];
+    const H = {}, put = (m, d, name) => { H[`${y}-${pad(m)}-${pad(d)}`] = name; };
+    const monday = (m, n) => 1 + (8 - new Date(Date.UTC(y, m - 1, 1)).getUTCDay()) % 7 + (n - 1) * 7;   // m 月の第 n 月曜
+    const eq = base => Math.floor(base + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4));
+    put(1, 1, '元日'); put(1, monday(1, 2), '成人の日'); put(2, 11, '建国記念の日'); put(2, 23, '天皇誕生日');
+    put(3, eq(20.8431), '春分の日'); put(4, 29, '昭和の日'); put(5, 3, '憲法記念日'); put(5, 4, 'みどりの日'); put(5, 5, 'こどもの日');
+    put(7, monday(7, 3), '海の日'); put(8, 11, '山の日'); put(9, monday(9, 3), '敬老の日'); put(9, eq(23.2488), '秋分の日');
+    put(10, monday(10, 2), 'スポーツの日'); put(11, 3, '文化の日'); put(11, 23, '勤労感謝の日');
+    for (const d of Object.keys(H).sort()) {                          // 国民の休日：祝日にはさまれた日
+      const m = D.add(d, 1);
+      if (!H[m] && H[D.add(d, 2)] && D.wd(m) !== 0) H[m] = '国民の休日';
+    }
+    for (const d of Object.keys(H).sort()) if (D.wd(d) === 0) {      // 振替休日：日曜の祝日のあと、最初の祝日でない日
+      let m = D.add(d, 1);
+      while (H[m]) m = D.add(m, 1);
+      H[m] = '振替休日';
+    }
+    return (holCache[y] = H);
+  }
+  GB.holiday = s => holidays(+s.slice(0, 4))[s] || '';
+  GB.dayType = s => (D.wd(s) === 0 || D.wd(s) === 6 || GB.holiday(s)) ? 'holiday' : 'weekday';
+
+  /* ---- 区分と、ルールの既定値（市役所の「ルール」画面で変えられる） ---- */
+  GB.TYPES = { club: '認定地域クラブ', youth: '子どもの団体', general: '一般の団体', commercial: '民間スクール等（営利）' };
+  GB.TYPE_SHORT = { club: '認定地域クラブ', youth: '子ども', general: '一般', commercial: '営利' };
+  GB.KINDS = { school: '学校体育館', city: '市の体育館' };
+  const slot = (id, label, start, end, prio = []) => ({ id, label, start, end, prio });
+  // 日程の既定値は、佐賀市の体育施設の予約（前月1〜9日に抽選申込・10日抽選・11〜15日に確定・16日から先着）にそろえた
+  GB.defaults = () => ({
+    lead: 1,                 // 何か月前に抽選するか（1＝利用月の前月）
+    applyStart: 1, applyEnd: 9, drawDay: 10, confirmEnd: 15, firstCity: 16, firstAll: 16,
+    bookUntil: 3,            // 先着の予約は、利用日の何日前まで
+    maxApps: 10,             // 抽選の申込（1団体・1か月）
+    maxWins: 4,              // 抽選で当たる上限（1団体・1か月）
+    maxTotal: 8,             // 抽選と先着の合計（1団体・1か月。定期枠は数えない）
+    maxRegular: 2,           // 定期枠は 1 団体につき週何コマまで
+    maxPerDay: 1,            // 1日に使えるコマ（1団体。定期枠もふくむ）
+    tickets: { club: 3, youth: 3, general: 2, commercial: 1 },   // くじの本数（区分ごとの基本）
+    bonusDistrict: 2,        // 地区内の体育館
+    bonusPriority: 2,        // 優先時間帯に、その対象の区分が申し込んだとき
+    bonusLoss: 1, lossMax: 2,            // 前回の抽選で1つも当たらなかった：1回につき +1（2回ぶんまで）
+    outsideLottery: false,   // 市外の団体も抽選に申し込めるか（学校体育館は、規則で市内の団体だけ）
+    commercialSchool: 'none',            // 営利の団体と学校体育館：'none' 使えない／'first' 抽選のあとの空きだけ（先着）／'lottery' 抽選も
+    regularMax: 50,          // 定期枠は、1週間のコマ（区画）の何％まで
+    freeCancelDays: 7,       // 利用日の何日前までのキャンセルは違反にしない
+    ptLate: 1, ptNoShow: 2, ptLimit: 3, suspendMonths: 1,
+    showCounts: true,        // 団体に、コマごとの申込の件数を見せる（混んでいるコマを避けてもらう）
+    closed: ['12-29', '12-30', '12-31', '01-01', '01-02', '01-03'],
+    slots: {
+      school: {
+        weekday: [slot('after', '放課後', '17:00', '19:00', ['club', 'youth']), slot('night', '夜', '19:00', '21:00')],
+        holiday: [slot('am', '午前', '09:00', '12:00'), slot('pm', '午後', '13:00', '17:00'), slot('night', '夜', '18:00', '21:00')],
+      },
+      city: {
+        weekday: [slot('am', '午前', '09:00', '12:00'), slot('pm', '午後', '13:00', '17:00'), slot('night', '夜', '18:00', '21:00')],
+        holiday: [slot('am', '午前', '09:00', '12:00'), slot('pm', '午後', '13:00', '17:00'), slot('night', '夜', '18:00', '21:00')],
+      },
+    },
+  });
+
+  // 日程の決まりとして成り立っているか（成り立たないときは、問題の文の配列）
+  GB.checkSettings = s => {
+    const out = [], days = [s.applyStart, s.applyEnd, s.drawDay, s.confirmEnd, s.firstCity, s.firstAll];
+    if (days.some(d => !Number.isInteger(d) || d < 1 || d > 28)) out.push('日程の日にちは 1〜28 の整数にしてください');
+    else if (!(s.applyStart <= s.applyEnd && s.applyEnd < s.drawDay && s.drawDay <= s.confirmEnd && s.confirmEnd < s.firstCity && s.firstCity <= s.firstAll))
+      out.push('日程は「申込の開始 ≦ 申込の締切 ＜ 抽選日 ≦ 確定の締切 ＜ 先着（市内） ≦ 先着（だれでも）」の順にしてください');
+    if (![1, 2].includes(s.lead)) out.push('抽選は、利用月の 1 か月前か 2 か月前にしてください');
+    for (const k of ['maxApps', 'maxWins', 'maxTotal', 'maxPerDay', 'maxRegular', 'ptLimit', 'suspendMonths'])
+      if (!Number.isInteger(s[k]) || s[k] < 1) out.push('上限と停止の数は 1 以上の整数にしてください');
+    if (s.maxWins > s.maxTotal) out.push('抽選の当選の上限は、合計の上限以下にしてください');
+    for (const t of Object.keys(GB.TYPES)) if (!Number.isInteger(s.tickets[t]) || s.tickets[t] < 1) out.push('区分ごとのくじの本数は 1 以上の整数にしてください');
+    for (const k of ['bonusDistrict', 'bonusPriority', 'bonusLoss', 'lossMax', 'freeCancelDays', 'ptLate', 'ptNoShow', 'bookUntil'])
+      if (!Number.isInteger(s[k]) || s[k] < 0) out.push('加える本数・日数・点数は 0 以上の整数にしてください');
+    if (!(s.regularMax >= 0 && s.regularMax <= 100)) out.push('定期枠の割合は 0〜100 ％にしてください');
+    return [...new Set(out)];
+  };
+
+  /* ---- 施設・コマ・定期枠 ---- */
+  GB.find = (list, id) => list.find(x => x.id === id) || null;
+  GB.units = fac => fac.areas >= 2 ? ['A', 'B'] : ['A'];
+  GB.closed = (st, date) => (st.settings.closed || []).includes(date.slice(5));
+  GB.slotsOn = (st, fac, date) => GB.closed(st, date) ? [] : ((st.settings.slots[fac.kind] || st.settings.slots.school)[GB.dayType(date)] || []);
+  GB.slot = (st, fac, date, slotId) => GB.slotsOn(st, fac, date).find(s => s.id === slotId) || null;
+  GB.time = s => `${s.start.replace(/^0/, '')}–${s.end.replace(/^0/, '')}`;
+  // 定期枠がその日にあるか（平日の定期枠は、祝日には休み）
+  GB.regularOn = (r, date) => D.wd(date) === r.weekday && date >= r.from && date <= r.to && (GB.dayType(date) === 'holiday') === (r.weekday === 0 || r.weekday === 6);
+
+  /* ---- 空き区画：学校行事・大会 → 定期枠 → 予約 の順にふさぐ ---- */
+  const LIVE = GB.LIVE = ['pending', 'confirmed', 'used', 'noshow'];
+  GB.occupancy = (st, fac, date, slotId) => {
+    const units = GB.units(fac), by = {};
+    const block = st.blocks.find(b => b.facilityId === fac.id && b.date === date && (!b.slotId || b.slotId === slotId)) || null;
+    const put = (half, item) => { for (const u of half ? [half] : units) if (!by[u]) by[u] = item; };
+    for (const r of st.regulars) if (r.facilityId === fac.id && r.slotId === slotId && GB.regularOn(r, date)) put(r.need === 'half' ? (r.half || 'A') : null, { kind: 'regular', orgId: r.orgId, ref: r });
+    for (const b of st.bookings) if (b.facilityId === fac.id && b.date === date && b.slotId === slotId && LIVE.includes(b.status)) put(b.half, { kind: 'booking', orgId: b.orgId, ref: b });
+    return { block, by, units, free: block ? [] : units.filter(u => !by[u]) };
+  };
+  GB.fits = (occ, need) => need === 'full' ? occ.free.length === occ.units.length : occ.units.length > 1 && occ.free.length > 0;
+
+  /* ---- くじの本数（区分の基本 ＋ 地区内 ＋ 優先時間帯 ＋ 前回はずれ） ---- */
+  GB.tickets = (st, org, fac, slot) => {
+    const s = st.settings, parts = [[GB.TYPE_SHORT[org.type], +s.tickets[org.type] || 0]];
+    if (org.districtId && org.districtId === fac.districtId) parts.push(['地区内', +s.bonusDistrict || 0]);
+    if (slot && (slot.prio || []).includes(org.type)) parts.push(['優先時間帯', +s.bonusPriority || 0]);
+    const n = Math.min(org.lossStreak || 0, +s.lossMax || 0);
+    if (n) parts.push([`前回はずれ${n > 1 ? `（${n}回）` : ''}`, n * (+s.bonusLoss || 0)]);
+    const list = parts.filter(p => p[1] > 0);
+    return { total: Math.max(1, list.reduce((a, p) => a + p[1], 0)), parts: list };
+  };
+
+  /* ---- 月の日程と、いまの段階 ---- */
+  GB.lotteryMonth = st => D.addMonths(D.ym(st.clock), st.settings.lead);
+  GB.schedule = (st, ym) => {
+    const s = st.settings, base = D.addMonths(ym, -s.lead), run = st.runs.find(r => r.month === ym) || null;
+    const sc = { month: ym, base, run, applyStart: D.on(base, s.applyStart), applyEnd: D.on(base, s.applyEnd), draw: D.on(base, s.drawDay),
+      confirmEnd: D.on(base, s.confirmEnd), firstCity: D.on(base, s.firstCity), firstAll: D.on(base, s.firstAll) };
+    if (run && run.confirmBy > sc.confirmEnd) {                        // 抽選が遅れたときは、確定と先着を後ろにずらす
+      sc.confirmEnd = run.confirmBy;
+      if (sc.firstCity <= sc.confirmEnd) sc.firstCity = D.add(sc.confirmEnd, 1);
+      if (sc.firstAll < sc.firstCity) sc.firstAll = sc.firstCity;
+    }
+    return sc;
+  };
+  GB.PHASE = { before: '受付前', apply: '抽選の申込期間', closed: '締切後（抽選待ち）', drawing: '抽選待ち', confirm: '当選の確定期間', settle: '先着の受付前', firstCity: '先着（市内の団体）', firstAll: '先着（だれでも）' };
+  GB.phase = (st, ym, today = st.clock) => {
+    const sc = GB.schedule(st, ym);
+    if (today < sc.applyStart) return 'before';
+    if (!sc.run) return today <= sc.applyEnd ? 'apply' : today < sc.draw ? 'closed' : 'drawing';
+    if (today <= sc.confirmEnd) return 'confirm';
+    if (today < sc.firstCity) return 'settle';
+    return today < sc.firstAll ? 'firstCity' : 'firstAll';
+  };
+
+  /* ---- 数える ---- */
+  GB.regularsOn = (st, date) => st.regulars.filter(r => GB.regularOn(r, date) && (() => { const f = GB.find(st.facilities, r.facilityId); return f && GB.slot(st, f, date, r.slotId); })());
+  GB.orgDayCount = (st, orgId, date) =>
+    GB.regularsOn(st, date).filter(r => r.orgId === orgId).length + st.bookings.filter(b => b.orgId === orgId && b.date === date && LIVE.includes(b.status)).length;
+  GB.monthCount = (st, orgId, ym) => st.bookings.filter(b => b.orgId === orgId && D.ym(b.date) === ym && LIVE.includes(b.status)).length;
+  GB.appCount = (st, orgId, ym) => st.apps.filter(a => a.orgId === orgId && a.month === ym && a.status === 'applied').length;
+  GB.suspended = (st, org) => !!(org.suspendUntil && st.clock < org.suspendUntil);
+  // 定期枠が、1週間のコマ（区画の数でかぞえる）の何％を使っているか（祝日は考えない）
+  GB.regularShare = (st, fac, extra = 0) => {
+    const sl = st.settings.slots[fac.kind] || st.settings.slots.school, n = GB.units(fac).length;
+    const total = (sl.weekday.length * 5 + sl.holiday.length * 2) * n;
+    const used = st.regulars.filter(r => r.facilityId === fac.id && r.to >= st.clock).reduce((a, r) => a + (r.need === 'half' ? 1 : n), 0) + extra;
+    return total ? Math.round(used / total * 100) : 0;
+  };
+
+  /* ---- 申込・予約ができない理由（できるときは ''）。
+          mode：'apply' 抽選の申込／'draw' 抽選のときの確かめ直し／'book' 先着の予約 ---- */
+  GB.blocker = (st, orgId, facId, date, slotId, need, mode) => {
+    const s = st.settings, org = GB.find(st.orgs, orgId), fac = GB.find(st.facilities, facId);
+    if (!org || !fac) return '団体または施設が見つかりません';
+    if (org.status !== 'approved') return '団体の登録がまだ承認されていません（市役所の承認が必要です）';
+    if (GB.suspended(st, org)) return `違反点数が上限に達したため、${GB.md(org.suspendUntil)} まで申込と予約を止めています`;
+    const sl = GB.slot(st, fac, date, slotId);
+    if (!sl) return 'この日は休館日か、このコマがありません';
+    if (need === 'half' && fac.areas < 2) return 'この体育館は半面に分けられません';
+    const ym = D.ym(date), sc = GB.schedule(st, ym), ph = GB.phase(st, ym), school = fac.kind === 'school';
+    if (school && !org.inCity) return '学校体育館を使えるのは、市内に住む・通う・働く人の団体です（学校開放の規則）';
+    if (mode === 'book') {
+      if (D.diff(date, st.clock) < Math.max(1, s.bookUntil)) return `先着の予約は、利用日の ${Math.max(1, s.bookUntil)} 日前までです`;
+      if (ph !== 'firstCity' && ph !== 'firstAll') return `この月の先着の予約は、抽選のあと ${GB.md(sc.firstCity)} からです`;
+      if (!org.inCity && ph === 'firstCity') return `市外の団体は ${GB.md(sc.firstAll)} から予約できます`;
+      if (school && org.type === 'commercial' && s.commercialSchool === 'none') return '営利目的の団体は、学校体育館を使えません';
+    } else {
+      if (mode === 'apply' && ph !== 'apply') return ph === 'before' ? `この月の抽選の申込は ${GB.md(sc.applyStart)}〜${GB.md(sc.applyEnd)} です` : 'この月の抽選の申込は締め切りました';
+      if (!org.inCity && !s.outsideLottery) return `市外の団体は抽選に申し込めません（${GB.md(sc.firstAll)} からの先着予約は使えます）`;
+      if (school && org.type === 'commercial' && s.commercialSchool !== 'lottery')
+        return s.commercialSchool === 'none' ? '営利目的の団体は、学校体育館を使えません' : '営利目的の団体は、学校体育館の抽選には申し込めません（抽選のあとの先着予約は使えます）';
+    }
+    if (mode === 'apply') {
+      if (st.apps.some(a => a.orgId === orgId && a.facilityId === facId && a.date === date && a.slotId === slotId && a.status === 'applied')) return 'このコマには申し込み済みです';
+      if (GB.appCount(st, orgId, ym) >= s.maxApps) return `抽選の申込は 1 か月 ${s.maxApps} 件までです`;
+    }
+    if (GB.orgDayCount(st, orgId, date) >= s.maxPerDay) return `この日はすでに使う予定があります（1日 ${s.maxPerDay} コマまで）`;
+    if (mode === 'book' && GB.monthCount(st, orgId, ym) >= s.maxTotal) return `1 か月に使えるのは ${s.maxTotal} コマまでです（定期枠は別）`;
+    const occ = GB.occupancy(st, fac, date, slotId);
+    if (occ.block) return `${occ.block.reason}のため使えません`;
+    if (!GB.fits(occ, need)) return need === 'full' && occ.free.length ? '半面しか空いていないので、全面は使えません' : '空いていません';
+    return '';
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = GB;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ---- js/lottery.js ---- */
+/* 体育館よやく：抽選。画面を持たない。
+   ・乱数は「シード」（文字列）から作る。同じ申込と同じシードなら、だれが何度やっても同じ結果になる（あとから再現して確かめられる）。
+   ・コマごとに、くじを引く。当たる確率は、くじの本数に比例する（7本と2本なら 7/9 と 2/9）。
+   ・コマを引く順番も乱数で決める。1か月の当選の上限・1日のコマ数の上限に達した団体は、そのあとのコマのくじから外れる。
+   ・半面に分けられる体育館は、半面ずつ（A面・B面）引く。同じコマで1団体が2区画当たることはない。 */
+(function (G) {
+  'use strict';
+  const GB = G.GB = G.GB || {};
+  const idn = id => +String(id).replace(/\D/g, '');
+
+  // シードの文字列から、0 以上 1 未満の乱数を順に返す関数を作る（cyrb53 でまぜて、mulberry32 で出す）
+  GB.rng = seed => {
+    let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (let i = 0; i < seed.length; i++) {
+      const c = seed.charCodeAt(i);
+      h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    let a = h1 >>> 0;
+    return () => {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+
+  // 抽選に入れる申込を、くじの本数つきで並べる。これを run.input に残すので、あとから同じ抽選をやり直せる
+  GB.lotteryInput = (st, ym) => {
+    const s = st.settings, items = [], invalid = [], capacity = {}, dayUsed = {}, count = {};
+    const apps = st.apps.filter(a => a.month === ym && a.status === 'applied').sort((a, b) => idn(a.id) - idn(b.id));
+    for (const a of apps) {
+      count[a.orgId] = (count[a.orgId] || 0) + 1;
+      const why = count[a.orgId] > s.maxApps ? `申込の上限（${s.maxApps} 件）をこえた分です` : GB.blocker(st, a.orgId, a.facilityId, a.date, a.slotId, a.need, 'draw');
+      if (why) { invalid.push({ appId: a.id, reason: why }); continue; }
+      const org = GB.find(st.orgs, a.orgId), fac = GB.find(st.facilities, a.facilityId);
+      const key = `${fac.id}|${a.date}|${a.slotId}`;
+      if (!capacity[key]) { const occ = GB.occupancy(st, fac, a.date, a.slotId); capacity[key] = { units: occ.units.length, free: occ.free }; }
+      const t = GB.tickets(st, org, fac, GB.slot(st, fac, a.date, a.slotId));
+      items.push({ appId: a.id, orgId: a.orgId, key, date: a.date, need: a.need, tickets: t.total, parts: t.parts });
+      const d = dayUsed[a.orgId] = dayUsed[a.orgId] || {};
+      if (d[a.date] === undefined) d[a.date] = GB.orgDayCount(st, a.orgId, a.date);
+    }
+    return { month: ym, items, invalid, capacity, dayUsed, maxWins: s.maxWins, maxPerDay: s.maxPerDay };
+  };
+
+  // 抽選する。input と seed だけで決まる（状態は変えない）
+  GB.draw = (input, seed) => {
+    const rnd = GB.rng(`${seed}|${input.month}`);
+    const items = input.items.map(x => ({ ...x, state: 'applied', seen: false, skip: '' }));
+    const byKey = {};
+    for (const it of items) (byKey[it.key] = byKey[it.key] || []).push(it);
+    const keys = Object.keys(byKey).sort().map(k => [k, rnd()]).sort((a, b) => a[1] - b[1]).map(x => x[0]);   // コマを引く順番
+    const free = {};
+    for (const k of keys) free[k] = input.capacity[k].free.slice();
+    const wins = {}, day = JSON.parse(JSON.stringify(input.dayUsed || {})), log = [];
+    const used = (o, d) => (day[o] && day[o][d]) || 0;
+    const fits = it => it.need === 'full' ? free[it.key].length === input.capacity[it.key].units : free[it.key].length > 0;
+    keys.forEach((k, order) => {
+      const here = new Set();                                          // このコマで当たった団体
+      for (;;) {
+        const cands = [];
+        for (const it of byKey[k]) {
+          if (it.state !== 'applied' || here.has(it.orgId)) continue;
+          const w = (wins[it.orgId] || 0) >= input.maxWins ? 'cap' : used(it.orgId, it.date) >= input.maxPerDay ? 'day' : fits(it) ? '' : 'fit';
+          if (w) { if (!it.skip) it.skip = w; } else cands.push(it);
+        }
+        if (!cands.length) break;
+        const total = cands.reduce((a, c) => a + c.tickets, 0);
+        const n = 1 + Math.floor(rnd() * total);                      // 1〜total の番号を引く
+        let acc = 0, win = cands[cands.length - 1];
+        for (const c of cands) c.seen = true;
+        for (const c of cands) { acc += c.tickets; if (n <= acc) { win = c; break; } }
+        win.state = 'won';
+        win.half = win.need === 'full' || input.capacity[k].units < 2 ? null : free[k][0];
+        free[k] = win.need === 'full' ? [] : free[k].slice(1);
+        wins[win.orgId] = (wins[win.orgId] || 0) + 1;
+        (day[win.orgId] = day[win.orgId] || {})[win.date] = used(win.orgId, win.date) + 1;
+        here.add(win.orgId);
+        log.push({ order: order + 1, key: k, n, total, cands: cands.map(c => [c.appId, c.tickets]), win: win.appId, half: win.half });
+      }
+    });
+    const results = {};
+    const CAP = `当選の上限（1か月 ${input.maxWins} コマ）に達したため`, DAY = `同じ日に、ほかのコマが当たったため（1日 ${input.maxPerDay} コマまで）`;
+    for (const it of items) {
+      if (it.state === 'won') { results[it.appId] = { status: 'won', half: it.half, tickets: it.tickets }; continue; }
+      const reason = it.seen ? 'くじではずれ' : it.skip === 'day' ? DAY : it.skip === 'cap' ? CAP : 'くじではずれ';
+      results[it.appId] = { status: 'lost', reason, tickets: it.tickets };
+    }
+    for (const x of input.invalid) results[x.appId] = { status: 'invalid', reason: x.reason };
+    return { results, log, wins };
+  };
+
+  // 1つのコマだけを何度も引いてみて、当たる見込み（％）を出す（上限などは考えない目安）
+  GB.odds = (cands, units, freeUnits, appId, times = 2000) => {
+    const rnd = GB.rng(`odds|${appId}|${cands.length}`);
+    let hit = 0;
+    for (let t = 0; t < times; t++) {
+      let left = freeUnits, pool = cands.slice();
+      while (pool.length) {
+        pool = pool.filter(c => c.need === 'full' ? left === units : left > 0);
+        if (!pool.length) break;
+        const total = pool.reduce((a, c) => a + c.tickets, 0);
+        let n = rnd() * total, w = pool[pool.length - 1];
+        for (const c of pool) { n -= c.tickets; if (n < 0) { w = c; break; } }
+        if (w.id === appId) { hit++; break; }
+        left -= w.need === 'full' ? units : 1;
+        pool = pool.filter(c => c !== w);
+      }
+    }
+    return Math.round(hit / times * 100);
+  };
+
+  // 残っている記録（input と seed）から抽選をやり直して、同じ結果になるかを確かめる
+  GB.verifyRun = run => {
+    const again = GB.draw(run.input, run.seed).results;
+    const ids = Object.keys(run.results);
+    return ids.length === Object.keys(again).length && ids.every(id => JSON.stringify(again[id]) === JSON.stringify(run.results[id]));
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = GB;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ---- js/actions.js ---- */
+/* 体育館よやく：状態を変える操作（申込・取り下げ・抽選・確定・キャンセル・先着の予約・学校の使用・利用の確認・違反点数・日付）。画面を持たない。
+   どの操作も { ok, msg } を返す。msg は画面にそのまま出す文。 */
+(function (G) {
+  'use strict';
+  const GB = G.GB = G.GB || {};
+  const D = GB.date, A = GB.act = {};
+  const nid = (st, p) => `${p}${++st.seq}`;
+  const notify = (st, orgId, text) => { st.notices.unshift({ id: nid(st, 'n'), orgId, at: st.clock, text }); };
+  const fail = msg => ({ ok: false, msg });
+  const where = (st, x) => {
+    const fac = GB.find(st.facilities, x.facilityId), sl = fac && GB.slot(st, fac, x.date, x.slotId);
+    return `${GB.mdw(x.date)} ${sl ? sl.label : ''}・${fac ? fac.name : ''}`;
+  };
+  A.where = where;
+
+  /* ---- 団体：抽選の申込・取り下げ ---- */
+  A.apply = (st, orgId, facId, date, slotId, need) => {
+    const why = GB.blocker(st, orgId, facId, date, slotId, need, 'apply');
+    if (why) return fail(why);
+    st.apps.push({ id: nid(st, 'a'), orgId, facilityId: facId, date, slotId, need, month: D.ym(date), status: 'applied', reason: '', at: st.clock });
+    return { ok: true, msg: `抽選に申し込みました（${GB.ymLabel(D.ym(date))} ${GB.appCount(st, orgId, D.ym(date))}/${st.settings.maxApps} 件）` };
+  };
+  A.withdraw = (st, appId) => {
+    const a = GB.find(st.apps, appId);
+    if (!a || a.status !== 'applied') return fail('この申込は取り下げられません');
+    if (GB.phase(st, a.month) !== 'apply') return fail('申込期間が終わったので、取り下げられません');
+    a.status = 'withdrawn';
+    return { ok: true, msg: '申込を取り下げました' };
+  };
+
+  /* ---- 市役所：抽選 ---- */
+  A.runLottery = (st, ym, seed) => {
+    const s = st.settings, sc0 = GB.schedule(st, ym);
+    if (sc0.run) return fail('この月の抽選はもう終わっています');
+    if (st.clock < sc0.applyStart) return fail(`この月の申込はまだ始まっていません（${GB.md(sc0.applyStart)} から）`);
+    seed = String(seed || '').trim();
+    if (!seed) return fail('シード（抽選に使う数字や言葉）を入れてください');
+    if (st.clock < sc0.draw) A.setClock(st, sc0.draw);                // デモ：申込を締め切って、抽選日まで進める
+    const confirmBy = st.clock > sc0.confirmEnd ? D.add(st.clock, s.confirmEnd - s.drawDay) : sc0.confirmEnd;
+    const input = GB.lotteryInput(st, ym), out = GB.draw(input, seed);
+    st.runs.push({ month: ym, seed, at: st.clock, confirmBy, input, results: out.results });
+    const tally = {};
+    for (const app of st.apps) {
+      const r = out.results[app.id];
+      if (!r || app.month !== ym || app.status !== 'applied') continue;
+      app.status = r.status; app.reason = r.reason || ''; app.tickets = r.tickets || null;
+      const t = tally[app.orgId] = tally[app.orgId] || { won: 0, lost: 0, invalid: 0 };
+      t[r.status]++;
+      if (r.status === 'won') st.bookings.push({ id: nid(st, 'b'), orgId: app.orgId, facilityId: app.facilityId, date: app.date, slotId: app.slotId, need: app.need, half: r.half, source: 'lottery', status: 'pending', at: st.clock, appId: app.id });
+    }
+    let won = 0;
+    for (const [orgId, t] of Object.entries(tally)) {
+      const org = GB.find(st.orgs, orgId);
+      won += t.won;
+      if (org && t.won + t.lost) org.lossStreak = t.won ? 0 : (org.lossStreak || 0) + 1;
+      notify(st, orgId, `${GB.ymLabel(ym)}の抽選：当選 ${t.won} 件・落選 ${t.lost} 件${t.invalid ? `・対象外 ${t.invalid} 件` : ''}。` + (t.won ? `${GB.md(confirmBy)} までに当選を確定してください（確定しないと取り消されます）。` : ''));
+    }
+    return { ok: true, msg: `${GB.ymLabel(ym)}を抽選しました（申込 ${input.items.length + input.invalid.length} 件 → 当選 ${won} 件）` };
+  };
+
+  /* ---- 団体：当選の確定・辞退・キャンセル・先着の予約 ---- */
+  A.confirm = (st, bookingId) => {
+    const b = GB.find(st.bookings, bookingId);
+    if (!b || b.status !== 'pending') return fail('この当選は確定できません');
+    if (st.clock > GB.schedule(st, D.ym(b.date)).confirmEnd) return fail('確定の締切を過ぎています');
+    b.status = 'confirmed';
+    return { ok: true, msg: `確定しました：${where(st, b)}` };
+  };
+  A.cancel = (st, bookingId) => {
+    const s = st.settings, b = GB.find(st.bookings, bookingId);
+    if (!b || !['pending', 'confirmed'].includes(b.status)) return fail('この予約は取り消せません');
+    if (b.date <= st.clock) return fail('利用日の当日・過ぎた日の予約は取り消せません（学校か市役所に連絡してください）');
+    const was = b.status;
+    b.status = 'cancelled';
+    if (was === 'pending') return { ok: true, msg: `当選を辞退しました：${where(st, b)}（違反にはなりません）` };
+    const left = D.diff(b.date, st.clock);
+    if (left < s.freeCancelDays && s.ptLate > 0) {
+      penalty(st, GB.find(st.orgs, b.orgId), s.ptLate, `${GB.md(b.date)} の直前のキャンセル`);
+      return { ok: true, msg: `キャンセルしました。利用日の ${s.freeCancelDays} 日前を過ぎていたので、違反点数が ${s.ptLate} 点つきました` };
+    }
+    return { ok: true, msg: `キャンセルしました：${where(st, b)}` };
+  };
+  A.book = (st, orgId, facId, date, slotId, need) => {
+    const why = GB.blocker(st, orgId, facId, date, slotId, need, 'book');
+    if (why) return fail(why);
+    const fac = GB.find(st.facilities, facId), occ = GB.occupancy(st, fac, date, slotId);
+    const b = { id: nid(st, 'b'), orgId, facilityId: facId, date, slotId, need, half: need === 'full' || fac.areas < 2 ? null : occ.free[0], source: 'first', status: 'confirmed', at: st.clock };
+    st.bookings.push(b);
+    return { ok: true, msg: `予約しました：${where(st, b)}` };
+  };
+
+  /* ---- 学校・市役所：学校で使う日／大会の優先確保（入っていた予約には、自動でお知らせ） ---- */
+  A.addBlock = (st, { facilityId, date, slotId, kind, reason }) => {
+    const fac = GB.find(st.facilities, facilityId);
+    if (!fac) return fail('施設をえらんでください');
+    if (!date) return fail('日付を入れてください');
+    if (date <= st.clock) return fail('明日以降の日付にしてください');
+    reason = String(reason || '').trim() || (kind === 'school' ? '学校行事' : '大会');
+    if (!GB.slotsOn(st, fac, date).length) return fail('この日は休館日です');
+    if (slotId && !GB.slot(st, fac, date, slotId)) return fail('この日に、そのコマはありません');
+    const hit = sid => !slotId || sid === slotId;
+    if (st.blocks.some(b => b.facilityId === facilityId && b.date === date && (!b.slotId || !slotId || b.slotId === slotId))) return fail('この日（このコマ）は、すでに登録されています');
+    st.blocks.push({ id: nid(st, 'k'), facilityId, date, slotId: slotId || null, kind, reason });
+    let moved = 0;
+    for (const b of st.bookings) if (b.facilityId === facilityId && b.date === date && hit(b.slotId) && ['pending', 'confirmed'].includes(b.status)) {
+      b.status = 'displaced'; moved++;
+      notify(st, b.orgId, `${where(st, b)} は「${reason}」で使えなくなりました。予約を取り消しました（違反にはなりません）`);
+    }
+    for (const r of GB.regularsOn(st, date)) if (r.facilityId === facilityId && hit(r.slotId)) {
+      moved++;
+      notify(st, r.orgId, `定期枠の ${GB.mdw(date)}（${fac.name}）は「${reason}」で使えません`);
+    }
+    for (const a of st.apps) if (a.facilityId === facilityId && a.date === date && hit(a.slotId) && a.status === 'applied') {
+      a.status = 'invalid'; a.reason = `${reason}のため使えなくなりました`; moved++;
+      notify(st, a.orgId, `抽選の申込（${where(st, a)}）は「${reason}」が入ったため、抽選の対象外になりました`);
+    }
+    return { ok: true, msg: `登録しました${moved ? `（${moved} 団体にお知らせしました）` : ''}` };
+  };
+  A.removeBlock = (st, blockId) => {
+    const i = st.blocks.findIndex(b => b.id === blockId);
+    if (i < 0) return fail('見つかりません');
+    st.blocks.splice(i, 1);
+    return { ok: true, msg: '取り消しました（空いたコマは、受付の段階に応じて申込・予約できます）' };
+  };
+
+  /* ---- 学校：利用の確認（使わなかったときは違反点数） ---- */
+  A.markUse = (st, bookingId, used) => {
+    const s = st.settings, b = GB.find(st.bookings, bookingId);
+    if (!b || b.status !== 'confirmed') return fail('この予約は確認できません');
+    if (b.date > st.clock) return fail('利用日のあとに確認してください');
+    b.status = used ? 'used' : 'noshow';
+    if (!used && s.ptNoShow > 0) penalty(st, GB.find(st.orgs, b.orgId), s.ptNoShow, `${GB.md(b.date)} の無断の不使用`);
+    return { ok: true, msg: used ? '「使った」にしました' : `「使わなかった」にしました（違反点数 ${s.ptNoShow} 点）` };
+  };
+
+  function penalty(st, org, pts, why) {
+    const s = st.settings;
+    if (!org) return;
+    org.points = (org.points || 0) + pts;
+    notify(st, org.id, `違反点数 +${pts}（${why}）。いま ${org.points}/${s.ptLimit} 点です`);
+    if (org.points >= s.ptLimit) {
+      org.suspendUntil = D.on(D.addMonths(D.ym(st.clock), s.suspendMonths), +st.clock.slice(8));
+      org.points = 0;
+      notify(st, org.id, `違反点数が ${s.ptLimit} 点に達したため、${GB.md(org.suspendUntil)} まで抽選の申込と先着の予約を止めます`);
+    }
+  }
+  A.penalty = penalty;
+
+  /* ---- 日付（デモ用に進める）と、日付が変わったときの片づけ ---- */
+  A.setClock = (st, date) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return fail('日付の形がちがいます');
+    if (date < st.clock) return fail('日付は戻せません（最初からやり直すときは「サンプルに戻す」）');
+    st.clock = date;
+    A.settle(st);
+    return { ok: true, msg: `きょうを ${GB.mdw(date)} にしました` };
+  };
+  A.settle = st => {
+    for (const run of st.runs) {
+      const sc = GB.schedule(st, run.month);
+      if (st.clock <= sc.confirmEnd) continue;
+      for (const b of st.bookings) if (b.source === 'lottery' && b.status === 'pending' && D.ym(b.date) === run.month) {
+        b.status = 'expired';
+        notify(st, b.orgId, `${where(st, b)} の当選は、確定の手続きがなかったため取り消しました（空いたコマは先着で予約できます）`);
+      }
+    }
+    for (const o of st.orgs) if (o.suspendUntil && st.clock >= o.suspendUntil) {
+      o.suspendUntil = null;
+      notify(st, o.id, '申込と予約の停止が終わりました');
+    }
+  };
+
+  /* ---- 市役所：団体・施設・定期枠・ルール ---- */
+  A.addOrg = (st, { name, type, districtId, inCity }) => {
+    name = String(name || '').trim();
+    if (!name) return fail('団体の名前を入れてください');
+    if (st.orgs.some(o => o.name === name)) return fail('同じ名前の団体があります');
+    st.orgs.push({ id: nid(st, 'o'), name, type: GB.TYPES[type] ? type : 'general', districtId: inCity ? districtId : null, inCity: !!inCity, status: 'pending', points: 0, suspendUntil: null, lossStreak: 0 });
+    return { ok: true, msg: `「${name}」を登録しました（承認待ち）` };
+  };
+  A.addRegular = (st, { facilityId, orgId, weekday, slotId, need }) => {
+    const fac = GB.find(st.facilities, facilityId), org = GB.find(st.orgs, orgId), s = st.settings;
+    if (!fac || !org) return fail('施設と団体をえらんでください');
+    weekday = +weekday;
+    const type = weekday === 0 || weekday === 6 ? 'holiday' : 'weekday';
+    if (!(s.slots[fac.kind][type] || []).some(x => x.id === slotId)) return fail('その曜日に、そのコマはありません');
+    if (need === 'half' && fac.areas < 2) return fail('この体育館は半面に分けられません');
+    const fy = +st.clock.slice(0, 4) - (+st.clock.slice(5, 7) < 4 ? 1 : 0);   // 年度（4月はじまり）
+    const from = st.clock, to = `${fy + 1}-03-31`, n = GB.units(fac).length, mine = need === 'half' ? 1 : n;
+    const same = st.regulars.filter(r => r.facilityId === facilityId && r.weekday === weekday && r.slotId === slotId && r.to >= st.clock);
+    if (same.reduce((a, r) => a + (r.need === 'half' ? 1 : n), 0) + mine > n) return fail('その曜日のそのコマには、もう定期枠があります');
+    const clash = st.bookings.find(b => b.facilityId === facilityId && b.slotId === slotId && b.date > st.clock && ['pending', 'confirmed'].includes(b.status) && D.wd(b.date) === weekday && GB.dayType(b.date) === type);
+    if (clash) return fail(`その曜日のそのコマには、もう予約が入っている日があります（${GB.md(clash.date)}）。定期枠は年度はじめの調整で決めてください`);
+    if (st.regulars.filter(r => r.orgId === orgId && r.to >= st.clock).length >= s.maxRegular) return fail(`定期枠は 1 団体につき週 ${s.maxRegular} コマまでです`);
+    const share = GB.regularShare(st, fac, mine);
+    if (share > s.regularMax) return fail(`定期枠が 1 週間のコマの ${share}％ になり、上限の ${s.regularMax}％ をこえます`);
+    const half = need === 'half' ? (same.some(r => r.half === 'A') ? 'B' : 'A') : null;
+    st.regulars.push({ id: nid(st, 'r'), facilityId, orgId, weekday, slotId, need, half, from, to });
+    return { ok: true, msg: `定期枠を追加しました（${fac.name}：1 週間のコマの ${share}％）` };
+  };
+  A.removeRegular = (st, id) => {
+    const i = st.regulars.findIndex(r => r.id === id);
+    if (i < 0) return fail('見つかりません');
+    st.regulars.splice(i, 1);
+    return { ok: true, msg: '定期枠を削除しました' };
+  };
+  A.setSettings = (st, next) => {
+    const errs = GB.checkSettings(next);
+    if (errs.length) return fail(errs[0]);
+    st.settings = next;
+    return { ok: true, msg: 'ルールを変えました' };
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = GB;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ---- js/sample.js ---- */
+/* 体育館よやく：サンプルデータ（実在の施設・団体ではない）。
+   「きょう」をいまの月の 5 日にして、
+   ・今月分：先月のうちに抽選が終わり、予約が入っている（月のはじめの数日は「使った」まで済んでいる）
+   ・来月分：抽選の申込期間のなか（いくつかの団体が申し込み済み）
+   という状態を作る。今月分の抽選も、本物の抽選（GB.draw）で決めている。 */
+(function (G) {
+  'use strict';
+  const GB = G.GB = G.GB || {};
+  const D = GB.date;
+
+  const districts = [
+    { id: 'd1', name: '中部' }, { id: 'd2', name: '北部' }, { id: 'd3', name: '東部' }, { id: 'd4', name: '西部' }, { id: 'd5', name: '南部' },
+  ];
+  const facilities = [
+    { id: 'f1', name: '中部第一中学校 体育館', kind: 'school', districtId: 'd1', areas: 2 },
+    { id: 'f2', name: '中部小学校 体育館', kind: 'school', districtId: 'd1', areas: 1 },
+    { id: 'f3', name: '北部中学校 体育館', kind: 'school', districtId: 'd2', areas: 2 },
+    { id: 'f4', name: '東部中学校 体育館', kind: 'school', districtId: 'd3', areas: 2 },
+    { id: 'f5', name: '西部小学校 体育館', kind: 'school', districtId: 'd4', areas: 1 },
+    { id: 'f6', name: '南部中学校 体育館', kind: 'school', districtId: 'd5', areas: 2 },
+    { id: 'f7', name: '市民体育館 サブアリーナ', kind: 'city', districtId: 'd1', areas: 2 },
+  ];
+  const org = (id, name, type, districtId, extra = {}) => ({ id, name, type, districtId, inCity: true, status: 'approved', points: 0, suspendUntil: null, lossStreak: 0, ...extra });
+  const orgs = [
+    org('o1', '中部ミニバス', 'youth', 'd1'),
+    org('o2', '中部ジュニアバレー', 'youth', 'd1'),
+    org('o3', '北部ミニバス', 'youth', 'd2'),
+    org('o4', '東部スポーツ少年団 バスケットボール', 'youth', 'd3'),
+    org('o5', '中部地域クラブ バスケットボール', 'club', 'd1'),
+    org('o6', '北部地域クラブ バレーボール', 'club', 'd2'),
+    org('o7', '東部地域クラブ バスケットボール', 'club', 'd3'),
+    org('o8', '南部地域クラブ バドミントン', 'club', 'd5'),
+    org('o9', '西部ママさんバレー', 'general', 'd4'),
+    org('o10', '中部社会人バスケ', 'general', 'd1'),
+    org('o11', '南部ソフトバレー愛好会', 'general', 'd5'),
+    org('o12', '（例）民間バスケットボールスクール', 'commercial', 'd1'),
+    org('o13', '市外の社会人バドミントン', 'general', null, { inCity: false }),
+    org('o14', '中部 親子バドミントン', 'general', 'd1', { status: 'pending' }),
+    org('o15', '中部女子ミニバス', 'youth', 'd1'),
+    org('o16', '西部ジュニアバドミントン', 'youth', 'd4'),
+    org('o17', '中部フットサル同好会', 'general', 'd1'),
+    org('o18', '北部シニアバレー', 'general', 'd2'),
+  ];
+  // 申込のくせ：[施設, 曜日の配列, コマ, 全面/半面, 何件]。どの団体も月の前半の土日に集まりやすい（取り合いが起きる）
+  const wants = {
+    o1: [['f2', [6], 'am', 'full', 2], ['f1', [6], 'am', 'full', 2], ['f1', [0], 'am', 'full', 2]],
+    o2: [['f1', [6], 'am', 'half', 2], ['f7', [6], 'am', 'half', 2], ['f2', [0], 'pm', 'full', 1]],
+    o3: [['f3', [6], 'am', 'full', 2], ['f1', [6], 'pm', 'full', 2], ['f3', [0], 'am', 'full', 2]],
+    o4: [['f4', [6], 'am', 'full', 2], ['f1', [6], 'am', 'full', 2], ['f1', [3], 'after', 'full', 2]],
+    o5: [['f1', [6], 'pm', 'full', 2], ['f1', [3], 'after', 'full', 2], ['f7', [0], 'pm', 'half', 2]],
+    o6: [['f3', [6], 'pm', 'half', 2], ['f3', [5], 'after', 'full', 2], ['f3', [6], 'am', 'half', 1]],
+    o7: [['f4', [6], 'pm', 'full', 2], ['f4', [3], 'after', 'full', 2], ['f1', [6], 'pm', 'full', 2]],
+    o8: [['f6', [6], 'am', 'half', 2], ['f6', [1], 'after', 'half', 2], ['f6', [0], 'pm', 'half', 2]],
+    o9: [['f5', [6], 'night', 'full', 2], ['f7', [6], 'am', 'half', 1], ['f1', [1], 'night', 'half', 2]],
+    o10: [['f1', [6], 'night', 'full', 2], ['f7', [0], 'pm', 'half', 2], ['f1', [5], 'night', 'full', 2]],
+    o11: [['f6', [0], 'am', 'half', 2], ['f6', [4], 'night', 'half', 2], ['f6', [6], 'am', 'half', 1]],
+    o12: [['f7', [6], 'am', 'half', 2], ['f7', [0], 'pm', 'half', 2], ['f7', [2], 'night', 'half', 2]],
+    o15: [['f2', [6], 'am', 'full', 2], ['f1', [0], 'am', 'full', 2], ['f1', [3], 'after', 'full', 2]],
+    o16: [['f5', [6], 'am', 'full', 2], ['f7', [6], 'am', 'half', 2], ['f6', [6], 'am', 'half', 1]],
+    o17: [['f7', [0], 'pm', 'half', 2], ['f1', [6], 'night', 'full', 1], ['f7', [2], 'night', 'half', 2]],
+    o18: [['f3', [6], 'am', 'half', 2], ['f3', [2], 'night', 'half', 2]],
+  };
+
+
+  function regulars(fy, toYear) {
+    const from = `${fy}-04-01`, to = `${toYear}-03-31`;
+    const r = (id, facilityId, orgId, weekday, slotId, need = 'full', half = null) => ({ id, facilityId, orgId, weekday, slotId, need, half, from, to });
+    return [
+      r('r1', 'f1', 'o5', 2, 'after'), r('r2', 'f1', 'o5', 4, 'after'),
+      r('r3', 'f3', 'o6', 1, 'after'), r('r4', 'f3', 'o6', 3, 'after'),
+      r('r5', 'f4', 'o7', 2, 'after'), r('r6', 'f4', 'o7', 5, 'after'),
+      r('r7', 'f2', 'o1', 1, 'night'), r('r8', 'f2', 'o1', 4, 'night'),
+      r('r10', 'f5', 'o9', 4, 'night'),
+      r('r11', 'f6', 'o8', 2, 'after', 'half', 'A'),
+      r('r12', 'f6', 'o11', 3, 'night', 'half', 'A'),
+    ];
+  }
+
+  // 月のうち、曜日が合う日（休館日や、そのコマがない日はのぞく）
+  function datesFor(st, fac, ym, wds, slotId) {
+    return D.list(ym).filter(d => wds.includes(D.wd(d)) && GB.slot(st, fac, d, slotId));
+  }
+  // 申込を作る（申込期間の「きょう」にして、ふつうの申込と同じ確かめをとおす）
+  function makeApps(st, ym, rnd) {
+    const sc = GB.schedule(st, ym), keep = st.clock;
+    for (const [orgId, list] of Object.entries(wants)) {
+      for (const [facId, wds, slotId, need, n] of list) {
+        const fac = GB.find(st.facilities, facId);
+        const pool = datesFor(st, fac, ym, wds, slotId).slice(0, Math.max(n + 1, 3));   // 月の前半の日に集まる
+        for (let k = 0; k < n && pool.length; k++) {
+          const date = pool.splice(Math.floor(rnd() * pool.length), 1)[0];
+          st.clock = D.add(sc.applyStart, Math.floor(rnd() * 4));
+          GB.act.apply(st, orgId, facId, date, slotId, need);   // 上限などで申し込めないものは、入らない
+        }
+      }
+    }
+    st.clock = keep;
+  }
+
+  GB.sample = (now = new Date()) => {
+    const ym0 = `${now.getFullYear()}-${D.pad(now.getMonth() + 1)}`;   // いまの月
+    const ym1 = D.addMonths(ym0, 1);
+    const fy = now.getMonth() + 1 < 4 ? now.getFullYear() - 1 : now.getFullYear();
+    const st = {
+      v: 1, seq: 100, clock: `${D.addMonths(ym0, -1)}-01`, settings: GB.defaults(),
+      districts: districts.map(x => ({ ...x })), facilities: facilities.map(x => ({ ...x })), orgs: orgs.map(x => ({ ...x })),
+      regulars: regulars(fy, ym1.slice(5) === '04' ? fy + 2 : fy + 1), blocks: [], apps: [], bookings: [], runs: [], notices: [],   // 3月のデモでは、来年度の分も続ける
+    };
+    const rnd = GB.rng(`sample|${ym0}`);
+    const A = GB.act, sc0 = GB.schedule(st, ym0);
+
+    // 1) 今月分：先月のうちに申込 → 抽選 → ほとんどの団体が確定 → 先着
+    A.addBlock(st, { facilityId: 'f7', date: datesFor(st, st.facilities[6], ym0, [0], 'am')[2] || D.on(ym0, 20), kind: 'event', reason: '市の大会（優先確保）' });
+    makeApps(st, ym0, rnd);
+    A.runLottery(st, ym0, `${ym0}-sample`);
+    const pend = st.bookings.filter(b => b.status === 'pending');
+    pend.forEach((b, i) => { if (i !== 3) A.confirm(st, b.id); });           // 1件だけ確定しないまま（取り消しの例）
+    A.setClock(st, sc0.firstCity);
+    const mon = datesFor(st, st.facilities[0], ym0, [1], 'night').find(d => d >= `${ym0}-03` && GB.blocker(st, 'o9', 'f1', d, 'night', 'half', 'book') === '');
+    if (mon) A.book(st, 'o9', 'f1', mon, 'night', 'half');
+    A.setClock(st, sc0.firstAll);
+    const sun = datesFor(st, st.facilities[6], ym0, [0], 'night').filter(d => GB.blocker(st, 'o13', 'f7', d, 'night', 'half', 'book') === '');
+    if (sun.length) A.book(st, 'o13', 'f7', sun[sun.length - 1], 'night', 'half');
+
+    // 2) きょう＝今月の 5 日。月のはじめの予約は、学校が「使った」にしてある（2件だけ、まだ確認していない）
+    st.clock = `${ym0}-05`;
+    A.settle(st);
+    const past = st.bookings.filter(b => b.status === 'confirmed' && b.date < st.clock).sort((a, b) => a.date < b.date ? -1 : 1);
+    past.forEach((b, i) => { if (i < past.length - 2) b.status = 'used'; });
+    GB.find(st.orgs, 'o10').points = 2;                                  // 違反点数の例（前に無断で使わなかったことがある）
+    GB.find(st.orgs, 'o3').lossStreak = Math.max(1, GB.find(st.orgs, 'o3').lossStreak);   // 「前回はずれ」の例
+
+    // 3) 来月分：学校行事と大会を先に入れてから、申込期間のなかの申込
+    const f1sat = datesFor(st, st.facilities[0], ym1, [6], 'am');
+    if (f1sat[1]) A.addBlock(st, { facilityId: 'f1', date: f1sat[1], kind: 'school', reason: '学習発表会' });
+    const f3thu = datesFor(st, st.facilities[2], ym1, [4], 'night');
+    if (f3thu[0]) A.addBlock(st, { facilityId: 'f3', date: f3thu[0], slotId: 'night', kind: 'school', reason: 'PTA の行事' });
+    const f7sun = datesFor(st, st.facilities[6], ym1, [0], 'am');
+    if (f7sun[2]) A.addBlock(st, { facilityId: 'f7', date: f7sun[2], kind: 'event', reason: '中学校の大会（優先確保）' });
+    const keep = st.clock;
+    makeApps(st, ym1, rnd);
+    st.clock = keep;
+
+    return st;
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = GB;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ---- js/store.js ---- */
+/* 体育館よやく：保存。ブラウザの localStorage に入れる（使えないときは、開いているあいだだけ覚える）。
+   この試作では、データはその人のブラウザの中だけにある（ほかの人とは共有されない）。 */
+(function (G) {
+  'use strict';
+  const GB = G.GB = G.GB || {};
+  const KEY = 'gym-booking-v1', UI = 'gym-booking-ui-v1';
+  const get = k => { try { return JSON.parse(G.localStorage.getItem(k)); } catch (e) { return null; } };
+  const put = (k, v) => { try { G.localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+  GB.store = {
+    load() { const s = get(KEY); return s && s.v === 1 && s.settings && Array.isArray(s.orgs) ? s : null; },
+    save: st => put(KEY, st),
+    loadUi: () => get(UI),
+    saveUi: ui => put(UI, ui),
+    clear() { try { G.localStorage.removeItem(KEY); G.localStorage.removeItem(UI); } catch (e) { /* 使えないときは何もしない */ } },
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = GB;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ---- js/app.js ---- */
+/* 体育館よやく：画面。状態（st）を書きかえたら render() で全部を描き直す。
+   操作は data-act（クリック）・data-ch（変更）・data-form（送信）で受ける。ルールの計算は rules.js・lottery.js・actions.js にある。 */
+(function () {
+  'use strict';
+  const GB = window.GB, D = GB.date, A = GB.act;
+  const ENV = window.GB_ENV || {};
+  const root = document.getElementById('app');
+
+  let st = GB.store.load();
+  if (st) A.settle(st); else { st = GB.sample(); GB.store.save(st); }
+  const ui = Object.assign({ view: 'guide', orgId: 'o1', orgTab: 'home', facId: 'f1', orgMonth: null, schoolFac: 'f1', schoolTab: 'cal', schoolMonth: null, adminTab: 'overview', runMonth: null, csvMonth: null, regForm: {} }, GB.store.loadUi() || {});
+  Object.assign(ui, { sheet: null, clockOpen: false, confirmReset: false, verified: {}, seed: '' });
+
+  /* ---- 小さな道具 ---- */
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const O = id => GB.find(st.orgs, id), F = id => GB.find(st.facilities, id);
+  const dn = id => { const d = GB.find(st.districts, id); return d ? d.name : '市外'; };
+  const idn = id => +String(id).replace(/\D/g, '');
+  const COLS = { am: '午前', pm: '午後', after: '放課後', night: '夜' };
+  const NEED = { full: '全面', half: '半面' };
+  const APP = { applied: ['申込中', 'wait'], won: ['当選', 'ok'], lost: ['落選', ''], invalid: ['対象外', 'bad'], withdrawn: ['取り下げ', ''] };
+  const BK = { pending: ['確定待ち', 'wait'], confirmed: ['確定', 'ok'], used: ['使った', ''], noshow: ['使わなかった', 'bad'], cancelled: ['取り消し', ''], expired: ['取り消し（未確定）', ''], displaced: ['取り消し（学校・大会）', ''] };
+  const PH_TONE = { apply: 'wait', closed: 'wait', drawing: 'wait', confirm: 'ok', firstCity: 'ok', firstAll: 'ok' };
+  const pill = (t, tone = '') => `<span class="pill ${tone}">${esc(t)}</span>`;
+  const attrs = data => Object.entries(data).map(([k, v]) => `data-${k}="${esc(v)}"`).join(' ');
+  const btn = (label, act, data = {}, cls = '', disabled = false) =>
+    `<button type="button" class="btn ${cls}" data-act="${act}" ${attrs(data)}${disabled ? ' disabled' : ''}>${label}</button>`;
+  const sel = (ch, options, value, extra = '') =>
+    `<select data-ch="${ch}" ${extra}>${options.map(([v, l]) => `<option value="${esc(v)}"${String(v) === String(value) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+  const court = (need, half) => `<svg class="court" viewBox="0 0 26 16" aria-hidden="true"><rect class="bg" x="1" y="1" width="24" height="14" rx="1.5"/>` +
+    (need === 'full' ? '<rect class="on" x="1" y="1" width="24" height="14" rx="1.5"/>' : `<rect class="on" x="${half === 'B' ? 13 : 1}" y="1" width="12" height="14"/>`) +
+    '<line x1="13" y1="1" x2="13" y2="15"/><circle cx="13" cy="8" r="2.6"/></svg>';
+  const slotOf = (f, date, slotId) => GB.slot(st, f, date, slotId) || { label: COLS[slotId] || slotId, start: '', end: '' };
+  const when = x => { const f = F(x.facilityId), s = f ? slotOf(f, x.date, x.slotId) : null; return `${GB.mdw(x.date)} ${s ? esc(s.label) : ''}`; };
+  const monthsFor = () => { const out = []; for (let m = D.ym(st.clock); m <= GB.lotteryMonth(st); m = D.addMonths(m, 1)) out.push(m); return out; };
+  const pickMonth = (m, fallback) => monthsFor().includes(m) ? m : fallback;
+  const logCache = new WeakMap();
+  const runLog = run => { if (!logCache.has(run)) logCache.set(run, GB.draw(run.input, run.seed).log); return logCache.get(run); };
+  const newSeed = m => `${m}-${1000 + Math.floor(Math.random() * 9000)}`;
+  // デモ：日付を進めて確定の締切を過ぎるとき、ほかの団体の当選は確定したことにする（1割ほどは確定しないまま＝取り消しの例）
+  function othersConfirm(to) {
+    let n = 0;
+    for (const b of st.bookings) {
+      if (b.status !== 'pending' || b.orgId === ui.orgId || to <= GB.schedule(st, D.ym(b.date)).confirmEnd || idn(b.id) % 10 === 0) continue;
+      b.status = 'confirmed';
+      n++;
+    }
+    return n;
+  }
+  function moveClock(to) {
+    if (to < st.clock) return A.setClock(st, to);
+    const n = othersConfirm(to), r = A.setClock(st, to);
+    if (r.ok && n) r.msg += `。ほかの団体の当選 ${n} 件は、締切までに確定したことにしました`;
+    return r;
+  }
+
+  /* ---- 保存・お知らせ ---- */
+  const toastEl = document.createElement('div');
+  toastEl.className = 'toast';
+  toastEl.setAttribute('role', 'status');
+  toastEl.setAttribute('aria-live', 'polite');
+  document.body.appendChild(toastEl);
+  let toastTimer = 0;
+  function toast(msg, ok = true) {
+    toastEl.textContent = msg;
+    toastEl.className = `toast show${ok ? '' : ' bad'}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toastEl.className = 'toast'; }, 4200);
+  }
+  function save() {
+    GB.store.save(st);
+    const { sheet, clockOpen, confirmReset, verified, seed, ...keep } = ui;
+    GB.store.saveUi(keep);
+  }
+  function done(r) { if (r && r.msg) toast(r.msg, r.ok !== false); save(); render(); return r; }
+
+  /* ---- 上の帯 ---- */
+  function topbar() {
+    const views = [['guide', 'しくみ'], ['org', '団体'], ['school', '学校'], ['admin', '市役所']];
+    return `<header class="top"><div class="top-in">
+      <div class="brand"><svg class="logo" viewBox="0 0 40 26" aria-hidden="true"><rect x="1.5" y="1.5" width="37" height="23" rx="2"/><line x1="20" y1="1.5" x2="20" y2="24.5"/><circle cx="20" cy="13" r="4.5"/><path d="M1.5 7.5h5a5.5 5.5 0 0 1 0 11h-5M38.5 7.5h-5a5.5 5.5 0 0 0 0 11h5"/></svg>
+        <div><div class="name">体育館よやく</div><div class="sub">佐賀市への提案用の試作（サンプルデータ）</div></div></div>
+      <nav class="views" aria-label="画面の切りかえ">${views.map(([v, l]) => `<button type="button" class="view${ui.view === v ? ' on' : ''}" data-act="view" data-v="${v}"${ui.view === v ? ' aria-current="page"' : ''}>${l}</button>`).join('')}</nav>
+      <div class="clock"><span class="k">きょう（デモ）</span><b class="mono">${st.clock.slice(0, 4)}年 ${GB.mdw(st.clock)}</b>${btn(ui.clockOpen ? '閉じる' : '日付を進める', 'clock', {}, 'sm ghost')}</div>
+    </div>${ui.clockOpen ? clockPanel() : ''}<div class="floor" aria-hidden="true"></div></header>`;
+  }
+  function clockPanel() {
+    const marks = [];
+    for (const m of [...monthsFor(), D.addMonths(GB.lotteryMonth(st), 1)]) {
+      const sc = GB.schedule(st, m), lab = GB.ymLabel(m);
+      marks.push([D.add(sc.applyStart, 2), `${lab}の申込期間のなか`], [sc.draw, `${lab}の抽選日`], [D.add(sc.confirmEnd, 1), `${lab}の先着が始まる`]);
+      if (sc.firstAll !== sc.firstCity) marks.push([sc.firstAll, `${lab}の先着（だれでも）`]);
+    }
+    const L = GB.lotteryMonth(st);
+    marks.push([D.on(L, 10), `${+L.slice(5)}月10日（利用月）`]);
+    const seen = new Set();
+    const list = marks.filter(([d]) => d > st.clock && !seen.has(d) && seen.add(d)).sort((a, b) => a[0] < b[0] ? -1 : 1).slice(0, 6);
+    return `<div class="clock-panel"><div class="clock-in">
+      <p>デモ用に「きょう」を進めると、申込 → 抽選 → 確定 → 先着 → 利用 の流れを試せます。確定の締切を過ぎるとき、いま団体の画面でえらんでいる団体のほかは、当選を確定したことにします（1割ほどは確定しないまま取り消しになります）。</p>
+      <div class="row-btn">${list.map(([d, l]) => btn(`${GB.mdw(d)}<small>${esc(l)}</small>`, 'setclock', { d }, 'sm ghost stack')).join('')}</div>
+      <form class="inline" data-form="clock"><label>日付をえらぶ <input type="date" name="d" id="clock-date" min="${D.add(st.clock, 1)}" value="${D.add(st.clock, 1)}"></label><button class="btn sm">この日にする</button></form>
+      <div class="reset">${ui.confirmReset ? `<span>入力した内容は消えます。</span>${btn('サンプルに戻す', 'reset', {}, 'sm warn')}${btn('やめる', 'reset-no', {}, 'sm ghost')}` : btn('最初からやり直す', 'reset-ask', {}, 'sm ghost')}</div>
+    </div></div>`;
+  }
+
+  /* ---- しくみ（ルールの説明。いまの設定から作る） ---- */
+  function guideView() {
+    const s = st.settings, L = GB.lotteryMonth(st), sc = GB.schedule(st, L), base = s.lead === 1 ? '前月' : '2か月前の月';
+    const prio = [];
+    for (const k of Object.keys(s.slots)) for (const dt of ['weekday', 'holiday']) for (const x of s.slots[k][dt]) if (x.prio && x.prio.length)
+      prio.push(`${GB.KINDS[k]}の${dt === 'weekday' ? '平日' : '土日祝'}の${x.label}（${GB.time(x)}）は、${x.prio.map(t => GB.TYPE_SHORT[t]).join('・')}`);
+    const policy = { none: '使えません', first: '抽選のあとに残ったコマだけ、先着で使えます', lottery: '抽選にも申し込めます' }[s.commercialSchool];
+    const afterSlot = (s.slots.school.weekday || []).find(x => x.id === 'after') || { prio: [] };
+    const exParts = [s.tickets.youth, s.bonusDistrict, ...((afterSlot.prio || []).includes('youth') ? [s.bonusPriority] : [])].filter(n => n > 0);
+    const ex = exParts.reduce((a, n) => a + n, 0), other = s.tickets.general;
+    const sameAsSaga = s.lead === 1 && s.applyStart === 1 && s.applyEnd === 9 && s.drawDay === 10 && s.confirmEnd === 15 && s.firstCity === 16;
+    return `
+    <section class="hero">
+      <p class="eyebrow">部活動の地域展開にそなえて</p>
+      <h1>体育館を、くじと上限で分け合う</h1>
+      <p class="lead">部活動の地域展開で、平日の夕方と休日に体育館を使いたい団体が増えます。先着順のままだと、受付が始まった瞬間に予約が集中し、早く操作できた団体だけが取れてしまいます。この試作では、市役所・学校・団体が同じ画面を見ながら、決まったルールで体育館を分け合います。</p>
+      <div class="row-btn">${btn('団体の画面で申し込んでみる', 'go', { v: 'org', tab: 'cal' })}${btn('市役所の画面で抽選してみる', 'go', { v: 'admin', tab: 'lottery' }, 'ghost')}</div>
+    </section>
+
+    <section class="block">
+      <h2>3つの段階で、順に決める</h2>
+      <div class="layers">
+        <article class="layer"><p class="step">1　年に1回</p><h3>定期枠</h3><p>認定地域クラブの平日の練習など、毎週決まった活動の土台です。学校ごとの調整会議で決め、毎年見直します。1団体 週 ${s.maxRegular} コマまで、体育館のコマの ${s.regularMax}％ までにします。</p></article>
+        <article class="layer"><p class="step">2　毎月</p><h3>抽選</h3><p>利用月の${base} ${s.applyStart}〜${s.applyEnd} 日に申し込み、${s.drawDay} 日に抽選します。申し込んだ順番は関係ないので、受付開始の瞬間に急ぐ必要はありません。</p></article>
+        <article class="layer"><p class="step">3　抽選のあと</p><h3>先着</h3><p>${s.confirmEnd} 日までに確定されなかったコマと、残ったコマを、${s.firstCity} 日から先着で予約できます。利用日の ${s.bookUntil} 日前までです。</p></article>
+      </div>
+      <p class="callout">学校行事と大会は、いつでも最優先です。あとから入ったときは、予約していた団体に自動でお知らせが届き、違反にはなりません。</p>
+    </section>
+
+    <section class="block">
+      <h2>${GB.ymLabel(L)}の日程</h2>
+      ${timeline(L)}
+      <p class="muted small">${sameAsSaga ? '日程は、佐賀市の体育施設のオンライン予約（前月 1〜9 日に抽選の申込、10 日に抽選、11〜15 日に確定、16 日から先着）にそろえています。市役所の「ルール」で変えられます。' : '日程は、市役所の「ルール」で変えてあります（既定値は、佐賀市の体育施設のオンライン予約と同じ日程です）。'}</p>
+    </section>
+
+    <section class="block two">
+      <div>
+        <h2>くじの本数</h2>
+        <p>当たる確率は、くじの本数に比例します。区分ごとの基本の本数に、条件に合うと本数が加わります。</p>
+        <div class="tw"><table class="plain">
+          <thead><tr><th>区分</th><th class="num">基本</th></tr></thead>
+          <tbody>${Object.keys(GB.TYPES).map(t => `<tr><td>${GB.TYPES[t]}</td><td class="num">${s.tickets[t]} 本</td></tr>`).join('')}</tbody>
+        </table></div>
+        <div class="tw"><table class="plain">
+          <thead><tr><th>加わる条件</th><th class="num">本数</th></tr></thead>
+          <tbody>
+            <tr><td>活動している地区の体育館に申し込む</td><td class="num">＋${s.bonusDistrict} 本</td></tr>
+            <tr><td>優先時間帯に、その対象の団体が申し込む</td><td class="num">＋${s.bonusPriority} 本</td></tr>
+            <tr><td>前の月の抽選で1つも当たらなかった（${s.lossMax} 回ぶんまで）</td><td class="num">＋${s.bonusLoss} 本ずつ</td></tr>
+          </tbody>
+        </table></div>
+        ${prio.length ? `<p class="small">優先時間帯：${prio.map(esc).join('。')}。</p>` : ''}
+      </div>
+      <div class="example">
+        <h3>たとえば</h3>
+        <p>中部の子どもの団体が、中部の中学校の平日の放課後に申し込むと、くじは ${exParts.join('＋')}＝<b>${ex} 本</b>。ほかの地区の一般の団体（${other} 本）と取り合うと、当たる確率は ${ex}/${ex + other} と ${other}/${ex + other} です。</p>
+        <div class="kuji demo" aria-hidden="true"><div class="track"><div class="bar"><div class="seg win" style="flex-grow:${ex}"><b>中部の子どもの団体</b><span class="mono">1–${ex}</span></div><div class="seg" style="flex-grow:${other}"><b>ほかの地区</b><span class="mono">${ex + 1}–${ex + other}</span></div></div></div></div>
+        <p class="small muted">落選が続いた団体のくじを増やす方法は、スポーツ施設では例が少なく、市営住宅の「優遇抽選」（落選が続くとくじが増える）を参考にしました。</p>
+      </div>
+    </section>
+
+    <section class="block two">
+      <div>
+        <h2>上限</h2>
+        <ul class="facts">
+          <li><b class="mono">${s.maxApps}</b> 件<span>抽選に申し込めるのは 1 か月 ${s.maxApps} 件まで</span></li>
+          <li><b class="mono">${s.maxWins}</b> コマ<span>抽選で当たるのは 1 か月 ${s.maxWins} コマまで。上限に達した団体は、残りのコマのくじから外れます</span></li>
+          <li><b class="mono">${s.maxTotal}</b> コマ<span>抽選と先着を合わせて 1 か月 ${s.maxTotal} コマまで（定期枠は別）</span></li>
+          <li><b class="mono">${s.maxPerDay}</b> コマ<span>1 日に使えるのは ${s.maxPerDay} コマまで（定期枠もふくむ）</span></li>
+        </ul>
+      </div>
+      <div>
+        <h2>約束ごと</h2>
+        <ul class="dots">
+          <li>当選したら、${s.confirmEnd} 日までに「確定」します。確定しないと取り消され、先着に回ります。</li>
+          <li>キャンセルは、利用日の ${s.freeCancelDays} 日前までなら違反になりません。それより後は違反 ${s.ptLate} 点です。</li>
+          <li>予約したのに連絡なしで使わなかったときは、違反 ${s.ptNoShow} 点です（学校が利用を確認します）。</li>
+          <li>違反が ${s.ptLimit} 点になると、${s.suspendMonths} か月のあいだ、抽選の申込と先着の予約ができません。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="block two">
+      <div>
+        <h2>使える団体</h2>
+        <ul class="dots">
+          <li>学校体育館を使えるのは、市内に住む・通う・働く人でつくる団体です（学校開放の規則）。</li>
+          <li>市外の団体は、抽選に${s.outsideLottery ? '申し込めます' : '申し込めません'}。市の体育館の先着は ${s.firstAll} 日から予約できます。</li>
+          <li>営利目的の団体（民間スクールなど）は、学校体育館を${policy}。市の体育館は抽選・先着とも使えます（くじは ${s.tickets.commercial} 本）。</li>
+          <li>団体の登録は、市役所が承認してから使えます。</li>
+        </ul>
+      </div>
+      <div>
+        <h2>公平さを確かめる</h2>
+        <ul class="dots">
+          <li>抽選は「シード」という言葉や数字から作る乱数で行います。同じ申込と同じシードなら、だれが何度やっても同じ結果になります。</li>
+          <li>市役所は、抽選のあとにシードを公開します。本番では、公開の場でサイコロを振るなどして決めます。</li>
+          <li>区分ごと・地区ごとの申込数と当選率を、毎月公開します。</li>
+          <li>コマごとの申込の件数が見えるので、混んでいるコマを避けて申し込めます。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="block note">
+      <h2>この試作について</h2>
+      <ul class="dots">
+        <li>データはすべてサンプルです。実在の施設・団体ではありません。佐賀市の公式のものでもありません。</li>
+        <li>このページはブラウザの中だけで動きます。入力した内容は、ほかの人には見えません。</li>
+        <li>上の「日付を進める」で、申込 → 抽選 → 確定 → 先着の流れを試せます。いまの「きょう」では、${GB.ymLabel(L)}が「${GB.PHASE[GB.phase(st, L)]}」です（申込は ${GB.md(sc.applyStart)}〜${GB.md(sc.applyEnd)}）。</li>
+      </ul>
+    </section>`;
+  }
+
+  function timeline(m) {
+    const sc = GB.schedule(st, m), t = st.clock, run = !!sc.run;
+    const state = (a, b) => t > b ? 'done' : t >= a ? 'now' : 'next';
+    const baseEnd = D.on(sc.base, 31);
+    const steps = [
+      ['抽選の申込', `${GB.md(sc.applyStart)}〜${GB.md(sc.applyEnd)}`, run ? 'done' : state(sc.applyStart, sc.applyEnd)],
+      ['抽選', GB.md(sc.draw), run ? 'done' : t > sc.applyEnd ? 'now' : 'next'],
+      ['当選の確定', `${GB.md(sc.draw)}〜${GB.md(sc.confirmEnd)}`, run ? state(sc.draw, sc.confirmEnd) : 'next'],
+      [sc.firstAll === sc.firstCity ? '先着' : '先着（市内）', `${GB.md(sc.firstCity)}〜`, run ? state(sc.firstCity, sc.firstAll === sc.firstCity ? baseEnd : D.add(sc.firstAll, -1)) : 'next'],
+    ];
+    if (sc.firstAll !== sc.firstCity) steps.push(['先着（だれでも）', `${GB.md(sc.firstAll)}〜`, run ? state(sc.firstAll, baseEnd) : 'next']);
+    steps.push(['利用', `${+m.slice(5)}月`, state(`${m}-01`, D.on(m, 31))]);
+    return `<ol class="tl">${steps.map(([l, d, k]) => `<li class="${k}"><b>${l}</b><span class="mono">${d}</span>${k === 'now' ? '<em>いまここ</em>' : ''}</li>`).join('')}</ol>`;
+  }
+
+  /* ---- 時間割（体育館 × 月） ---- */
+  function calendar(f, m, role) {
+    const sl = st.settings.slots[f.kind] || st.settings.slots.school;
+    const ids = Object.keys(COLS).filter(id => sl.weekday.some(x => x.id === id) || sl.holiday.some(x => x.id === id));
+    const idx = {};
+    for (const a of st.apps) if (a.facilityId === f.id && a.month === m && a.status !== 'withdrawn') (idx[`${a.date}|${a.slotId}`] = idx[`${a.date}|${a.slotId}`] || []).push(a);
+    const rows = D.list(m).map(date => {
+      const wd = D.wd(date), hol = GB.holiday(date), slots = GB.slotsOn(st, f, date);
+      const tone = wd === 0 || hol ? 'sun' : wd === 6 ? 'sat' : '';
+      const dc = `<div class="dc ${tone}"><b class="mono">${+date.slice(8)}</b><span>${D.WD[wd]}${hol ? `・${esc(hol)}` : ''}</span>${date === st.clock ? '<i>きょう</i>' : ''}</div>`;
+      if (!slots.length) return `<div class="row closed">${dc}<div class="closed-msg">休館日</div></div>`;
+      return `<div class="row${date < st.clock ? ' past' : ''}">${dc}${ids.map(id => { const s = slots.find(x => x.id === id); return s ? cell(f, date, s, role, idx[`${date}|${id}`] || []) : '<div class="cell none" aria-hidden="true"></div>'; }).join('')}</div>`;
+    });
+    return `<div class="cal" style="--cols:${ids.length}"><div class="row head" aria-hidden="true"><div></div>${ids.map(id => `<div class="ch">${COLS[id]}</div>`).join('')}</div>${rows.join('')}</div>`;
+  }
+  function cell(f, date, s, role, apps) {
+    const occ = GB.occupancy(st, f, date, s.id), ph = GB.phase(st, D.ym(date)), me = role === 'org' ? ui.orgId : null;
+    const pre = ['before', 'apply', 'closed', 'drawing'].includes(ph);
+    const lines = [], badges = [];
+    let tone = 'free';
+    if (occ.block) { tone = 'block'; lines.push(`<span class="u">${esc(occ.block.reason)}</span>`); }
+    else {
+      const seen = new Set();
+      for (const u of occ.units) {
+        const it = occ.by[u];
+        if (it && seen.has(it)) continue;
+        if (it) seen.add(it);
+        const both = it && occ.units.length > 1 && occ.by.A === occ.by.B;
+        const lab = occ.units.length > 1 ? `<i>${both ? '全' : u}</i>` : '';
+        if (!it) { lines.push(`<span class="u open">${lab}空き</span>`); continue; }
+        const mine = me && it.orgId === me, pend = it.kind === 'booking' && it.ref.status === 'pending';
+        const name = role === 'org' && !mine ? (it.kind === 'regular' ? '定期枠' : '予約あり') : `${it.kind === 'regular' ? '定期 ' : ''}${O(it.orgId) ? O(it.orgId).name : ''}`;
+        lines.push(`<span class="u ${it.kind === 'regular' ? 'reg' : pend ? 'pend' : 'bk'}${mine ? ' mine' : ''}">${lab}${esc(mine ? (it.kind === 'regular' ? 'あなた（定期）' : pend ? 'あなた（確定待ち）' : 'あなた') : name)}</span>`);
+        if (mine) tone = pend ? 'pend' : 'mine';
+      }
+      if (tone === 'free' && !occ.free.length) tone = 'full';
+    }
+    if (pre && !occ.block) {
+      const live = apps.filter(a => a.status === 'applied');
+      const mineApp = me && live.find(a => a.orgId === me);
+      if (live.length && (role !== 'org' || st.settings.showCounts)) badges.push(`<span class="cnt${live.length > 1 ? ' hot' : ''}">申込 ${live.length}</span>`);
+      if (mineApp) { badges.push('<span class="me">申込済み</span>'); if (tone === 'free') tone = 'applied'; }
+    } else if (role === 'org' && !occ.block) {
+      const mineApp = apps.find(a => a.orgId === me && ['won', 'lost', 'invalid'].includes(a.status));
+      if (mineApp && mineApp.status !== 'won') badges.push(`<span class="me lost">${APP[mineApp.status][0]}</span>`);
+      if ((ph === 'firstCity' || ph === 'firstAll') && occ.free.length && (tone === 'free' || tone === 'full') && ['full', 'half'].some(n => !GB.blocker(st, me, f.id, date, s.id, n, 'book'))) { tone = 'can'; badges.push('<span class="me ok">予約できる</span>'); }
+    }
+    const label = `${GB.mdw(date)} ${s.label} ${GB.time(s)}`;
+    return `<button type="button" class="cell t-${tone}" data-act="open" data-f="${f.id}" data-d="${date}" data-s="${s.id}" aria-label="${esc(label)}"><span class="tm"><b>${esc(s.label)}</b><span class="mono">${GB.time(s)}</span></span><span class="ls">${lines.join('')}</span>${badges.length ? `<span class="bd">${badges.join('')}</span>` : ''}</button>`;
+  }
+  function legend(role) {
+    const items = role === 'org'
+      ? [['free', '空きがある'], ['applied', '抽選に申込済み'], ['can', '先着で予約できる'], ['mine', 'あなたの予約・定期枠'], ['pend', '当選（確定待ち）'], ['full', 'ほかの団体で埋まっている'], ['block', '学校行事・大会']]
+      : [['free', '空きがある'], ['full', '埋まっている'], ['block', '学校行事・大会']];
+    const text = role === 'org' ? '' : '<li><span class="u reg">紺の字</span>＝定期枠</li><li><span class="u pend">黄の字</span>＝当選の確定待ち</li>';
+    return `<ul class="legend">${items.map(([t, l]) => `<li><i class="sw t-${t}"></i>${l}</li>`).join('')}${text}</ul>`;
+  }
+  function monthSwitch(cur, ch) {
+    return `<div class="seg" role="group" aria-label="月">${monthsFor().map(m => `<button type="button" class="${m === cur ? 'on' : ''}" data-act="${ch}" data-m="${m}"${m === cur ? ' aria-pressed="true"' : ' aria-pressed="false"'}>${+m.slice(5)}月</button>`).join('')}</div>`;
+  }
+  function facSelect(ch, value, filter = () => true) {
+    const list = st.facilities.filter(filter);
+    return sel(ch, list.map(f => [f.id, `${dn(f.districtId)}｜${f.name}`]), value, `id="${ch}"`);
+  }
+
+  /* ---- まだ抽選していない月のお知らせ ---- */
+  function pendingBanner() {
+    return monthsFor().filter(m => GB.phase(st, m) === 'drawing').map(m =>
+      `<div class="banner"><p><b>${GB.ymLabel(m)}の抽選がまだです。</b>本番では抽選日（${GB.md(GB.schedule(st, m).draw)}）に自動で行います。</p>${btn('いま抽選する', 'quickdraw', { m })}</div>`).join('');
+  }
+
+  /* ---- 団体の画面 ---- */
+  function orgView() {
+    const o = O(ui.orgId) || st.orgs[0];
+    ui.orgId = o.id;
+    const tabs = [['home', 'ホーム'], ['cal', '空きと申込'], ['list', '申込と予約']];
+    const opts = st.orgs.map(x => [x.id, `${x.name}（${GB.TYPE_SHORT[x.type]}・${dn(x.districtId)}${x.status !== 'approved' ? '・承認待ち' : ''}）`]);
+    return `<div class="subbar"><label class="pick">団体 ${sel('org', opts, o.id, 'id="org-pick"')}</label>
+      <nav class="tabs" aria-label="団体の画面">${tabs.map(([k, l]) => `<button type="button" class="tab${ui.orgTab === k ? ' on' : ''}" data-act="orgtab" data-tab="${k}">${l}</button>`).join('')}</nav></div>
+      ${pendingBanner()}
+      ${ui.orgTab === 'cal' ? orgCal(o) : ui.orgTab === 'list' ? orgList(o) : orgHome(o)}`;
+  }
+  function orgHome(o) {
+    const s = st.settings;
+    const regs = st.regulars.filter(r => r.orgId === o.id && r.to >= st.clock);
+    const pend = st.bookings.filter(b => b.orgId === o.id && b.status === 'pending').sort((a, b) => a.date < b.date ? -1 : 1);
+    const notes = st.notices.filter(n => n.orgId === o.id).slice(0, 10);
+    const cards = monthsFor().map(m => {
+      const ph = GB.phase(st, m), sc = GB.schedule(st, m);
+      const lines = {
+        before: `抽選の申込は ${GB.md(sc.applyStart)}〜${GB.md(sc.applyEnd)} です。`,
+        apply: `抽選の申込期間です（${GB.md(sc.applyStart)}〜${GB.md(sc.applyEnd)}）。申込 <b class="mono">${GB.appCount(st, o.id, m)}/${s.maxApps}</b> 件。`,
+        closed: `申込を締め切りました。${GB.md(sc.draw)} に抽選します。`,
+        drawing: '抽選を待っています。',
+        confirm: `抽選が終わりました。当選は ${GB.md(sc.confirmEnd)} までに確定してください。`,
+        settle: `先着の予約は ${GB.md(sc.firstCity)} からです。`,
+        firstCity: `先着の受付中です（市内の団体）。この月 <b class="mono">${GB.monthCount(st, o.id, m)}/${s.maxTotal}</b> コマ。`,
+        firstAll: `先着の受付中です。この月 <b class="mono">${GB.monthCount(st, o.id, m)}/${s.maxTotal}</b> コマ。`,
+      }[ph];
+      return `<li><div><b>${GB.ymLabel(m)}</b> ${pill(GB.PHASE[ph], PH_TONE[ph] || '')}</div><p>${lines}</p>${btn('時間割を見る', 'gocal', { m }, 'sm ghost')}</li>`;
+    }).join('');
+    return `<div class="grid2">
+      <section class="card">
+        <h2>${esc(o.name)}</h2>
+        <p class="chips">${pill(GB.TYPES[o.type], o.type === 'club' ? 'reg' : '')}${pill(`${dn(o.districtId)}${o.inCity ? '' : '（学校体育館は使えません）'}`)}${o.status !== 'approved' ? pill('承認待ち', 'wait') : ''}${GB.suspended(st, o) ? pill(`${GB.md(o.suspendUntil)} まで停止中`, 'bad') : ''}</p>
+        <dl class="kv">
+          <dt>違反点数</dt><dd><span class="meter" style="--v:${Math.min(100, (o.points || 0) / s.ptLimit * 100)}"></span> <b class="mono">${o.points || 0}/${s.ptLimit}</b> 点</dd>
+          <dt>前の抽選</dt><dd>${o.lossStreak ? `${o.lossStreak} 回続けて1つも当たらなかった（次の抽選のくじ ＋${Math.min(o.lossStreak, s.lossMax) * s.bonusLoss} 本）` : '—'}</dd>
+          <dt>定期枠</dt><dd>${regs.length ? regs.map(r => `${D.WD[r.weekday]}曜 ${COLS[r.slotId]}・${esc(F(r.facilityId).name)}（${NEED[r.need]}）`).join('<br>') : 'なし'}</dd>
+        </dl>
+        ${o.status !== 'approved' ? '<p class="callout">市役所が登録を承認すると、申込と予約ができます（市役所の画面の「団体」で承認できます）。</p>' : ''}
+      </section>
+      <section class="card"><h2>いまの受付</h2><ul class="months">${cards}</ul></section>
+    </div>
+    ${pend.length ? `<section class="card attn"><h2>当選の確定（${pend.length} 件）</h2><p>確定の締切までに確定しないと、当選は取り消されます。</p><ul class="rows">${pend.map(b => `<li><span>${court(b.need, b.half)} ${when(b)}・${esc(F(b.facilityId).name)}<small>${GB.md(GB.schedule(st, D.ym(b.date)).confirmEnd)} まで</small></span><span class="row-btn">${btn('確定する', 'confirm', { id: b.id }, 'sm')}${btn('辞退する', 'cancel', { id: b.id }, 'sm ghost')}</span></li>`).join('')}</ul>${pend.length > 1 ? btn('まとめて確定する', 'confirm-all', {}, 'ghost') : ''}</section>` : ''}
+    <section class="card"><h2>お知らせ</h2>${notes.length ? `<ul class="notes">${notes.map(n => `<li><span class="mono">${GB.md(n.at)}</span><p>${esc(n.text)}</p></li>`).join('')}</ul>` : '<p class="muted">まだありません。</p>'}</section>`;
+  }
+  function orgCal(o) {
+    const m = ui.orgMonth = pickMonth(ui.orgMonth, GB.lotteryMonth(st));
+    const f = F(ui.facId) || st.facilities[0];
+    ui.facId = f.id;
+    const ph = GB.phase(st, m), sc = GB.schedule(st, m), s = st.settings;
+    const msg = {
+      before: `${GB.ymLabel(m)}の抽選の申込は ${GB.md(sc.applyStart)} からです。`,
+      apply: `${GB.ymLabel(m)}は抽選の申込期間です（${GB.md(sc.applyStart)}〜${GB.md(sc.applyEnd)}）。コマを押して申し込みます。申し込んだ順番は関係ありません。申込 ${GB.appCount(st, o.id, m)}/${s.maxApps} 件。`,
+      closed: `${GB.ymLabel(m)}の申込は締め切りました。${GB.md(sc.draw)} に抽選します。`,
+      drawing: `${GB.ymLabel(m)}の抽選を待っています。`,
+      confirm: `${GB.ymLabel(m)}の抽選が終わりました。当選したコマは ${GB.md(sc.confirmEnd)} までに確定してください。`,
+      settle: `${GB.ymLabel(m)}の先着の予約は ${GB.md(sc.firstCity)} からです。`,
+      firstCity: `${GB.ymLabel(m)}は先着の受付中です（市内の団体）。空いているコマは、押してすぐ予約できます。この月 ${GB.monthCount(st, o.id, m)}/${s.maxTotal} コマ。`,
+      firstAll: `${GB.ymLabel(m)}は先着の受付中です。空いているコマは、押してすぐ予約できます。この月 ${GB.monthCount(st, o.id, m)}/${s.maxTotal} コマ。`,
+    }[ph];
+    return `<div class="toolbar"><label class="pick">体育館 ${facSelect('fac', f.id)}</label>${monthSwitch(m, 'orgmonth')}</div>
+      <p class="phase ${PH_TONE[ph] || ''}">${pill(GB.PHASE[ph], PH_TONE[ph] || '')} ${esc(msg)}</p>
+      ${legend('org')}
+      ${calendar(f, m, 'org')}`;
+  }
+  function orgList(o) {
+    const apps = st.apps.filter(a => a.orgId === o.id).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+    const bks = st.bookings.filter(b => b.orgId === o.id).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+    const appRows = apps.map(a => {
+      const f = F(a.facilityId), [t, tone] = APP[a.status];
+      const tk = a.tickets || (a.status === 'applied' && f ? GB.tickets(st, o, f, GB.slot(st, f, a.date, a.slotId)).total : null);
+      return `<tr><td class="mono">${GB.ymLabel(a.month)}</td><td>${when(a)}</td><td>${esc(f.name)}</td><td>${court(a.need)} ${NEED[a.need]}</td><td class="num">${tk ? `${tk} 本` : '—'}</td><td>${pill(t, tone)}</td><td class="wrap">${esc(a.reason || '')}</td><td>${a.status === 'applied' && GB.phase(st, a.month) === 'apply' ? btn('取り下げ', 'withdraw', { id: a.id }, 'sm ghost') : ''}</td></tr>`;
+    }).join('');
+    const bkRows = bks.map(b => {
+      const f = F(b.facilityId), [t, tone] = BK[b.status];
+      const act = b.status === 'pending' ? btn('確定', 'confirm', { id: b.id }, 'sm') + btn('辞退', 'cancel', { id: b.id }, 'sm ghost') : b.status === 'confirmed' && b.date > st.clock ? btn('キャンセル', 'cancel', { id: b.id }, 'sm warn') : '';
+      return `<tr><td>${when(b)}</td><td>${esc(f.name)}</td><td>${court(b.need, b.half)} ${b.half ? `${b.half}面` : NEED[b.need]}</td><td>${b.source === 'lottery' ? '抽選' : '先着'}</td><td>${pill(t, tone)}</td><td><span class="row-btn">${act}</span></td></tr>`;
+    }).join('');
+    const regs = st.regulars.filter(r => r.orgId === o.id);
+    return `<section class="card"><h2>抽選の申込</h2>${apps.length ? `<div class="tw"><table><thead><tr><th>月</th><th>日・コマ</th><th>体育館</th><th>区画</th><th class="num">くじ</th><th>結果</th><th>わけ</th><th></th></tr></thead><tbody>${appRows}</tbody></table></div>` : '<p class="muted">まだ申し込んでいません。「空きと申込」から申し込めます。</p>'}</section>
+      <section class="card"><h2>予約</h2>${bks.length ? `<div class="tw"><table><thead><tr><th>日・コマ</th><th>体育館</th><th>区画</th><th>方法</th><th>状態</th><th></th></tr></thead><tbody>${bkRows}</tbody></table></div>` : '<p class="muted">まだ予約はありません。</p>'}</section>
+      <section class="card"><h2>定期枠</h2>${regs.length ? `<ul class="dots">${regs.map(r => `<li>${D.WD[r.weekday]}曜 ${COLS[r.slotId]}・${esc(F(r.facilityId).name)}（${NEED[r.need]}、${GB.md(r.from)}〜${r.to.slice(0, 4)}/${GB.md(r.to)}）</li>`).join('')}</ul>` : '<p class="muted">定期枠はありません（年度はじめの調整会議で決めます）。</p>'}</section>`;
+  }
+
+  /* ---- 学校の画面 ---- */
+  function schoolView() {
+    const schools = st.facilities.filter(f => f.kind === 'school');
+    const f = schools.find(x => x.id === ui.schoolFac) || schools[0];
+    if (!f) return '<p class="muted">学校体育館が登録されていません。</p>';
+    ui.schoolFac = f.id;
+    const tabs = [['cal', '予定'], ['block', '学校で使う日'], ['check', '利用の確認']];
+    const waiting = st.bookings.filter(b => b.facilityId === f.id && b.status === 'confirmed' && b.date <= st.clock).length;
+    return `<div class="subbar"><label class="pick">学校 ${facSelect('school', f.id, x => x.kind === 'school')}</label>
+      <nav class="tabs" aria-label="学校の画面">${tabs.map(([k, l]) => `<button type="button" class="tab${ui.schoolTab === k ? ' on' : ''}" data-act="schooltab" data-tab="${k}">${l}${k === 'check' && waiting ? ` <span class="num-badge">${waiting}</span>` : ''}</button>`).join('')}</nav></div>
+      ${ui.schoolTab === 'block' ? schoolBlocks(f) : ui.schoolTab === 'check' ? schoolCheck(f) : schoolCal(f)}`;
+  }
+  function schoolCal(f) {
+    const m = ui.schoolMonth = pickMonth(ui.schoolMonth, D.ym(st.clock));
+    return `<div class="toolbar">${monthSwitch(m, 'schoolmonth')}</div>
+      <p class="phase">コマを押すと、だれが使うかの確認と、学校で使う日の登録ができます。学校開放の運営委員会（地域の方）が使う想定にもできます。</p>
+      ${legend('school')}${calendar(f, m, 'school')}`;
+  }
+  function schoolBlocks(f) {
+    const list = st.blocks.filter(b => b.facilityId === f.id && b.date >= st.clock).sort((a, b) => a.date < b.date ? -1 : 1);
+    const slotOpts = [['', '終日'], ...Object.keys(COLS).filter(id => ['weekday', 'holiday'].some(dt => (st.settings.slots.school[dt] || []).some(x => x.id === id))).map(id => [id, COLS[id]])];
+    return `<section class="card"><h2>学校で使う日を登録する</h2>
+      <form class="form" data-form="block-tab"><input type="hidden" name="f" value="${f.id}">
+        <label>日付 <input type="date" name="d" id="blk-date" min="${D.add(st.clock, 1)}" required></label>
+        <label>コマ <select name="s" id="blk-slot">${slotOpts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></label>
+        <label class="grow">理由 <input name="reason" id="blk-reason2" value="学校行事" maxlength="30"></label>
+        <button class="btn">登録する</button>
+      </form>
+      <p class="muted small">入っていた予約・申込・定期枠の団体には、自動でお知らせが届きます（違反にはなりません）。</p></section>
+      <section class="card"><h2>これからの登録</h2>${list.length ? `<div class="tw"><table><thead><tr><th>日付</th><th>コマ</th><th>理由</th><th>登録</th><th></th></tr></thead><tbody>${list.map(b => `<tr><td>${GB.mdw(b.date)}</td><td>${b.slotId ? COLS[b.slotId] : '終日'}</td><td>${esc(b.reason)}</td><td>${b.kind === 'school' ? '学校' : '市役所'}</td><td>${b.kind === 'school' ? btn('取り消す', 'unblock', { id: b.id }, 'sm ghost') : ''}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">登録はありません。</p>'}</section>`;
+  }
+  function schoolCheck(f) {
+    const wait = st.bookings.filter(b => b.facilityId === f.id && b.status === 'confirmed' && b.date <= st.clock).sort((a, b) => a.date < b.date ? -1 : 1);
+    const doneList = st.bookings.filter(b => b.facilityId === f.id && ['used', 'noshow'].includes(b.status)).sort((a, b) => a.date < b.date ? 1 : -1).slice(0, 12);
+    const s = st.settings;
+    return `<section class="card"><h2>利用の確認（${wait.length} 件）</h2><p>予約した団体が実際に使ったかを記録します。「使わなかった」にすると、その団体に違反 ${s.ptNoShow} 点がつきます。</p>
+      ${wait.length > 1 ? `<div class="row-btn">${btn(`${wait.length} 件をまとめて「使った」にする`, 'use-all', { f: f.id }, 'ghost')}</div>` : ''}
+      ${wait.length ? `<ul class="rows">${wait.map(b => `<li><span>${when(b)}・<b>${esc(O(b.orgId).name)}</b>（${b.half ? `${b.half}面` : NEED[b.need]}）</span><span class="row-btn">${btn('使った', 'use', { id: b.id, v: 1 }, 'sm')}${btn('使わなかった', 'use', { id: b.id, v: 0 }, 'sm warn')}</span></li>`).join('')}</ul>` : '<p class="muted">確認を待っている予約はありません。日付を進めると、使い終わった予約がここに出ます。</p>'}</section>
+      <section class="card"><h2>確認ずみ</h2>${doneList.length ? `<ul class="rows">${doneList.map(b => `<li><span>${when(b)}・${esc(O(b.orgId).name)}</span>${pill(BK[b.status][0], BK[b.status][1])}</li>`).join('')}</ul>` : '<p class="muted">まだありません。</p>'}</section>`;
+  }
+
+  /* ---- 市役所の画面 ---- */
+  function adminView() {
+    const tabs = [['overview', '概要'], ['cal', '予定'], ['lottery', '抽選'], ['orgs', '団体'], ['facilities', '施設'], ['regular', '定期枠・大会'], ['rules', 'ルール'], ['data', 'データ']];
+    const pending = st.orgs.filter(o => o.status !== 'approved').length;
+    const body = { cal: adminCal, lottery: adminLottery, orgs: adminOrgs, facilities: adminFacilities, regular: adminRegular, rules: adminRules, data: adminData }[ui.adminTab] || adminOverview;
+    return `<div class="subbar"><nav class="tabs" aria-label="市役所の画面">${tabs.map(([k, l]) => `<button type="button" class="tab${ui.adminTab === k ? ' on' : ''}" data-act="admintab" data-tab="${k}">${l}${k === 'orgs' && pending ? ` <span class="num-badge">${pending}</span>` : ''}</button>`).join('')}</nav></div>
+      ${pendingBanner()}${body()}`;
+  }
+  function adminCal() {
+    const f = F(ui.adminFac) || st.facilities[0];
+    ui.adminFac = f.id;
+    const m = ui.adminMonth = pickMonth(ui.adminMonth, D.ym(st.clock));
+    return `<div class="toolbar"><label class="pick">体育館 ${facSelect('adminfac', f.id)}</label>${monthSwitch(m, 'adminmonth')}</div>
+      <p class="phase">コマを押すと、申込の一覧（くじの本数つき）と、くじの結果を見られます。大会などの優先確保もここからできます。</p>
+      ${legend('admin')}${calendar(f, m, 'admin')}`;
+  }
+  function adminOverview() {
+    const L = GB.lotteryMonth(st), ym = D.ym(st.clock);
+    const apps = st.apps.filter(a => a.month === L && a.status !== 'withdrawn');
+    const keys = {};
+    for (const a of apps) keys[`${a.facilityId}|${a.date}|${a.slotId}`] = (keys[`${a.facilityId}|${a.date}|${a.slotId}`] || 0) + 1;
+    const contested = Object.values(keys).filter(n => n > 1).length;
+    const now = st.bookings.filter(b => D.ym(b.date) === ym);
+    const cnt = k => now.filter(b => k.includes(b.status)).length;
+    return `<section class="card"><h2>${GB.ymLabel(L)}の流れ</h2>${timeline(L)}</section>
+      <div class="tiles">
+        <div class="tile"><span>${GB.ymLabel(L)}の申込</span><b class="mono">${apps.length}</b><small>件</small></div>
+        <div class="tile"><span>申し込んだ団体</span><b class="mono">${new Set(apps.map(a => a.orgId)).size}</b><small>団体</small></div>
+        <div class="tile"><span>取り合いのコマ</span><b class="mono">${contested}</b><small>コマ（申込 2 件以上）</small></div>
+        <div class="tile"><span>承認待ちの団体</span><b class="mono">${st.orgs.filter(o => o.status !== 'approved').length}</b><small>団体</small></div>
+      </div>
+      <section class="card"><h2>混み具合（${GB.ymLabel(L)}）</h2><p class="small muted">大きな数字は、申込の区画数 ÷ 抽選にかけられる区画数（月の平均。学校行事・大会・定期枠はのぞく）。「取り合い」は、空きより申込が多く、だれかが落選するコマの数です。</p>${heat(L)}</section>
+      <section class="card"><h2>${+ym.slice(5)}月の利用</h2><ul class="facts row">
+        <li><b class="mono">${cnt(['confirmed', 'pending'])}</b> コマ<span>これからの予約</span></li>
+        <li><b class="mono">${cnt(['used'])}</b> コマ<span>使った</span></li>
+        <li><b class="mono">${now.filter(b => b.status === 'confirmed' && b.date <= st.clock).length}</b> コマ<span>学校の確認待ち</span></li>
+        <li><b class="mono">${cnt(['noshow'])}</b> コマ<span>使わなかった</span></li>
+      </ul></section>`;
+  }
+  function heat(m) {
+    const kinds = [...new Set(st.facilities.map(f => f.kind))];
+    const cols = [];
+    for (const dt of ['weekday', 'holiday']) for (const id of Object.keys(COLS))
+      if (kinds.some(k => ((st.settings.slots[k] || {})[dt] || []).some(x => x.id === id))) cols.push([dt, id]);
+    const want = {}, bare = { ...st, bookings: [] };
+    for (const a of st.apps) if (a.month === m && a.status !== 'withdrawn') {
+      const k = `${a.facilityId}|${a.date}|${a.slotId}`;
+      want[k] = (want[k] || 0) + (a.need === 'full' ? GB.units(F(a.facilityId)).length : 1);
+    }
+    const rows = st.facilities.map(f => {
+      const tds = cols.map(([dt, id]) => {
+        let supply = 0, need = 0, fights = 0, exists = false;
+        for (const d of D.list(m)) {
+          if (GB.dayType(d) !== dt || !GB.slot(st, f, d, id)) continue;
+          exists = true;
+          const free = GB.occupancy(bare, f, d, id).free.length, w = want[`${f.id}|${d}|${id}`] || 0;
+          supply += free; need += w;
+          if (w > free) fights++;
+        }
+        if (!exists) return '<td class="na">—</td>';
+        const r = supply ? need / supply : (need ? 9 : 0), v = Math.round(Math.min(1, r / 1.5) * 80);
+        return `<td style="--v:${v}"${v > 46 ? ' class="hot"' : ''}><b class="mono">${r.toFixed(1)}</b><small>${fights ? `取り合い ${fights}` : `${need}/${supply}`}</small></td>`;
+      }).join('');
+      return `<tr><th scope="row">${esc(f.name)}</th>${tds}</tr>`;
+    }).join('');
+    return `<div class="tw"><table class="heat"><thead><tr><th></th>${cols.map(([dt, id]) => `<th>${dt === 'weekday' ? '平日' : '土日祝'}<br>${COLS[id]}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  function adminLottery() {
+    const L = GB.lotteryMonth(st);
+    const months = [...new Set([...st.runs.map(r => r.month), ...monthsFor().filter(m => GB.phase(st, m) !== 'before')])].sort();
+    const m = ui.runMonth = months.includes(ui.runMonth) ? ui.runMonth : (months.includes(L) ? L : months[months.length - 1]);
+    const sc = GB.schedule(st, m), run = sc.run;
+    const seg = `<div class="seg" role="group" aria-label="月">${months.map(x => `<button type="button" class="${x === m ? 'on' : ''}" data-act="runmonth" data-m="${x}" aria-pressed="${x === m}">${+x.slice(5)}月分</button>`).join('')}</div>`;
+    if (!run) {
+      const apps = st.apps.filter(a => a.month === m && a.status === 'applied');
+      if (!ui.seed) ui.seed = newSeed(m);
+      const ph = GB.phase(st, m);
+      return `<div class="toolbar">${seg}</div><section class="card"><h2>${GB.ymLabel(m)}の抽選</h2>
+        <p>${pill(GB.PHASE[ph], PH_TONE[ph] || '')} 申込 <b class="mono">${apps.length}</b> 件（${new Set(apps.map(a => a.orgId)).size} 団体）。抽選日は ${GB.md(sc.draw)} です。</p>
+        <form class="form" data-form="draw"><input type="hidden" name="m" value="${m}">
+          <label class="grow">シード（抽選に使う言葉や数字） <input name="seed" id="seed" value="${esc(ui.seed)}" maxlength="40" required></label>
+          <button class="btn">${st.clock < sc.draw ? `申込を締め切って抽選する（きょうを ${GB.md(sc.draw)} にします）` : '抽選する'}</button>
+        </form>
+        <p class="small muted">シードは、抽選のあとに公開します。同じ申込と同じシードなら、だれがやっても同じ結果になります。本番では、公開の場でサイコロを振るなどしてシードを決めます。</p></section>`;
+    }
+    const res = Object.entries(run.results);
+    const count = k => res.filter(([, r]) => r.status === k).length;
+    const by = { type: {}, district: {} }, perOrg = {};
+    for (const [appId, r] of res) {
+      const a = GB.find(st.apps, appId), o = a && O(a.orgId);
+      if (!o) continue;
+      for (const [g, k] of [['type', o.type], ['district', o.districtId || '']]) { const x = by[g][k] = by[g][k] || { apps: 0, won: 0, lost: 0, invalid: 0 }; x.apps++; x[r.status]++; }
+      const y = perOrg[o.id] = perOrg[o.id] || { apps: 0, won: 0, ok: 0 }; y.apps++; if (r.status === 'won') y.won++; if (r.status !== 'invalid') y.ok++;
+    }
+    const rate = x => x.won + x.lost ? `${Math.round(x.won / (x.won + x.lost) * 100)}％` : '—';
+    const table = (g, label) => `<div class="tw"><table class="plain"><thead><tr><th>${label}</th><th class="num">申込</th><th class="num">当選</th><th class="num">当選率</th></tr></thead><tbody>${Object.entries(by[g]).map(([k, x]) => `<tr><td>${g === 'type' ? GB.TYPES[k] : esc(dn(k))}</td><td class="num">${x.apps}</td><td class="num">${x.won}</td><td class="num">${rate(x)}</td></tr>`).join('')}</tbody></table></div>`;
+    const zero = Object.entries(perOrg).filter(([, y]) => y.ok && !y.won).map(([id]) => O(id));
+    const log = runLog(run), groups = {};
+    for (const e of log) (groups[e.key] = groups[e.key] || []).push(e);
+    const hot = Object.entries(groups).filter(([, es]) => es[0].cands.length > 1).sort((a, b) => b[1][0].cands.length - a[1][0].cands.length || (a[0] < b[0] ? -1 : 1)).slice(0, 10);
+    const v = ui.verified[m];
+    return `<div class="toolbar">${seg}</div>
+      <div class="tiles">
+        <div class="tile"><span>申込</span><b class="mono">${res.length}</b><small>件</small></div>
+        <div class="tile ok"><span>当選</span><b class="mono">${count('won')}</b><small>件</small></div>
+        <div class="tile"><span>落選</span><b class="mono">${count('lost')}</b><small>件</small></div>
+        <div class="tile"><span>対象外</span><b class="mono">${count('invalid')}</b><small>件</small></div>
+      </div>
+      <section class="card"><h2>${GB.ymLabel(m)}の抽選の記録</h2>
+        <dl class="kv"><dt>シード</dt><dd><code>${esc(run.seed)}</code></dd><dt>抽選した日</dt><dd>${GB.mdw(run.at)}</dd><dt>確定の締切</dt><dd>${GB.mdw(run.confirmBy)}</dd></dl>
+        <div class="row-btn">${btn('同じシードでやり直して確かめる', 'verify', { m })}</div>
+        ${v === undefined ? '' : `<p class="${v ? 'okmsg' : 'badmsg'}">${v ? `やり直しても、${res.length} 件すべて同じ結果になりました。` : '結果がちがいます。記録が書きかえられた可能性があります。'}</p>`}
+      </section>
+      <div class="grid2"><section class="card"><h2>区分ごと</h2>${table('type', '区分')}</section><section class="card"><h2>地区ごと</h2>${table('district', '地区')}</section></div>
+      <section class="card"><h2>1つも当たらなかった団体</h2>${zero.length ? `<p>${zero.map(o => esc(o.name)).join('、')}</p><p class="small muted">次の抽選では、くじが ${st.settings.bonusLoss} 本ずつ増えます。</p>` : '<p class="muted">ありません。申し込んだ団体は、どこも1コマ以上当たりました。</p>'}</section>
+      <section class="card"><h2>取り合いになったコマ</h2><p class="small muted">くじの本数のぶんだけ番号を持ち、引いた番号の持ち主が当たります。</p>
+        ${hot.length ? hot.map(([key, es]) => { const [fid, d, sid] = key.split('|'), f = F(fid); return `<div class="hot-slot"><h3>${GB.mdw(d)} ${slotOf(f, d, sid).label}・${esc(f.name)}</h3>${es.map(e => kuji(e, 'admin')).join('')}</div>`; }).join('') : '<p class="muted">取り合いはありませんでした。</p>'}
+      </section>`;
+  }
+  function adminOrgs() {
+    const dOpts = [...st.districts.map(d => [d.id, d.name]), ['', '市外']];
+    const s = st.settings;
+    const rows = st.orgs.map(o => `<tr><td>${esc(o.name)}</td>
+      <td>${sel('org-type', Object.entries(GB.TYPES), o.type, `data-id="${o.id}" aria-label="区分"`)}</td>
+      <td>${sel('org-dist', dOpts, o.inCity ? o.districtId : '', `data-id="${o.id}" aria-label="地区"`)}</td>
+      <td>${o.status === 'approved' ? pill('承認済み', 'ok') : btn('承認する', 'approve', { id: o.id }, 'sm')}${GB.suspended(st, o) ? ' ' + pill(`${GB.md(o.suspendUntil)} まで停止`, 'bad') : ''}</td>
+      <td class="num">${o.points || 0}/${s.ptLimit}${o.points ? ' ' + btn('0 にする', 'resetpts', { id: o.id }, 'sm ghost') : ''}</td>
+      <td class="num">${o.lossStreak || 0}</td></tr>`).join('');
+    return `<section class="card"><h2>登録団体（${st.orgs.length}）</h2><div class="tw"><table><thead><tr><th>団体</th><th>区分</th><th>地区</th><th>状態</th><th class="num">違反点数</th><th class="num">続けてはずれ</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <p class="small muted">区分を「認定地域クラブ」にするのは、市が部活動の受け皿として認定したクラブです。オンライン化すると登録の申請が急に増えることがあるので（港区の例）、登録の条件（人数・市内に住む人の割合など）を先に決めておきます。</p></section>
+      <section class="card"><h2>団体を登録する</h2><form class="form" data-form="addorg">
+        <label class="grow">名前 <input name="name" id="org-name" maxlength="40" required placeholder="例：東部ジュニアバレー"></label>
+        <label>区分 <select name="type" id="org-type">${Object.entries(GB.TYPES).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></label>
+        <label>地区 <select name="dist" id="org-dist">${dOpts.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></label>
+        <button class="btn">登録する（承認待ちになります）</button></form></section>`;
+  }
+  function adminFacilities() {
+    const dOpts = st.districts.map(d => [d.id, d.name]);
+    const rows = st.facilities.map(f => `<tr>
+      <td><input data-ch="fac-name" data-id="${f.id}" value="${esc(f.name)}" aria-label="施設の名前" maxlength="40"></td>
+      <td>${sel('fac-kind', Object.entries(GB.KINDS), f.kind, `data-id="${f.id}" aria-label="種類"`)}</td>
+      <td>${sel('fac-dist', dOpts, f.districtId, `data-id="${f.id}" aria-label="地区"`)}</td>
+      <td>${sel('fac-areas', [[1, '全面だけ'], [2, '半面ずつ（A・B）']], f.areas, `data-id="${f.id}" aria-label="区画"`)}</td>
+      <td class="num">${GB.regularShare(st, f)}％</td></tr>`).join('');
+    return `<section class="card"><h2>体育館（${st.facilities.length}）</h2><div class="tw"><table><thead><tr><th>名前</th><th>種類</th><th>地区</th><th>区画</th><th class="num">定期枠の割合</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <p class="small muted">名前はその場で書きかえられます。デモで実際の体育館の名前を入れて見せるときに使ってください。</p></section>
+      <section class="card"><h2>体育館を足す</h2><form class="form" data-form="addfac">
+        <label class="grow">名前 <input name="name" id="fac-name" maxlength="40" required placeholder="例：西部中学校 体育館"></label>
+        <label>種類 <select name="kind" id="fac-kind">${Object.entries(GB.KINDS).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></label>
+        <label>地区 <select name="dist" id="fac-dist">${dOpts.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></label>
+        <label>区画 <select name="areas" id="fac-areas"><option value="2">半面ずつ（A・B）</option><option value="1">全面だけ</option></select></label>
+        <button class="btn">足す</button></form></section>`;
+  }
+  function adminRegular() {
+    const s = st.settings;
+    const rf = ui.regForm = Object.assign({ f: st.facilities[0].id, w: 1, s: '', n: 'full', o: st.orgs[0].id }, ui.regForm);
+    const fac = F(rf.f) || st.facilities[0];
+    const dt = +rf.w === 0 || +rf.w === 6 ? 'holiday' : 'weekday';
+    const slotOpts = (s.slots[fac.kind][dt] || []).map(x => [x.id, `${x.label} ${GB.time(x)}`]);
+    if (!slotOpts.some(([id]) => id === rf.s)) rf.s = slotOpts.length ? slotOpts[0][0] : '';
+    const regs = st.regulars.filter(r => r.to >= st.clock).sort((a, b) => a.facilityId.localeCompare(b.facilityId) || a.weekday - b.weekday);
+    const events = st.blocks.filter(b => b.kind === 'event' && b.date >= st.clock).sort((a, b) => a.date < b.date ? -1 : 1);
+    const evFac = F(ui.evFac) || st.facilities[st.facilities.length - 1];
+    return `<section class="card"><h2>定期枠（${regs.length}）</h2>
+      <p class="small muted">年度はじめの調整会議で決めた、毎週の枠です。1団体 週 ${s.maxRegular} コマまで、各体育館のコマの ${s.regularMax}％ まで。平日の定期枠は祝日には休みです。</p>
+      <div class="tw"><table><thead><tr><th>体育館</th><th>曜日</th><th>コマ</th><th>区画</th><th>団体</th><th>期間</th><th></th></tr></thead><tbody>
+      ${regs.map(r => `<tr><td>${esc(F(r.facilityId).name)}</td><td>${D.WD[r.weekday]}曜</td><td>${COLS[r.slotId]}</td><td>${r.half ? `${r.half}面` : NEED[r.need]}</td><td>${esc(O(r.orgId).name)}</td><td class="mono">〜${r.to.slice(0, 4)}/${GB.md(r.to)}</td><td>${btn('削除', 'delreg', { id: r.id }, 'sm ghost')}</td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="chips">${st.facilities.map(f => pill(`${f.name.replace(/ 体育館$/, '')} ${GB.regularShare(st, f)}％`, GB.regularShare(st, f) > s.regularMax ? 'bad' : '')).join('')}</p>
+      <h3>定期枠を足す</h3>
+      <form class="form" data-form="addreg">
+        <label>体育館 ${sel('reg-f', st.facilities.map(f => [f.id, f.name]), rf.f, 'id="reg-f" name="f"')}</label>
+        <label>曜日 ${sel('reg-w', [1, 2, 3, 4, 5, 6, 0].map(w => [w, `${D.WD[w]}曜`]), rf.w, 'id="reg-w" name="w"')}</label>
+        <label>コマ ${sel('reg-s', slotOpts, rf.s, 'id="reg-s" name="s"')}</label>
+        <label>区画 ${sel('reg-n', fac.areas > 1 ? [['full', '全面'], ['half', '半面']] : [['full', '全面']], rf.n, 'id="reg-n" name="n"')}</label>
+        <label class="grow">団体 ${sel('reg-o', st.orgs.filter(o => o.status === 'approved').map(o => [o.id, o.name]), rf.o, 'id="reg-o" name="o"')}</label>
+        <button class="btn">足す</button>
+      </form></section>
+      <section class="card"><h2>大会・市の行事（優先確保）</h2>
+      ${events.length ? `<div class="tw"><table><thead><tr><th>日付</th><th>体育館</th><th>コマ</th><th>理由</th><th></th></tr></thead><tbody>${events.map(b => `<tr><td>${GB.mdw(b.date)}</td><td>${esc(F(b.facilityId).name)}</td><td>${b.slotId ? COLS[b.slotId] : '終日'}</td><td>${esc(b.reason)}</td><td>${btn('取り消す', 'unblock', { id: b.id }, 'sm ghost')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">これからの優先確保はありません。</p>'}
+      <form class="form" data-form="addevent">
+        <label>体育館 ${sel('ev-f', st.facilities.map(f => [f.id, f.name]), evFac.id, 'id="ev-f" name="f"')}</label>
+        <label>日付 <input type="date" name="d" id="ev-d" min="${D.add(st.clock, 1)}" required></label>
+        <label>コマ <select name="s" id="ev-s"><option value="">終日</option>${Object.keys(COLS).filter(id => ['weekday', 'holiday'].some(dt => (s.slots[evFac.kind][dt] || []).some(x => x.id === id))).map(id => `<option value="${id}">${COLS[id]}</option>`).join('')}</select></label>
+        <label class="grow">理由 <input name="reason" id="ev-r" value="大会" maxlength="30"></label>
+        <button class="btn">確保する</button>
+      </form><p class="small muted">入っていた予約・申込・定期枠の団体には、自動でお知らせが届きます。</p></section>`;
+  }
+  function adminRules() {
+    const s = st.settings;
+    const num = (k, label, unit, v = k.split('.').reduce((o, p) => o[p], s)) =>
+      `<label class="num-in"><span>${label}</span><span><input type="number" inputmode="numeric" min="0" step="1" data-ch="set" data-k="${k}" id="set-${k.replace(/\./g, '-')}" value="${v}"> ${unit}</span></label>`;
+    const slotRows = [];
+    for (const k of Object.keys(s.slots)) for (const dt of ['weekday', 'holiday']) s.slots[k][dt].forEach((x, i) => {
+      const base = `slots.${k}.${dt}.${i}`;
+      slotRows.push(`<tr><td>${GB.KINDS[k]}</td><td>${dt === 'weekday' ? '平日' : '土日祝'}</td><td>${esc(x.label)}</td>
+        <td><input type="time" data-ch="set" data-k="${base}.start" value="${x.start}" aria-label="${GB.KINDS[k]} ${x.label} 開始" id="set-${base.replace(/\./g, '-')}-start"> – <input type="time" data-ch="set" data-k="${base}.end" value="${x.end}" aria-label="${GB.KINDS[k]} ${x.label} 終了" id="set-${base.replace(/\./g, '-')}-end"></td>
+        <td class="checks">${Object.keys(GB.TYPES).map(t => `<label><input type="checkbox" data-ch="prio" data-k="${base}" data-t="${t}"${(x.prio || []).includes(t) ? ' checked' : ''}> ${GB.TYPE_SHORT[t]}</label>`).join('')}</td></tr>`);
+    });
+    return `<p class="phase">ここで変えた内容は、すぐに「しくみ」の説明と、申込・抽選の判定に反映されます。</p>
+      <div class="grid2">
+        <section class="card"><h2>日程（利用月の${s.lead === 1 ? '前月' : '2か月前の月'}の日にち）</h2><div class="nums">
+          <label class="num-in"><span>抽選する月</span><span>${sel('lead', [[1, '利用月の前月'], [2, '利用月の2か月前']], s.lead, 'id="set-lead"')}</span></label>
+          ${num('applyStart', '申込の開始', '日')}${num('applyEnd', '申込の締切', '日')}${num('drawDay', '抽選日', '日')}${num('confirmEnd', '確定の締切', '日')}${num('firstCity', '先着（市内の団体）', '日から')}${num('firstAll', '先着（だれでも）', '日から')}${num('bookUntil', '先着の予約の締切', '日前まで')}
+        </div></section>
+        <section class="card"><h2>上限</h2><div class="nums">
+          ${num('maxApps', '抽選の申込', '件／月')}${num('maxWins', '抽選の当選', 'コマ／月')}${num('maxTotal', '抽選＋先着の合計', 'コマ／月')}${num('maxPerDay', '1日に使える', 'コマ')}${num('maxRegular', '定期枠（1団体）', 'コマ／週')}${num('regularMax', '定期枠（体育館ごと）', '％まで')}
+        </div></section>
+        <section class="card"><h2>くじの本数</h2><div class="nums">
+          ${Object.keys(GB.TYPES).map(t => num(`tickets.${t}`, GB.TYPES[t], '本')).join('')}
+          ${num('bonusDistrict', '地区内の体育館', '本 加える')}${num('bonusPriority', '優先時間帯', '本 加える')}${num('bonusLoss', '前の月に全部はずれ', '本 加える')}${num('lossMax', '「全部はずれ」を数える上限', '回')}
+        </div></section>
+        <section class="card"><h2>違反と停止</h2><div class="nums">
+          ${num('freeCancelDays', '違反にならないキャンセル', '日前まで')}${num('ptLate', '直前のキャンセル', '点')}${num('ptNoShow', '無断で使わなかった', '点')}${num('ptLimit', '停止になる点数', '点')}${num('suspendMonths', '停止の長さ', 'か月')}
+        </div></section>
+        <section class="card"><h2>使える団体</h2><div class="nums">
+          <label class="num-in"><span>営利の団体と学校体育館</span><span>${sel('commercial', [['none', '使えない'], ['first', '抽選のあとの先着だけ'], ['lottery', '抽選も使える']], s.commercialSchool, 'id="set-commercial"')}</span></label>
+          <label class="num-in"><span>市外の団体の抽選</span><span><label><input type="checkbox" data-ch="flag" data-k="outsideLottery" id="set-outside"${s.outsideLottery ? ' checked' : ''}> 申し込める</label></span></label>
+          <label class="num-in"><span>コマごとの申込の件数</span><span><label><input type="checkbox" data-ch="flag" data-k="showCounts" id="set-counts"${s.showCounts ? ' checked' : ''}> 団体に見せる</label></span></label>
+        </div></section>
+      </div>
+      <section class="card"><h2>コマと優先時間帯</h2><p class="small muted">チェックした区分は、そのコマでくじが ${s.bonusPriority} 本増えます。</p>
+        <div class="tw"><table><thead><tr><th>施設</th><th>日</th><th>コマ</th><th>時間</th><th>優先する区分</th></tr></thead><tbody>${slotRows.join('')}</tbody></table></div></section>
+      <div class="row-btn">${btn('ルールを既定に戻す', 'rules-default', {}, 'ghost')}</div>`;
+  }
+  function adminData() {
+    const m = ui.csvMonth = pickMonth(ui.csvMonth, D.ym(st.clock));
+    const LIVE = ['pending', 'confirmed', 'used', 'noshow'];
+    const lines = [['日付', '曜日', 'コマ', '時間', '体育館', '区画', '団体', '区分', '方法', '状態']];
+    for (const b of st.bookings.filter(b => D.ym(b.date) === m && LIVE.includes(b.status)).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0)) {
+      const f = F(b.facilityId), s = slotOf(f, b.date, b.slotId), o = O(b.orgId);
+      lines.push([b.date, D.WD[D.wd(b.date)], s.label, GB.time(s), f.name, b.half ? `${b.half}面` : NEED[b.need], o.name, GB.TYPE_SHORT[o.type], b.source === 'lottery' ? '抽選' : '先着', BK[b.status][0]]);
+    }
+    const csv = lines.map(r => r.map(c => /[",\n]/.test(String(c)) ? `"${String(c).replace(/"/g, '""')}"` : c).join(',')).join('\n');
+    const json = JSON.stringify(st);
+    return `<section class="card"><h2>予約の一覧（CSV）</h2><div class="toolbar">${monthSwitch(m, 'csvmonth')}</div>
+      <textarea id="csv-out" readonly rows="8">${esc(csv)}</textarea>
+      <div class="row-btn">${btn('コピーする', 'copy', { t: 'csv-out' })}${ENV.artifact ? '' : btn('ファイルに保存', 'download', { t: 'csv-out', name: `体育館よやく_${m}.csv` }, 'ghost')}</div></section>
+      <section class="card"><h2>全部のデータ（JSON）</h2><p class="small muted">この試作のデータは、このブラウザの中にだけあります。ほかのパソコンに移すときは、ここでコピーして、移したい先の「読み込む」に貼りつけます。</p>
+      <textarea id="json-out" readonly rows="4">${esc(json)}</textarea>
+      <div class="row-btn">${btn('コピーする', 'copy', { t: 'json-out' })}${ENV.artifact ? '' : btn('ファイルに保存', 'download', { t: 'json-out', name: '体育館よやく_データ.json' }, 'ghost')}</div>
+      <form class="form" data-form="import"><label class="grow">読み込む（JSON を貼りつける）<textarea name="json" id="json-in" rows="3" required></textarea></label><button class="btn ghost">読み込む</button></form></section>
+      <section class="card"><h2>サンプルに戻す</h2><p>入力した内容を消して、最初のサンプルの状態に戻します。</p>
+      <div class="row-btn">${ui.confirmReset ? `${btn('消してサンプルに戻す', 'reset', {}, 'warn')}${btn('やめる', 'reset-no', {}, 'ghost')}` : btn('サンプルに戻す', 'reset-ask', {}, 'ghost')}</div></section>`;
+  }
+
+  /* ---- コマの詳しい画面（下から出る） ---- */
+  function sheetView() {
+    const { f: facId, d: date, s: slotId } = ui.sheet, f = F(facId), sl = f && GB.slot(st, f, date, slotId);
+    if (!sl) { ui.sheet = null; return ''; }
+    const m = D.ym(date), ph = GB.phase(st, m), sc = GB.schedule(st, m), occ = GB.occupancy(st, f, date, slotId);
+    const role = ui.view, me = role === 'org' ? O(ui.orgId) : null;
+    const apps = st.apps.filter(a => a.facilityId === facId && a.date === date && a.slotId === slotId && a.status !== 'withdrawn').sort((a, b) => idn(a.id) - idn(b.id));
+    const names = {};
+    let k = 0;
+    for (const a of apps) if (!(a.orgId in names)) names[a.orgId] = me && a.orgId === me.id ? 'あなた' : role === 'org' ? `団体${'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[k++] || k}` : (O(a.orgId) || {}).name;
+    const parts = [unitsBlock(f, occ, role, me), lotteryBlock(f, date, sl, apps, ph, sc, role, me, names)];
+    if (role === 'org') parts.push(orgActions(f, date, sl, apps, ph, sc, me));
+    else if (role === 'school') parts.push(schoolActions(f, date, sl, occ));
+    else if (role === 'admin') parts.push(adminActions(f, date, sl, occ));
+    return `<div class="sheet-bg" data-act="close"></div>
+      <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-h">
+        <header class="sheet-h"><div><h2 id="sheet-h" tabindex="-1">${GB.mdw(date)} ${esc(sl.label)} <span class="mono">${GB.time(sl)}</span></h2>
+        <p>${esc(f.name)}・${f.areas > 1 ? '半面ずつ使える（A面・B面）' : '全面だけ'}　${pill(`${GB.ymLabel(m)}：${GB.PHASE[ph]}`, PH_TONE[ph] || '')}</p></div>
+        <button type="button" class="x" data-act="close" aria-label="閉じる">×</button></header>
+        ${parts.join('')}
+      </section>`;
+  }
+  function unitsBlock(f, occ, role, me) {
+    if (occ.block) return `<div class="sec"><p class="blockmsg">${esc(occ.block.reason)}（${occ.block.kind === 'school' ? '学校' : '市役所'}が登録）のため、このコマは使えません。</p></div>`;
+    const rows = [], seen = new Set();
+    for (const u of occ.units) {
+      const it = occ.by[u];
+      if (it && seen.has(it)) continue;
+      if (it) seen.add(it);
+      const lab = occ.units.length === 1 || (it && occ.by.A === occ.by.B) ? '全面' : `${u}面`;
+      let txt = '<span class="muted">空き</span>';
+      if (it) {
+        const mine = me && it.orgId === me.id;
+        const name = role === 'org' && !mine ? 'ほかの団体' : mine ? 'あなた' : esc(O(it.orgId).name);
+        txt = it.kind === 'regular' ? `${pill('定期枠', 'reg')} ${name}` : `${pill(it.ref.source === 'lottery' ? '抽選' : '先着')} ${name} ${pill(BK[it.ref.status][0], BK[it.ref.status][1])}`;
+      }
+      rows.push(`<li><span class="ul">${court(lab === '全面' ? 'full' : 'half', u)} ${lab}</span>${txt}</li>`);
+    }
+    return `<div class="sec"><h3>いまの状態</h3><ul class="units">${rows.join('')}</ul></div>`;
+  }
+  function lotteryBlock(f, date, sl, apps, ph, sc, role, me, names) {
+    const s = st.settings, out = [], pre = ['before', 'apply', 'closed', 'drawing'].includes(ph);
+    if (sl.prio && sl.prio.length) out.push(`<p class="note">優先時間帯：${sl.prio.map(t => GB.TYPE_SHORT[t]).join('・')}は、くじ ＋${s.bonusPriority} 本</p>`);
+    if (me) { const t = GB.tickets(st, me, f, sl); out.push(`<p>あなたのくじ：<b class="mono">${t.total} 本</b>（${t.parts.map(p => `${esc(p[0])} ${p[1]}`).join('＋')}）</p>`); }
+    if (pre) {
+      const live = apps.filter(a => a.status === 'applied');
+      if (role !== 'org' || s.showCounts) {
+        const nf = live.filter(a => a.need === 'full').length;
+        out.push(`<p>抽選の申込：<b class="mono">${live.length} 件</b>${live.length ? `（全面 ${nf}・半面 ${live.length - nf}）` : ''}</p>`);
+      }
+      if (role !== 'org' && live.length) out.push(`<div class="tw"><table class="plain"><thead><tr><th>団体</th><th>区画</th><th class="num">くじ</th><th>内訳</th></tr></thead><tbody>${live.map(a => { const t = GB.tickets(st, O(a.orgId), f, sl); return `<tr><td>${esc(names[a.orgId])}</td><td>${NEED[a.need]}</td><td class="num">${t.total}</td><td>${t.parts.map(p => `${esc(p[0])} ${p[1]}`).join('＋')}</td></tr>`; }).join('')}</tbody></table></div>`);
+      const mine = me && live.find(a => a.orgId === me.id);
+      if (mine && s.showCounts) {
+        const occ = GB.occupancy(st, f, date, sl.id);
+        const cands = live.map(a => ({ id: a.id, need: a.need, tickets: GB.tickets(st, O(a.orgId), f, sl).total }));
+        out.push(`<p>いまの申込で計算した、当たる見込み：<b class="mono">約 ${GB.odds(cands, occ.units.length, occ.free.length, mine.id)}％</b><br><small class="muted">このコマだけで考えた目安です（1か月・1日の上限は入れていません）。</small></p>`);
+      }
+    } else if (sc.run) {
+      const key = `${f.id}|${date}|${sl.id}`, log = runLog(sc.run).filter(e => e.key === key);
+      if (log.length) out.push(`<h3>くじの結果</h3>${log.map(e => kuji(e, role, names)).join('')}`);
+      else if (apps.length) out.push('<p class="muted">このコマは、くじを引く前に決まりました（申込が対象外だったか、上限に達していたため）。</p>');
+      const mine = me && apps.find(a => a.orgId === me.id);
+      if (mine) out.push(`<p>あなたの申込：${pill(APP[mine.status][0], APP[mine.status][1])} ${esc(mine.reason || '')}</p>`);
+    }
+    return out.length ? `<div class="sec">${out.join('')}</div>` : '';
+  }
+  function kuji(e, role, names = {}) {
+    const nm = appId => { const a = GB.find(st.apps, appId); return a ? esc(names[a.orgId] || (O(a.orgId) || {}).name || '') : ''; };
+    if (e.cands.length === 1) return `<p class="kuji1">${nm(e.win)} だけが申し込んでいたので、当選${e.half ? `（${e.half}面）` : ''}。</p>`;
+    let acc = 0;
+    const segs = e.cands.map(([appId, t]) => { const from = acc + 1; acc += t; return `<div class="seg${appId === e.win ? ' win' : ''}" style="flex-grow:${t}"><b>${nm(appId)}</b><span class="mono">${from === acc ? from : `${from}–${acc}`}</span></div>`; }).join('');
+    return `<div class="kuji"><div class="track"><div class="bar">${segs}</div><i class="pin" style="left:${((e.n - 0.5) / e.total * 100).toFixed(2)}%"></i></div>
+      <p class="cap">くじ ${e.total} 本から <b class="mono">${e.n} 番</b>を引いた → <b>${nm(e.win)}</b>${e.half ? `（${e.half}面）` : ''}</p></div>`;
+  }
+  function choice(title, act, f, date, sl, mode) {
+    const rows = (f.areas > 1 ? ['full', 'half'] : ['full']).map(n => ({ n, why: GB.blocker(st, ui.orgId, f.id, date, sl.id, n, mode) }));
+    const whys = [...new Set(rows.filter(r => r.why).map(r => r.why))];
+    return `<div class="row-btn">${rows.map(r => btn(`${court(r.n)} ${title}（${NEED[r.n]}）`, act, { f: f.id, d: date, s: sl.id, n: r.n }, r.n === 'half' ? 'ghost' : '', !!r.why)).join('')}</div>${whys.length ? `<ul class="why">${whys.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}`;
+  }
+  function orgActions(f, date, sl, apps, ph, sc, me) {
+    const s = st.settings, out = [];
+    const mineApp = apps.find(a => a.orgId === me.id && a.status === 'applied');
+    const bk = st.bookings.find(b => b.orgId === me.id && b.facilityId === f.id && b.date === date && b.slotId === sl.id && ['pending', 'confirmed'].includes(b.status));
+    if (ph === 'apply') {
+      if (mineApp) out.push(`<p>${pill('申込済み', 'wait')} ${NEED[mineApp.need]}で申し込んでいます。</p><div class="row-btn">${btn('申込を取り下げる', 'withdraw', { id: mineApp.id }, 'ghost')}</div>`);
+      else out.push(choice('抽選に申し込む', 'apply', f, date, sl, 'apply'));
+    } else if (ph === 'before') out.push(`<p class="muted">抽選の申込は ${GB.md(sc.applyStart)}〜${GB.md(sc.applyEnd)} です。</p>`);
+    else if (ph === 'closed' || ph === 'drawing') out.push(`<p class="muted">${GB.md(sc.draw)} の抽選を待っています。</p>`);
+    if (bk && bk.status === 'pending') out.push(`<p>${pill('当選', 'ok')} ${GB.md(sc.confirmEnd)} までに確定してください。</p><div class="row-btn">${btn('当選を確定する', 'confirm', { id: bk.id })}${btn('辞退する', 'cancel', { id: bk.id }, 'ghost')}</div>`);
+    else if (bk && bk.date > st.clock) {
+      const late = D.diff(bk.date, st.clock) < s.freeCancelDays;
+      out.push(`<p>${pill('予約あり', 'ok')} ${late ? `<span class="warn">いまキャンセルすると違反 ${s.ptLate} 点です（利用日の ${s.freeCancelDays} 日前を過ぎています）。</span>` : `利用日の ${s.freeCancelDays} 日前までは、キャンセルしても違反になりません。`}</p><div class="row-btn">${btn('キャンセルする', 'cancel', { id: bk.id }, 'warn')}</div>`);
+    }
+    if ((ph === 'firstCity' || ph === 'firstAll') && !bk) out.push(choice('先着で予約する', 'book', f, date, sl, 'book'));
+    return out.length ? `<div class="sec act">${out.join('')}</div>` : '';
+  }
+  function blockForm(kind, f, date) {
+    const def = kind === 'school' ? '学校行事' : '大会';
+    return `<form class="form" data-form="sheet-block"><input type="hidden" name="kind" value="${kind}"><input type="hidden" name="f" value="${f.id}"><input type="hidden" name="d" value="${date}">
+      <label class="grow">理由 <input name="reason" id="sheet-reason" value="${def}" maxlength="30"></label>
+      <div class="row-btn"><button class="btn" name="scope" value="slot">このコマを${kind === 'school' ? '学校で使う' : '確保する'}</button><button class="btn ghost" name="scope" value="day">この日を終日${kind === 'school' ? ' 学校で使う' : ' 確保する'}</button></div></form>
+      <p class="small muted">入っていた予約・申込・定期枠の団体には、自動でお知らせが届きます（違反にはなりません）。</p>`;
+  }
+  function useButtons(f, date, sl) {
+    return st.bookings.filter(b => b.facilityId === f.id && b.date === date && b.slotId === sl.id && b.status === 'confirmed' && b.date <= st.clock)
+      .map(b => `<p>${esc(O(b.orgId).name)}は使いましたか？</p><div class="row-btn">${btn('使った', 'use', { id: b.id, v: 1 }, 'sm')}${btn('使わなかった', 'use', { id: b.id, v: 0 }, 'sm warn')}</div>`).join('');
+  }
+  function schoolActions(f, date, sl, occ) {
+    if (f.kind !== 'school') return '<div class="sec act"><p class="muted">市の体育館です。学校の画面からは登録できません。</p></div>';
+    const out = [];
+    if (occ.block) out.push(occ.block.kind === 'school' ? `<div class="row-btn">${btn('学校の使用を取り消す', 'unblock', { id: occ.block.id }, 'warn')}</div>` : `<p class="muted">市役所が登録した「${esc(occ.block.reason)}」です。</p>`);
+    else if (date > st.clock) out.push(blockForm('school', f, date));
+    out.push(useButtons(f, date, sl));
+    return `<div class="sec act">${out.join('')}</div>`;
+  }
+  function adminActions(f, date, sl, occ) {
+    const out = [];
+    if (occ.block) out.push(occ.block.kind === 'event' ? `<div class="row-btn">${btn('優先確保を取り消す', 'unblock', { id: occ.block.id }, 'warn')}</div>` : `<p class="muted">学校が登録した「${esc(occ.block.reason)}」です。</p>`);
+    else if (date > st.clock) out.push(blockForm('event', f, date));
+    out.push(useButtons(f, date, sl));
+    return `<div class="sec act">${out.join('')}</div>`;
+  }
+
+  /* ---- 描く ---- */
+  function render() {
+    const view = { org: orgView, school: schoolView, admin: adminView }[ui.view] || guideView;
+    root.innerHTML = `${topbar()}<main class="wrap" id="main">${view()}</main>${ui.sheet ? sheetView() : ''}`;
+    document.body.classList.toggle('locked', !!ui.sheet);
+  }
+
+  /* ---- 操作 ---- */
+  const settingsCopy = () => JSON.parse(JSON.stringify(st.settings));
+  const setPath = (obj, path, v) => { const ks = path.split('.'), last = ks.pop(); ks.reduce((o, k) => o[k], obj)[last] = v; };
+  const ACT = {
+    view: d => { ui.view = d.v; ui.sheet = null; save(); render(); window.scrollTo(0, 0); },
+    go: d => { ui.view = d.v; if (d.v === 'org') ui.orgTab = d.tab; if (d.v === 'admin') ui.adminTab = d.tab; save(); render(); window.scrollTo(0, 0); },
+    gocal: d => { ui.orgTab = 'cal'; ui.orgMonth = d.m; save(); render(); window.scrollTo(0, 0); },
+    orgtab: d => { ui.orgTab = d.tab; save(); render(); },
+    schooltab: d => { ui.schoolTab = d.tab; save(); render(); },
+    admintab: d => { ui.adminTab = d.tab; ui.confirmReset = false; save(); render(); },
+    orgmonth: d => { ui.orgMonth = d.m; save(); render(); },
+    schoolmonth: d => { ui.schoolMonth = d.m; save(); render(); },
+    csvmonth: d => { ui.csvMonth = d.m; render(); },
+    adminmonth: d => { ui.adminMonth = d.m; save(); render(); },
+    runmonth: d => { ui.runMonth = d.m; ui.seed = ''; render(); },
+    clock: () => { ui.clockOpen = !ui.clockOpen; ui.confirmReset = false; render(); },
+    setclock: d => { const r = moveClock(d.d); ui.clockOpen = false; done(r); },
+    'reset-ask': () => { ui.confirmReset = true; render(); },
+    'reset-no': () => { ui.confirmReset = false; render(); },
+    reset: () => { st = GB.sample(); ui.confirmReset = false; ui.clockOpen = false; ui.sheet = null; ui.verified = {}; ui.seed = ''; done({ ok: true, msg: 'サンプルの状態に戻しました' }); },
+    open: d => { ui.sheet = { f: d.f, d: d.d, s: d.s }; render(); const h = document.getElementById('sheet-h'); if (h) h.focus(); },
+    close: () => { ui.sheet = null; render(); },
+    apply: d => done(A.apply(st, ui.orgId, d.f, d.d, d.s, d.n)),
+    withdraw: d => done(A.withdraw(st, d.id)),
+    book: d => done(A.book(st, ui.orgId, d.f, d.d, d.s, d.n)),
+    confirm: d => done(A.confirm(st, d.id)),
+    'confirm-all': () => {
+      const list = st.bookings.filter(b => b.orgId === ui.orgId && b.status === 'pending');
+      const ok = list.map(b => A.confirm(st, b.id)).filter(r => r.ok).length;
+      done({ ok: ok > 0, msg: ok ? `${ok} 件を確定しました` : '確定できる当選はありません（締切を過ぎています）' });
+    },
+    cancel: d => done(A.cancel(st, d.id)),
+    use: d => done(A.markUse(st, d.id, d.v === '1')),
+    'use-all': d => {
+      const list = st.bookings.filter(b => b.facilityId === d.f && b.status === 'confirmed' && b.date <= st.clock);
+      list.forEach(b => A.markUse(st, b.id, true));
+      done({ ok: true, msg: `${list.length} 件を「使った」にしました` });
+    },
+    unblock: d => done(A.removeBlock(st, d.id)),
+    quickdraw: d => done(A.runLottery(st, d.m, newSeed(d.m))),
+    verify: d => { const run = GB.schedule(st, d.m).run; ui.verified[d.m] = !!run && GB.verifyRun(run); render(); },
+    approve: d => { const o = O(d.id); if (o) o.status = 'approved'; done({ ok: true, msg: `「${o.name}」を承認しました` }); },
+    resetpts: d => { const o = O(d.id); if (o) o.points = 0; done({ ok: true, msg: '違反点数を 0 にしました' }); },
+    delreg: d => done(A.removeRegular(st, d.id)),
+    'rules-default': () => done(A.setSettings(st, GB.defaults())),
+    copy: (d, el) => {
+      const ta = document.getElementById(d.t);
+      if (!ta) return;
+      const fallback = () => { ta.focus(); ta.select(); toast('選びました。コピーの操作（Ctrl+C や長押し）でコピーしてください'); };
+      try { navigator.clipboard.writeText(ta.value).then(() => toast('コピーしました'), fallback); } catch (e) { fallback(); }
+    },
+    download: d => {
+      const ta = document.getElementById(d.t);
+      if (!ta) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(['﻿' + ta.value], { type: d.name.endsWith('.csv') ? 'text/csv' : 'application/json' }));
+      a.download = d.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    },
+  };
+  const CH = {
+    org: el => { ui.orgId = el.value; save(); render(); },
+    fac: el => { ui.facId = el.value; save(); render(); },
+    school: el => { ui.schoolFac = el.value; save(); render(); },
+    adminfac: el => { ui.adminFac = el.value; save(); render(); },
+    'org-type': el => { const o = O(el.dataset.id); o.type = el.value; done({ ok: true, msg: `「${o.name}」の区分を変えました` }); },
+    'org-dist': el => { const o = O(el.dataset.id); o.inCity = !!el.value; o.districtId = el.value || null; done({ ok: true, msg: `「${o.name}」の地区を変えました` }); },
+    'fac-name': el => { const f = F(el.dataset.id), v = el.value.trim(); if (v) f.name = v; done({ ok: !!v, msg: v ? '名前を変えました' : '名前を入れてください' }); },
+    'fac-kind': el => {
+      const f = F(el.dataset.id);
+      if (st.bookings.some(b => b.facilityId === f.id && b.date > st.clock && ['pending', 'confirmed'].includes(b.status)) || st.regulars.some(r => r.facilityId === f.id)) return done({ ok: false, msg: '予約や定期枠が入っているので、種類は変えられません' });
+      f.kind = el.value; done({ ok: true, msg: '種類を変えました' });
+    },
+    'fac-dist': el => { F(el.dataset.id).districtId = el.value; done({ ok: true, msg: '地区を変えました' }); },
+    'fac-areas': el => {
+      const f = F(el.dataset.id), n = +el.value;
+      if (n < 2 && (st.bookings.some(b => b.facilityId === f.id && b.half && b.date >= st.clock && ['pending', 'confirmed'].includes(b.status)) || st.regulars.some(r => r.facilityId === f.id && r.need === 'half') || st.apps.some(a => a.facilityId === f.id && a.need === 'half' && a.status === 'applied')))
+        return done({ ok: false, msg: '半面の予約・申込・定期枠があるので、全面だけにはできません' });
+      f.areas = n; done({ ok: true, msg: '区画を変えました' });
+    },
+    'reg-f': el => { ui.regForm.f = el.value; render(); },
+    'reg-w': el => { ui.regForm.w = +el.value; render(); },
+    'reg-s': el => { ui.regForm.s = el.value; },
+    'reg-n': el => { ui.regForm.n = el.value; },
+    'reg-o': el => { ui.regForm.o = el.value; },
+    'ev-f': el => { ui.evFac = el.value; render(); },
+    lead: el => { const s = settingsCopy(); s.lead = +el.value; done(A.setSettings(st, s)); },
+    commercial: el => { const s = settingsCopy(); s.commercialSchool = el.value; done(A.setSettings(st, s)); },
+    flag: el => { const s = settingsCopy(); s[el.dataset.k] = el.checked; done(A.setSettings(st, s)); },
+    set: el => {
+      const s = settingsCopy(), k = el.dataset.k;
+      if (el.type === 'time') {
+        if (!/^\d{2}:\d{2}$/.test(el.value)) return done({ ok: false, msg: '時刻を入れてください' });
+        setPath(s, k, el.value);
+        const x = k.split('.').slice(0, -1).reduce((o, p) => o[p], s);
+        if (x.start >= x.end) return done({ ok: false, msg: '終わりの時刻は、始まりより後にしてください' });
+      } else setPath(s, k, el.value === '' ? NaN : Number(el.value));
+      done(A.setSettings(st, s));
+    },
+    prio: el => {
+      const s = settingsCopy(), x = el.dataset.k.split('.').reduce((o, p) => o[p], s);
+      x.prio = el.checked ? [...new Set([...(x.prio || []), el.dataset.t])] : (x.prio || []).filter(t => t !== el.dataset.t);
+      done(A.setSettings(st, s));
+    },
+  };
+  const FORM = {
+    clock: fd => { const r = moveClock(fd.get('d')); if (r.ok) ui.clockOpen = false; done(r); },
+    draw: fd => { ui.seed = fd.get('seed'); const r = A.runLottery(st, fd.get('m'), fd.get('seed')); if (r.ok) ui.seed = ''; done(r); },
+    'sheet-block': (fd, sub) => {
+      const r = A.addBlock(st, { facilityId: fd.get('f'), date: fd.get('d'), slotId: sub === 'day' ? null : ui.sheet.s, kind: fd.get('kind'), reason: fd.get('reason') });
+      done(r);
+    },
+    'block-tab': fd => done(A.addBlock(st, { facilityId: fd.get('f'), date: fd.get('d'), slotId: fd.get('s') || null, kind: 'school', reason: fd.get('reason') })),
+    addevent: fd => done(A.addBlock(st, { facilityId: fd.get('f'), date: fd.get('d'), slotId: fd.get('s') || null, kind: 'event', reason: fd.get('reason') })),
+    addorg: fd => done(A.addOrg(st, { name: fd.get('name'), type: fd.get('type'), districtId: fd.get('dist') || null, inCity: !!fd.get('dist') })),
+    addfac: fd => {
+      const name = String(fd.get('name') || '').trim();
+      if (!name) return done({ ok: false, msg: '名前を入れてください' });
+      st.facilities.push({ id: `f${++st.seq}`, name, kind: fd.get('kind'), districtId: fd.get('dist'), areas: +fd.get('areas') });
+      done({ ok: true, msg: `「${name}」を足しました` });
+    },
+    addreg: fd => {
+      Object.assign(ui.regForm, { f: fd.get('f'), w: +fd.get('w'), s: fd.get('s'), n: fd.get('n'), o: fd.get('o') });
+      done(A.addRegular(st, { facilityId: fd.get('f'), orgId: fd.get('o'), weekday: fd.get('w'), slotId: fd.get('s'), need: fd.get('n') }));
+    },
+    import: fd => {
+      let x = null;
+      try { x = JSON.parse(fd.get('json')); } catch (e) { /* 下で知らせる */ }
+      if (!x || x.v !== 1 || !x.settings || !Array.isArray(x.orgs) || !Array.isArray(x.bookings)) return done({ ok: false, msg: '読み込めませんでした。「全部のデータ」でコピーした JSON を、そのまま貼りつけてください' });
+      st = x; A.settle(st); ui.verified = {};
+      done({ ok: true, msg: 'データを読み込みました' });
+    },
+  };
+
+  root.addEventListener('click', e => {
+    const el = e.target.closest('[data-act]');
+    if (!el || !root.contains(el) || el.disabled) return;
+    const fn = ACT[el.dataset.act];
+    if (fn) { e.preventDefault(); fn(el.dataset, el); }
+  });
+  root.addEventListener('change', e => {
+    const el = e.target.closest('[data-ch]');
+    if (el && CH[el.dataset.ch]) CH[el.dataset.ch](el);
+  });
+  root.addEventListener('submit', e => {
+    const form = e.target.closest('form[data-form]');
+    if (!form) return;
+    e.preventDefault();
+    const fn = FORM[form.dataset.form];
+    if (fn) fn(new FormData(form), e.submitter ? e.submitter.value : '');
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (ui.sheet) { ui.sheet = null; render(); }
+    else if (ui.clockOpen) { ui.clockOpen = false; render(); }
+  });
+
+  render();
+})();
+
+</script>
+</body>
+</html>
