@@ -167,6 +167,10 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
 .pos span { font-size: .76rem; color: var(--muted); }
 .tempo { display: flex; align-items: center; gap: 6px; flex: 1 1 260px; min-width: 220px; }
 .tempo .lab, .mini .lab { font-size: .78rem; color: var(--muted); font-weight: 700; white-space: nowrap; }
+.tb-sel { display: contents; }
+.mini.rhythm select { max-width: 11.5em; }
+.mini.loops select { max-width: 6.8em; }
+.mini.solo select { max-width: 9.5em; }
 .num { width: 4.4em; text-align: center; font-weight: 700; padding: 5px 4px; -moz-appearance: textfield; }
 .num::-webkit-outer-spin-button, .num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .step { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface); font-weight: 700; padding: 0; }
@@ -383,8 +387,14 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   .pos { min-width: 0; flex: 1 1 0; }
   .tempo { flex: 0 0 auto; min-width: 0; }
   .tempo .rng { display: none; }
-  .mini { flex: 1 1 40%; min-width: 0; }
-  .mini select { width: 100%; min-width: 0; }
+  /* せまい画面：リズム・くり返し・ソロを、2行目に1行でならべる（くり返しは、文字のかわりに ↻ の印） */
+  .tb-sel { display: flex; flex: 1 1 100%; align-items: center; gap: 6px 10px; min-width: 0; }
+  .mini { flex: 1 1 0; min-width: 0; }
+  .mini select { width: 100%; min-width: 0; max-width: none !important; padding-right: 18px; }
+  .mini.rhythm { flex: 1.5 1 0; }
+  .mini.loops { flex: 0 0 6.6em; }
+  .mini.loops .lab { font-size: 0; }
+  .mini.loops .lab::before { content: '↻'; font-size: .95rem; }
   .mix-row { grid-template-columns: 1fr auto; gap: 2px 10px; }
   .mix-row .mv, .mix-row .mr, .mix-row.single .mv { grid-column: 1 / -1; }
   .cands { grid-template-columns: 1fr; }

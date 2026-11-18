@@ -276,6 +276,10 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
 .pos span { font-size: .76rem; color: var(--muted); }
 .tempo { display: flex; align-items: center; gap: 6px; flex: 1 1 260px; min-width: 220px; }
 .tempo .lab, .mini .lab { font-size: .78rem; color: var(--muted); font-weight: 700; white-space: nowrap; }
+.tb-sel { display: contents; }
+.mini.rhythm select { max-width: 11.5em; }
+.mini.loops select { max-width: 6.8em; }
+.mini.solo select { max-width: 9.5em; }
 .num { width: 4.4em; text-align: center; font-weight: 700; padding: 5px 4px; -moz-appearance: textfield; }
 .num::-webkit-outer-spin-button, .num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .step { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface); font-weight: 700; padding: 0; }
@@ -492,8 +496,14 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
   .pos { min-width: 0; flex: 1 1 0; }
   .tempo { flex: 0 0 auto; min-width: 0; }
   .tempo .rng { display: none; }
-  .mini { flex: 1 1 40%; min-width: 0; }
-  .mini select { width: 100%; min-width: 0; }
+  /* せまい画面：リズム・くり返し・ソロを、2行目に1行でならべる（くり返しは、文字のかわりに ↻ の印） */
+  .tb-sel { display: flex; flex: 1 1 100%; align-items: center; gap: 6px 10px; min-width: 0; }
+  .mini { flex: 1 1 0; min-width: 0; }
+  .mini select { width: 100%; min-width: 0; max-width: none !important; padding-right: 18px; }
+  .mini.rhythm { flex: 1.5 1 0; }
+  .mini.loops { flex: 0 0 6.6em; }
+  .mini.loops .lab { font-size: 0; }
+  .mini.loops .lab::before { content: '↻'; font-size: .95rem; }
   .mix-row { grid-template-columns: 1fr auto; gap: 2px 10px; }
   .mix-row .mv, .mix-row .mr, .mix-row.single .mv { grid-column: 1 / -1; }
   .cands { grid-template-columns: 1fr; }
@@ -7204,10 +7214,15 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     const mkStep = (d, label) => h('button', { type: 'button', class: 'step', 'aria-label': 'テンポを' + label, onclick: () => App.setTempo(st.tempo + d) }, d > 0 ? '＋' : '－');
     const tempo = h('div', { class: 'tempo' }, h('span', { class: 'lab' }, '♩＝'), mkStep(-1, '1下げる'), tempoNum, mkStep(1, '1上げる'), tempoRange);
     const loopSel = U.select(LOOP_CHOICES.map(n => [n, n === 0 ? '∞（ずっと）' : n + '回']), st.loops, v => { st.loops = +v; save(); }, { id: 'loopSel', 'aria-label': 'くり返す回数' });
-    const loops = h('label', { class: 'mini' }, h('span', { class: 'lab' }, 'くり返し'), loopSel);
+    const loops = h('label', { class: 'mini loops' }, h('span', { class: 'lab', title: 'くり返す回数' }, 'くり返し'), loopSel);
     const soloSel = U.select([['same', 'ソロあり'], ['fresh', '毎回あたらしいソロ'], ['off', 'ソロなし（伴奏のみ）']], st.soloMode, v => { st.soloMode = v; if (App.player) App.player.soloOn = v !== 'off'; save(); App.emit('solo-mode'); }, { id: 'soloModeSel', 'aria-label': 'ソロの再生' });
-    const soloLab = h('label', { class: 'mini' }, h('span', { class: 'lab' }, 'ソロ'), soloSel);
-    root.appendChild(h('div', { class: 'transport-in' }, playBtn, pos, tempo, loops, soloLab));
+    const soloLab = h('label', { class: 'mini solo' }, h('span', { class: 'lab' }, 'ソロ'), soloSel);
+    // リズム（伴奏のスタイル）：どのタブからでも変えられるように、ここにも置く（コード譜タブの「演奏の設定」と同じもの）
+    const styleSel = U.select(B.STYLE_GROUPS.map(g => ({ group: g.jp, items: Object.keys(B.STYLES).filter(id => B.STYLES[id].group === g.id).map(id => [id, B.STYLES[id].jp]) })), st.style, v => App.setStyle(v), { id: 'styleQuick', 'aria-label': 'リズム（伴奏のスタイル）', title: 'リズム（伴奏のスタイル）を変える' });
+    const styleLab = h('label', { class: 'mini rhythm' }, h('span', { class: 'lab' }, 'リズム'), styleSel);
+    // リズム・くり返し・ソロは、ひとまとめ（せまい画面では、この3つで2行目になる）
+    root.appendChild(h('div', { class: 'transport-in' }, playBtn, pos, tempo, h('div', { class: 'tb-sel' }, styleLab, loops, soloLab)));
+    App.ui.styleSel = styleSel;
     App.ui.playBtn = playBtn; App.ui.pos = pos; App.ui.tempoNum = tempoNum; App.ui.tempoRange = tempoRange; App.ui.loopSel = loopSel; App.ui.soloSel = soloSel;
   }
   function refreshTransport() {
@@ -7221,6 +7236,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     App.ui.tempoRange.min = Math.min(40, sd.tempo[1]); App.ui.tempoRange.max = Math.max(320, sd.tempo[2]);
     App.ui.loopSel.value = String(st.loops);
     App.ui.soloSel.value = st.soloMode;
+    App.ui.styleSel.value = st.style;
     if (!playing) setPosText('停止中', App.hasChords ? 'スペースキーで再生' : 'コードを入力してください');
     else if (App.playKind === 'preview') setPosText('試聴中', '■で止まります');
   }
@@ -7366,7 +7382,7 @@ textarea.code { width: 100%; font-family: var(--mono); font-size: .92rem; line-h
     root.appendChild(h('div', { class: 'card' },
       h('div', { class: 'card-h' }, h('h2', null, '演奏の設定')),
       h('div', { class: 'fields' },
-        U.field('伴奏のスタイル', el.style, null),
+        U.field('リズム（伴奏のスタイル）', el.style, 'ジャズ・ロック・ブルース・ファンク・ラテンなど16種類。画面の下のバーの「リズム」でも変えられます'),
         h('div', { class: 'field' }, h('label', { class: 'f-label', for: 'keySel' }, 'キー（まるごと移調）'), h('div', { class: 'row gap' }, keyDown, el.keySel, keyUp), el.keyNote),
         h('div', { class: 'field wide' }, h('label', { class: 'f-label' }, 'ノリ（シャッフルの種類と強さ）'), el.feel),
         U.field('カウントイン', el.countIn, null),

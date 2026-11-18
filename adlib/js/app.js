@@ -543,10 +543,15 @@
     const mkStep = (d, label) => h('button', { type: 'button', class: 'step', 'aria-label': 'テンポを' + label, onclick: () => App.setTempo(st.tempo + d) }, d > 0 ? '＋' : '－');
     const tempo = h('div', { class: 'tempo' }, h('span', { class: 'lab' }, '♩＝'), mkStep(-1, '1下げる'), tempoNum, mkStep(1, '1上げる'), tempoRange);
     const loopSel = U.select(LOOP_CHOICES.map(n => [n, n === 0 ? '∞（ずっと）' : n + '回']), st.loops, v => { st.loops = +v; save(); }, { id: 'loopSel', 'aria-label': 'くり返す回数' });
-    const loops = h('label', { class: 'mini' }, h('span', { class: 'lab' }, 'くり返し'), loopSel);
+    const loops = h('label', { class: 'mini loops' }, h('span', { class: 'lab', title: 'くり返す回数' }, 'くり返し'), loopSel);
     const soloSel = U.select([['same', 'ソロあり'], ['fresh', '毎回あたらしいソロ'], ['off', 'ソロなし（伴奏のみ）']], st.soloMode, v => { st.soloMode = v; if (App.player) App.player.soloOn = v !== 'off'; save(); App.emit('solo-mode'); }, { id: 'soloModeSel', 'aria-label': 'ソロの再生' });
-    const soloLab = h('label', { class: 'mini' }, h('span', { class: 'lab' }, 'ソロ'), soloSel);
-    root.appendChild(h('div', { class: 'transport-in' }, playBtn, pos, tempo, loops, soloLab));
+    const soloLab = h('label', { class: 'mini solo' }, h('span', { class: 'lab' }, 'ソロ'), soloSel);
+    // リズム（伴奏のスタイル）：どのタブからでも変えられるように、ここにも置く（コード譜タブの「演奏の設定」と同じもの）
+    const styleSel = U.select(B.STYLE_GROUPS.map(g => ({ group: g.jp, items: Object.keys(B.STYLES).filter(id => B.STYLES[id].group === g.id).map(id => [id, B.STYLES[id].jp]) })), st.style, v => App.setStyle(v), { id: 'styleQuick', 'aria-label': 'リズム（伴奏のスタイル）', title: 'リズム（伴奏のスタイル）を変える' });
+    const styleLab = h('label', { class: 'mini rhythm' }, h('span', { class: 'lab' }, 'リズム'), styleSel);
+    // リズム・くり返し・ソロは、ひとまとめ（せまい画面では、この3つで2行目になる）
+    root.appendChild(h('div', { class: 'transport-in' }, playBtn, pos, tempo, h('div', { class: 'tb-sel' }, styleLab, loops, soloLab)));
+    App.ui.styleSel = styleSel;
     App.ui.playBtn = playBtn; App.ui.pos = pos; App.ui.tempoNum = tempoNum; App.ui.tempoRange = tempoRange; App.ui.loopSel = loopSel; App.ui.soloSel = soloSel;
   }
   function refreshTransport() {
@@ -560,6 +565,7 @@
     App.ui.tempoRange.min = Math.min(40, sd.tempo[1]); App.ui.tempoRange.max = Math.max(320, sd.tempo[2]);
     App.ui.loopSel.value = String(st.loops);
     App.ui.soloSel.value = st.soloMode;
+    App.ui.styleSel.value = st.style;
     if (!playing) setPosText('停止中', App.hasChords ? 'スペースキーで再生' : 'コードを入力してください');
     else if (App.playKind === 'preview') setPosText('試聴中', '■で止まります');
   }
