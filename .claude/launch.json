@@ -156,6 +156,12 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8796", "--directory", "kyomu"],
       "port": 8796
+    },
+    {
+      "name": "portal",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8798"],
+      "port": 8798
     }
   ]
 }

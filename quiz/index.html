@@ -400,7 +400,10 @@ const CONFIG = {
 };
 const ACCOUNT_KEY    = "quiz:account_id"; // この端末に記憶するID（例：E-101236）
 const ACCOUNT_PW_KEY = "quiz:account_pw"; // 「パスワードを保存する」を選んだ場合のみ、この端末に平文で記憶する
-const APPLIED_BASE = "https://math-applied.pages.dev"; // 応用チャレンジ（別デプロイ・同じ回番号M1-04-xを共有）
+// 応用チャレンジ（同じ回番号M1-04-xを共有）。ポータル（portal/）と同じサイトに /quiz/ と /applied/ を並べて
+// 公開しているときは同じサイトの中へ（ポータルでのログインがそのまま引き継がれる）、quiz/ を単独で公開して
+// いるときは別デプロイの math-applied へ。
+const APPLIED_BASE = /\/quiz\/[^/]*$/.test(location.pathname) ? "../applied" : "https://math-applied.pages.dev";
 const qs = new URLSearchParams(location.search);
 const CLASS_ID = qs.get("c") || "";          // 例: ?c=1-3 （出席番号選択の学年・組を固定）
 const QUIZ_ID  = qs.get("quiz") || "";       // QRコードで指定された小テストID
@@ -1849,7 +1852,7 @@ async function refreshTests(){
           ${quizOn
             ? `<button class="btn" id="go" style="flex:1">この小テストをはじめる</button>`
             : `<div class="notice" style="flex:1">小テストは先生がまだ配布していません。</div>`}
-          ${S.sid && reflOn ? `<button class="btn ghost" id="go-reflect" style="flex:none">📝 振り返り</button>` : ""}
+          ${S.sid && reflOn ? `<button class="btn ghost" id="go-reflect" style="flex:none;width:auto">📝 振り返り</button>` : ""}
         </div>
         ${!S.sid ? `<div class="notice warn" style="margin-top:8px">振り返りを書くには先にログインしてください。</div>` : ""}
         <div id="idleSlot"></div>`;
