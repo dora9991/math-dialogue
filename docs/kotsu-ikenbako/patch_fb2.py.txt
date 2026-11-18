@@ -1,0 +1,11 @@
+"""ご意見ばこ：同じ文を送ろうとして {"error":"dup"} で止められたときの、生徒の画面の文。
+使い方: python3 patch_fb2.py <土台の solo-*.js（patch_fb.py の login を足したもの）> <出力 solo-*.js>"""
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+s = open(src, encoding='utf-8').read()
+old = 'もういちど おくってね。書いた文は のこしてあるよ。"};function K2(s){'
+assert s.count(old) == 1 and 'login:"ご意見ばこは' in s, s.count(old)
+new = 'もういちど おくってね。書いた文は のこしてあるよ。",dup:"おなじ文は、もう とどいているよ。ちがうことを 書いてね。"};function K2(s){'
+s = s.replace(old, new)
+open(dst, 'w', encoding='utf-8').write(s)
+print('ok', len(s))
