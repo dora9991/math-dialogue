@@ -63,8 +63,8 @@ function proj2(pre, x0, y0, o = {}) {
 const P2 = ["rect", "g", "d1", "d2", "circ"];
 
 const X1 = 40, Y0 = 22, X2 = 290;
-const base1 = proj1("p", X1, Y0), base2 = proj2("q", X2, Y0);
-const copy2 = proj2("r", X1, Y0, { c: "g" });
+const base1 = [...proj1("p", X1, Y0), txt(8, 34, "(1)", { id: "n1", size: 16, anchor: "start" })], base2 = [...proj2("q", X2, Y0), txt(X2 - 40, 34, "(2)", { id: "n2", size: 16, anchor: "start" })];
+const copy2 = [...proj2("r", X1, Y0, { c: "g" }), txt(8, 34, "(2)", { id: "rn", size: 16, anchor: "start", c: "g" })];
 
 // 見出しの文字（(1) の図のそば）
 const yb1 = Y0 + T1.H * S, yg1 = yb1 + 18, yp1 = yg1 + 19;
@@ -115,7 +115,7 @@ export default {
     },
     {
       cap: "(1) 立面図は**三角形**。上がとがっているから、**錐**（すい）の形だね。",
-      hide: P2.map((k) => "q" + k),
+      hide: [...P2.map((k) => "q" + k), "n2"],
       hl: ["pel", "per", "peb"],
       eqClear: true,
       eq: ["## (1)", "立面図：三角形 → 錐の形"],
@@ -148,7 +148,7 @@ export default {
     },
     {
       cap: "(2) 立面図は**長方形**、平面図は**円**だね。",
-      hide: P1.map((k) => "p" + k),
+      hide: [...P1.map((k) => "p" + k), "n1"],
       clear: true,
       add: [...copy2, ...labels.map((l) => ({ ...l, id: l.id + "2", c: "k" }))],
       hl: ["rrect", "rcirc"],

@@ -1,5 +1,5 @@
 // 問23：投影図から立体を答える（球・六角柱・三角柱）
-import { seg, poly, circ, ell, dot, oblique } from "../dsl.js";
+import { seg, poly, circ, ell, dot, txt, oblique } from "../dsl.js";
 
 // ── 3 次元の頂点・面から、見える辺／見えない辺を決める（斜投影）──
 const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -74,9 +74,11 @@ const ids = (pre, L) => L.map((k) => pre + k);
 
 // 問題の図（3つならべる）と、1つずつ見るときの図（左に大きめ）
 const GB = 142, SB = 0.42, GC = 156, SC = 0.5, XC = 40;
-const base1 = fig1("p", 40, GB, SB), base2 = fig2("q", 175, GB, SB), base3 = fig3("r", 335, GB, SB);
-const cp1 = fig1("a", XC, GC, SC, { c: "g" }), cp2 = fig2("b", XC, GC, SC, { c: "g" }), cp3 = fig3("c", XC, GC, SC, { c: "g" });
-const baseAll = [...ids("p", IDS1), ...ids("q", IDS2), ...ids("r", IDS3)];
+const num = (id, x, c) => txt(x, 40, "(" + id + ")", { id: "n" + id, size: 16, anchor: "start", ...(c ? { c } : {}) });
+const base1 = [...fig1("p", 40, GB, SB), num(1, 8)], base2 = [...fig2("q", 175, GB, SB), num(2, 140)], base3 = [...fig3("r", 335, GB, SB), num(3, 300)];
+const cn = (k) => txt(10, 34, "(" + k + ")", { id: "cn" + k, size: 16, anchor: "start", c: "g" });
+const cp1 = [...fig1("a", XC, GC, SC, { c: "g" }), cn(1)], cp2 = [...fig2("b", XC, GC, SC, { c: "g" }), cn(2)], cp3 = [...fig3("c", XC, GC, SC, { c: "g" }), cn(3)];
+const baseAll = [...ids("p", IDS1), ...ids("q", IDS2), ...ids("r", IDS3), "n1", "n2", "n3"];
 
 // ── (1) 球 ──
 const SX = 350, SY = 160, SR = 58;
@@ -138,7 +140,7 @@ export default {
     },
     {
       cap: "(2) 立面図は**長方形**でたて線が2本、平面図は**六角形**だね。",
-      hide: ids("a", IDS1),
+      hide: [...ids("a", IDS1), "cn1"],
       clear: true,
       add: cp2,
       hl: ["brect", "bhex"],
@@ -167,7 +169,7 @@ export default {
     },
     {
       cap: "(3) 立面図は**長方形**でたて線が1本、平面図は**三角形**だね。",
-      hide: ids("b", IDS2),
+      hide: [...ids("b", IDS2), "cn2"],
       clear: true,
       add: cp3,
       hl: ["crect", "ctri"],
