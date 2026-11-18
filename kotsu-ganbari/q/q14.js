@@ -8,7 +8,7 @@ const A = [50, 60], B = [50, 60 + H], C = [50 + W, 60 + H], D = [50 + W, 60];
 // ── ① A を中心に、半径 AD の円 → 辺 BC との交点 D′
 const Dp = geo.interLC(B, C, A, W).find((p) => p[0] > B[0] && p[0] < C[0]);   // BC 上（B と C のあいだ）
 // ── ②③ D と D′ から同じ半径 rr の円 → 交点 Q（辺のなか）, R（辺のそと）
-const rr = 130;                                   // DD′ の半分（約105）より大きい
+const rr = 140;                                   // DD′ の半分（約105）より大きい
 const [X1, X2] = geo.interCC(D, rr, Dp, rr);
 const Q = X1[0] < X2[0] ? X1 : X2, R = X1[0] < X2[0] ? X2 : X1;
 // ── ④ 直線 QR と辺 CD の交点が P
