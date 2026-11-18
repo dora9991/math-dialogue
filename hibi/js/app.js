@@ -53,7 +53,7 @@
     registerSW();
     if (/demo/.test(location.search) && !HB.api.conn()) startDemo();
     else if (/demo/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
-    else if (HB.api.conn()) S.st = HB.api.cachedState();
+    else if (HB.api.conn()) { S.st = HB.api.cachedState(); keepStorage(); }
     onRoute();
     if (!S.demo && HB.api.conn()) refresh(true);
     // 0時をまたいだら「今日」を描きなおす
@@ -134,7 +134,11 @@
     if (S.sheetOpen) { S.dirtyWhileSheet = true; return; }
     if (S.route.name === 'cal') { const snap = calSnap(); render(); if (!calRestore(snap)) calScrollTo(S.route.ym); return; }
     const y = window.scrollY;
+    // 書きかけの「この日のメモを書く」は、描きなおしても残す（うしろで新しいデータが届いたときに消えないように）
+    const qa = $('.quick textarea'), draft = qa ? qa.value : '', typing = !!qa && document.activeElement === qa;
     render();
+    const nq = draft && $('.quick textarea');
+    if (nq) { nq.value = draft; if (typing) nq.focus(); }
     window.scrollTo(0, y);
   }
 
@@ -198,16 +202,23 @@
 
   function viewWelcome() {
     const c = HB.api.conn() || {};
+    const pk = HB.passkey.supported();
     return `<div class="welcome">
       <div class="logo">${icon('book', 56)}</div>
       <h1>ひびの手帳</h1>
       <p class="lead">予定・リマインダー・メモ・写真を、日付ごとに。<br>毎朝 Claude が受信箱を整理して、ニュースとメールのまとめも「今日」に届きます。</p>
+      ${pk ? `<div class="card pk-login">
+        <button class="primary big" data-act="passkeyLogin">${icon('key', 22)}<span>Face ID・Touch ID でログイン</span></button>
+        <p class="form-err" id="pkErr" hidden></p>
+        <p class="muted small">パスキーを作ってあれば、顔・指紋・パスコードだけで入れます。パスキーは、つながっている端末の「設定」で作れます。</p>
+      </div>
+      <p class="or"><span>はじめての端末は、URL と合言葉で</span></p>` : ''}
       <form class="card form" data-form="connect">
         <h2>裏側につなぐ</h2>
         <label>裏側の URL（/exec で終わる）<input id="cUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(c.url || '')}"></label>
         <label>合言葉（トークン）<input id="cToken" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="hb_…" value="${esc(c.token || '')}"></label>
         <p class="form-err" id="cErr" hidden></p>
-        <button class="primary big" type="submit">つなぐ</button>
+        <button class="${pk ? '' : 'primary '}big" type="submit">つなぐ</button>
         <p class="muted small">URL と合言葉は、裏側（Apps Script）で <code>showSetupInfo</code> を実行するとログに出ます。準備のしかたは README の「はじめに」。</p>
       </form>
       <button class="ghost big" data-act="demo">おためし（サンプルで見る）</button>
@@ -547,11 +558,38 @@
       const on = u.memoFilter === f && (f !== 'cat' || u.memoCat === cat);
       return `<button class="fchip ${on ? 'on' : ''}" data-act="memoFilter" data-f="${f}" data-cat="${esc(cat || '')}">${label}</button>`;
     };
+    const nRem = ((st.ios && st.ios.reminders) || []).length;
     const chips = [chip('all', 'すべて'), chip('star', '★ 重要'), chip('dated', '日付つき'), chip('uncat', '分類なし')]
+      .concat(nRem ? [chip('rem', `iPhoneのリマインダー ${nRem}`)] : [])
       .concat(st.settings.categories.map(c => chip('cat', esc(c.name), c.name))).concat([chip('archived', 'しまったもの')]).join('');
+    const body = u.memoFilter === 'rem' ? reminderLists(u.memoQ)
+      : `<div class="list-wrap">${list.map(memoCard).join('') || '<p class="empty center">メモはありません。右下の ＋ から書けます。</p>'}</div>`;
     return `<div class="toolbar"><label class="searchbox">${icon('search', 18)}<input type="search" class="search" data-input="memoQ" placeholder="メモをさがす" value="${esc(u.memoQ)}" aria-label="メモをさがす"></label></div>
-      <div class="fchips">${chips}</div>
-      <div class="list-wrap">${list.map(memoCard).join('') || '<p class="empty center">メモはありません。右下の ＋ から書けます。</p>'}</div>`;
+      <div class="fchips">${chips}</div>${body}`;
+  }
+
+  /** iPhone のリマインダー（終わっていないもの全部）を、リストごとに。日付のないものも、ここで見られる */
+  function reminderLists(q) {
+    const st = S.st, n = s => String(s || '').toLowerCase().normalize('NFKC');
+    const words = n(q).split(/\s+/).filter(Boolean);
+    const groups = new Map();
+    ((st.ios && st.ios.reminders) || []).filter(r => words.every(w => n(r.title + ' ' + (r.list || '')).includes(w))).forEach(r => {
+      const k = r.list || 'リマインダー';
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(r);
+    });
+    if (!groups.size) return '<p class="empty center">リマインダーはありません。</p>';
+    const t = HB.today();
+    const row = r => {
+      const due = r.due ? HB.labelShort(r.due) + (r.dueTime ? ' ' + hm(r.dueTime) : '') : '';
+      const prio = r.prio >= 3 ? '<span class="prio">!!!</span>' : r.prio === 2 ? '<span class="prio">!!</span>' : '';
+      return `<li class="rem ${r.due && r.due < t ? 'overdue' : ''}"><a href="x-apple-reminderkit://" class="rem-a"><span class="circle"></span>
+        <span class="rem-main"><b>${r.flag ? '🚩 ' : ''}${esc(r.title)}</b>${due ? `<small>${r.due < t ? '期限切れ ' : ''}${esc(due)}</small>` : ''}</span>${prio}</a></li>`;
+    };
+    return Array.from(groups.keys()).sort().map(k => {
+      const rs = groups.get(k).slice().sort((a, b) => (a.due ? 0 : 1) - (b.due ? 0 : 1) || String(a.due).localeCompare(String(b.due)) || String(a.dueTime).localeCompare(String(b.dueTime)));
+      return `<section class="sec rem-list"><h2 class="sec-h small"><i class="cc-dot p${colorOf(k)}"></i><span>${esc(k)}</span><small class="when">${rs.length}</small></h2><div class="card"><ul class="rems">${rs.map(row).join('')}</ul></div></section>`;
+    }).join('');
   }
 
   /* ── 画像・資料 ── */
@@ -591,12 +629,13 @@
         <div class="btns"><button data-act="reconnect">つなぎなおす</button><button data-act="syncRun">いま取り込む</button>${st.folders && st.folders.root ? `<a class="btn" href="https://drive.google.com/drive/folders/${esc(st.folders.root)}" target="_blank" rel="noopener">ドライブのフォルダ</a>` : ''}</div>
         ${(st.outboxErrors || []).length ? `<p class="err">読めなかった Claude の結果：${st.outboxErrors.map(e => esc(e.name)).join('、')}</p>` : ''}`,
         `Claude の整理：${lr.at ? esc(HB.labelWhen(lr.at)) + `（資料 ${lr.files || 0}・メモ ${lr.memos || 0}・確認 ${lr.proposals || 0}）` : 'まだ'}${st.exportedAt ? `　Claude へのデータ：${esc(HB.labelWhen(st.exportedAt))}` : ''}`)}
+      ${S.demo ? '' : passkeyGroup(group)}
       ${group('iPhone 連携（ショートカット）', `<p>iPhone のカレンダー・リマインダーとは、ショートカットApp でつなぎます。<a href="#/guide">つくり方を見る</a></p>
         <label>同期のショートカットの名前<input id="sSync" value="${esc(sc.sync || '')}"></label>
         <label>受信箱へ送るショートカットの名前<input id="sSend" value="${esc(sc.send || '')}"></label>
         <label>iPhone に登録するショートカットの名前<input id="sAdd" value="${esc(sc.add || '')}"></label>
         <div class="btns"><button data-act="saveShortcuts">名前を保存</button><button data-act="runSync">いま同期する</button></div>`,
-        `iPhone から：${st.ios && st.ios.syncedAt ? esc(HB.labelWhen(st.ios.syncedAt)) + `（予定 ${st.ios.events.length}・リマインダー ${st.ios.reminders.length}）` : 'まだ'}`)}
+        `iPhone から：${st.ios && st.ios.syncedAt ? esc(HB.labelWhen(st.ios.syncedAt)) + `（予定 ${st.ios.events.length}件${eventSpan(st.ios.events)}・リマインダー ${st.ios.reminders.length}件）` : 'まだ'}`)}
       ${calColorsGroup()}
       ${group('カレンダー購読（おこのみで）', `<p>日付をつけたメモ・写真を、iPhone のカレンダーにも出せます（見るだけ）。</p>
         <p>${S.feedUrl ? `<button class="copy" data-copy="${esc(S.feedUrl)}">${esc(S.feedUrl)}</button>` : '<span class="muted">URL を読みこみ中…</span>'}</p>`,
@@ -613,6 +652,30 @@
       ${group('この端末', `<div class="btns"><button data-act="exportJson">全部を書き出す（JSON）</button><button data-act="clearCache">この端末の控えを消す</button><button data-act="disconnect">接続をはずす</button></div>`,
         `ひびの手帳 ${esc(st.version || '')}　データは自分の Google ドライブ（「ひびの手帳」フォルダ）にあります。`)}
     </div>`;
+  }
+
+  /** 設定の「ログイン（Face ID・Touch ID）」 */
+  function passkeyGroup(group) {
+    const list = S.st.passkeys;
+    if (!Array.isArray(list)) return group('ログイン（Face ID・Touch ID）', '<p>裏側の Code.gs を新しくすると、Face ID・Touch ID でログインできるようになります（README の「パスキー」）。</p>');
+    const rows = list.map(p => `<li class="pk-row"><span class="pk-ic">${icon('key', 18)}</span><span class="pk-t"><b>${esc(p.name)}</b>${pkDates(p).map(t => `<small>${esc(t)}</small>`).join('')}</span>` +
+      `<button data-act="passkeyDel" data-id="${esc(p.id)}" aria-label="${esc(p.name)} のパスキーを消す">消す</button></li>`).join('');
+    const can = HB.passkey.supported();
+    const lead = list.length ? '<p>ほかの iPhone・iPad・Mac では、ログインの画面で「Face ID・Touch ID でログイン」を押すだけでつながります。</p>'
+      : '<p>パスキーを作ると、ほかの iPhone・iPad・Mac でも、顔・指紋・パスコードだけでつながります。URL と合言葉は、もう入れなくてよくなります。</p>';
+    const btn = !can ? '<p class="muted">このブラウザは、パスキーに対応していません。</p>'
+      : `<div class="btns"><button class="${list.length ? '' : 'primary'}" data-act="passkeyCreate">${icon('key', 18)}${list.length ? 'この端末でも作る' : 'パスキーを作る'}</button></div>`;
+    return group('ログイン（Face ID・Touch ID）', `${lead}${rows ? `<ul class="pk-list">${rows}</ul>` : ''}${btn}`,
+      'パスキーは iCloud キーチェーンに入り、同じ Apple ID の端末に届きます（iPhone で作るのがおすすめ）。端末をなくしたら、ここで消してください。');
+  }
+
+  /** 入っている予定の期間：' · 2025/10/16〜2027/10/15' */
+  function eventSpan(evs) {
+    if (!evs || !evs.length) return '';
+    let a = evs[0].d0, b = evs[0].d0;
+    evs.forEach(e => { if (e.d0 < a) a = e.d0; if (e.d0 > b) b = e.d0; });
+    const f = ymd => ymd.replace(/^(\d{4})-0?(\d+)-0?(\d+)$/, '$1/$2/$3');
+    return ` · ${f(a)}〜${f(b)}`;
   }
 
   /** カレンダーの色（この端末だけに覚える）：iPhone から届いたカレンダーとリマインダーのリストごとに */
@@ -1050,17 +1113,99 @@
     btn.disabled = true; btn.textContent = 'つないでいます…';
     try {
       await HB.api.call('ping', {}, { conn: { url: chk.url, token } });
-      HB.api.setConn({ url: chk.url, token });
-      HB.api.clearState();
-      S.st = null; S.demo = false;
-      go('#/today');
-      await refresh(true);
-      toast('つながりました');
-      const here = location.origin + location.pathname;
-      if (S.st && !S.st.settings.appUrl && /^https:/.test(here)) saveSettings({ appUrl: here }, 'つながりました');
+      await connected({ url: chk.url, token }, 'つながりました');
+      offerPasskey();
     } catch (e) { show(e.message); }
     finally { if (btn.isConnected) { btn.disabled = false; btn.textContent = 'つなぐ'; } }
   }
+
+  /** つながったあと：この端末に覚えて、今日を出す */
+  async function connected(c, msg) {
+    HB.api.setConn(c);
+    HB.api.clearState();
+    S.st = null; S.demo = false;
+    go('#/today');
+    await refresh(true);
+    toast(msg);
+    keepStorage();
+    const here = location.origin + location.pathname;
+    if (S.st && !S.st.settings.appUrl && /^https:/.test(here)) saveSettings({ appUrl: here }, msg);
+  }
+
+  /** この端末の控え（つなぎ先など）を、ブラウザが勝手に消さないようにたのむ */
+  function keepStorage() {
+    try {
+      if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p => p || navigator.storage.persist()).catch(() => {});
+    } catch (e) { /* なくても動く */ }
+  }
+
+  /* ───── パスキー（Face ID・Touch ID でログイン） ───── */
+
+  const PK_ERR = {
+    passkey_unknown: 'このパスキーは、裏側で消されています。URL と合言葉でつないでから、設定でパスキーを作りなおしてください',
+    passkey_stale: 'ログインの期限が切れました。端末の時計が合っているか確かめて、もう一度押してください',
+    passkey_failed: 'パスキーを確かめられませんでした。もう一度押してください',
+    passkey_unsupported: '裏側（Apps Script）でパスキーが使えません。新しい Code.gs を貼って、デプロイしなおしてください',
+    old_backend: '裏側の Code.gs が古く、パスキーに対応していません。新しい Code.gs を貼って、デプロイしなおしてください'
+  };
+  const pkMessage = (e, login) => PK_ERR[e.code] || (/^unknown_action: passkey/.test(e.code || '') || (login && e.code === 'unauthorized') ? PK_ERR.old_backend : e.message);
+
+  /** ログインの画面の「Face ID・Touch ID でログイン」 */
+  async function passkeyLogin() {
+    const err = $('#pkErr'), btn = $('[data-act="passkeyLogin"]');
+    // わけは、ボタンの下に残す（やめたとき・パスキーがないときは、赤くしない）
+    const show = (m, soft) => { if (err) { err.textContent = m; err.hidden = false; err.classList.toggle('soft', !!soft); } else toast(m, soft ? '' : 'err'); };
+    if (err) err.hidden = true;
+    let got;
+    try { got = await HB.passkey.get(); }   // 押したその場で呼ぶ（この前に await を入れない）
+    catch (e) { show(HB.passkey.explain(e, 'login'), HB.passkey.cancelled(e)); return; }
+    const chk = HB.checkGasUrl(got.url);
+    if (!chk.ok) return show(HB.passkey.MESSAGES.no_url);
+    const label = btn && $('span', btn);
+    if (btn) { btn.disabled = true; label.textContent = 'たしかめています…'; }
+    try {
+      const r = await HB.api.call('passkey.login', got.assertion, { conn: { url: chk.url, token: '' } });
+      await connected({ url: chk.url, token: r.token }, 'ログインしました');
+    } catch (e) { show(pkMessage(e, true)); }
+    finally { if (btn && btn.isConnected) { btn.disabled = false; label.textContent = 'Face ID・Touch ID でログイン'; } }
+  }
+
+  /** 設定・つないだ直後の「パスキーを作る」 */
+  async function passkeyCreate() {
+    if (blockDemo()) return;
+    const c = HB.api.conn();
+    if (!c || !S.st) { toast('この端末は、裏側につながっていません（設定の「つなぎなおす」から）', 'err'); return; }
+    let k;
+    try { k = await HB.passkey.create(c.url); }   // 押したその場で呼ぶ
+    catch (e) { toast(HB.passkey.explain(e, 'create'), HB.passkey.cancelled(e) ? '' : 'err'); return; }
+    try {
+      busy(true);
+      const r = await HB.api.call('passkey.add', k);
+      S.st.passkeys = r.passkeys;
+      HB.api.saveState(S.st);
+      if (S.sheetOpen) closeSheet(true);
+      toast('パスキーを作りました');
+      softRender();
+    } catch (e) { toast(pkMessage(e), 'err'); }
+    finally { busy(false); }
+  }
+
+  /** URL と合言葉でつないだ直後：まだパスキーがなければ、作るかをきく */
+  async function offerPasskey() {
+    if (S.demo || !S.st || !Array.isArray(S.st.passkeys) || S.st.passkeys.length) return;
+    if (!(await HB.passkey.platformReady()) || S.sheetOpen) return;
+    $('#toast').className = 'toast';   // 「つながりました」はシートの題名で伝える
+    openSheet(`${sheetHead('つながりました')}
+      <div class="pk-offer">
+        <div class="pk-hero">${icon('key', 34)}</div>
+        <h3>次からは、顔や指紋で</h3>
+        <p>パスキーを作っておくと、ほかの iPhone・iPad・Mac では、URL と合言葉のかわりに、Face ID・Touch ID（またはパスコード）だけでつながります。</p>
+        <button class="primary big" data-act="passkeyCreate">パスキーを作る</button>
+        <button class="cancel" data-act="closeSheet">あとで（設定からも作れます）</button>
+      </div>`, 'small');
+  }
+
+  const pkDates = p => [p.createdAt ? `${HB.labelShort(String(p.createdAt).slice(0, 10))} に作成` : '', p.lastUsedAt ? `最後のログイン：${HB.labelWhen(p.lastUsedAt)}` : 'まだログインに使っていません'].filter(Boolean);
 
   function startDemo() {
     S.demo = true;
@@ -1149,6 +1294,18 @@
       case 'refresh': if (S.demo) toast('おためし中です'); else refresh(true); break;
       case 'demo': startDemo(); onRoute(); break;
       case 'endDemo': endDemo(); break;
+      case 'passkeyLogin': passkeyLogin(); break;
+      case 'passkeyCreate': passkeyCreate(); break;
+      case 'passkeyDel':
+        if (blockDemo() || !confirm('このパスキーを消します。消したパスキーでは、ログインできなくなります（iPhone の「パスワード」App に残る印は、そこで消せます）。')) break;
+        try {
+          busy(true);
+          const r = await HB.api.call('passkey.remove', { id: d.id });
+          S.st.passkeys = r.passkeys; HB.api.saveState(S.st);
+          toast('パスキーを消しました');
+          softRender();
+        } catch (e) { toast(pkMessage(e), 'err'); } finally { busy(false); }
+        break;
       case 'reconnect': S.st = null; S.demo = false; $('#view').innerHTML = viewWelcome(); $('#top').innerHTML = ''; $('#top').hidden = true; $('#bottom').hidden = true; break;
       case 'disconnect':
         if (!confirm('この端末の接続をはずします（データは Google ドライブに残ります）')) break;
@@ -1386,6 +1543,7 @@
   const ICONS = {
     refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>', left: '<path d="M15 18l-6-6 6-6"/>', right: '<path d="M9 18l6-6-6-6"/>',
     up: '<path d="M18 15l-6-6-6 6"/>', x: '<path d="M18 6L6 18M6 6l12 12"/>', plus: '<path d="M12 5v14M5 12h14"/>',
+    key: '<circle cx="8" cy="15.5" r="4.5"/><path d="M11.3 12.2L20 3.5M16.4 7.1l2.6 2.6M13.9 9.6l2 2"/>',
     star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/>',
     cal: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
     memo: '<path d="M6 3.5h9l3.5 3.5V20a.5.5 0 0 1-.5.5H6a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z"/><path d="M9 10h6M9 14h6M9 18h3"/>',

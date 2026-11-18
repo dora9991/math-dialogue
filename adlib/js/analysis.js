@@ -404,10 +404,16 @@
     const lyd = info.roles.some(r => r.kind === 'sub') || info.roles.some(r => r.fn === 'SD' && r.diatonic && c.cls === 'maj');
     const has = (n, a) => c.ext[n] && c.ext[n].indexOf(a) >= 0;
     switch (c.cls) {
-      case 'maj':
+      case 'maj': {
+        // 7th のない V の和音（ロックやポップスの G・D など）は、キーの音で弾けるミクソリディアンのリックを使う
+        // （maj7 のリックだと、キーにない長7度の音が出てしまう）
+        const triad = c.seventh == null && !c.six;
+        if (triad && info.roles.some(r => r.kind === 'func' && r.fn === 'D' && r.diatonic)) { push('dom7', 3); break; }
         push('maj7', 3);
-        if (lyd || has(11, 1)) push('maj7#11', 2);
+        // 借りてきた長和音（♭VII・♭VI・♭III など）も、リディアンのほうがキーになじむ
+        if (lyd || has(11, 1) || (triad && info.roles.some(r => r.kind === 'borrow'))) push('maj7#11', 2);
         break;
+      }
       case 'min': if (c.six) { push('min6', 3); push('min7', 1); } else push('min7', 3); break;
       case 'minmaj': push('minmaj7', 3); push('min6', 1); break;
       case 'hdim': push('m7b5', 3); break;

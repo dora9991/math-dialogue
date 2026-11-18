@@ -4,6 +4,7 @@
 //   最後に rim を付けると、シュートの一部を「リングに当たってから入る／外れる」形にする（fixtures/rimplay.js。正解の shots[].rim に形の名前）。
 //   その次にカメラの場所（behind：ゴールA の裏の2階から斜めに／behindLow：ゴールA の裏のフロアから。省略時は side＝コートの横から）。
 //   例：node make-video.cjs out.mp4 0-120 30 4 - behind（リングに当たるシュートなし・ゴール裏から）
+//   その次はボールの動きぶれ（シャッターが開いている秒数）。例：node make-video.cjs out.mp4 0-150 30 4 - side 0.033（暗い体育館をスマホで撮ったつもり）
 // 映像は「バスケ分析スタジオ」のサンプル試合（fixtures/。シード 204・ブルー vs レッド）を、ブラウザの WebCodecs で1コマずつ描いて作る。
 // 実時間の録画ではないので、コマ落ちがなく、毎回同じ動画になる。
 // VP9 にしているのは、テストに使う Chromium（Playwright 同梱）が H.264 を扱えないため（ふつうの Chrome・Safari では H.264 の動画も同じように読める）。
@@ -54,7 +55,7 @@ async function renderInPage(opts) {
   // リングに当たってから入る／外れるシュートを混ぜる（opts.rim：{ makes, misses } 変える割合）
   const rimPlay = opts.rim ? BS.rimPlay(game, opts.rim) : [];
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  const rd = BS.Renderer(game, cv, { view: opts.view || 'side' });
+  const rd = BS.Renderer(game, cv, { view: opts.view || 'side', blur: opts.blur || 0 });
   const chunks = []; let err = null;
   const enc = new VideoEncoder({ output: (c) => { const d = new Uint8Array(c.byteLength); c.copyTo(d); chunks.push({ d, key: c.type === 'key' }); }, error: (e) => { err = e; } });
   const cfg = { codec: 'vp09.00.31.08', width: W, height: H, bitrate: mbps * 1e6, framerate: fps, latencyMode: 'realtime' };
@@ -116,10 +117,10 @@ async function renderInPage(opts) {
     rimTrack.push([+(m.off + i / fps).toFixed(3)].concat([0, 1].map((side) => { const r = rd.rimAt(side, x); return r && r.cx > 0 && r.cx < W && r.cy > 0 && r.cy < H ? [Math.round(r.cx), Math.round(r.cy), +r.w.toFixed(1)] : null; })));
   }
   window.__blob = window.__mux(chunks, W, H, fps);
-  return { view: opts.view || 'side', frames: chunks.length, duration: off, bytes: window.__blob.size, sec: (performance.now() - t0) / 1000, segs: map, shots, marks, rimTrack, teams: game.teams.map((t) => ({ name: t.name, color: t.color })), toOutCheck: toOut(segs[0].a + 1) };
+  return { view: opts.view || 'side', blur: opts.blur || 0, frames: chunks.length, duration: off, bytes: window.__blob.size, sec: (performance.now() - t0) / 1000, segs: map, shots, marks, rimTrack, teams: game.teams.map((t) => ({ name: t.name, color: t.color })), toOutCheck: toOut(segs[0].a + 1) };
 }
 
-async function make(out, segSpec, fps, mbps, rim, view) {
+async function make(out, segSpec, fps, mbps, rim, view, blur) {
   const segs = String(segSpec || '0-150').split(',').map((s) => { const [a, b] = s.split('-').map(Number); return { a, b }; });
   const srv = await start(0);
   const browser = await chromium.launch({ args: ['--disable-background-timer-throttling', '--disable-renderer-backgrounding'] });
@@ -128,7 +129,7 @@ async function make(out, segSpec, fps, mbps, rim, view) {
     await page.goto(srv.url + 'tests/tools/render.html');
     await page.waitForFunction(() => window.BS && BS.Renderer && BS.sim);
     await page.addScriptTag({ content: MUX + '\nwindow.__mux = mux;' });
-    const info = await page.evaluate(renderInPage, { segs, fps: fps || 30, W: 1280, H: 720, mbps: mbps || 4, rim: rim || null, view: view || 'side' });
+    const info = await page.evaluate(renderInPage, { segs, fps: fps || 30, W: 1280, H: 720, mbps: mbps || 4, rim: rim || null, view: view || 'side', blur: blur || 0 });
     if (info.error) throw new Error(info.error);
     // ページの中の動画を、ダウンロードとして受け取る
     const [dl] = await Promise.all([
@@ -145,6 +146,7 @@ module.exports = { make };
 if (require.main === module) {
   const out = path.resolve(process.argv[2] || 'game.mp4');
   // 6番目の引数に rim を渡すと、リングに当たるシュートを混ぜる（例：node make-video.cjs out.mp4 0-400 30 4 rim）
-  make(out, process.argv[3], Number(process.argv[4] || 30), Number(process.argv[5] || 4), process.argv[6] === 'rim' ? { makes: 0.7, misses: 0.6 } : null, process.argv[7] || 'side')
+  // 8番目の引数は、ボールの動きぶれ（シャッターが開いている秒数。例 0.033＝1/30 秒。暗い体育館をスマホで撮ったつもり）
+  make(out, process.argv[3], Number(process.argv[4] || 30), Number(process.argv[5] || 4), process.argv[6] === 'rim' ? { makes: 0.7, misses: 0.6 } : null, process.argv[7] || 'side', Number(process.argv[8] || 0))
     .then((r) => console.log(JSON.stringify(r))).catch((e) => { console.error(e); process.exit(1); });
 }

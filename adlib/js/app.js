@@ -19,7 +19,8 @@
   App.emit = (name, arg) => { (subs[name] || []).slice().forEach(fn => { try { fn(arg); } catch (e) { console.error('[' + name + ']', e); } }); };
 
   /* ---------------- 状態 ---------------- */
-  const FEEL = { swing: 'Swing', swing2: '2-Beat Swing', ballad: 'Ballad', bossa: 'Bossa Nova', waltz: 'Jazz Waltz', funk: 'Funk' };
+  const FEEL = {};   // スタイル → 楽譜の左上に出す名前（'Swing'・'Rock' …）
+  Object.keys(B.STYLES).forEach(id => { FEEL[id] = B.STYLES[id].en || id; });
   const MIX_DEF = { comp: 0.8, bass: 0.8, drums: 0.9, solo: 0.9, click: 0.5, master: 0.8 };
   const REV_DEF = { comp: 0.16, bass: 0.02, drums: 0.12, solo: 0.2 };
   const LOOP_CHOICES = [1, 2, 3, 4, 6, 8, 12, 0];   // 0 = 無限
@@ -28,11 +29,12 @@
   function defaults() {
     const p = P.byId[P.DEFAULT_ID];
     return {
-      v: 1, presetId: p.id, title: p.title, text: p.text, style: p.style, tempo: p.tempo, swing: null,
+      v: 1, presetId: p.id, title: p.title, text: p.text, style: p.style, tempo: p.tempo, swing: null, feel: null,
       loops: 4, countIn: 1, click: false,
       comp: 'piano', bass: 'upright', drums: 'jazz', soloInst: 'altosax',
       mix: Object.assign({}, MIX_DEF), reverb: Object.assign({}, REV_DEF), muted: {},
-      seed: 1, soloSeed: 3, level: 2, density: 1, soloMode: 'same', concert: true,
+      seed: 1, soloSeed: 3, level: 2, density: 1, rest: 1, soloMode: 'same', concert: true,
+      midi: { on: false, out: '', parts: { comp: true, bass: true, solo: true, drums: true }, offset: 0 },
       keyOverride: null, keyCycle: 0, perRow: 4, range: null, tab: 'chart', dictKey: 0,
     };
   }
@@ -46,6 +48,9 @@
     o.style = B.STYLES[o.style] ? o.style : d.style;
     o.tempo = Math.round(num(o.tempo, 40, 320, B.STYLES[o.style].tempo[0]));
     o.swing = o.swing == null ? null : num(o.swing, 0.5, 0.75, null);
+    o.feel = inList(['even', 's8', 's16'], o.feel, null);
+    // 古い保存・古い共有リンク（強さだけがあって、ノリの種類がない）：標準がストレートのスタイルでも、付けてあったスウィングが消えないように
+    if (o.feel == null && o.swing != null && o.swing > 0.505 && B.feelKindOf(B.STYLES[o.style]) === 'even') o.feel = 's8';
     o.loops = inList(LOOP_CHOICES, o.loops, 4);
     o.countIn = inList([0, 1, 2], o.countIn, 1);
     o.click = !!o.click;
@@ -62,6 +67,10 @@
     o.soloSeed = Math.round(num(o.soloSeed, 1, 99999, 3));
     o.level = inList([1, 2, 3], o.level, 2);
     o.density = inList([0, 1, 2], o.density, 1);
+    o.rest = inList([0, 1, 2], o.rest, 1);
+    // MIDI で送る（Kontakt など）。送り先は名前で覚える
+    { const m = o.midi && typeof o.midi === 'object' ? o.midi : {}, p = m.parts && typeof m.parts === 'object' ? m.parts : {};
+      o.midi = { on: !!m.on, out: typeof m.out === 'string' ? m.out.slice(0, 200) : '', parts: { comp: p.comp !== false, bass: p.bass !== false, solo: p.solo !== false, drums: p.drums !== false }, offset: Math.round(num(m.offset, -150, 150, 0)) }; }
     o.soloMode = inList(['off', 'same', 'fresh'], o.soloMode, 'same');
     o.concert = !!o.concert;
     o.keyOverride = o.keyOverride && typeof o.keyOverride.tonicPc === 'number' && (o.keyOverride.mode === 'major' || o.keyOverride.mode === 'minor') ? { tonicPc: mod(o.keyOverride.tonicPc | 0, 12), mode: o.keyOverride.mode } : null;
@@ -78,7 +87,56 @@
   App.save = save;
 
   /* ---------------- 派生データ（コード譜 → 解析 → ソロ） ---------------- */
-  App.swing = () => (st.swing != null ? st.swing : B.STYLES[st.style].swing);
+  // ノリ（フィール）。kind：'even' ストレート／'s8' 8分シャッフル／'s16' 16分シャッフル。r：前半の長さの割合（0.5〜0.75）
+  //   st.feel・st.swing が null のときは、スタイルの標準（B.STYLES の swing と sdiv）
+  App.feelKind = () => st.feel || B.feelKindOf(B.STYLES[st.style]);
+  App.swing = () => {
+    const sd = B.STYLES[st.style], kind = App.feelKind();
+    if (kind === 'even') return 0.5;
+    if (st.swing != null) return Math.max(0.5, st.swing);
+    return B.feelKindOf(sd) === kind ? sd.swing : (kind === 's16' ? 0.6 : 0.667);   // スタイルの標準と違う種類を選んだときの、はじめの強さ
+  };
+  App.feel = () => ({ div: App.feelKind() === 's16' ? 4 : 2, r: App.swing() });
+  // 強さの名前（スライダーの横に出す）
+  const FEEL_PRESETS = [[57, 'かるい'], [62, 'ふつう'], [67, '3連符'], [71, '強い'], [75, '付点']];
+  App.feelText = () => {
+    const kind = App.feelKind();
+    if (kind === 'even') return 'ストレート（ずらさない）';
+    const pct = Math.round(App.swing() * 100), near = FEEL_PRESETS.find(p => Math.abs(p[0] - pct) <= 1);
+    return (kind === 's16' ? '16分シャッフル ' : '8分シャッフル ') + pct + '%' + (near ? '（' + near[1] + (near[0] === 67 ? 'のハネ' : near[0] === 75 ? '8分＋16分' : '') + '）' : '');
+  };
+  // ノリの選択（コード譜タブと、ソロのタブの両方に置く。どちらで変えても、もう一方に反映される）
+  App.feelControl = function (idPrefix) {
+    const kindSeg = U.seg([['even', 'ストレート'], ['s8', '8分シャッフル'], ['s16', '16分シャッフル']], App.feelKind(), v => App.set({ feel: v }), 'ノリ');
+    const rng = h('input', { type: 'range', class: 'rng', id: (idPrefix || '') + 'swingRng', min: 50, max: 75, step: 1, 'aria-label': 'シャッフルの強さ', oninput: () => App.set({ swing: +rng.value / 100 }) });
+    const val = h('span', { class: 'val' });
+    const chips = h('div', { class: 'row gap wrap' });
+    const chipBtns = FEEL_PRESETS.map(([pct, name]) => { const b = h('button', { type: 'button', class: 'chip btnchip', 'aria-pressed': 'false', title: pct + '%', onclick: () => App.set({ swing: pct === 67 ? 2 / 3 : pct / 100 }) }, name); chips.appendChild(b); return [pct, b]; });
+    const reset = h('button', { type: 'button', class: 'btn sm ghost', onclick: () => App.set({ feel: null, swing: null }) }, 'スタイルの標準にもどす');
+    const hint = h('p', { class: 'f-hint' });
+    const strength = h('div', { class: 'feel-strength' }, h('div', { class: 'row gap' }, rng, val), chips);
+    const root = h('div', { class: 'feel-ctl' }, kindSeg, strength, h('div', { class: 'row gap' }, reset), hint);
+    root.refresh = function () {
+      const kind = App.feelKind(), pct = Math.round(App.swing() * 100), even = kind === 'even';
+      kindSeg.set(kind);
+      rng.value = even ? 50 : pct; rng.disabled = even;
+      val.textContent = even ? '—' : pct + '%';
+      chipBtns.forEach(([p, b]) => { b.disabled = even; b.setAttribute('aria-pressed', String(!even && Math.abs(p - pct) <= 1)); });
+      strength.classList.toggle('off', even);
+      reset.hidden = st.feel == null && st.swing == null;
+      hint.textContent = even ? '8分音符も16分音符も、均等に弾きます。シャッフルを選ぶと、強さを変えられます。'
+        : kind === 's16' ? '16分音符の裏をうしろにずらします（ヒップホップ、ハーフタイム・シャッフル、ニュージャック・スウィングのノリ）。8分音符は動きません。'
+          : '8分音符の裏拍をうしろにずらします（スウィング、ブルースのシャッフル）。67% で3連符のハネ、75% で付点8分＋16分の長さになります。';
+    };
+    root.refresh();
+    return root;
+  };
+  // 楽譜の左上に出す文字（'Swing'・'Rock (Shuffle)' など）
+  App.feelLabel = () => {
+    const base = FEEL[st.style] || '', kind = App.feelKind(), std = B.feelKindOf(B.STYLES[st.style]);
+    if (kind === std) return base;
+    return base + (kind === 'even' ? ' (Straight)' : kind === 's16' ? ' (16th Shuffle)' : ' (Shuffle)');
+  };
   App.styleDef = () => B.STYLES[st.style];
   App.soloInstDef = () => Au.INSTRUMENTS.solo.find(i => i.id === st.soloInst) || Au.INSTRUMENTS.solo[0];
   App.keyLabel = key => key.name;
@@ -117,7 +175,9 @@
   };
   App.soloOpts = function () {
     const rg = S.RANGES[st.soloInst] || S.RANGES.default;
-    return { seed: st.soloSeed, level: st.level, density: st.density, lo: rg[0], hi: rg[1], bpb: App.bpb };
+    const sd = B.STYLES[st.style];
+    // スタイルに合う語彙（ロックならペンタやブルース…）を選びやすくし、速い書き方のスタイル（サンバ・サルサ）では16分音符を使わない
+    return { seed: st.soloSeed, level: st.level, density: st.density, rest: st.rest, lo: rg[0], hi: rg[1], bpb: App.bpb, tags: sd.vocab || null, avoidTags: sd.avoid || null, fast: !!sd.fast };
   };
   App.makeSolo = function () {
     App.solo = S.generate(App.hs, App.an, App.soloOpts());
@@ -182,17 +242,46 @@
   App.loadPreset = function (id) {
     const p = P.byId[id];
     if (!p) return;
+    applyStyleInst(st.style, p.style);
     st.presetId = id; st.title = p.title; st.text = p.text; st.style = p.style;
-    st.tempo = p.tempo; st.swing = null; st.keyOverride = null; st.range = null;
+    st.tempo = p.tempo; st.swing = null; st.feel = null; st.keyOverride = null; st.range = null;
     afterChartChange();
     App.emit('settings');
   };
+  // スタイルに合う楽器へ入れかえる。ただし、自分で選びなおしてある（前のスタイルのおすすめと違う）パートは、そのままにする
+  function applyStyleInst(prevId, nextId) {
+    const a = (B.STYLES[prevId] || {}).inst || {}, b = (B.STYLES[nextId] || {}).inst || {};
+    ['comp', 'bass', 'drums'].forEach(p => { if (b[p] && st[p] === a[p]) st[p] = b[p]; });
+    if (App.engine) { App.engine.inst.comp = st.comp; App.engine.inst.bass = st.bass; App.engine.inst.drums = st.drums; }
+  }
+  /* ---------------- MIDI で送る（Kontakt など） ---------------- */
+  // patch：{ on, out, parts, offset }。オンにしたときは、MIDI を使う許可をもらって、送り先の一覧を作る
+  App.midiStatus = '';
+  App.setMidi = function (patch) {
+    Object.assign(st.midi, patch || {});
+    if (patch && patch.parts) st.midi.parts = Object.assign({}, st.midi.parts, patch.parts);
+    const MO = AL.MO;
+    MO.configure(st.midi);
+    save();
+    if (st.midi.on) {
+      App.midiStatus = '接続しています…';
+      MO.connect().then(() => {
+        MO.configure(st.midi);
+        if (!st.midi.out && MO.outName()) { st.midi.out = MO.outName(); save(); }
+        App.midiStatus = MO.outputs().length ? '' : '送り先が見つかりません（下の「Mac での準備」の 1 を見てください）';
+        App.emit('midi');
+      }, e => { App.midiStatus = 'MIDI を使えませんでした：' + ((e && e.message) || e) + '（Chrome の許可を確かめてください）'; App.emit('midi'); });
+    } else App.midiStatus = '';
+    App.emit('midi');
+  };
+
   App.setStyle = function (id) {
     if (!B.STYLES[id]) return;
     const nw = B.STYLES[id];
+    applyStyleInst(st.style, id);
     st.style = id;
     if (st.tempo < nw.tempo[1] || st.tempo > nw.tempo[2]) st.tempo = nw.tempo[0];
-    st.swing = null;
+    st.swing = null; st.feel = null;
     afterChartChange();
     App.emit('settings');
   };
@@ -215,7 +304,7 @@
 
   App.setSoloParams = function (patch) {
     const instChanged = patch.soloInst != null && patch.soloInst !== st.soloInst;
-    const regen = ['level', 'density', 'soloSeed'].some(k => patch[k] != null && patch[k] !== st[k]);
+    const regen = ['level', 'density', 'rest', 'soloSeed'].some(k => patch[k] != null && patch[k] !== st[k]);
     Object.assign(st, patch);
     st.soloInst = inList(Au.INSTRUMENTS.solo.map(i => i.id), st.soloInst, 'altosax');
     if (regen) App.makeSolo(); else if (instChanged) App.refitSolo();
@@ -259,6 +348,7 @@
       try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* 対応していないブラウザ */ }
       App.ctx = new AC({ latencyHint: 'interactive' });
       App.engine = new Au.Engine(App.ctx);
+      if (AL.MO) App.engine.midiOut = AL.MO;   // MIDI で送るパートは、ここから外へ（midiout.js。送らない設定のときは何もしない）
       App.player = new Au.Player(App.engine);
       App.player.on('stop', () => { stopFrames(); setPlayKind(null); }).on('end', () => { stopFrames(); setPlayKind(null); });
     }
@@ -292,7 +382,7 @@
         return { comp: g.comp, bass: g.bass, drums: g.drums, solo: st.soloMode === 'off' ? [] : App.soloFor(k).events };
       },
       tempo: () => st.tempo,
-      swing: () => App.swing(),
+      feel: () => App.feel(),
       get metronome() { return st.click; },
     };
   };
@@ -354,12 +444,13 @@
       t += c.dur;
     });
     const total = Math.max(bpb, Math.ceil(t / bpb - 1e-6) * bpb);
-    const gen = B.generate(slots, { style: spec.style || 'swing', kind: st.comp, seed: 11, bpb, drums: false });
+    const pvStyle = spec.style || (B.STYLES[st.style].bpb === bpb ? st.style : 'swing');
+    const gen = B.generate(slots, { style: pvStyle, kind: st.comp, seed: 11, bpb, drums: false });
     const solo = spec.solo || [];
     const plan = {
       bpb, chorusBeats: total,
       chorus: () => ({ comp: spec.noComp ? [] : gen.comp, bass: spec.noComp ? [] : gen.bass, drums: [], solo }),
-      tempo: () => spec.tempo || U.clamp(st.tempo, 70, 200), swing: () => spec.swing != null ? spec.swing : App.swing(), metronome: false,
+      tempo: () => spec.tempo || U.clamp(st.tempo, 70, 200), feel: () => (spec.swing != null ? { div: 2, r: spec.swing } : App.feel()), metronome: false,
     };
     App.emit('pos', null);   // 本再生の小節ハイライトを消す
     App.player.start(plan, { loops: 1, countIn: 0, solo: true });
@@ -387,14 +478,15 @@
   }
 
   /* ---------------- 共有リンク ---------------- */
-  // 共有リンク：コード譜・スタイル・テンポに加えて、ソロの条件（番号・難しさ・音の多さ・楽器）と差しかえたリックも入れる。
+  // 共有リンク：コード譜・スタイル・テンポに加えて、ソロの条件（番号・難しさ・音の多さ・ブレイクの多さ・楽器）と差しかえたリックも入れる。
   // 開いた人にも、同じソロが同じように鳴る
   App.shareHash = function () {
     const base = S.generate(App.hs, App.an, App.soloOpts());
     const swaps = [];
     App.solo.decisions.forEach((d, i) => { if (!base.decisions[i] || base.decisions[i].id !== d.id) swaps.push([i, d.id]); });
-    const data = { t: st.text, s: st.style, p: st.tempo, ti: st.title, k: st.keyOverride, ss: st.soloSeed, lv: st.level, dn: st.density, si: st.soloInst, sd: st.seed, cn: st.concert ? 1 : 0 };
+    const data = { t: st.text, s: st.style, p: st.tempo, ti: st.title, k: st.keyOverride, ss: st.soloSeed, lv: st.level, dn: st.density, rs: st.rest, si: st.soloInst, ci: st.comp, bi: st.bass, di: st.drums, sd: st.seed, cn: st.concert ? 1 : 0 };
     if (st.swing != null) data.sw = st.swing;
+    if (st.feel != null) data.fl = st.feel;
     if (swaps.length) data.sx = swaps;
     const json = JSON.stringify(data);
     const b64 = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -412,9 +504,14 @@
       if (d.ss != null) patch.soloSeed = d.ss;
       if (d.lv != null) patch.level = d.lv;
       if (d.dn != null) patch.density = d.dn;
+      if (d.rs != null) patch.rest = d.rs;
       if (d.si != null) patch.soloInst = d.si;
+      // 伴奏の楽器。入っていないリンク（前の版で作ったもの）は、そのスタイルのおすすめの楽器で開く（ロックのリンクが、ジャズの楽器で鳴らないように）
+      const rec = (B.STYLES[d.s] || {}).inst || {};
+      patch.comp = d.ci != null ? d.ci : rec.comp; patch.bass = d.bi != null ? d.bi : rec.bass; patch.drums = d.di != null ? d.di : rec.drums;
       if (d.sd != null) patch.seed = d.sd;
       if (d.sw != null) patch.swing = d.sw;
+      if (d.fl != null) patch.feel = d.fl;
       if (d.cn != null) patch.concert = !!d.cn;
       App._shareSwaps = Array.isArray(d.sx) ? d.sx : null;
       return patch;
@@ -501,6 +598,7 @@
     }
     buildTransport();
     refreshTransport();
+    if (AL.MO) { AL.MO.onchange = () => App.emit('midi'); if (st.midi.on && AL.MO.supported()) App.setMidi({}); else AL.MO.configure(st.midi); }
     App.emit('init');
     U.$$('#tabs button').forEach(b => b.addEventListener('click', () => App.showTab(b.dataset.tab)));
     App.showTab(shared ? 'chart' : st.tab);

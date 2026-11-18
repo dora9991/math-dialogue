@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>根号の中を小さくする</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 平方根 第7時：根号の中の数を、できるだけ小さい自然数にしよう（ikkan の lesson_heihou_07 と同じ流れ）。
+   図の数値は ikkan のデータ（自作）と同じ（今日の問い 2√3 と √12、例題 √12・√45・√28・√90、例題2 は √180（ワークシートのくふう）、
+   考えようの「√2＝1.414 で値が求められる √□」（答えは出さない）、チャレンジ √(135n)）。
+   面積 3 の正方形を4まいならべると、1辺 2√3・面積 12 の正方形（1辺 √12）。√ の中の数を素因数のカードに分けて、2まい組のカードが1まいになって √ の外に出る。
+   答えは、素因数分解と CH.root（土台の √ の字）の2通りで出し直して照らし合わせる（CH.check）。考えようでは、√2 の整数倍になる数（8・18・32・50・72・98）はどこにも出さない。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)', NUMF = '"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif';
+  var PC = [C.yel, C.pink, C.green, C.lav];
+  /* ---- このページの道具 ---- */
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D); if (o.maxW) size = CH.fitSize(D, s, o.maxW, size, { num: o.num }); CH.text(D, x, y, s, { col: o.col, a: o.a, size: size, num: o.num, align: o.align, outline: o.outline === false ? null : OUT }); }
+  function top(D, s, col, a, row) { var B = CH.box(D, { t: 0, l: .03, r: .03 }), f = CH.fs(D, 1); say(D, B.cx, B.y0 + f * (.8 + (row || 0) * 1.35), s, { col: col || C.yel, a: a, size: f, maxW: B.w }); }
+  function mw(D, txt, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + NUMF; var w = g.measureText(String(txt)).width; g.restore(); return w; }
+  /* 根号の記号を線で描く（x0：左はし、y0：上、y1：下、w：中の幅）。中の左はしを返す */
+  function radical(D, x0, y0, y1, w, o) {
+    o = o || {}; var H = y1 - y0, g = D.ctx; g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.lw || Math.max(1.6, Math.min(H * .07, 4)); g.lineJoin = 'round'; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0, y0 + H * .62); g.lineTo(x0 + H * .12, y0 + H * .55); g.lineTo(x0 + H * .3, y1); g.lineTo(x0 + H * .48, y0); g.lineTo(x0 + H * .48 + w, y0); g.stroke(); g.restore();
+    return x0 + H * .48;
+  }
+  /* √ をふくむ式：parts＝['字', ['r', '中の字'], …] を横にならべる */
+  function expr(D, x, y, parts, o) {
+    o = o || {}; var size = o.size || CH.fs(D), col = o.col || C.chalk, a = o.a, ws = parts.map(function (p) { return typeof p === 'string' ? mw(D, p, size) : size * .1 + size * 1.15 * .48 + mw(D, p[1], size) + size * .2; }), W = ws.reduce(function (s, w) { return s + w; }, 0), xx = o.align === 'left' ? x : x - W / 2;
+    parts.forEach(function (p, i) {
+      if (typeof p === 'string') CH.text(D, xx, y, p, { size: size, col: col, a: a, num: true, align: 'left', outline: OUT });
+      else { var H = size * 1.15, xi = radical(D, xx + size * .1, y - H * .55, y + H * .45, ws[i] - H * .48 - size * .14, { col: col, a: a }); CH.text(D, xi + size * .06, y + size * .04, p[1], { size: size, col: col, a: a, num: true, align: 'left' }); }
+      xx += ws[i];
+    });
+    return W;
+  }
+  /* 素因数分解（小さい順） */
+  function pf(n) { var f = [], p = 2; while (n > 1) { while (n % p === 0) { f.push(p); n /= p; } p++; } return f; }
+  /* a√b の形に：[a, b]（2まい組を外に出す） */
+  function simp(n) { var f = pf(n), a = 1, b = 1, i = 0; while (i < f.length) { if (f[i] === f[i + 1]) { a *= f[i]; i += 2; } else { b *= f[i]; i++; } } return [a, b]; }
+  function ab(n) { var q = simp(n); return q[1] === 1 ? String(q[0]) : (q[0] === 1 ? '' : q[0]) + '√' + q[1]; }
+
+  /* カードを √ の中にならべ、2まい組を外に出す。fac：素因数（小さい順）、k：[組に色, 外へ出す]。o：cw（カードの幅）、extra（足すカードの番号→色） */
+  function fRoot(D, cx, y, fac, k1, k2, o) {
+    o = o || {}; var n = fac.length, cw = o.cw || CH.fs(D, 1.6), ch = cw * 1.15, gx = cw * .55, H = ch * 1.35, rw = H * .48, pairs = [], rest = [], col = [], i = 0;
+    while (i < n) { if (i + 1 < n && fac[i] === fac[i + 1]) { col[i] = col[i + 1] = PC[pairs.length % PC.length]; pairs.push([i, i + 1]); i += 2; } else { rest.push(i); i++; } }
+    var p = pairs.length, r = rest.length, W0 = rw + n * cw + (n - 1) * gx + cw * .3, WF = (p ? p * cw + (p - 1) * gx + cw * .35 : 0) + (r ? rw + r * cw + (r - 1) * gx + cw * .3 : 0);
+    var b0 = cx - W0 / 2, bF = cx - WF / 2, X0 = function (j) { return b0 + rw + cw * .15 + j * (cw + gx) + cw / 2; };
+    var e = CH.ease(k2), pos = [], al = [], rbF = bF + (p ? p * cw + (p - 1) * gx + cw * .35 : 0);
+    pairs.forEach(function (q, j) { var xf = bF + j * (cw + gx) + cw / 2; pos[q[0]] = CH.lerp(X0(q[0]), xf, e); pos[q[1]] = CH.lerp(X0(q[1]), xf, e); al[q[0]] = 1; al[q[1]] = 1 - CH.smooth(.6, 1, e); });
+    rest.forEach(function (q, j) { pos[q] = CH.lerp(X0(q), rbF + rw + cw * .15 + j * (cw + gx) + cw / 2, e); al[q] = 1; });
+    /* √ の記号：のこりのカードをかこむ */
+    var rx0 = CH.lerp(b0, rbF, e), rwid = CH.lerp(n * cw + (n - 1) * gx + cw * .3, r ? r * cw + (r - 1) * gx + cw * .3 : 0, e);
+    if (r || e < 1) radical(D, rx0, y - H / 2, y + H / 2, rwid, { col: o.rcol || C.chalk, a: r ? 1 : 1 - CH.smooth(.6, 1, e), lw: Math.max(2, cw * .07) });
+    /* × のしるし（いまの位置のとなりどうし） */
+    var outs = pairs.map(function (q) { return q[0]; }), ins = rest.slice();
+    if (e < .5) { ins = []; for (var j = 0; j < n; j++) ins.push(j); outs = []; }
+    [outs, ins].forEach(function (g) { for (var m = 0; m + 1 < g.length; m++) say(D, (pos[g[m]] + pos[g[m + 1]]) / 2, y, '×', { size: cw * .5, num: true, outline: false, col: 'rgba(242,240,230,.8)' }); });
+    for (var c = 0; c < n; c++) {
+      var cc = k1 > 0 && col[c] ? col[c] : C.blue, lift = col[c] ? -Math.sin(Math.PI * e) * ch * .9 : 0;
+      CH.card(D, pos[c], y + lift, cw, ch, fac[c], { col: cc, size: ch * .55, a: al[c] });
+      if (o.extra && o.extra[c]) CH.fillRect(D, pos[c] - cw / 2 - 3, y - ch / 2 - 3, pos[c] + cw / 2 + 3, y + ch / 2 + 3, { stroke: C.orange, sw: 2.6, a: al[c] });
+    }
+    if (k1 > 0 && e < .05) pairs.forEach(function (q) { var xa = X0(q[0]) - cw / 2, xb = X0(q[1]) + cw / 2, yb = y + ch / 2 + 5; CH.line(D, xa, yb, xb, yb, { col: col[q[0]], w: 3, a: k1 }); });
+    return { W0: W0, WF: WF, x1: cx + CH.lerp(W0, WF, e) / 2, x0: cx - CH.lerp(W0, WF, e) / 2, a: pairs.reduce(function (s, q) { return s * fac[q[0]]; }, 1), b: rest.reduce(function (s, q) { return s * fac[q]; }, 1), ch: ch };
+  }
+
+  /* ---- 数と検算 ---- */
+  CH.check(2 * 2 * 3 === 12 && Math.abs(2 * Math.sqrt(3) - Math.sqrt(12)) < 1e-12 && ab(12) === '2√3' && CH.root(12) === '2√3', '今日の問い（2√3＝√12）');
+  var EX = [12, 45, 28, 90], EXS = ['4×3', '9×5', '4×7', '9×10'];
+  CH.check(EX.map(ab).join() === '2√3,3√5,2√7,3√10' && EX.every(function (n, i) { var q = simp(n), m = EXS[i].split('×'); return ab(n) === CH.root(n) && q[0] * q[0] === +m[0] && q[1] === +m[1] && Math.abs(q[0] * Math.sqrt(q[1]) - Math.sqrt(n)) < 1e-9; }), '例題（2√3、3√5、2√7、3√10）');
+  CH.check(pf(180).join() === '2,2,3,3,5' && ab(180) === '6√5' && CH.root(180) === '6√5', '例題2（√180＝6√5）');
+  var NS = []; for (var n = 1; n <= 200 && NS.length < 2; n++) { var v = Math.round(Math.sqrt(135 * n)); if (v * v === 135 * n) NS.push(n); }
+  CH.check(pf(135).join() === '3,3,3,5' && NS.join() === '15,60' && Math.sqrt(135 * 15) === 45 && Math.sqrt(135 * 60) === 90, 'チャレンジ（n＝15、60）');
+
+  /* ---- 今日の問い：面積 3 の正方形を4まい ---- */
+  function squares(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .06, b: .05 }), wide = D.W > D.H * .9, s = CH.fs(D, .95), r3 = Math.sqrt(3);
+    var c = wide ? CH.rect(R.x0, R.y0, R.x0 + R.w * .52, R.y1) : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .6), q = wide ? CH.rect(R.x0 + R.w * .55, R.y0, R.x1, R.y1) : CH.rect(R.x0, R.y0 + R.h * .62, R.x1, R.y1);
+    var u = Math.min((c.w - s * 5) / (2 * r3), (c.h - s * 6) / (2 * r3)), L = r3 * u, x0 = c.cx - L, y1 = c.cy + L - s * 1.2;
+    var k1 = CH.ease(CH.smooth(.02, .35, t)), k2 = CH.smooth(.38, .52, t), k3 = CH.smooth(.56, .7, t), k4 = CH.smooth(.74, .88, t);
+    var off = [[0, 0], [1, 0], [0, 1], [1, 1]], from = [[0, 0], [1.6, .4], [-.4, 1.7], [1.9, 1.9]];
+    off.forEach(function (o, i) {
+      var a = i === 0 ? 1 : k1, fx = CH.lerp(from[i][0], o[0], k1), fy = CH.lerp(from[i][1], o[1], k1);
+      if (i > 0 && t <= 0) return;
+      var X = x0 + fx * L, Y = y1 - (fy + 1) * L;
+      CH.fillRect(D, X, Y, X + L, Y + L, { fill: hexA(C.blue, .25), stroke: C.blue, sw: 2.2, a: a });
+      say(D, X + L / 2, Y + L / 2, '3', { size: Math.min(s * 1.1, L * .35), col: C.blue, a: a, num: true });
+    });
+    say(D, x0 + L / 2, y1 + s * .9, '√3', { size: s, col: C.yel, num: true });
+    if (k2 > 0) { say(D, x0 + L * 1.5, y1 + s * .9, '√3', { size: s, col: C.yel, num: true, a: k2 }); CH.line(D, x0, y1 + s * 1.9, x0 + 2 * L, y1 + s * 1.9, { col: C.yel, w: 2.4, a: k2 }); say(D, x0 + L, y1 + s * 2.8, '2√3', { size: s * 1.1, col: C.yel, num: true, a: k2 }); }
+    if (k3 > 0) { CH.fillRect(D, x0, y1 - 2 * L, x0 + 2 * L, y1, { stroke: C.orange, sw: 3.2, a: k3 }); say(D, x0 + 2 * L + s * .4, y1 - L, '√12', { size: s * 1.1, col: C.orange, num: true, align: 'left', a: k4 }); }
+    var f = CH.fs(D, wide ? 1 : .9), yy = q.y0 + (wide ? q.h * .25 : f * .6);
+    say(D, q.cx, yy, '2√3 と √12', { size: f * 1.2, col: C.chalk });
+    if (!D.ph) { say(D, q.cx, yy + f * 1.8, '同じ数？', { size: f * 1.1, col: 'rgba(242,240,230,.7)' }); return; }
+    say(D, q.cx, yy + f * 1.8, '面積 3 × 4 ＝ 12', { size: f, col: C.orange, a: k3, num: false });
+    say(D, q.cx, yy + f * 3.2, '1辺 2√3 ＝ √12', { size: f * 1.1, col: C.yel, a: k4, num: false });
+    say(D, q.cx, yy + f * 4.8, '(2√3)² ＝ 2²×(√3)² ＝ 4×3 ＝ 12', { size: f * .9, col: C.chalk, a: CH.smooth(.9, 1, t), maxW: q.w, num: true });
+  }
+
+  /* ---- ことば：√12 のカード ---- */
+  function words(D, t, ph) {
+    var R = CH.box(D, { l: .04, r: .04, t: .08, b: .05 }), s = CH.fs(D, 1), cw = Math.min(s * 1.9, R.w / 7.5), y = R.y0 + R.h * .3;
+    var k1 = ph ? CH.smooth(.15, .3, t) : 0, k2 = ph ? CH.smooth(.32, .58, t) : 0, k3 = ph ? CH.smooth(.62, .8, t) : 0, k4 = ph ? CH.smooth(.82, 1, t) : 0;
+    expr(D, R.cx, R.y0 + s * .4, [['r', '12'], '＝', ['r', '2×2×3']], { size: s, a: 1 });
+    var F = fRoot(D, R.cx, y + s * 1.2, [2, 2, 3], k1, k2, { cw: cw });
+    if (k2 >= 1) say(D, F.x1 + s * .4, y + s * 1.2, '＝ 2√3', { size: s * 1.2, col: C.yel, align: 'left', num: true });
+    if (k1 > 0 && k2 < .2) say(D, R.cx, y + s * 1.2 + F.ch / 2 + s * 1.4, '2まい組（2×2）は、√ の外に 2 として出る', { size: s * .85, col: C.yel, a: k1, maxW: R.w });
+    var y2 = R.y0 + R.h * .72;
+    expr(D, R.cx, y2, [['r', 'a²b'], '＝', 'a', ['r', 'b']], { size: s * 1.25, col: C.green, a: k3 });
+    say(D, R.cx, y2 + s * 1.9, '（例）3√2 ＝ √(3²×2) ＝ √18', { size: s * .95, a: k4, maxW: R.w, num: false });
+  }
+
+  /* ---- 例題：4つ ---- */
+  function exRows(D, t) {
+    var R = CH.box(D, { l: .03, r: .03, t: .05, b: .05 }), rs = CH.rows(R, 4, .1), s = CH.fs(D, .9);
+    rs.forEach(function (r, i) {
+      var n = EX[i], k = i === 0 ? 1 : D.ph ? CH.smooth(.04 + (i - 1) * .32, .3 + (i - 1) * .32, t) : 0, y = r.cy, lw = Math.min(r.w * .17, s * 4.2), cw = Math.min(r.h * .6, s * 1.7, (r.w - lw) / 9);
+      say(D, r.x0, y, '(' + (i + 1) + ')', { size: s * .8, align: 'left', col: 'rgba(242,240,230,.75)' });
+      expr(D, r.x0 + lw * .6, y, [['r', String(n)]], { size: s * 1.05 });
+      var F = fRoot(D, r.x0 + lw + (r.w - lw) * .42, y, pf(n), k > 0 ? 1 : 0, CH.smooth(.3, 1, k), { cw: cw });
+      if (k >= 1 || i === 0) say(D, r.x1, y, '＝ ' + ab(n), { size: s * 1.1, col: C.yel, align: 'right', num: true });
+      if (i === 0) say(D, r.x0, y + s * 1.1, '見本', { size: s * .65, align: 'left', col: 'rgba(242,240,230,.6)' });
+    });
+  }
+
+  /* ---- 例題2：√180 ---- */
+  function ex2(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .06, b: .05 }), s = CH.fs(D, 1), cw = Math.min(s * 1.8, R.w / 11), y = R.y0 + R.h * .45;
+    var k1 = D.ph ? CH.smooth(.18, .32, t) : 0, k2 = D.ph ? CH.smooth(.36, .66, t) : 0, k3 = D.ph ? CH.smooth(.7, .9, t) : 0;
+    expr(D, R.cx, R.y0 + s * .6, [['r', '180']], { size: s * 1.3 });
+    say(D, R.cx, R.y0 + s * 2.2, '180 ＝ 2×2×3×3×5（素因数分解）', { size: s * .9, col: C.chalk, a: D.ph ? 1 : .55, maxW: R.w });
+    var F = fRoot(D, R.cx, y, pf(180), k1, k2, { cw: cw });
+    if (k2 >= 1) say(D, F.x0 + cw * .8, y + F.ch / 2 + s * 1.2, '2×3＝6', { size: s * .9, col: C.yel, a: k3 });
+    if (k3 > 0) expr(D, R.cx, R.y1 - s * 1.2, [['r', '180'], '＝ 6', ['r', '5']], { size: s * 1.35, col: C.yel, a: k3 });
+  }
+
+  /* ---- 考えよう：n の素因数カード（外には出さない） ---- */
+  function tool(D, n) {
+    var R = CH.box(D, { l: .04, r: .04, t: .16, b: .08 }), s = CH.fs(D, 1), f = pf(n), cw = Math.min(s * 1.9, R.w / (f.length * 1.6 + 1.5)), y = R.cy;
+    top(D, '√2 ＝ 1.414 とする', C.chalk, 1, 0);
+    expr(D, R.cx, R.y0 + s * 1.2, [['r', String(n)]], { size: s * 1.4, col: C.yel });
+    if (f.length) fRoot(D, R.cx, y + s, f, 0, 0, { cw: cw });
+    say(D, R.cx, R.y1 - s * .5, n + ' ＝ ' + (f.length > 1 ? f.join('×') : n + '（素数）'), { size: s * .9, col: 'rgba(242,240,230,.85)', maxW: R.w, num: true });
+  }
+
+  /* ---- チャレンジ：√(135n) ---- */
+  function chal(D, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .05, b: .05 }), s = CH.fs(D, .95), rs = CH.rows(R, 3, .1);
+    var k1 = D.ph ? CH.smooth(.02, .22, t) : 0, k2 = D.ph ? CH.smooth(.28, .5, t) : 0, k3 = D.ph ? CH.smooth(.58, .8, t) : 0, k4 = D.ph ? CH.smooth(.85, 1, t) : 0;
+    function row(r, fac, ex, lab, txt, a, kc) {
+      var cw = Math.min(r.h * .45, s * 1.6, r.w / (fac.length * 1.7 + 2)), y = r.y0 + r.h * .45;
+      say(D, r.x0, r.y0 + s * .5, lab, { size: s * .85, align: 'left', col: 'rgba(242,240,230,.8)', a: a });
+      if (a <= 0) return;
+      fRoot(D, r.cx, y, fac, kc, 0, { cw: cw, extra: ex });
+      if (txt) say(D, r.cx, r.y1 - s * .3, txt, { size: s * .95, col: C.yel, a: a, maxW: r.w, num: true });
+    }
+    row(rs[0], [3, 3, 3, 5], null, '135 ＝ 3×3×3×5', D.ph ? '2まい組にならない 3 と 5 が のこる' : '', 1, k1);
+    if (!D.ph) return;
+    row(rs[1], [3, 3, 3, 3, 5, 5], { 3: 1, 5: 1 }, 'n＝3×5＝15 をかける（オレンジのわく）', 'n＝15 … √(135×15)＝√2025＝45', k2, 1);
+    row(rs[2], [2, 2, 3, 3, 3, 3, 5, 5], { 0: 1, 1: 1, 5: 1, 7: 1 }, '2番目は、2×2 もかける', 'n＝15×4＝60 … √(135×60)＝√8100＝90', k3, 1);
+  }
+
+  K3.run({
+    no: '第7時', title: '根号の中の数を、できるだけ小さい自然数にしよう', flat: true, hint: '', alt: '根号と素因数のカードの図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '06.html', label: '◀ 第6時' }, { href: '08.html', label: '第8時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '2√3 と √12', q: '2√3（2×√3 のこと）と √12 は、同じ数といえるだろうか。わけも書こう。',
+        notes: ['① 自分の考え（3分）　同じといえるか、確かめ方も書こう。', '② ペアの考え（3分）　自分とちがう確かめ方は？'],
+        draw: function (D) { squares(D, 0); } },
+      { tag: '今日の問い', q: '2√3 と √12 は、同じ数？', a: '同じ数（2√3＝√12）', sub: '(2√3)²＝2²×(√3)²＝4×3＝12。√12 も2乗すると 12 で、どちらも正の数。2＝√4 と見ても √4×√3＝√12', dur: 7,
+        b: { t: '(2√3)²＝4×3＝12 → <b>2√3＝√12</b>（面積 3 の正方形 4まい ＝ 面積 12）', col: C.yel },
+        draw: function (D) { squares(D, D.ph ? D.t : 0); } },
+      { tag: 'ことば', bh: 'ことば', q: '√12 の 12 を、2×2×3 と分けると、√ の外に出せる数は？ 一般に、√a²b は、どう表せる？', a: '√12＝2√3。√a²b＝a√b', sub: '2乗の因数（2まい組）は、√ の外に出せる。根号の中は、できるだけ小さい自然数にする。反対に、a√b＝√a²b（a を2乗して中に入れる）', dur: 6,
+        b: [{ t: '<b>√a²b＝a√b</b>（2乗の因数は、根号の<b>外</b>に出せる）', col: C.green }, { t: 'a√b＝√a²b　根号の中は、できるだけ<b>小さい</b>自然数に', col: C.green }],
+        draw: function (D) { words(D, D.ph ? D.t : 0, D.ph); } },
+      { tag: '例題', bh: '例題　a√b の形に', q: 'a√b の形に直して、根号の中の数を、できるだけ小さい自然数にしよう。(1) √12（見本）　(2) √45　(3) √28　(4) √90', a: '(2) 3√5　(3) 2√7　(4) 3√10', sub: '(2) 45＝9×5＝3²×5　(3) 28＝4×7＝2²×7　(4) 90＝9×10＝3²×10', dur: 6,
+        b: { t: '√45＝<b>3√5</b>　√28＝<b>2√7</b>　√90＝<b>3√10</b>', col: C.pink },
+        draw: function (D) { exRows(D, D.ph ? D.t : 0); } },
+      { tag: '例題', bh: '例題2　大きな数のとき', q: '√180 を、a√b の形に直そう。2乗の数が見つけにくいときは、どうすればよいだろう。', a: '6√5', sub: '素因数分解して、同じ数が2つずつ組になるものを外に出す。180＝2×2×3×3×5 → 外に 2×3＝6、中に 5', dur: 6,
+        b: { t: '素因数分解 180＝2×2×3×3×5 → √180＝<b>6√5</b>', col: C.pink },
+        draw: function (D) { ex2(D, D.ph ? D.t : 0); } },
+      { tag: '考えよう', q: '√2＝1.414 とする。この値だけを使って、値が求められる √□ を、根号の中が 100 以下の自然数で、すべて見つけよう。（例：√2。√□ が整数になるものは、のぞく）',
+        notes: ['見つけた数と、その値を書こう。', 'どうやって見つけたか、気づいたことを書こう。', 'スライダーで、√ の中の数を素因数のカードに分けられます。'],
+        sliders: [{ key: 'n', label: '√ の中', min: 2, max: 100, step: 1, val: 2, fmt: function (v) { return v; } }],
+        draw: function (D) { tool(D, D.V.n); } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'n を自然数とする。√135n が整数になるような n のうち、いちばん小さい数と、2番目に小さい数を求めよう。',
+        notes: ['ヒント① 135 を、素因数分解してみよう。', 'ヒント② 根号の外に出せないで、中に残る数は、いくつかな。'],
+        a: 'いちばん小さい n＝15、2番目 n＝60', sub: '135＝3×3×3×5。のこる 3 と 5 に、もう1まいずつ組の相手が要る → n＝3×5＝15（√2025＝45）。2番目は 15×2²＝60（√8100＝90）', dur: 6,
+        b: { t: '135＝3×3×3×5 → n＝<b>15</b>（√2025＝45）、2番目 n＝<b>60</b>（√8100＝90）', col: C.orange },
+        draw: function (D) { chal(D, D.ph ? D.t : 0); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

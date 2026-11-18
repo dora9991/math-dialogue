@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>二等辺三角形の底角</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三角形と四角形 第1時：二等辺三角形の底角が等しいことを証明しよう（ikkan の lesson_sankaku_01 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。証明の行は GE.proof が座標で確かめ、表・角の答えは CH.check で計算し直す。
+   折り目（∠A の二等分線）で △ABD を折ると、△ACD にぴったり重なる。 */
+(function () {
+  var C = CH.C, R = Math.PI / 180;
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .06, r: .06, t: .1, b: .12 }); }
+  function fit(D, P, o) { o = o || {}; return GE.fit(D, box(D, o.box), P, { pad: o.pad, keys: o.keys }); }
+  /* F に、動く点（Q）を足す（GE.arc などに名前で渡せる） */
+  function ext(F, Q) { return Object.assign({}, F, { P: Object.assign({}, F.P, Q), X: function (p) { return F.X(typeof p === 'string' && Q[p] ? Q[p] : p); } }); }
+  /* 直線 ab を折り目にして、点 p を k（0〜1）だけ折る（k＝1 で折り返した位置） */
+  function fold(p, a, b, k) { var f = GE.foot(p, a, b), c = Math.cos(Math.PI * k); return [f[0] + (p[0] - f[0]) * c, f[1] + (p[1] - f[1]) * c]; }
+  function iso(b, ba) { return { A: [b / 2, b / 2 * Math.tan(ba * R)], B: [0, 0], C: [b, 0] }; }
+  /* 頂点 v の角（a と b の間）の二等分線と、直線 q1q2 の交点 */
+  function bis(P, v, a, b, q1, q2) { var V = P[v], u = GE.sub(P[a], V), w = GE.sub(P[b], V), lu = Math.hypot(u[0], u[1]), lw = Math.hypot(w[0], w[1]); return GE.meet(V, [V[0] + u[0] / lu + w[0] / lw, V[1] + u[1] / lu + w[1] / lw], P[q1], P[q2]); }
+  /* 直線 pq の上で、点 c から きょり r の点（2つ） */
+  function circLine(p, q, c, r) { var d = GE.sub(q, p), f = GE.sub(p, c), a = d[0] * d[0] + d[1] * d[1], b = 2 * (f[0] * d[0] + f[1] * d[1]), cc = f[0] * f[0] + f[1] * f[1] - r * r, s = Math.sqrt(b * b - 4 * a * cc); return [(-b - s) / (2 * a), (-b + s) / (2 * a)].map(function (t) { return [p[0] + d[0] * t, p[1] + d[1] * t]; }); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), g = D.ctx; g.save(); g.font = '600 ' + size + 'px "Klee One",sans-serif'; var w = g.measureText(s).width; g.restore(); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({}, o, { size: size })); }
+
+  /* ---- 今日の問い：底角 56° の二等辺三角形。D は ∠A の二等分線と BC の交点 ---- */
+  var P1 = iso(4.4, 56); P1.D = bis(P1, 'A', 'B', 'C', 'B', 'C');
+  CH.check(GE.verify(P1, 'AB＝AC') && GE.verify(P1, 'BD＝DC') && GE.near(GE.ang(P1, 'ABC'), 56), '今日の問いの図');
+  function tri1(D, F, o) {
+    o = o || {};
+    GE.figure(F, { segs: ['AB', 'BC', 'CA'], ticks: [['AB', 1], ['AC', 1]], labels: ['A', 'B', 'C'] });
+    if (o.q) { GE.arc(F, 'ABC', { col: C.pink, lab: '?', r: F.s * 1.3 }); GE.arc(F, 'ACB', { col: C.pink, lab: '?', r: F.s * 1.3 }); }
+  }
+
+  var def1 = {
+    id: '第1時 今日の問い', lv: 1, ttl: '底角が等しいことの証明',
+    q: 'AB＝AC の △ABC で、∠B＝∠C を証明しよう。', P: P1,
+    fig: { segs: ['AB', 'BC', 'CA', 'AD'], ticks: [['AB', 1], ['AC', 1]], angs: [['BAD', 1], ['CAD', 1]], dir: { D: 's' } },
+    alias: { B: 'ABD', C: 'ACD' }, hyp: 'AB＝AC', goal: '∠B＝∠C', tri: ['ABD', 'ACD'],
+    L: [{ t: '△ABD と △ACD で' },
+      { t: 'AB＝AC', r: '仮定', n: 1 },
+      { t: '∠BAD＝∠CAD', r: 'AD は ∠A の二等分線', n: 2 },
+      { t: 'AD は共通', n: 3, q: '③ もう1組、等しいものは？', a: 'AD は共通' },
+      { t: '①②③より、2組の辺とその間の角が、それぞれ等しいので', c: 'SAS' },
+      { t: '△ABD≡△ACD' },
+      { t: '∠B＝∠C', r: '合同な図形の対応する角は等しい', ask: 'r' }],
+    point: { a: '補助線を1本ひいて、合同な三角形を2つつくる', sub: 'これで、どんな二等辺三角形でも「底角は等しい」といえる（定理）' }
+  };
+
+  /* ---- 例題：頂角と底角 ---- */
+  var EX = [{ n: 'ア', top: 40, base: 70, ask: '' }, { n: 'イ', top: 100, base: 40, ask: 'base' }, { n: 'ウ', top: 50, base: 65, ask: 'top' }, { n: 'エ', top: 90, base: 45, ask: 'base' }];
+  CH.check(EX.every(function (e) { return e.top + 2 * e.base === 180; }) && (180 - 100) / 2 === 40 && 180 - 65 * 2 === 50 && (180 - 90) / 2 === 45, '例題の表');
+  EX.forEach(function (e) { e.P = iso(4, e.base); CH.check(GE.near(GE.ang(e.P, 'BAC'), e.top), '例題の図 ' + e.n); });
+
+  /* ---- チャレンジ：AB＝AC、AD＝BD＝BC（頂角 36°） ---- */
+  var P8 = iso(4, 72); P8.D = circLine(P8.C, P8.A, P8.B, 4).filter(function (p) { return Math.hypot(p[0] - 4, p[1]) > 1e-6; })[0];
+  CH.check(GE.verify(P8, 'AD＝BD＝BC') && GE.verify(P8, 'AB＝AC') && GE.verify(P8, '∠BAD＝∠ABD') && GE.verify(P8, '∠BDC＝∠BAD＋∠ABD') && GE.verify(P8, '∠BDC＝∠BCD') && GE.verify(P8, '∠ABC＝∠ACB') && GE.verify(P8, '∠BAD＝36°') && 36 + 2 * 36 + 2 * 36 === 180, 'チャレンジ（∠A＝36°）');
+
+  var steps = [
+    { tag: '今日の問い', bh: '二等辺三角形 ABC（AB＝AC）', q: '紙の二等辺三角形を折ると、2つの底角がぴったり重なった。でも、どんな二等辺三角形でもいえるだろうか。AB＝AC のとき ∠B＝∠C になるわけを、合同を使って説明しよう。',
+      notes: ['① 自分の考え（3分）　図に線を1本かき加えて、証明を考えよう。', '② ペアの考え（3分）　自分とちがう線のひき方は？'],
+      b: [{ t: '【仮定】AB＝AC', col: C.blue }, { t: '【結論】∠B＝∠C', col: C.blue }],
+      draw: function (D) { var F = fit(D, P1); tri1(D, F, { q: true }); } },
+    { tag: '今日の問い', q: 'どんな線を1本かき加えると、合同になりそうな三角形が2つできる？', a: '∠A の二等分線 AD', sub: '紙を折ったときの折り目の線。△ABD を AD で折ると、△ACD に重なる', dur: 4,
+      b: { t: '補助線 … ∠A の二等分線 AD（BC との交点を D）', col: C.green },
+      draw: function (D) {
+        var F = fit(D, P1), t = D.ph ? D.t : 0, k1 = CH.smooth(0, .25, t), k2 = CH.smooth(.35, .95, t);
+        tri1(D, F, { q: !D.ph });
+        if (!D.ph) return;
+        GE.seg(F, ['A', GE.lerpP(P1.A, P1.D, k1)], { col: C.yel, w: 3 });
+        if (k1 >= 1) { GE.arc(F, 'BAD', { col: C.green, a: CH.smooth(.25, .35, t) }); GE.arc(F, 'DAC', { col: C.green, a: CH.smooth(.25, .35, t) }); GE.labels(F, ['D'], { dir: { D: 's' } }); }
+        if (t > .35) {
+          var F2 = ext(F, { b: fold(P1.B, P1.A, P1.D, k2) });
+          GE.polyP(F, [P1.A, F2.P.b, P1.D], { col: C.yel, fa: .3 });
+          GE.arc(F2, 'AbD', { col: C.pink, fill: .5, r: F.s * 1.3 });
+          GE.arc(F, 'ACD', { col: C.pink, r: F.s * 1.3, a: k2 });
+        }
+        if (t > .95) say(D, F.R.cx, F.R.y1 + F.s * .9, '△ABD が △ACD にぴったり重なる', { col: C.yel, a: CH.smooth(.95, 1, t), maxW: F.R.w });
+      } }
+  ].concat(GE.proof(def1, { tag: '今日の問い' }).slice(1)).concat([
+    { tag: 'ことば', bh: 'ことば', q: 'ことばの意味をはっきり述べたものを何という？ 二等辺三角形の、等しい2辺の間の角・底辺の両はしの角を何という？', a: '定義。頂角・底角', sub: '証明されたことがらのうち、基本になるものを 定理 という（二等辺三角形の底角は等しい）', dur: 3,
+      b: [{ t: '<b>定義</b> … ことばの意味をはっきり述べたもの', col: C.green }, { t: '二等辺三角形の定義 … 2つの辺が等しい三角形', col: C.green },
+        { t: '<b>頂角</b> … 等しい2辺の間の角　<b>底角</b> … 底辺の両はしの角', col: C.green }, { t: '<b>定理</b> … 証明されたことがらのうち、基本になるもの（例：二等辺三角形の底角は等しい）', col: C.green }],
+      draw: function (D) {
+        var F = fit(D, P1), t = D.ph ? D.t : 0, a1 = CH.smooth(.05, .3, t), a2 = CH.smooth(.35, .6, t), a3 = CH.smooth(.65, .9, t);
+        GE.figure(F, { segs: ['AB', 'BC', 'CA'], ticks: [['AB', 1], ['AC', 1]], labels: ['A', 'B', 'C'] });
+        GE.seg(F, 'AB', { col: C.yel, w: 4, a: a1 * (1 - a2 * .6) }); GE.seg(F, 'AC', { col: C.yel, w: 4, a: a1 * (1 - a2 * .6) });
+        var mAB = F.X(GE.mid(P1.A, P1.B)); if (t > 0) say(D, mAB[0] - F.s * 1.2, mAB[1] - F.s * .4, '等しい2辺', { col: C.yel, a: a1, align: 'right', size: F.s * .9 });
+        GE.arc(F, 'BAC', { col: C.pink, fill: .45, r: F.s * 1.8, a: a2 }); say(D, F.X('A')[0], F.X('A')[1] + F.s * 2.6, '頂角', { col: C.pink, a: a2, size: F.s * .95 });
+        GE.arc(F, 'ABC', { col: C.blue, fill: .45, r: F.s * 1.8, a: a3 }); GE.arc(F, 'ACB', { col: C.blue, fill: .45, r: F.s * 1.8, a: a3 });
+        say(D, F.X('B')[0] + F.s * 3.4, F.X('B')[1] - F.s * .8, '底角', { col: C.blue, a: a3, size: F.s * .95 }); say(D, F.X('C')[0] - F.s * 3.4, F.X('C')[1] - F.s * .8, '底角', { col: C.blue, a: a3, size: F.s * .95 });
+        say(D, F.X([2.2, 0])[0], F.X([2.2, 0])[1] + F.s * 1.1, '底辺', { col: C.blue, a: a3, size: F.s * .9 });
+      } },
+    { tag: '例題', bh: '例題　頂角と底角', q: '二等辺三角形の頂角と底角。表の空らん（？）をうめよう。（アは見本）', a: 'イ 40°、ウ 50°、エ 45°', sub: '底角＝(180°−頂角)÷2、頂角＝180°−底角×2', dur: 1.5,
+      b: [{ t: '底角＝(180°−頂角)÷2　頂角＝180°−底角×2', col: C.pink }, { t: 'イ 底角 (180°−100°)÷2＝<b>40°</b>　ウ 頂角 180°−65°×2＝<b>50°</b>　エ 底角 (180°−90°)÷2＝<b>45°</b>', col: C.pink }],
+      draw: function (D) {
+        var t = D.ph ? D.t : 0, narrow = D.W < 640, R1 = CH.box(D, { l: .04, r: .04, t: .02, b: .38 }), s = CH.fs(D, .85), all = {}, ofs = [];
+        EX.forEach(function (e, i) { var o = narrow ? [(i % 2) * 6, -Math.floor(i / 2) * 7.2] : [i * 5.6, 0]; ofs.push(o); ['A', 'B', 'C'].forEach(function (k) { all[k + i] = GE.add(e.P[k], o); }); });
+        var F0 = GE.fit(D, R1, all, { pad: .06, size: s });
+        EX.forEach(function (e, i) {
+          var F = ext(F0, { A: all['A' + i], B: all['B' + i], C: all['C' + i] }), lb = F.X(GE.add([2, 0], ofs[i]));
+          CH.text(D, lb[0], lb[1] + s * 1.1, e.n, { col: C.chalk, size: s });
+          GE.figure(F, { segs: ['AB', 'BC', 'CA'], ticks: [['AB', 1], ['AC', 1]], labels: false });
+          var showT = e.ask !== 'top' || t > .3, showB = e.ask !== 'base' || t > .3;
+          GE.arc(F, 'BAC', { col: e.ask === 'top' ? C.pink : C.yel, r: s * 1.1, a: showT ? 1 : .5 });
+          GE.arc(F, 'ABC', { col: e.ask === 'base' ? C.pink : C.blue, r: s * 1.1, a: showB ? 1 : .5 }); GE.arc(F, 'ACB', { col: e.ask === 'base' ? C.pink : C.blue, r: s * 1.1, a: showB ? 1 : .5 });
+        });
+        var R2 = CH.box(D, { l: .14, r: .1, t: .66, b: .04 }), sh = function (r, c) { var k = (r === 1 && c === 3) || (r === 2 && (c === 2 || c === 4)); return k && !D.ph ? 0 : k ? CH.smooth(.3, .8, t) : 1; };
+        var g = CH.table(D, R2, ['', 'ア', 'イ', 'ウ', 'エ'], [['頂角'].concat(EX.map(function (e) { return e.top + '°'; })), ['底角'].concat(EX.map(function (e) { return e.base + '°'; }))],
+          { fw: .18, show: sh, hl: function (r, c) { return ((r === 1 && c === 3) || (r === 2 && (c === 2 || c === 4))) ? C.pink : null; } });
+        if (!D.ph) [[1, 3], [2, 2], [2, 4]].forEach(function (rc) { var q = g.cell(rc[0], rc[1]); CH.text(D, q.cx, q.cy, '？', { col: C.pink }); });
+      } },
+    { tag: '考えよう', q: '辺 BC の中点を M として、A と M を結ぶ線を補助線にしても、∠B＝∠C を証明できるだろうか。できるなら、使う合同条件も考えよう。',
+      notes: ['△ABM と △ACM で、等しいといえる辺や角は？', '二等分線 AD を使った証明と、くらべよう。', 'スライダーで、頂角の大きさを変えたり、AM で折ったりできます。'],
+      sliders: [{ key: 'top', label: '頂角', min: 30, max: 140, step: 2, val: 64, fmt: function (x) { return x + '°'; } }, { key: 'f', label: 'AM で折る', min: 0, max: 1, step: .05, val: 0, fmt: function (x) { return x ? Math.round(x * 100) + '%' : '—'; } }],
+      draw: function (D) {
+        var P = iso(4.4, (180 - D.V.top) / 2); P.M = [2.2, 0];
+        var F = GE.fit(D, box(D, { l: .08, r: .08, t: .1, b: .1 }), P, { pad: .14 });
+        GE.figure(F, { segs: ['AB', 'BC', 'CA', 'AM'], ticks: [['AB', 1], ['AC', 1], ['BM', 2], ['MC', 2]], dots: ['M'], dir: { M: 's' } });
+        if (D.V.f > 0) { var F2 = ext(F, { b: fold(P.B, P.A, P.M, D.V.f) }); GE.polyP(F, [P.A, F2.P.b, P.M], { col: C.yel, fa: .3 }); }
+      } },
+    { tag: 'チャレンジ', bh: 'チャレンジ', q: 'AB＝AC の二等辺三角形 ABC の辺 AC 上に、AD＝BD＝BC となる点 D がある。∠A の大きさを求めよう。', a: '∠A＝36°', sub: '∠A＝a° とすると　∠ABD＝a°（AD＝BD）→ ∠BDC＝2a°（外角）→ ∠C＝2a°（BD＝BC）→ ∠ABC＝2a°（AB＝AC）。a＋2a＋2a＝180 より a＝36', dur: 7,
+      b: { t: '∠A＝a° → ∠ABD＝a°、∠BDC＝∠C＝∠ABC＝2a°　a＋2a＋2a＝180　<b>∠A＝36°</b>', col: C.orange },
+      notes: ['ヒント：∠A を a° として、ほかの角を a で表そう。'],
+      draw: function (D) {
+        var F = fit(D, P8, { box: { l: .06, r: .06, t: .06, b: .2 } }), t = D.ph ? D.t : 0, s = F.s;
+        GE.figure(F, { segs: ['AB', 'BC', 'CA', 'BD'], ticks: [['AB', 1], ['AC', 1], ['AD', 2], ['BD', 2], ['BC', 2]], dir: { D: 'e' } });
+        if (!D.ph) { GE.arc(F, 'BAD', { col: C.pink, lab: '?', r: s * 1.6 }); return; }
+        var k = function (a) { return CH.smooth(a, a + .08, t); };
+        GE.arc(F, 'BAD', { col: C.pink, fill: .4, lab: 'a', r: s * 1.6, a: k(.02) });
+        GE.arc(F, 'ABD', { col: C.pink, fill: .4, lab: 'a', r: s * 1.5, a: k(.2) });
+        GE.arc(F, 'BDC', { col: C.yel, fill: .4, lab: '2a', r: s * 1.1, a: k(.38) });
+        GE.arc(F, 'BCD', { col: C.yel, fill: .4, lab: '2a', r: s * 1.3, a: k(.56) });
+        GE.arc(F, 'ABC', { col: C.green, lab: '2a', r: s * 2.6, a: k(.74), n: 1 });
+        var cap = t < .2 ? '∠A を a° とする' : t < .38 ? 'AD＝BD だから　∠ABD＝a°' : t < .56 ? '∠BDC は △ABD の外角だから　2a°' : t < .74 ? 'BD＝BC だから　∠C＝∠BDC＝2a°' : t < .9 ? 'AB＝AC だから　∠ABC＝∠C＝2a°' : 'a＋2a＋2a＝180　→　a＝36　∠A＝36°';
+        say(D, F.R.cx, F.R.y1 + s * 1.9, cap, { col: t < .9 ? C.yel : C.orange, maxW: F.R.w });
+      } }
+  ]);
+
+  K3.run({
+    no: '第1時', title: '二等辺三角形の底角が等しいことを証明しよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '02.html', label: '第2時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

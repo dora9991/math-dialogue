@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>累積度数と累積相対度数</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="js/chart.js"></script>
+<script>
+/* データの活用 第5時：「ある値未満」の割合を、累積度数・累積相対度数で調べよう（ikkan の lesson_data_new_05 と同じ流れ）。
+   ヒストグラムの棒を、左から順に積み上げると、累積度数の「階段」になる。 */
+(function () {
+  var C = CH.C, E = [120, 140, 160, 180, 200, 220, 240], J = [2, 5, 7, 8, 5, 3], CJ = CH.cum(J);
+  CH.check(CJ.join() === '2,7,14,22,27,30', '累積度数');
+  CH.check(CJ.map(function (x) { return CH.f2(x / 30); }).join() === '0.07,0.23,0.47,0.73,0.90,1.00', '累積相対度数');
+  CH.check(CH.f2(2 / 30) === '0.07' && CH.f2(5 / 30) === '0.17' && CH.f2(7 / 30) === '0.23', '四捨五入のずれ');
+  var E80 = [0, 10, 20, 30, 40, 50], CR80 = [0, .10, .30, .60, .85, 1];
+  CH.check(80 * .6 === 48 && 80 * .3 === 24 && CH.near(1 - .85, .15), 'チャレンジ');
+  function ax(D, R, ymax, o) { o = o || {}; var yt = []; for (var y = 0; y <= ymax + 1e-9; y += o.step || 5) yt.push(Math.round(y * 100) / 100); return CH.axes(D, R, { x: [110, 250], y: [0, ymax], xt: E, yt: yt, xl: '（cm）', yl: o.yl || '（人）', yf: o.yf }); }
+
+  K3.run({
+    no: '第5時', title: '「ある値未満」の割合を、累積度数・累積相対度数で調べよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '04.html', label: '◀ 第4時' }, { href: '06.html', label: '第6時 ▶' }],
+    steps: [
+      { tag: '今日の問い', bh: '1年1組30人の立ち幅とび', q: '1年1組30人の、立ち幅とびの記録。180cm 未満の人は、何人で、全体の何%だろう。',
+        notes: ['① 自分の考え（3分）　表のどこを使ったか、式も。', '② ペアの考え（3分）'],
+        draw: function (D) { var Ax = ax(D, CH.box(D, { l: .1, t: .1, b: .16 }), 10, { step: 2 }); CH.bars(D, Ax, E, J, { col: C.blue, labels: true }); } },
+      { tag: '今日の問い', q: '180cm 未満の人は 何人？ 全体の何%？', a: '14人、およそ 47%', sub: '120〜140・140〜160・160〜180 の 3階級　2＋5＋7＝14、14÷30＝0.466…', dur: 3,
+        b: { t: '180cm 未満 … 2＋5＋7＝<b>14人</b>　14÷30 ≒ 0.47 → <b>約47%</b>', col: C.yel },
+        draw: function (D) {
+          var Ax = ax(D, CH.box(D, { l: .1, t: .1, b: .16 }), 16, { step: 2 }), t = D.ph ? D.t : 0, acc = 0;
+          CH.bars(D, Ax, E, J, { col: C.blue, labels: t < .1, alpha: function (i) { return i < 3 ? 1 - CH.smooth(.1, .4, t) * .8 : 1; } });
+          for (var i = 0; i < 3; i++) { var k = CH.ease(CH.clamp((t - .1 - i * .15) / .4, 0, 1)), x0 = CH.lerp(E[i], 160, k), x1 = x0 + 20, y0 = CH.lerp(0, acc, k); if (t > .1) CH.fillRect(D, Ax.X(x0), Ax.Y(y0 + J[i]), Ax.X(x1), Ax.Y(y0), { fill: 'rgba(255,226,122,.45)', stroke: C.yel }); acc += J[i]; }
+          if (t > .8) CH.text(D, Ax.X(170), Ax.Y(14) - Ax.s * 1.2, '14人', { col: C.yel, a: CH.smooth(.8, .95, t), size: Ax.s * 1.3 });
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '最初の階級からの度数の合計・相対度数の合計を、何という？', a: '累積度数・累積相対度数', sub: '累積相対度数 ＝ 累積度数 ÷ 度数の合計。「180〜200」の累積度数は、200cm 未満の人数', dur: 5,
+        b: [{ t: '最初の階級からの 度数の合計 … <b>累積度数</b>', col: C.green }, { t: '累積相対度数 ＝ 累積度数 ÷ 度数の合計', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .12, t: .1, b: .16 }), Ax = ax(D, R, 30, { step: 5 }), t = D.ph ? D.t : 0;
+          CH.bars(D, Ax, E, CJ, { col: C.green, grow: function (i) { return CH.easeOut(CH.clamp(t * 1.4 - i * .14, 0, 1)); }, labels: true, a: .8 });
+          CH.bars(D, Ax, E, J, { col: C.blue, a: .9 - CH.smooth(0, .5, t) * .5 });
+          if (t > .8) CH.path(D, Ax, [[120, 0]].concat(CJ.map(function (c, i) { return [E[i + 1], c]; })), { col: C.yel, t: CH.smooth(.8, 1, t) });
+        } },
+      { tag: '例題', bh: '例題　累積度数・累積相対度数の表', q: '累積相対度数を、相対度数をたして求めると、どうなる？', a: 'ずれることがある', sub: '0.07＋0.17＝0.24 だが、7÷30≒0.23。四捨五入した数をたすと ずれる。累積度数÷30 で、四捨五入は最後に1回', dur: 1,
+        b: [{ t: '累積度数　2・7・14・22・27・30', col: C.green }, { t: '累積相対度数　0.07・0.23・0.47・0.73・0.90・1.00', col: C.green }, { t: '相対度数をたすと ずれる → <b>累積度数 ÷ 30</b> で求める', col: C.pink }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .04, r: .04, t: .14, b: .2 });
+          CH.table(D, R, ['記録（cm）', '120〜', '140〜', '160〜', '180〜', '200〜', '220〜'], [
+            ['度数（人）'].concat(J), ['相対度数'].concat(J.map(function (x) { return CH.f2(x / 30); })), ['累積度数（人）'].concat(CJ), ['累積相対度数'].concat(CJ.map(function (x) { return CH.f2(x / 30); }))
+          ], { fw: .24, hl: function (r, c) { return D.ph && ((r === 2 && (c === 1 || c === 2)) || (r === 4 && c === 2)) ? (r === 4 ? C.pink : C.yel) : null; } });
+        } },
+      { tag: '考えよう', q: '立ち幅とびで 190cm とんだ Aさんは、記録の小さいほうから数えて、全体の何%くらいのところにいるといえるだろう。',
+        notes: ['Aさんが入る階級と、その両はしの累積相対度数を見よう。', '全体の何%くらいか、言い方を考えよう。', 'スライダーで、記録の位置に線を引けます。'],
+        sliders: [{ key: 'x', label: '記録', min: 120, max: 240, step: 1, val: 120, fmt: function (x) { return x + 'cm'; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .12, t: .1, b: .16 }), Ax = ax(D, R, 1, { step: .2, yl: '累積相対度数', yf: function (v) { return v.toFixed(1); } });
+          CH.bars(D, Ax, E, CJ.map(function (c) { return c / 30; }), { col: C.green, a: .5 });
+          CH.path(D, Ax, [[120, 0]].concat(CJ.map(function (c, i) { return [E[i + 1], c / 30]; })), { col: C.yel });
+          if (D.V.x > 120) CH.line(D, Ax.X(D.V.x), Ax.R.y0, Ax.X(D.V.x), Ax.R.y1, { col: C.pink, w: 2.4, dash: true });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'ある学年 80人の、通学時間の累積相対度数のグラフ。① 30分未満は 何人？ ② 中央値は どの階級？ ③ 長いほうから 15%の人は 何分以上？',
+        a: '① 48人 ② 20〜30分 ③ 40分以上', sub: '① 80×0.60＝48　② 40・41番目。20分未満 24人、30分未満 48人　③ 40分未満が 0.85 → 1−0.85＝0.15', dur: 6,
+        b: { t: '① 80×0.60＝<b>48人</b>　② <b>20〜30分</b>　③ 1−0.85＝0.15 → <b>40分以上</b>', col: C.orange },
+        draw: function (D) {
+          var R = CH.box(D, { l: .14, t: .1, b: .16 }), Ax = CH.axes(D, R, { x: [0, 50], y: [0, 1], xt: E80, yt: [0, .2, .4, .6, .8, 1], yf: function (v) { return v.toFixed(1); }, xl: '（分）', yl: '累積相対度数' }), t = D.ph ? D.t : 0;
+          CH.path(D, Ax, E80.map(function (x, i) { return [x, CR80[i]]; }), { col: C.yel });
+          function guide(x, y, col, a) { CH.line(D, Ax.X(x), Ax.Y(0), Ax.X(x), Ax.Y(y), { col: col, dash: true, w: 2.2, a: a }); CH.line(D, Ax.X(0), Ax.Y(y), Ax.X(x), Ax.Y(y), { col: col, dash: true, w: 2.2, a: a }); CH.text(D, Ax.X(0) + 8, Ax.Y(y) - Ax.s * .7, y.toFixed(2), { col: col, a: a, align: 'left', num: true, size: Ax.s * .9 }); }
+          if (t > .05) guide(30, .6, C.blue, CH.smooth(.05, .25, t));
+          if (t > .35) { guide(20, .3, C.green, CH.smooth(.35, .55, t)); CH.line(D, Ax.X(0), Ax.Y(.5), Ax.X(50), Ax.Y(.5), { col: C.green, w: 1.6, a: CH.smooth(.35, .55, t) }); CH.text(D, Ax.X(48), Ax.Y(.5) - Ax.s * .8, '0.5（中央値）', { col: C.green, align: 'right', a: CH.smooth(.35, .55, t), size: Ax.s * .9 }); }
+          if (t > .7) guide(40, .85, C.pink, CH.smooth(.7, .9, t));
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

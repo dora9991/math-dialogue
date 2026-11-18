@@ -464,7 +464,17 @@
           netFg++;
           if (!isCand[cc.label[i]]) netOnly++;
         }
-        return { cands, fg: fgCount / n, netFg: netFg / netN, netOnly: netOnly / netN, patch, mask };
+        // （バスケ得点クリップで足したもの）ネットの揺れを、ボールが見えなくても使うための手がかり：
+        //   sideFg：ネットの左右（リング幅 0.7〜1.3 個ぶん外・同じ高さ）の動き。ボールがネットを通ると、ネットだけが動く。
+        //           選手の手や体がネットの前を通ると、まわりも一緒に動く
+        //   aboveFg：リングのすぐ上（リング幅 0.15〜1.3 個ぶん上）の動き。入るボールは、ネットが揺れる直前に上から来る
+        //           （手前を横切るボールや、下から入ってくる頭は、上を通らない）。形や色を問わないので、ぶれて伸びたボールでも動きとして残る
+        let sideFg = 0, sideN = 0, aboveFg = 0, aboveN = 0;
+        for (const [a, b] of [[ox - 1.3 * WC, ox - 0.7 * WC], [ox + 0.7 * WC, ox + 1.3 * WC]]) {
+          for (let y = ny0; y <= ny1; y++) for (let x = Math.round(a); x <= Math.round(b); x++) { sideN++; if (mask[y * PS + x]) sideFg++; }
+        }
+        for (let y = Math.round(oy - 1.3 * WC); y <= Math.round(oy - 0.15 * WC); y++) for (let x = Math.round(ox - 0.6 * WC); x <= Math.round(ox + 0.6 * WC); x++) { aboveN++; if (mask[y * PS + x]) aboveFg++; }
+        return { cands, fg: fgCount / n, netFg: netFg / netN, netOnly: netOnly / netN, sideFg: sideFg / sideN, aboveFg: aboveFg / aboveN, patch, mask };
       }
       return { step, reset, state: st };
     }
@@ -741,6 +751,99 @@
       return { gray: g, half, quarter };
     }
 
+    /* ---------- ネットの揺れ（バスケ得点クリップで足したもの） ----------
+       ボールが見えなくても（照明でぶれた・色が違って見えた・人に隠れた）、入ったシュートはネットを大きく揺らす。
+       ゴールごとのコマの記録（[t, netFg, netOnly, sideFg, fg, rim.cx, rim.cy, rim.w, aboveFg]）から、「ネットが大きく揺れた」山を探す。
+       山：ネットの動き（ボールらしい形を除いた分）の、ふだん（基準）からの増えが on を超えてから、また下がるまで。
+       「強い山」＝入ったシュートらしい揺れ：
+         ・増えの最大が peak 以上（入ったシュートは 0.4〜0.56。リングで弾んだ外れは 0.2〜0.35 が多い）
+         ・揺れが続いた時間が dMin〜dMax 秒（入ると 0.4〜1.8 秒揺れる。リングの上を転がってから入ると長い。一瞬だけ・ずっと続くのは、人が前を通った・カメラが動いた）。
+           コマ数ではなく時間で見る（再生しながら探す互換モードでは、調べるコマの間隔が不ぞろい）
+         ・ネットの左右の動きが、揺れの最大の locK 倍以下（選手の体がネットの前を通ると、まわりも動く）
+         ・peak の半分から peak を超えるまでが rise 秒以内、最大から半分に落ちるまで fall 秒以内（入ると急に揺れて、すぐ収まる。
+           カメラを振ったあとに背景がずれて「動いて見える」ときは、ゆっくり上がって、なかなか下がらない）
+         ・その間、ゴールの見かけの位置・大きさが、1コマに mvMax（リング幅の何倍）より大きく変わらない（カメラを大きく振った最中は使わない）
+       合成映像 6 本（横・ゴール裏の2階・フロア・ボールのぶれ入り。計 31 分・得点 78・外れ 71）で確かめた値：
+         「入った」68 本はすべて本物（以前は、リングの手前に落ちた外れを得点と誤るものが 10 本混ざっていた → いまは「たぶん入った」に）。
+         ボールがまったく見えなかったとしても、ネットの揺れだけで得点 69 本（88%）を「たぶん入った」に拾える（外れ 1・シュートでない所 6） */
+    const NE = { on: 0.08, peak: 0.35, dMin: 0.3, dMax: 2.0, locK: 0.3, rise: 0.35, fall: 0.6, mvMax: 1.0, needNet: true };
+    function netEvents(ser, opts) {
+      const P = Object.assign({}, NE, opts || {});
+      const out = [];
+      let b = null, lastT = -9, cur = null, low = 0, prev = null, tBelow = -9, flat = 0;
+      const close = () => { if (cur.fall == null) cur.fall = Infinity; out.push(cur); cur = null; };
+      for (const r of ser) {
+        const t = r[0], o = r[2], sd = r[3], cx = r[5], cy = r[6], w = r[7];
+        if (t - lastT > 0.5) { if (cur) close(); b = o; prev = null; tBelow = t; flat = 0; }
+        lastT = t;
+        const mv = prev ? Math.max(Math.hypot(cx - prev[5], cy - prev[6]) / w, 5 * Math.abs(w - prev[7]) / w) : 0;
+        flat = prev && Math.abs(o - prev[2]) < 0.04 ? flat + 1 : 0;
+        prev = r;
+        const e = o - b;
+        if (e < 0.5 * P.peak) tBelow = t;
+        if (e >= P.on) {
+          if (!cur) cur = { t0: t, t1: t, n: 0, peak: 0, tp: t, sd: 0, mv: 0, rise: null, fall: null };
+          cur.n++; cur.t1 = t; low = 0;
+          if (mv > cur.mv) cur.mv = mv;
+          if (e > cur.peak) { cur.peak = e; cur.tp = t; cur.sd = sd; cur.fall = null; }
+          // 立ち上がり：揺れの最大の半分ほど（peak の半分）から peak を超えるまでの時間（リングの上で転がる間の小さな揺れは数えない）
+          if (cur.rise == null && e >= P.peak) cur.rise = t - tBelow;
+          if (cur.fall == null && e < 0.5 * cur.peak) cur.fall = t - cur.tp;
+        } else if (cur) {
+          if (cur.fall == null) cur.fall = t - cur.tp;
+          if (++low >= 2) close();
+        }
+        // 基準：下がるときは速く、上がるときはゆっくり追う。ただし、ほぼ同じ値が続く（平ら）ときは速めに追う
+        // （ゴールの追跡が少し跳ぶと、背景がずれて、ネットのあたりが「ずっと動いて」見える。その上に来た本物の揺れを、別の山として拾うため）
+        if (o < b) b = b * 0.6 + o * 0.4; else b += (o - b) * (flat >= 4 ? 0.25 : 0.02);
+      }
+      if (cur) close();
+      // すき間 0.4 秒以内で続いた山は1つに（揺れが一度おさまりかけて、また揺れた）
+      const merged = [];
+      for (const e of out) {
+        const L = merged[merged.length - 1];
+        if (L && e.t0 - L.t1 <= 0.4) { if (e.peak > L.peak) Object.assign(L, { peak: e.peak, tp: e.tp, sd: e.sd, rise: e.rise, fall: e.fall }); L.n += e.n; L.t1 = e.t1; L.mv = Math.max(L.mv, e.mv); } else merged.push(e);
+      }
+      merged.forEach((e) => { e.dur = e.t1 - e.t0; e.strong = e.peak >= P.peak && e.n >= 3 && e.dur >= P.dMin && e.dur <= P.dMax && e.sd <= P.locK * e.peak && e.rise != null && e.rise <= P.rise && e.fall <= P.fall && e.mv < P.mvMax; });
+      return merged;
+    }
+
+    /* 判定を3段に分ける（shots を直す）：'made' 入った／'maybe' たぶん入った（使う人が確かめる）／'miss' 外れ。
+         成功で、ネットの動きをはっきり確かめられなかったもの → たぶん入った（why: 'faint'）
+         外れで、そのあと（−0.5〜+2 秒に重なって）ネットが「強く」揺れたもの（リングで弾んでから入ったかもしれない）→ たぶん入った（'bounce'）
+         どのシュートにも結びつかない「強い」揺れ（ボールは見えなかったが、入ったのかもしれない）→ たぶん入った（'net'。新しいシュートとして足す）
+       netSeries：ゴールごとのネットの動きの記録、opts：netEvents のしきい値の上書き（検証用） */
+    function classify(shots, netSeries, opts) {
+      const nev = netSeries.map((ser) => netEvents(ser, opts));
+      const P = Object.assign({}, NE, opts || {});
+      for (const s of shots) {
+        if (s.made) {
+          // 成功：ネットの揺れでも裏付けが取れたもの（同じゴールで、±1 秒に重なる「強い」揺れ）だけを「入った」に。
+          // 取れないものは「たぶん入った」（リングの手前に真下へ落ちた外れは、ボールの動きだけでは成功に見える）。
+          // 揺れの山は、その前の小さな揺れとつながって早く始まることがあるので、始まりの時刻ではなく、山の続いた間で比べる
+          const e = (nev[s.hoop] || []).find((x) => x.strong && x.t0 <= s.t + 1.0 && x.t1 >= s.t - 1.0);
+          if (e) e.used = true;
+          const ok = s.sure !== false && (!!e || P.needNet === false);
+          s.tier = ok ? 'made' : 'maybe';
+          if (!ok) s.why = 'faint';
+          continue;
+        }
+        const e = (nev[s.hoop] || []).find((x) => x.strong && !x.used && x.t0 <= s.t + 2.0 && x.t1 >= s.t - 0.5);
+        if (e) { e.used = true; s.tier = 'maybe'; s.why = 'bounce'; s.net = +e.peak.toFixed(2); } else s.tier = 'miss';
+      }
+      const extra = [];
+      nev.forEach((list, h) => list.forEach((e) => {
+        if (e.used || !e.strong) return;
+        if (shots.some((s) => s.hoop === h && Math.abs(s.t - e.t0) < 2.5)) return;
+        extra.push({ t: +Math.max(0, e.t0 - 0.1).toFixed(2), hoop: h, made: false, tier: 'maybe', why: 'net', conf: 0.5, net: +e.peak.toFixed(2) });
+      }));
+      // 両方のゴールで 1 秒以内に出たものは、同じボールを2つのゴールで見たもの。揺れの大きい方だけ
+      extra.sort((a, b) => a.t - b.t).forEach((a, i) => { const b = extra[i + 1]; if (b && b.hoop !== a.hoop && b.t - a.t <= 1.0) (a.net >= b.net ? b : a).dup = true; });
+      extra.forEach((a) => { if (!a.dup) shots.push(a); });
+      shots.sort((a, b) => a.t - b.t);
+      return { shots, events: nev };
+    }
+
     /* ---------- 解析のまとめ役 ----------
        使い方：
          const an = createAnalyzer({ srcW, srcH, hoops: [{ id, box, rim }] });
@@ -761,6 +864,9 @@
       const sameSpot = (p, q) => p.tracked && q.tracked && p.inFrame && q.inFrame && Math.hypot(p.rim.cx - q.rim.cx, p.rim.cy - q.rim.cy) < 0.8 * Math.max(p.rim.w, q.rim.w);
       const shots = [];
       const vis = [];          // どのゴールが映っていたか {t, on:[bool...]}（攻守の行き来の推定に使う）
+      // （バスケ得点クリップで足したもの）ゴールごとの、コマごとのネットの動き [t, netFg, netOnly, sideFg, fg, rim.cx, rim.cy, rim.w, aboveFg]。
+      // 解析の最後に、ボールが見えなくても「ネットが大きく揺れた」場面を探すのに使う（netEvents）
+      const netSeries = cfg.hoops.map(() => []);
       let prevQ = null, frames = 0;
       /* ゴールを指定したコマで呼ぶ。getPatch(cx, cy, size, outSize) → RGB（outSize×outSize） */
       function initHoop(i, gray, w, h, getPatch) {
@@ -838,7 +944,8 @@
           const r = watchers[i].step(null, 0, 0, null, s.rim, f.t, patch);
           detectors[i].push(f.t, r.cands, r.netFg, r.netOnly);
           for (const ev of detectors[i].take()) { ev.hoop = i; shots.push(ev); fresh.push(ev); }
-          s.cands = r.cands; s.net = r.netFg; s.netOnly = r.netOnly; s.fg = r.fg;
+          s.cands = r.cands; s.net = r.netFg; s.netOnly = r.netOnly; s.fg = r.fg; s.side = r.sideFg;
+          if (watchers[i].state.warm >= 5) netSeries[i].push([f.t, r.netFg, r.netOnly, r.sideFg, r.fg, s.rim.cx, s.rim.cy, s.rim.w, r.aboveFg]);
         });
         vis.push({ t: f.t, on: status.map((s) => s.tracked && s.inFrame) });
         return { status, events: fresh, motion: shift ? shift.err : 0 };
@@ -858,6 +965,12 @@
           }
         }
         for (let i = shots.length - 1; i >= 0; i--) if (shots[i].dup) shots.splice(i, 1);
+        // （バスケ得点クリップで足したもの）3段に分ける：'made' 入った／'maybe' たぶん入った（使う人が確かめる）／'miss' 外れ。
+        //   成功で、ネットの動きをはっきり確かめられなかったもの → たぶん入った（faint）
+        //   外れで、そのあとネットが「強く」揺れたもの（リングで弾んでから入ったかもしれない）→ たぶん入った（bounce）
+        //   どのシュートにも結びつかない「強い」揺れ（ボールは見えなかったが、入ったのかもしれない）→ たぶん入った（net）
+        let nets = null;
+        if (cfg.tiers !== false) nets = classify(shots, netSeries, cfg.net).events;
         // ゴールが映っていた区間（[開始, 終了, ビット：ゴール i が映っていれば 1<<i]）と、映っていたコマ数
         const spans = [], seen = cfg.hoops.map(() => 0);
         for (const v of vis) {
@@ -867,9 +980,12 @@
           if (last && last[2] === mask && v.t - last[1] <= 0.5) last[1] = v.t;
           else spans.push([v.t, v.t, mask]);
         }
-        return { shots, frames, spans, seen, conflicts };
+        const out = { shots, frames, spans, seen, conflicts };
+        // 検証用（cfg.debug）：ネットの揺れの山（ゴールごと）。本物の動画で「なぜ入ったにならなかったか」を調べるのに使う
+        if (cfg.debug && nets) out.nets = nets.map((list) => list.map((e) => ({ t0: +e.t0.toFixed(2), peak: +e.peak.toFixed(2), dur: +e.dur.toFixed(2), sd: +e.sd.toFixed(2), rise: e.rise == null ? null : +e.rise.toFixed(2), fall: isFinite(e.fall) ? +e.fall.toFixed(2) : null, mv: +e.mv.toFixed(2), strong: e.strong })));
+        return out;
       }
-      return { initHoop, process, finish, trackers, shots, vis };
+      return { initHoop, process, finish, trackers, shots, vis, netSeries };
     }
 
     /* ---------- 検出結果 → タグ（イベント） ----------
@@ -968,7 +1084,7 @@
       return { load, initHoop, frame, finish: an.finish, analyzer: an, canvas: cF, width: fw, height: fh, fixed, kf };
     }
 
-    BS.auto = { AW, WC, PS, PCY, RV, createHoopTracker, createFixedTracker, createRimChecker, createHoopWatcher, createShotDetector, createAnalyzer, createFrameAnalyzer, toEvents, ballLike, prepFrame };
+    BS.auto = { AW, WC, PS, PCY, RV, NE, createHoopTracker, createFixedTracker, createRimChecker, createHoopWatcher, createShotDetector, createAnalyzer, createFrameAnalyzer, toEvents, ballLike, prepFrame, netEvents, classify };
   }
   mod(root);
   (root.BS.src = root.BS.src || {}).auto = mod;   // Worker に同じコードを渡すため

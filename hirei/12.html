@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>比例で数を求める</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 比例と反比例 第12時：比例を使って、数えにくいものの数を求めよう（ikkan の lesson_hirei_12 と同じ流れ）。
+   はかりの上の クリップ 20個（9g）と、クリップの山（441g）。山が 9g ずつの小さな山 7×7＝49 こに分かれて、20×49＝980個。
+   ことばは、個数と重さのグラフ y＝0.45x（比例とみなす）。例題は ひもの重さと長さのテープ図（15 等分）、例題②は 画用紙の束が 0.2mm ずつ積み上がる。
+   考えようは、10個ずつ 5回はかった重さを選ぶと、グラフの線と 441g の線の交わる所が ずれる道具（理由・方法は書かない）。チャレンジは、箱の重さをひく。
+   数値は ikkan のまま（ikkan で新しく作った数。例題② は演習プリント（4））。図と動きは自作。答えはページの中で計算し直している（CH.check）。 */
+(function () {
+  var C = CH.C, M = CH.mnum, OUT = 'rgba(20,40,30,.9)';
+  /* ---- 道具（比例と反比例の黒板 第9〜16時で共通。どのページにも同じものを入れてある） ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function near(a, b) { return Math.abs(a - b) < 1e-9; }
+  function ext(a, b) { for (var k in b) if (b[k] !== undefined) a[k] = b[k]; return a; }
+  function ha(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  /* 問い・答え・板書（HTML）の字：[6/x] を たての分数に（CH.fr） */
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = CH.fr(s[k]); }); if (s.notes) s.notes = s.notes.map(function (t) { return CH.fr(t); }); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = CH.fr(b.t); }); }); return st; }
+  /* 図の中（canvas）の字：[6/x] は たての分数。TW で幅、TX でかく（返すのは幅） */
+  function parse(s) { var out = [], re = /\[([^\/\]]+)\/([^\]]+)\]/g, m, i = 0; s = String(s); while ((m = re.exec(s))) { if (m.index > i) out.push({ t: s.slice(i, m.index) }); out.push({ n: m[1], d: m[2] }); i = re.lastIndex; } if (i < s.length) out.push({ t: s.slice(i) }); return out; }
+  function mw(D, t, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(t).width; g.restore(); return w; }
+  function segW(D, p, size) { var fz = size * .72; return p.t != null ? mw(D, p.t, size) : Math.max(mw(D, p.n, fz), mw(D, p.d, fz)) + fz * .4; }
+  function TW(D, s, size) { return parse(s).reduce(function (w, p) { return w + segW(D, p, size); }, 0); }
+  function TX(D, x, y, s, o) {
+    o = o || {}; var size = o.size || CH.fs(D), fz = size * .72, w = TW(D, s, size), x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    parse(s).forEach(function (p) {
+      var pw = segW(D, p, size);
+      if (p.t != null) CH.text(D, x0, y, p.t, ext({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + pw / 2; CH.text(D, cx, y - fz * .64, p.n, ext({ size: fz }, oo)); CH.text(D, cx, y + fz * .7, p.d, ext({ size: fz }, oo));
+        CH.line(D, x0 + fz * .14, y + fz * .03, x0 + pw - fz * .14, y + fz * .03, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += pw;
+    });
+    return w;
+  }
+  /* 幅 maxW に入る字の大きさ */
+  function fitT(D, s, maxW, size) { var w = TW(D, s, size); return w > maxW && w > 0 ? size * maxW / w : size; }
+  /* 四角 R の上から、1行ずつ（l.t 字、l.col 色、l.a 濃さ）。字は R に入る大きさにそろえる。返すのは字の大きさ */
+  function lines(D, R, L, o) {
+    o = o || {}; var s = Math.min(o.size || CH.fs(D, .95), R.h / (L.length * 1.75 + .3));
+    L.forEach(function (l) { if (l.t) s = Math.min(s, fitT(D, l.t, R.w, s)); });
+    L.forEach(function (l, i) { if (l.a === 0 || !l.t) return; TX(D, R.x0, R.y0 + s * (1.1 + i * 1.75), l.t, { col: l.col || C.chalk, size: s, align: 'left', a: l.a }); });
+    return s;
+  }
+  function full(D) { return CH.box(D, { l: 0, r: 0, t: 0, b: 0 }); }
+  /* 図と字の2つの四角。横長の画面なら左右（k は左の割合）、縦長なら上下（kn は上の割合） */
+  function two(D, k, kn) {
+    var R = full(D);
+    if (D.W > D.H * .9) { var x = R.x0 + R.w * k; return [CH.rect(R.x0, R.y0, x, R.y1), CH.rect(x + R.w * .03, R.y0 + R.h * .02, R.x1 - R.w * .02, R.y1)]; }
+    var y = R.y0 + R.h * (kn || k); return [CH.rect(R.x0, R.y0, R.x1, y), CH.rect(R.x0 + 8, y + 4, R.x1 - 8, R.y1)];
+  }
+  /* 座標平面：四角 R の中に、目もりの字のすきま（o.m：l・r・t・b を字の大きさの何倍か）をとって。そのほかの o は CH.plane と同じ */
+  function PL(D, R, o) { var s = CH.fs(D, .72), m = ext({ l: 2.1, r: 2.4, t: 1.8, b: 1.2 }, o.m || {}); return CH.plane(D, CH.rect(R.x0 + s * m.l, R.y0 + s * m.t, R.x1 - s * m.r, R.y1 - s * m.b), o); }
+  /* 平面の上の字（ふちどり。分数も） */
+  function lab(D, Pl, x, y, t, o) { o = o || {}; TX(D, Pl.X(x) + (o.dx || 0), Pl.Y(y) + (o.dy || 0), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
+  /* 点のまわりの、光る輪 */
+  function glow(D, Pl, p, col, a) { var r = CH.fs(D, .3); CH.circle(D, Pl.X(p[0]), Pl.Y(p[1]), r * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
+  /* 反比例 y＝a/x のグラフ（双曲線）を、平面の中だけにかく。x＝0 の近くは、平面のふち（y の最大・最小）で切る。
+     o：side（1 なら x＞0 の曲線だけ、−1 なら x＜0 だけ）、x0・x1（x の変域）、t（0〜1 で とちゅうまで）、col、w、dash、a、glow */
+  function hyp(D, Pl, a, o) {
+    o = o || {}; var g = D.ctx, n = o.n || 160, t = o.t == null ? 1 : CH.clamp(o.t, 0, 1);
+    if (!a || t <= 0) return;
+    g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.yel; g.lineWidth = o.w || 3; g.lineCap = 'round'; g.lineJoin = 'round';
+    if (o.dash) g.setLineDash(o.dash === true ? [8, 7] : o.dash);
+    if (o.glow) { g.shadowColor = ha(o.col || C.yel, .55); g.shadowBlur = 8; }
+    [1, -1].forEach(function (sg) {
+      if (o.side && o.side !== sg) return;
+      var yl = a * sg > 0 ? Pl.yr[1] : Pl.yr[0], xn = yl ? Math.abs(a / yl) : Infinity;   /* xn：曲線が平面のふちにとどくところの |x| */
+      var lo = sg > 0 ? xn : Pl.xr[0], hi = sg > 0 ? Pl.xr[1] : -xn;
+      if (o.x0 != null) lo = Math.max(lo, o.x0); if (o.x1 != null) hi = Math.min(hi, o.x1);
+      if (!(hi > lo) || !isFinite(lo) || !isFinite(hi) || (sg > 0 ? lo <= 0 : hi >= 0)) return;
+      var p = sg > 0 ? lo : -hi, q = sg > 0 ? hi : -lo;   /* |x| を p から q へ（原点に近いほうから。点は |x| の等比で とる） */
+      g.beginPath();
+      for (var i = 0; i <= n * t; i++) { var x = sg * p * Math.pow(q / p, i / n), y = a / x; if (i) g.lineTo(Pl.X(x), Pl.Y(y)); else g.moveTo(Pl.X(x), Pl.Y(y)); }
+      g.stroke();
+    });
+    g.restore();
+  }
+  /* 式の字：y＝[6/x]、y＝−[6/x] */
+  function eqInv(a) { return 'y＝' + (a < 0 ? '−' : '') + '[' + Math.abs(a) + '/x]'; }
+  /* 表（字は分数も）。rows[0] が見出しの行、各行の [0] が見出しの列。
+     o：fw（見出しの列の幅の割合）、rh（行の高さの上限）、size、top（上につめる）、hl(r, c)→色、show(r, c)→濃さ、col(r, c)→字の色、a。cell(r, c) を返す */
+  function TB(D, R, rows, o) {
+    o = o || {}; var nR = rows.length, nC = rows[0].length, fw = o.fw == null ? .26 : o.fw, w0 = R.w * fw, cw = (R.w - w0) / Math.max(1, nC - 1);
+    var rh = Math.min(R.h / nR, o.rh || CH.fs(D) * 2.3), H = rh * nR, y0 = o.top ? R.y0 : R.cy - H / 2, s0 = o.size || Math.min(CH.fs(D, .85), rh * .42), g = D.ctx, r, c;
+    function cell(r, c) { var x0 = c === 0 ? R.x0 : R.x0 + w0 + (c - 1) * cw, x1 = c === 0 ? R.x0 + w0 : x0 + cw; return CH.rect(x0, y0 + r * rh, x1, y0 + (r + 1) * rh); }
+    for (r = 0; r < nR; r++) for (c = 0; c < nC; c++) {
+      var q = cell(r, c), hl = o.hl ? o.hl(r, c) : null;
+      if (r === 0 || c === 0) CH.fillRect(D, q.x0, q.y0, q.x1, q.y1, { fill: 'rgba(242,240,230,.06)', a: o.a });
+      if (hl) CH.fillRect(D, q.x0, q.y0, q.x1, q.y1, { fill: ha(hl, .28), a: o.a });
+    }
+    g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = 'rgba(242,240,230,.45)'; g.lineWidth = 1.2; g.beginPath();
+    for (r = 0; r <= nR; r++) { g.moveTo(R.x0, y0 + r * rh); g.lineTo(R.x1, y0 + r * rh); }
+    for (c = 0; c <= nC; c++) { var x = c === 0 ? R.x0 : R.x0 + w0 + (c - 1) * cw; g.moveTo(x, y0); g.lineTo(x, y0 + H); }
+    g.stroke(); g.restore();
+    rows.forEach(function (row, r) {
+      row.forEach(function (txt, c) {
+        var q = cell(r, c), sh = o.show ? o.show(r, c) : 1; if (sh <= 0 || txt == null || txt === '') return;
+        var hl = o.hl ? o.hl(r, c) : null, col = (o.col && o.col(r, c)) || hl || (r === 0 || c === 0 ? 'rgba(242,240,230,.85)' : C.chalk);
+        TX(D, q.cx, q.cy + 1, String(txt), { size: fitT(D, String(txt), q.w * .9, s0), col: col, a: (o.a == null ? 1 : o.a) * sh });
+      });
+    });
+    return { cell: cell, rh: rh, y0: y0, y1: y0 + H };
+  }
+
+  /* ---- 数と検算 ---- */
+  var A1 = 9 / 20;
+  CH.check(near(A1, .45) && near(441 / A1, 980) && near(441 / 9, 49) && 7 * 7 === 49 && 20 * 49 === 980, '今日の問い（1個 0.45g、980個）');
+  CH.check(near(40 / 5, 8) && near(600 / 8, 75) && near(600 / 40, 15) && 5 * 15 === 75, '例題（ひも 75m）');
+  CH.check(near(2 / 10, .2) && near(35 / .2, 175) && near(3.5 * 10, 35), '例題②（画用紙 175枚）');
+  var WS = [4.4, 4.7, 4.3, 4.6, 4.5];
+  CH.check(near(WS.reduce(function (s, x) { return s + x; }, 0) / 5, 4.5) && WS.every(function (w) { return 441 / (w / 10) < 1100; }), '考えよう（ここで確かめるだけ。図の中に入る）');
+  CH.check(near(56 / 40, 1.4) && near((1500 - 100) / 1.4, 1000) && near(1.4 * 1000 + 100, 1500) && !near(1500 / 1.4, 1000), 'チャレンジ（箱をひいて 1000個）');
+  var RNG = CH.rng(1207); for (var i0 = 0; i0 < 12; i0++) RNG();
+  var HEAP = []; for (var i = 0; i < 70; i++) { var u = RNG(), v = RNG(), r = RNG(); HEAP.push([u * 2 - 1, Math.sqrt(v) * (1 - Math.pow(u * 2 - 1, 2)), r * Math.PI]); }
+
+  /* クリップ 1こ（まん中 x、y、長さ L、向き rot） */
+  function clip(D, x, y, L, rot, a) {
+    var g = D.ctx, w = L * .34; g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.translate(x, y); g.rotate(rot || 0);
+    g.strokeStyle = '#d9e4ee'; g.lineWidth = Math.max(1.2, L * .07); g.lineJoin = 'round';
+    function rr(x0, y0, w0, h0) { var r0 = h0 / 2; g.beginPath(); g.moveTo(x0 + r0, y0); g.lineTo(x0 + w0 - r0, y0); g.arc(x0 + w0 - r0, y0 + r0, r0, -Math.PI / 2, Math.PI / 2); g.lineTo(x0 + r0, y0 + h0); g.arc(x0 + r0, y0 + r0, r0, Math.PI / 2, Math.PI * 1.5); g.stroke(); }
+    rr(-L / 2, -w / 2, L, w); rr(-L / 2 + L * .12, -w * .22, L * .7, w * .44);
+    g.restore();
+  }
+  /* ねじ 1こ */
+  function screw(D, x, y, L, rot, a) {
+    var g = D.ctx; g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.translate(x, y); g.rotate(rot || 0); g.strokeStyle = '#d9e4ee'; g.lineWidth = Math.max(1.4, L * .12); g.lineCap = 'round';
+    g.beginPath(); g.moveTo(-L / 2, 0); g.lineTo(L / 2, 0); g.moveTo(-L / 2, -L * .22); g.lineTo(-L / 2, L * .22); g.stroke(); g.restore();
+  }
+  /* はかり（下のまん中 cx・by、幅 w）。皿の上の高さ y を返す */
+  function scale(D, cx, by, w, read, o) {
+    o = o || {}; var h = w * .34, a = o.a, s = Math.min(w * .1, CH.fs(D, 1.05));
+    CH.fillRect(D, cx - w / 2, by - h, cx + w / 2, by, { fill: 'rgba(242,240,230,.1)', stroke: C.chalk, sw: 2, a: a });
+    CH.fillRect(D, cx - w * .24, by - h * .78, cx + w * .24, by - h * .22, { fill: 'rgba(20,40,30,.9)', stroke: 'rgba(242,240,230,.6)', sw: 1.4, a: a });
+    CH.text(D, cx, by - h * .5, read, { size: s, num: true, col: o.col || C.yel, a: a });
+    CH.line(D, cx, by - h, cx, by - h - w * .05, { w: 3, a: a });
+    CH.fillRect(D, cx - w * .46, by - h - w * .08, cx + w * .46, by - h - w * .05, { fill: C.chalk, a: a });
+    if (o.cap) CH.text(D, cx, by + s * 1.1, o.cap, { size: fitT(D, o.cap, w * 1.2, s * .9), col: o.ccol || C.chalk, a: a });
+    return by - h - w * .08;
+  }
+  /* クリップの山（皿の上 y、幅 w） */
+  function heap(D, cx, y, w, a) { var L = w * .13; HEAP.forEach(function (p) { clip(D, cx + p[0] * w * .42, y - L * .4 - p[1] * w * .3, L, p[2], a); }); }
+  function pile20(D, cx, y, w, a) { var L = w * .17; for (var k = 0; k < 20; k++) { var c = k % 5, rr = Math.floor(k / 5); clip(D, cx + (c - 2) * L * 1.02, y - L * .3 - rr * L * .42, L, (c + rr) % 2 ? -.3 : .25, a); } }
+  function sc2(D, R) { var w = Math.min(R.w * .36, R.h * .55), by = R.y0 + R.h * .78; return { w: w, by: by, x1: R.x0 + R.w * .27, x2: R.x0 + R.w * .73 }; }
+  /* 個数と重さのグラフ */
+  function wplane(D, R) { return PL(D, R, { x: [0, 1100], y: [0, 500], fit: false, stepX: 100, stepY: 50, labX: D.W < 700 ? 500 : 200, labY: 100, m: { l: 2.6, b: 1.6 } }); }
+
+  K3.run({
+    no: '第12時', title: '比例を使って、数えにくいものの数を求めよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '11.html', label: '◀ 第11時' }, { href: '13.html', label: '第13時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: 'クリップの数を、数えずに求める', q: 'たくさんのクリップは、全部で何個だろう。数えずに、図のはかりの結果を使って、求める計画を立てよう。',
+        notes: ['① 自分の考え（3分）　何と何が比例するとみなすか、求め方を書こう。', '② ペアの考え（3分）　自分とちがう求め方を書こう。'],
+        draw: function (D) {
+          var R = full(D), S = sc2(D, R), y1 = scale(D, S.x1, S.by, S.w, '9 g', { cap: 'クリップ 20個' }), y2 = scale(D, S.x2, S.by, S.w, '441 g', { cap: 'クリップ全部' });
+          pile20(D, S.x1, y1, S.w); heap(D, S.x2, y2, S.w); CH.text(D, S.x2, y2 - S.w * .5, '？個', { size: CH.fs(D, 1.3), col: C.yel, outline: OUT });
+        } },
+      { tag: '今日の問い', q: '何と何が比例するとみなす？ クリップは、およそ何個？', a: 'およそ 980個',
+        sub: '個数と重さが比例するとみなす。重さが 441÷9＝49（倍）だから、個数も 20×49＝980。1個の重さ 9÷20＝0.45g から 441÷0.45＝980 でもよい', dur: 8,
+        b: { t: '重さ 441÷9＝49倍 → 個数も 49倍　20×49＝<b>およそ 980個</b>（1個 0.45g でも）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Rs = two(D, .56, .62), R = Rs[0], s = CH.fs(D, .85), n = Math.floor(CH.smooth(.06, .5, t) * 49.99);
+          var side = Math.min(R.w * .92, R.h - s * 4), cs = side / 7, x0 = R.cx - side / 2, y0 = R.y0 + s * 2.4;
+          if (!D.ph || t < .05) { var S = sc2(D, R), yy = scale(D, R.cx, S.by, S.w * 1.3, '441 g', { cap: 'クリップ全部' }); heap(D, R.cx, yy, S.w * 1.3); }
+          else {
+            for (var k = 0; k < 49; k++) {
+              var c = k % 7, rr = Math.floor(k / 7), a = k < n ? 1 : .15, cx = x0 + (c + .5) * cs, cy = y0 + (rr + .5) * cs;
+              CH.fillRect(D, cx - cs * .44, cy - cs * .44, cx + cs * .44, cy + cs * .44, { fill: 'rgba(154,216,255,.12)', stroke: C.blue, sw: 1.2, a: a });
+              clip(D, cx - cs * .12, cy - cs * .1, cs * .45, .3, a); clip(D, cx + cs * .12, cy + cs * .1, cs * .45, -.3, a);
+              if (cs > 34 && k < n) CH.text(D, cx, cy + cs * .3, '9g', { size: cs * .2, num: true, col: C.chalk });
+            }
+            CH.text(D, R.cx, R.y0 + s, n < 49 ? '9g の山が ' + n + ' こ' : '9g（20個）の山が 49 こ', { col: C.blue, size: s * 1.05 });
+            if (t > .55) TX(D, R.cx, y0 + side + s * 1.2, '20 × 49 ＝ 980（個）', { col: C.yel, size: s * 1.1, a: CH.smooth(.55, .62, t) });
+          }
+          lines(D, Rs[1], [{ t: '個数と重さが比例するとみなす', col: C.green, a: D.ph ? CH.smooth(0, .06, t) : 0 }, { t: '重さ　441÷9＝49（倍）', a: CH.smooth(.06, .14, t) }, { t: '個数も 49倍　20×49＝980', col: C.yel, a: CH.smooth(.55, .62, t) },
+            { t: '（1個の重さ　9÷20＝0.45（g）', col: C.blue, a: CH.smooth(.7, .78, t) }, { t: '　441÷0.45＝980 でもよい）', col: C.blue, a: CH.smooth(.76, .84, t) }, { t: 'およそ 980個', col: C.pink, a: CH.smooth(.86, .94, t) }]);
+        } },
+      { tag: 'ことば', bh: 'ことば', q: '個数と重さは、どんな関係とみなした？ 比例定数 a は、何を表す？ 求めた個数は、ちょうど？', a: '比例とみなす。a は 1個の重さ。求めた数は およその数',
+        sub: 'x 個の重さを y g とすると y＝0.45x。グラフは原点を通る直線で、y＝441 のとき x＝980。1個1個の重さは少しずつちがうから「およそ」', dur: 6,
+        b: [{ t: '個数と重さが <b>比例する</b> とみなす　y＝ax（a は <b>1個の重さ</b>）', col: C.green }, { t: '求めた数は <b>およそ</b> の数', col: C.green }],
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Rs = two(D, .6, .62), Pl = wplane(D, Rs[0]), s = CH.fs(D, .8);
+          lab(D, Pl, 1100, 0, '（個）', { align: 'right', dy: s * 2.2, size: s * .85, col: 'rgba(242,240,230,.75)' }); lab(D, Pl, 0, 500, '（g）', { dx: s * 1.6, dy: s * .2, size: s * .85, col: 'rgba(242,240,230,.75)' });
+          CH.pt(D, Pl, 20, 9, { col: C.blue, r: CH.fs(D, .26) }); lab(D, Pl, 40, 40, '20個で 9g', { col: C.blue, size: s });
+          if (t > .05) CH.fn(D, Pl, function (x) { return A1 * x; }, { x0: 0, x1: 1100, col: C.yel, w: 3, t: CH.smooth(.05, .4, t) });
+          if (t > .42) { var a = CH.smooth(.42, .55, t); CH.pseg(D, Pl, [0, 441], [980, 441], { col: C.pink, dash: true, a: a }); CH.pseg(D, Pl, [980, 0], [980, 441], { col: C.pink, dash: true, a: a }); CH.pt(D, Pl, 980, 441, { col: C.pink, a: a }); lab(D, Pl, 960, 441, '(980, 441)', { col: C.pink, align: 'right', dy: -s * 1, size: s, a: a }); }
+          if (t > .6) lab(D, Pl, 420, 300, 'y＝0.45x', { col: C.yel, a: CH.smooth(.6, .7, t) });
+          lines(D, Rs[1], [{ t: 'x 個の重さを y g とする', a: D.ph ? CH.smooth(0, .06, t) : 1 }, { t: '比例とみなす　y＝ax', col: C.green, a: CH.smooth(.06, .14, t) }, { t: 'a＝9÷20＝0.45', a: CH.smooth(.3, .4, t) }, { t: '→ 1個の重さ（比例定数）', col: C.yel, a: CH.smooth(.62, .72, t) }, { t: '求めた数は「およそ」', col: C.pink, a: CH.smooth(.8, .9, t) }]);
+        } },
+      { tag: '例題', bh: '例題　ひもの長さ', q: 'ひもの束がある。ひも 5m の重さは 40g、束全体の重さは 600g である。ひも全体の長さを求めよう。', a: 'およそ 75m',
+        sub: '長さ x m の重さを y g とすると y＝ax。a＝40÷5＝8（1m の重さ）。y＝8x に y＝600 を代入して 600＝8x、x＝75。（600÷40＝15倍 → 5×15＝75 でもよい）', dur: 8,
+        b: { t: 'ひも … a＝40÷5＝8、600＝8x → <b>およそ 75m</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Rs = two(D, .6, .58), R = Rs[0], s = CH.fs(D, .85), h = Math.min(R.h * .14, s * 2.6), x0 = R.x0 + s * 3.4, w = R.w - s * 4.4, y1 = R.cy - h * 1.8, y2 = R.cy + h * .6;
+          var nP = D.ph ? Math.floor(CH.smooth(.25, .65, t) * 14.99) : 0, pw = w / 15;
+          [[y1, '重さ', C.orange, '600g', '40g'], [y2, '長さ', C.blue, t > .7 ? '75m' : '？m', '5m']].forEach(function (b) {
+            CH.fillRect(D, x0, b[0], x0 + w, b[0] + h, { fill: ha(b[2], .14), stroke: b[2], sw: 2 });
+            CH.fillRect(D, x0, b[0], x0 + pw, b[0] + h, { fill: ha(b[2], .5), stroke: b[2], sw: 2 });
+            CH.text(D, x0 - s * .4, b[0] + h / 2, b[1], { col: b[2], size: s, align: 'right' });
+            CH.text(D, x0 + pw / 2, b[0] - s * .7, b[4], { col: b[2], size: s * .85 });
+            CH.text(D, x0 + w, b[0] + h + s * .9, b[3], { col: b[3] === '？m' ? C.chalk : b[2], size: s * 1.1, align: 'right' });
+            for (var k = 1; k <= nP; k++) CH.line(D, x0 + k * pw, b[0], x0 + k * pw, b[0] + h, { col: b[2], w: 1.6 });
+          });
+          if (t > .66) CH.text(D, x0 + w / 2, y2 + h * 2.2, '15 こ分（600÷40＝15）', { col: C.green, size: s, a: CH.smooth(.66, .74, t) });
+          lines(D, Rs[1], [{ t: '長さ x m の重さを y g とする', a: D.ph ? CH.smooth(0, .06, t) : 0 }, { t: 'y＝ax　a＝40÷5＝8', col: C.orange, a: CH.smooth(.06, .16, t) }, { t: 'y＝8x に y＝600 を代入', a: CH.smooth(.7, .78, t) }, { t: '600＝8x　x＝75', col: C.blue, a: CH.smooth(.78, .86, t) }, { t: 'およそ 75m', col: C.pink, a: CH.smooth(.88, .96, t) }]);
+        } },
+      { tag: '例題', bh: '例題②　画用紙の枚数', q: '同じ画用紙 10枚を重ねた厚さは 2mm だった。画用紙の束の厚さが 3.5cm のとき、およそ何枚あるか。', a: 'およそ 175枚',
+        sub: '枚数と厚さが比例するとみなす。1枚の厚さ 2÷10＝0.2（mm）。3.5cm＝35mm だから 35÷0.2＝175', dur: 8,
+        b: { t: '画用紙 … 1枚 0.2mm、35÷0.2＝<b>およそ 175枚</b>', col: C.pink },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Rs = two(D, .5, .6), R = Rs[0], s = CH.fs(D, .8), H = R.h - s * 4, mm = H / 40, by = R.y1 - s * 1.6, rx = R.x0 + R.w * .3, w = R.w * .42;
+          CH.line(D, rx, by, rx, by - 40 * mm, { w: 2 });
+          for (var m = 0; m <= 40; m++) { var big = m % 5 === 0; CH.line(D, rx - (big ? 10 : 5), by - m * mm, rx, by - m * mm, { w: big ? 1.6 : 1 }); if (m % 10 === 0) CH.text(D, rx - 14, by - m * mm, m + 'mm', { size: s * .85, num: true, align: 'right' }); }
+          var hh = D.ph ? CH.lerp(2, 35, CH.ease(CH.smooth(.15, .7, t))) : 2, n = Math.round(hh / .2), x0 = rx + 6;
+          CH.fillRect(D, x0, by - hh * mm, x0 + w, by, { fill: 'rgba(242,240,230,.12)' });
+          var g = D.ctx; g.save(); g.globalAlpha = D.ga * .75; g.strokeStyle = C.chalk; g.lineWidth = 1; g.beginPath();
+          for (var k = 0; k <= n; k++) { var y = by - k * .2 * mm; g.moveTo(x0, y); g.lineTo(x0 + w, y); } g.stroke(); g.restore();
+          CH.fillRect(D, x0, by - 2 * mm, x0 + w, by, { fill: 'rgba(255,192,120,.35)', stroke: C.orange, sw: 2 });
+          CH.text(D, x0 + w + 8, by - mm, '10枚で 2mm', { col: C.orange, size: s, align: 'left' });
+          if (D.ph && t > .15) CH.text(D, x0 + w + 8, by - hh * mm, n + '枚', { col: C.yel, size: s * 1.1, align: 'left' });
+          if (t > .72) CH.line(D, rx - 12, by - 35 * mm, x0 + w + 4, by - 35 * mm, { col: C.pink, dash: true, w: 2, a: CH.smooth(.72, .8, t) });
+          lines(D, Rs[1], [{ t: '枚数と厚さが比例するとみなす', col: C.green, a: D.ph ? CH.smooth(0, .06, t) : 0 }, { t: '1枚の厚さ　2÷10＝0.2（mm）', col: C.orange, a: CH.smooth(.06, .14, t) }, { t: '3.5cm＝35mm', a: CH.smooth(.72, .8, t) }, { t: '35÷0.2＝175', col: C.yel, a: CH.smooth(.8, .88, t) }, { t: 'およそ 175枚', col: C.pink, a: CH.smooth(.88, .96, t) }]);
+        } },
+      { tag: '考えよう', q: 'クリップ 10個ずつの重さを 5回はかったら、4.4g、4.7g、4.3g、4.6g、4.5g だった。求めた個数が「およそ」になるわけと、もっと正確に求める方法を考えよう。',
+        notes: ['なぜ「およそ」になるのか、書こう。', 'もっと正確に求める方法を、書こう。', 'スライダーで、何回目の重さを使うかを変えると、グラフの線と、441g の線と交わる所が動きます。'],
+        sliders: [{ key: 'k', label: '何回目', min: 0, max: 4, step: 1, val: 0, fmt: function (v) { return (v + 1) + '回目（' + WS[v] + 'g）'; } }],
+        draw: function (D) {
+          var k = D.V.k, w = WS[k], Rs = two(D, .32, .4), s = CH.fs(D, .8), R = Rs[0], sw = Math.min(R.w * .8, R.h * .6);
+          var y1 = scale(D, R.cx, R.cy + sw * .3, sw, w + ' g', { cap: (k + 1) + '回目　10個' }); for (var j = 0; j < 10; j++) clip(D, R.cx + (j % 5 - 2) * sw * .17, y1 - sw * .05 - Math.floor(j / 5) * sw * .07, sw * .16, j % 2 ? -.3 : .25);
+          var Pl = wplane(D, Rs[1]);
+          lab(D, Pl, 1100, 0, '（個）', { align: 'right', dy: s * 2.2, size: s * .85, col: 'rgba(242,240,230,.75)' }); lab(D, Pl, 0, 500, '（g）', { dx: s * 1.6, dy: s * .2, size: s * .85, col: 'rgba(242,240,230,.75)' });
+          WS.forEach(function (ww, i) { if (i !== k) CH.fn(D, Pl, function (x) { return ww / 10 * x; }, { x0: 0, x1: 1100, col: C.chalk, w: 1.4, a: .3 }); });
+          CH.pseg(D, Pl, [0, 441], [1100, 441], { col: C.pink, dash: true }); lab(D, Pl, 30, 441, '441g', { col: C.pink, dy: -s * .9, size: s });
+          CH.fn(D, Pl, function (x) { return w / 10 * x; }, { x0: 0, x1: 1100, col: C.yel, w: 3 });
+          var xc = 441 / (w / 10); CH.pseg(D, Pl, [xc, 0], [xc, 441], { col: C.yel, dash: true, w: 1.6 }); CH.pt(D, Pl, xc, 441, { col: C.yel });
+          /* 拡大図（交わる所のまわり x 900〜1060、y 400〜480） */
+          var Z = [900, 1060, 400, 480], ix0 = Pl.X(40), ix1 = Pl.X(600), iy0 = Pl.Y(495), iy1 = Pl.Y(330), g = D.ctx;
+          CH.fillRect(D, Pl.X(Z[0]), Pl.Y(Z[3]), Pl.X(Z[1]), Pl.Y(Z[2]), { stroke: C.blue, sw: 1.4, dash: true });
+          CH.line(D, ix1, iy1, Pl.X(Z[0]), Pl.Y(Z[2]), { col: C.blue, w: 1, dash: [3, 4] });
+          CH.fillRect(D, ix0, iy0, ix1, iy1, { fill: '#1f3a2c', stroke: C.blue, sw: 2 });
+          function ZX(x) { return ix0 + (x - Z[0]) / (Z[1] - Z[0]) * (ix1 - ix0); } function ZY(y) { return iy1 - (y - Z[2]) / (Z[3] - Z[2]) * (iy1 - iy0); }
+          g.save(); g.beginPath(); g.rect(ix0, iy0, ix1 - ix0, iy1 - iy0); g.clip();
+          [900, 950, 1000, 1050].forEach(function (x) { CH.line(D, ZX(x), iy0, ZX(x), iy1, { col: 'rgba(242,240,230,.15)', w: 1 }); });
+          WS.forEach(function (ww, i) { CH.line(D, ZX(Z[0]), ZY(ww / 10 * Z[0]), ZX(Z[1]), ZY(ww / 10 * Z[1]), i === k ? { col: C.yel, w: 3 } : { col: C.chalk, w: 1.4, a: .35 }); });
+          CH.line(D, ix0, ZY(441), ix1, ZY(441), { col: C.pink, dash: true });
+          CH.line(D, ZX(xc), ZY(441), ZX(xc), iy1, { col: C.yel, dash: true, w: 1.6 }); CH.circle(D, ZX(xc), ZY(441), CH.fs(D, .28), { fill: C.yel });
+          g.restore();
+          [900, 950, 1000, 1050].forEach(function (x) { CH.text(D, ZX(x), iy1 + s * .8, String(x), { size: s * .8, num: true }); });
+          CH.text(D, ix0 + s * .3, iy0 + s * .8, '拡大', { size: s * .85, col: C.blue, align: 'left' });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: 'ねじ 40個の重さは 56g だった。ねじの入った箱ごと重さをはかると 1.5kg で、からの箱の重さは 100g である。ねじは、およそ何個あるか。', a: 'およそ 1000個',
+        sub: 'ねじ 1個 56÷40＝1.4（g）。ねじだけの重さ 1500−100＝1400（g）。1400÷1.4＝1000。（1500÷1.4 では、箱の重さまで ねじとして数えてしまう）', dur: 8,
+        b: { t: 'ねじだけ 1500−100＝1400g、1400÷1.4＝<b>およそ 1000個</b>', col: C.orange },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Rs = two(D, .56, .6), R = Rs[0], s = CH.fs(D, .85), S = { w: Math.min(R.w * .42, R.h * .42), x1: R.x0 + R.w * .27, x2: R.x0 + R.w * .73 }; S.by = R.cy + S.w * .5;
+          var y1 = scale(D, S.x1, S.by, S.w, '1500 g', { cap: '箱ごと 1.5kg' }), bw = S.w * .7, bh = S.w * .32;
+          CH.fillRect(D, S.x1 - bw / 2, y1 - bh, S.x1 + bw / 2, y1, { fill: 'rgba(255,192,120,.2)', stroke: C.orange, sw: 2 });
+          for (var k = 0; k < 18; k++) screw(D, S.x1 + ((k % 6) - 2.5) * bw * .15, y1 - bh * .25 - Math.floor(k / 6) * bh * .25, bw * .13, (k % 3 - 1) * .5);
+          var a2 = CH.smooth(.2, .35, t);
+          if (a2 > 0) { var y2 = scale(D, S.x2, S.by, S.w, '100 g', { cap: 'からの箱', a: a2 }); CH.fillRect(D, S.x2 - bw / 2, y2 - bh, S.x2 + bw / 2, y2, { fill: 'rgba(255,192,120,.2)', stroke: C.orange, sw: 2, a: a2 }); }
+          if (t > .4) TX(D, R.cx, R.y0 + s * 1.4, 'ねじだけ　1500−100＝1400（g）', { col: C.yel, size: fitT(D, 'ねじだけ　1500−100＝1400（g）', R.w * .95, s * 1.1), a: CH.smooth(.4, .5, t) });
+          lines(D, Rs[1], [{ t: 'ねじ 1個　56÷40＝1.4（g）', col: C.blue, a: D.ph ? CH.smooth(0, .1, t) : 0 }, { t: 'からの箱は 100g', col: C.orange, a: CH.smooth(.25, .35, t) }, { t: 'ねじだけ 1500−100＝1400（g）', col: C.yel, a: CH.smooth(.42, .52, t) },
+            { t: '1400÷1.4＝1000', a: CH.smooth(.6, .7, t) }, { t: 'およそ 1000個', col: C.pink, a: CH.smooth(.75, .85, t) }]);
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

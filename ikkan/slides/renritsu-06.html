@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>連立方程式　第6時　A＝B＝C の形の方程式を解こう　スライド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0f1722;color:#e6e9ec;font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;overflow:hidden}
+#stage{position:absolute;left:0;right:0;top:0;bottom:44px;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#deck>section{position:absolute;left:0;top:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#deck>section:not(.on){display:none !important}   /* 各枚の style="display:flex" より強くする */
+#deck p,#deck h1,#deck h2,#deck h3,#deck ul,#deck ol{margin:0}
+#deck ul,#deck ol{padding-left:1.2em}
+#deck table{border-collapse:collapse}
+#deck th,#deck td{border:3px solid #2b3647;padding:6px 14px}   /* 表の罫線は、色ではなく、はっきりした濃い線（プロジェクターでも見える） */
+#deck th{background:#eceff4}
+#deck aside{display:none}
+#bar{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#18222f;border-top:1px solid #2a3647;font-size:14px;white-space:nowrap;overflow-x:auto}
+#bar button,#bar a{font:inherit;color:#e6e9ec;background:#243245;border:1px solid #34455b;border-radius:8px;padding:5px 12px;cursor:pointer;text-decoration:none}
+#bar button:hover,#bar a:hover{border-color:#7cb1ff}
+#bar .sp{flex:1}
+#bar .no{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#notes{position:absolute;left:0;right:0;bottom:44px;max-height:42%;overflow:auto;padding:12px 18px;background:#fffdf5;color:#1f2933;font-size:16px;line-height:1.7;border-top:3px solid #d9730d;display:none;white-space:pre-wrap}
+body.notes #notes{display:block}
+@page{size:1920px 1080px;margin:0}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #bar,#notes{display:none !important}
+  #stage{position:static}
+  #deck{position:static;transform:none !important;width:auto;height:auto}
+  #deck>section:not(.on),#deck>section{display:flex !important;position:relative;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+<section id="r06-pair" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">ペア学習</p>
+<p style="font-size:30px;color:#B8C4D3">第6時　A＝B＝C の形の方程式を解こう</p>
+</div>
+<h2 style="font-size:72px;font-weight:700;line-height:1.3">前の時間の重要語句を、ペアで出し合おう</h2>
+<p style="font-size:48px;line-height:1.6;color:#DCE4EE">第5時の重要語句から、1人1問ずつ、言葉を選んで出題する。<br>聞かれた人は、その言葉の意味を、自分の言葉で言う。</p>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">整数の係数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">最小公倍数</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">分母をはらう</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">連立方程式　第6時　A＝B＝C の形の方程式を解こう</p>
+<aside>【導入 3分】前時（第5時）の重要語句を、ペアで1人1問ずつ出題し合う。言葉の意味を、自分の言葉で言う。静かに、時間を切って。緊張感をつくる。このあと、小テスト 7分（前時分。5分＋答え合わせ・回収 2分。10点満点。チャレンジは別枠で、正解で満点）。</aside>
+</section>
+<section id="r06-aim" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#1E3A5F;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">めあて</p>
+<p style="font-size:30px;color:#6B7480">第6時　A＝B＝C の形の方程式を解こう</p>
+</div>
+<h2 style="font-size:60px;font-weight:700;line-height:1.3;color:#1E3A5F">A＝B＝C の形の方程式を、<br>連立方程式に直して解こう</h2>
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:20px;background:#FFFFFF;border:3px solid #1E3A5F;border-radius:20px;padding:32px 48px">
+<p style="font-size:34px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:6px 24px;border-radius:12px;white-space:nowrap">学習課題</p>
+<p style="font-size:50px;font-weight:500;line-height:1.5">方程式 <b><i>x</i>+2<i>y</i>＝2<i>x</i>−<i>y</i>＝5</b> のように、<br>等号が 2つある方程式は、どうすれば解けるだろう。</p>
+<p style="font-size:46px;font-weight:500;line-height:1.5">これまでに学んだ連立方程式の考えで、解き方を考えよう。</p>
+</div>
+<p style="font-size:36px;line-height:1.5;color:#1F2A37">【自分の考え】解き方を書こう。　【ペア】自分とちがう考えを書こう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第6時　A＝B＝C の形の方程式を解こう</p>
+<aside>【解説 4分・学習課題】めあてを書く。x+2y＝2x−y＝5 の解き方を、個人→ペアで考える。発問：等号が 2つある。式を 2つにするなら、どう分ける？／x+2y・2x−y・5 は、どうなっている？　想定される反応：「x+2y＝5 と 2x−y＝5」のように、2つの等式に分ける。留意：ちがう分け方が出たら、板書に残す。</aside>
+</section>
+<section id="r06-aim-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1E3A5F;border:3px solid #1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">学習課題のまとめ</p>
+<p style="font-size:30px;color:#6B7480">第6時　A＝B＝C の形の方程式を解こう</p>
+</div>
+<p style="font-size:44px;line-height:1.5;color:#6B7480">方程式 <i>x</i>+2<i>y</i>＝2<i>x</i>−<i>y</i>＝5 は、どうすれば解けるだろう。</p>
+<div style="display:flex;flex-direction:row;align-items:stretch;gap:32px">
+<div style="display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:32px 48px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">（例）解き方</p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B"><i>x</i>+2<i>y</i>＝5 …①　　2<i>x</i>−<i>y</i>＝5 …②</p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B"><i>y</i> を消去　② × 2　4<i>x</i>−2<i>y</i>＝10 …③</p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B">①+③　5<i>x</i>＝15　<i>x</i>＝3</p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B">② に代入して　6−<i>y</i>＝5　<i>y</i>＝1</p>
+<p style="font-size:44px;line-height:1.45;color:#C0392B"><b><i>x</i>＝3、<i>y</i>＝1</b></p>
+</div>
+<div style="display:flex;flex-direction:column;justify-content:center;gap:12px;flex:1;border-left:8px solid #C0392B;padding:0px 0px 0px 32px">
+<p style="font-size:34px;font-weight:700;color:#6B7480">考え方</p>
+<p style="font-size:48px;line-height:1.5;color:#C0392B"><b>等号が 2つあるから、<br>等式を 2つつくる。</b></p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第6時　A＝B＝C の形の方程式を解こう</p>
+<aside>【解説 4分・学習課題のまとめ】いくつかのペアの考えを聞いて、板書にまとめる。等号が 2つあるから、等式を 2つつくる、をまとめとする。ちがう分け方が出ていたら、板書に残してある。赤い字は、先生の板書。</aside>
+</section>
+<section id="r06-word-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第6時　A＝B＝C の形の方程式を解こう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<p style="font-size:48px;line-height:1.6">A＝B＝C の形の方程式は、<br>等式を<u>　　　　</u>つくって、<u>　　　　　　　</u>に直して解く。</p>
+<p style="font-size:48px;line-height:1.6">組のつくり方は、次の<u>　　　</u>通りある。</p>
+<div style="display:flex;flex-direction:row;align-items:center;justify-content:space-around;gap:48px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+<p style="font-size:130px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:50px;line-height:1.4">A＝B</p>
+<p style="font-size:50px;line-height:1.4">A＝C</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+<p style="font-size:130px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:50px;line-height:1.4">A＝B</p>
+<p style="font-size:50px;line-height:1.4">B＝C</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+<p style="font-size:130px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:50px;line-height:1.4">A＝C</p>
+<p style="font-size:50px;line-height:1.4">B＝C</p>
+</div>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第6時　A＝B＝C の形の方程式を解こう</p>
+<aside>【解説 3分・ことば】2つの等式の組に直すことと、3通りの組を押さえる。空欄は、先生が言ってから書かせる。発問：等式は、いくつつくればよい？　想定される反応：空欄に書き込む。留意：重要語句は、先生が言い切る。「解は同じ」は言わない。</aside>
+</section>
+<section id="r06-word-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#2563C9;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">ことば</p>
+<p style="font-size:30px;color:#6B7480">第6時　A＝B＝C の形の方程式を解こう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:24px;background:#FFFFFF;border:3px solid #2563C9;border-radius:20px;padding:40px 56px">
+<p style="font-size:48px;line-height:1.6">A＝B＝C の形の方程式は、<br>等式を<span style="color:#C0392B"><b>2つ</b></span>つくって、<span style="color:#C0392B"><b>連立方程式</b></span>に直して解く。</p>
+<p style="font-size:48px;line-height:1.6">組のつくり方は、次の<span style="color:#C0392B"><b>3</b></span>通りある。</p>
+<div style="display:flex;flex-direction:row;align-items:center;justify-content:space-around;gap:48px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+<p style="font-size:130px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:50px;line-height:1.4">A＝B</p>
+<p style="font-size:50px;line-height:1.4">A＝C</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+<p style="font-size:130px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:50px;line-height:1.4">A＝B</p>
+<p style="font-size:50px;line-height:1.4">B＝C</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+<p style="font-size:130px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:50px;line-height:1.4">A＝C</p>
+<p style="font-size:50px;line-height:1.4">B＝C</p>
+</div>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第6時　A＝B＝C の形の方程式を解こう</p>
+<aside>【解説 3分・ことば（答え）】空欄の答え。先生が言い切ってから、書かせる。「解は同じ」とは言わない（考えようで扱う）。</aside>
+</section>
+<section id="r06-ex-q" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題</p>
+<p style="font-size:30px;color:#6B7480">第6時　A＝B＝C の形の方程式を解こう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:20px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:52px 56px">
+<p style="font-size:56px;font-weight:500;line-height:1.5">方程式　<i>x</i>+<u>　　</u><i>y</i>＝<u>　　</u><i>x</i>+3＝5<i>y</i>−<u>　　</u>　を解こう。</p>
+</div>
+<p style="font-size:40px;line-height:1.5;color:#6B7480">どの組に分けるか決めて、解こう。解けたら、解を確かめよう。</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第6時　A＝B＝C の形の方程式を解こう</p>
+<aside>【解説 5分・例題】x+3y＝2x+3＝5y−1 を、A＝B、B＝C に分けて解き、解を確かめる。空欄の数は、先生が言ってから書かせる。発問：どの組に分けようか。／整理した式は、どう解く？　想定される反応：「x−3y＝−3」「2x−5y＝−4」に整理して、加減法で解く。留意：確かめは、① と ② に解を代入して成り立つか。</aside>
+</section>
+<section id="r06-ex-a" data-transition="fade" style="background:#F7F5F0;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#FFFFFF;color:#1B7F5C;border:3px solid #1B7F5C;padding:10px 28px;border-radius:12px;white-space:nowrap">例題　解答</p>
+<p style="font-size:30px;color:#6B7480">第6時　A＝B＝C の形の方程式を解こう</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:28px 48px">
+<p style="font-size:44px;line-height:1.4">方程式　<i>x</i>+<span style="color:#C0392B"><b>3</b></span><i>y</i>＝<span style="color:#C0392B"><b>2</b></span><i>x</i>+3＝5<i>y</i>−<span style="color:#C0392B"><b>1</b></span></p>
+<hr style="width:1500px;border-top:2px solid #E3E6EA">
+<div style="display:flex;flex-direction:row;align-items:flex-start;gap:40px">
+<div style="display:flex;flex-direction:column;gap:8px;width:820px">
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><b>ここでは A＝B、B＝C にする。</b></p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><i>x</i>+3<i>y</i>＝2<i>x</i>+3 …①　2<i>x</i>+3＝5<i>y</i>−1 …②</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">① を整理して　<i>x</i>−3<i>y</i>＝−3 …③</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">② を整理して　2<i>x</i>−5<i>y</i>＝−4 …④</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;flex:1">
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><i>x</i> を消去　③ × 2　2<i>x</i>−6<i>y</i>＝−6 …⑤</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">⑤−④　−<i>y</i>＝−2　<i>y</i>＝2</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">③ に代入して　<i>x</i>−6＝−3　<i>x</i>＝3</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B"><b><i>x</i>＝3、<i>y</i>＝2</b></p>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:20px;padding:24px 48px">
+<p style="font-size:40px;line-height:1.4;color:#6B7480"><b>【確かめ】</b><i>x</i>＝3、<i>y</i>＝2 を、① と ② に代入して、成り立つか確かめよう。</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">① 左辺 3+3×2＝9　右辺 2×3+3＝9　→ 成り立つ</p>
+<p style="font-size:44px;line-height:1.4;color:#C0392B">② 左辺 2×3+3＝9　右辺 5×2−1＝9　→ 成り立つ</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第6時　A＝B＝C の形の方程式を解こう</p>
+<aside>【解説 5分・例題（解答）】赤い字は、先生の板書。ここでは A＝B、B＝C にして解く。確かめは、① と ② に解を代入して、左辺と右辺が等しくなるかを見る。</aside>
+</section>
+<section id="r06-think" data-transition="fade" style="background:#FFF4E8;color:#1F2A37;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#D9730D;color:#F7F5F0;padding:10px 28px;border-radius:12px;white-space:nowrap">考えよう</p>
+<p style="font-size:30px;color:#6B7480">第6時　A＝B＝C の形の方程式を解こう</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px">
+<p style="font-size:46px;line-height:1.4"><i>x</i>+2<i>y</i>＝2<i>x</i>−<i>y</i>＝5 を、</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:12px">
+<p style="font-size:130px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:48px;line-height:1.4"><i>x</i>+2<i>y</i>＝5</p>
+<p style="font-size:48px;line-height:1.4">2<i>x</i>−<i>y</i>＝5</p>
+</div>
+</div>
+<p style="font-size:46px;line-height:1.4">に直して解くと、<br><i>x</i>＝3、<i>y</i>＝1 になった。</p>
+</div>
+<h2 style="font-size:50px;font-weight:700;line-height:1.35;color:#1F2A37">ほかの組に直して解いても、同じ解になるだろうか。</h2>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:10px 36px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">①</p>
+<p style="font-size:44px;line-height:1.4">ほかの 2通りの組に直して、<br>それぞれ解いてみよう。</p>
+<div style="display:flex;flex-direction:row;align-items:center;gap:12px;padding:0px 0px 0px 24px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">ア</p>
+<p style="font-size:110px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:44px;line-height:1.4"><i>x</i>+2<i>y</i>＝2<i>x</i>−<i>y</i></p>
+<p style="font-size:44px;line-height:1.4">2<i>x</i>−<i>y</i>＝5</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:12px;padding:0px 0px 0px 24px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">イ</p>
+<p style="font-size:110px;font-weight:400;line-height:1">{</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-size:44px;line-height:1.4"><i>x</i>+2<i>y</i>＝2<i>x</i>−<i>y</i></p>
+<p style="font-size:44px;line-height:1.4"><i>x</i>+2<i>y</i>＝5</p>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:10px 36px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">②</p>
+<p style="font-size:44px;line-height:1.4">気づいたことを書こう。</p>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;background:#FFFFFF;border:3px solid #F0C9A0;border-radius:16px;padding:10px 36px">
+<p style="font-size:44px;font-weight:700;color:#D9730D">③</p>
+<p style="font-size:44px;line-height:1.4">どの組に直しても、同じ解になるのは、なぜだろう。説明しよう。</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:row;align-items:center;gap:24px;background:#FFFFFF;border:3px solid #E3E6EA;border-radius:16px;padding:10px 28px">
+<p style="font-size:30px;font-weight:700;color:#D9730D;white-space:nowrap">発展</p>
+<p style="font-size:32px;line-height:1.4;color:#1F2A37">2<i>x</i>−<i>y</i>−2＝<i>x</i>+1＝3<i>y</i> を、3通りの組で解いてみよう。<br>いちばん解きやすいのは、どの組だろう。</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7480">連立方程式　第6時　A＝B＝C の形の方程式を解こう</p>
+<aside>【演習 14分・考えよう＋標準（学び合い）】進め方：基礎（個人）5分 → 終わった人から考えようへ。立ち歩きOK。解答は教卓（考えようの答えはない）。「できた人が教える」ではなく「説明できるようになる」と伝える。立ち歩きで、教え合い・説明し合い。先生は回って、気づきの言葉を拾い、必要なら判断して短く全体に戻す。進み方：別の組で解く → 解を比べる → わけを説明する。ヒントを出す順：1）ほかの 2通りの組に直して解き、解を比べる。2）解を、3つの式に入れて、値を求める。3）「A＝B」「B＝C」なら、A と C は、どうなる？　判断：つまずく人が多い→共有1〜2分／気づきが出ない→ヒント1／止まる→ヒント2・3／残り5分→指名。答えは言わない。方向性（最後に一言）：「組に直す考え方は、これからも使う。ほかの方程式でも、自分で確かめてみよう。次の時間は、解き方をくらべるよ。」　発展（下の枠）は、解き終わった人向け。</aside>
+</section>
+<section id="r06-end" data-transition="fade" style="background:#1E3A5F;color:#F7F5F0;font-family:'Noto Sans JP', sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:row;align-items:center;gap:28px">
+<p style="font-size:36px;font-weight:700;background:#F7F5F0;color:#1E3A5F;padding:10px 28px;border-radius:12px;white-space:nowrap">振り返り</p>
+<p style="font-size:30px;color:#B8C4D3">第6時　A＝B＝C の形の方程式を解こう</p>
+</div>
+<p style="font-size:34px;font-weight:700;color:#F4B860">今日のめあて</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.35">A＝B＝C の形の方程式を、<br>連立方程式に直して解こう</h2>
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:20px">
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">A＝B＝C の形</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">2つの等式</p>
+<p style="font-size:44px;font-weight:700;background:#2B4C75;color:#F7F5F0;padding:14px 36px;border-radius:14px">連立方程式に直す</p>
+</div>
+<p style="font-size:48px;line-height:1.5;color:#DCE4EE">今日わかったことを、ペアで1つずつ言い合おう。</p>
+<p style="font-size:40px;line-height:1.5;color:#B8C4D3">ワークシートと演習プリントを出そう。（未完成でも出す）</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9FB0C6">連立方程式　第6時　A＝B＝C の形の方程式を解こう</p>
+<aside>【振り返り・回収 5分】今日わかったことを、ペアで1つずつ言い合う。ワークシートと演習プリントを回収（未完成でも出す）。裏の発展は、解き終わった人向け。</aside>
+</section>
+</div></div>
+<div id="notes" aria-live="polite"></div>
+<div id="bar">
+  <button type="button" id="prev" aria-label="前へ">◀</button><span class="no" id="no"></span><button type="button" id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button type="button" id="nt" title="先生のメモ（N）">メモ</button>
+  <button type="button" id="fs" title="全画面（F）">全画面</button>
+  <button type="button" id="pr" title="1枚ずつ印刷・PDF（P）">印刷</button>
+</div>
+<script>
+(function () {
+  var S = [].slice.call(document.querySelectorAll('#deck>section')), cur = 0, deck = document.getElementById('deck'), stage = document.getElementById('stage');
+  function fit() { var w = stage.clientWidth, h = stage.clientHeight, k = Math.min(w / 1920, h / 1080); deck.style.transform = 'translate(' + (-960 * k) + 'px,' + (-540 * k) + 'px) scale(' + k + ')'; }
+  function show(i, noHash) {
+    cur = Math.max(0, Math.min(S.length - 1, i));
+    S.forEach(function (s, j) { s.classList.toggle('on', j === cur); });
+    document.getElementById('no').textContent = (cur + 1) + ' / ' + S.length;
+    var a = S[cur].querySelector('aside'); document.getElementById('notes').textContent = a ? a.textContent.trim() : '（この枚のメモはありません）';
+    if (!noHash) { try { history.replaceState(null, '', '#' + S[cur].id); } catch (e) {} }
+  }
+  function fromHash() { var h = location.hash.replace('#', ''), j = S.findIndex(function (s) { return s.id === h; }); if (j < 0 && /^\d+$/.test(h)) j = +h - 1; show(j < 0 ? 0 : j, true); }
+  document.getElementById('prev').onclick = function () { show(cur - 1); };
+  document.getElementById('next').onclick = function () { show(cur + 1); };
+  document.getElementById('nt').onclick = function () { document.body.classList.toggle('notes'); fit(); };
+  document.getElementById('pr').onclick = function () { window.print(); };
+  document.getElementById('fs').onclick = function () { var d = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen(); };
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { show(cur + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { show(cur - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0); else if (k === 'End') show(S.length - 1);
+    else if (k === 'f' || k === 'F') document.getElementById('fs').click();
+    else if (k === 'n' || k === 'N') document.getElementById('nt').click();
+    else if (k === 'p' || k === 'P') window.print();
+  });
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1)); else { var r = stage.getBoundingClientRect(), x = e.changedTouches[0].clientX - r.left; show(cur + (x < r.width * 0.3 ? -1 : 1)); } });
+  stage.addEventListener('click', function (e) { var r = stage.getBoundingClientRect(); show(cur + ((e.clientX - r.left) < r.width * 0.3 ? -1 : 1)); });
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', fromHash);
+  fit(); fromHash();
+})();
+</script>
+</body>
+</html>

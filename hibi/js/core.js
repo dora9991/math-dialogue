@@ -347,6 +347,42 @@
     return { ok: false, why: 'https://script.google.com/macros/s/…/exec の形の URL を入れてください' };
   }
 
+  /* ───── パスキーの「ユーザー ID」（64 バイトまで）に、つなぎ先の URL をつめる ─────
+     https://script.google.com/macros/s/{ID}/exec は、ID の1文字を6ビットにつめる：[1, 文字数, …]（ID が 72 文字なら 56 バイト）
+     ほかの URL（開発用の localhost など）は、そのまま：[0, …UTF-8]。入らなければ null */
+  const B64U = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  function packUrl(url) {
+    url = String(url || '');
+    const m = /^https:\/\/script\.google\.com\/macros\/s\/([A-Za-z0-9_-]{1,255})\/exec$/.exec(url);
+    if (m) {
+      const out = [1, m[1].length];
+      let acc = 0, bits = 0;
+      for (const ch of m[1]) {
+        acc = ((acc << 6) | B64U.indexOf(ch)) & 0xffff; bits += 6;
+        if (bits >= 8) { bits -= 8; out.push((acc >> bits) & 255); }
+      }
+      if (bits) out.push((acc << (8 - bits)) & 255);
+      return out.length <= 64 ? Uint8Array.from(out) : null;
+    }
+    const raw = Array.from(new TextEncoder().encode(url));
+    return raw.length && raw.length <= 63 ? Uint8Array.from([0].concat(raw)) : null;
+  }
+  function unpackUrl(bytes) {
+    const b = Array.from(bytes || []);
+    if (b[0] === 1 && b[1] > 0) {
+      let acc = 0, bits = 0, id = '';
+      for (let i = 2; i < b.length && id.length < b[1]; i++) {
+        acc = ((acc << 8) | b[i]) & 0xffff; bits += 8;
+        while (bits >= 6 && id.length < b[1]) { bits -= 6; id += B64U[(acc >> bits) & 63]; }
+      }
+      return id.length === b[1] ? `https://script.google.com/macros/s/${id}/exec` : '';
+    }
+    if (b[0] === 0 && b.length > 1) {
+      try { return new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(b.slice(1))); } catch (e) { return ''; }
+    }
+    return '';
+  }
+
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
@@ -385,6 +421,6 @@
     TZ, WD, isYmd, ymdOf, hmOf, today, addDays, diffDays, weekday, addMonths, labelDay, labelShort, relDay, labelWhen, monthGrid, isoWeek, holidayName, holidaysOf,
     eventsOn, remindersFor, undatedReminders, memosOn, pinnedMemos, itemsOn, briefingFor, dayView, monthMarks, calEntries, weekLayout,
     filterMemos, filterItems, memoTitle, memoBody, colorIndex, catIndex, shortcutUrl, memoToIos, iosForShortcut, calshowUrl,
-    parseConnect, checkGasUrl, esc, safeUrl, uid, upsert, proposalTarget, withDate, withoutDate
+    parseConnect, checkGasUrl, packUrl, unpackUrl, esc, safeUrl, uid, upsert, proposalTarget, withDate, withoutDate
   };
 });

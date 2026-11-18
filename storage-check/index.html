@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>保存領域チェック</title>
+<meta name="description" content="dora9991.github.io のアプリが、ブラウザの保存領域をどれだけ使っているかを調べるページ（何も消しません）">
+<style>
+  :root { --bg: #f3f5f8; --card: #ffffff; --line: #dfe4ec; --text: #1b2330; --muted: #5d6b80; --accent: #2563eb; --warn: #d97706; --bad: #dc2626; --good: #16a34a; --bar: #e8edf4; color-scheme: light; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0b0f16; --card: #141b26; --line: #263244; --text: #eef2f8; --muted: #97a4b8; --accent: #5b93ff; --warn: #f59e0b; --bad: #f87171; --good: #22c55e; --bar: #1d2737; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; -webkit-text-size-adjust: 100%; }
+  main { max-width: 680px; margin: 0 auto; padding: 16px 16px calc(32px + env(safe-area-inset-bottom)); }
+  h1 { font-size: 22px; margin: 8px 0 6px; }
+  h2 { font-size: 17px; margin: 0 0 8px; }
+  p { margin: 0 0 10px; }
+  .lead { color: var(--muted); font-size: 14.5px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin: 12px 0; }
+  .big { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .state { display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 800; font-size: 14px; color: #fff; background: var(--good); vertical-align: 4px; margin-left: 6px; }
+  .state.warn { background: var(--warn); }
+  .state.bad { background: var(--bad); }
+  .bar { height: 14px; border-radius: 7px; background: var(--bar); overflow: hidden; display: flex; margin: 8px 0 4px; }
+  .bar i { display: block; height: 100%; }
+  .note { color: var(--muted); font-size: 13.5px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  td { padding: 7px 4px; border-top: 1px solid var(--line); vertical-align: top; }
+  td.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; }
+  td .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: 0; }
+  td small { display: block; color: var(--muted); font-size: 12.5px; word-break: break-all; }
+  button { font: inherit; font-weight: 700; border: 0; border-radius: 12px; padding: 12px 16px; background: var(--accent); color: #fff; width: 100%; }
+  button:disabled { opacity: 0.5; }
+  textarea { width: 100%; height: 170px; margin-top: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 8px; font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg); color: var(--text); }
+  .row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<main>
+  <h1>保存領域チェック</h1>
+  <p class="lead">iPhone の空き容量とは別に、ブラウザは<b>サイトごと</b>に小さな保存場所（localStorage・約 5MB）を持っています。dora9991.github.io のアプリは、ぜんぶ同じサイトなので、<b>この約 5MB を分け合っています</b>。どれか1つのアプリがたくさん保存すると、ほかのアプリでも「容量がいっぱい」になります。</p>
+  <p class="lead">このページは、使い方を調べるだけです。<b>何も消しません</b>。アプリを使っているのと同じブラウザ（Safari など）で開いてください。</p>
+
+  <section class="card" id="sum"><p class="note">調べています…</p></section>
+  <section class="card" id="apps" hidden></section>
+  <section class="card" id="idb" hidden></section>
+  <section class="card" id="rep">
+    <h2>結果を送る</h2>
+    <p class="note">下のボタンで結果をコピーして、Claude に貼りつけてください（中身のデータは入りません。アプリごとの量と、項目の名前だけです）。</p>
+    <button id="copy" disabled>結果をコピー</button>
+    <textarea id="report" readonly></textarea>
+  </section>
+</main>
+<script>
+(function () {
+  'use strict';
+  // キーのはじまり → アプリの名前（このリポジトリのアプリ）。分からないキーは、キーの名前をそのまま出す
+  const APPS = [
+    ['btap:', 'バスケ タップ記録'], ['bclip:', 'バスケ得点クリップ'], ['bc.', 'バスケ・グロウ'], ['mise:', 'みせびらき'],
+    ['stap:', 'スポーツ タップ記録'], ['ssoc:', 'サッカー タップ記録'], ['kyomu-', '教務・時間割'], ['conferenceEditor.', '大会サイト 編集画面'],
+    ['ikkan.', '数学ワークシート（板書型）'], ['adlib.', 'アドリブ・ラボ'], ['tangocho.', '計算単語帳'], ['hyojunNavi.', '授業ナビ 標準版'],
+    ['phrasePocket.', 'フレーズポケット'], ['mathApp_', '数学アプリ'], ['quiz', 'クイズ'], ['study', '学習アプリ'], ['applied', '活用アプリ'],
+    ['mecha.', 'メカバトル'], ['mb.', 'ミニバス スコアシート分析']
+  ];
+  const DBS = { 'btap-media': 'バスケ タップ記録の動画' };
+  const LIMIT = 5 * 1024 * 1024;           // Safari の localStorage：サイトごとに約 5MB（文字は 1 字 2 バイトで数える）
+  const COLORS = ['#2563eb', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0891b2', '#ca8a04', '#db2777', '#4b5563'];
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const fmt = (b) => (b >= 1e9 ? (b / 1e9).toFixed(2) + ' GB' : b >= 1e6 ? (b / 1e6).toFixed(2) + ' MB' : Math.round(b / 1e3) + ' KB');
+  const appOf = (k) => { for (const [p, n] of APPS) if (k.startsWith(p)) return { id: p, name: n }; return null; };
+
+  /* localStorage の中身の大きさ（キー＋値の文字数 × 2 バイト）を、アプリごとに */
+  function scan() {
+    const groups = new Map(), items = [];
+    let total = 0;
+    let n = 0;
+    try { n = localStorage.length; } catch (e) { return { error: String(e && e.message || e) }; }
+    for (let i = 0; i < n; i++) {
+      let k = '', v = '';
+      try { k = localStorage.key(i) || ''; v = localStorage.getItem(k) || ''; } catch (e) { continue; }
+      const b = (k.length + v.length) * 2;
+      total += b;
+      const a = appOf(k) || { id: '?' + k, name: 'その他（' + (k.length > 28 ? k.slice(0, 28) + '…' : k) + '）' };
+      const g = groups.get(a.id) || { name: a.name, prefix: a.id[0] === '?' ? '' : a.id, b: 0, keys: [] };
+      g.b += b; g.keys.push({ k, b });
+      groups.set(a.id, g);
+      items.push({ k, b });
+    }
+    const list = Array.from(groups.values()).sort((x, y) => y.b - x.b);
+    list.forEach((g) => g.keys.sort((x, y) => y.b - x.b));
+    items.sort((x, y) => y.b - x.b);
+    return { total, list, items };
+  }
+
+  /* あとどれだけ入るか：一時的な項目に、入るいちばん長い文字列を探して書き、すぐ消す */
+  function probe() {
+    const K = '__storage_check_probe__';
+    const fits = (m) => {
+      try { localStorage.setItem(K, 'x'.repeat(m)); return true; } catch (e) { return false; } finally { try { localStorage.removeItem(K); } catch (e) { /* なし */ } }
+    };
+    try {
+      if (!fits(1)) return 0;
+      let ok = 1, ng = 0, m = 32768;
+      while (m <= 8 * 1024 * 1024) { if (fits(m)) { ok = m; m *= 2; } else { ng = m; break; } }
+      if (!ng) return ok * 2;                              // 8M 字まで入った（上限がとても大きい）
+      while (ng - ok > 2048) { const mid = Math.floor((ok + ng) / 2); if (fits(mid)) ok = mid; else ng = mid; }
+      return (ok + K.length) * 2;
+    } catch (e) { return null; }
+  }
+
+  async function idbInfo() {
+    const out = { usage: null, quota: null, persisted: null, dbs: null };
+    try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); out.usage = e.usage; out.quota = e.quota; } } catch (e) { /* 分からない */ }
+    try { if (navigator.storage && navigator.storage.persisted) out.persisted = await navigator.storage.persisted(); } catch (e) { /* 分からない */ }
+    try { if (window.indexedDB && indexedDB.databases) out.dbs = (await indexedDB.databases()).map((d) => d.name).filter(Boolean); } catch (e) { /* 分からない */ }
+    return out;
+  }
+
+  function osText() {
+    const ua = navigator.userAgent;
+    const m = ua.match(/OS (\d+)[._](\d+)/);
+    const where = /CriOS/.test(ua) ? 'Chrome' : /FxiOS/.test(ua) ? 'Firefox' : /Line\//.test(ua) ? 'LINE の中のブラウザ' : (window.navigator.standalone ? 'ホーム画面のアプリ' : 'Safari など');
+    return (m ? 'iOS ' + m[1] + '.' + m[2] : (/Android/.test(ua) ? 'Android' : 'パソコンなど')) + '・' + where;
+  }
+
+  async function run() {
+    const s = scan();
+    if (s.error) { $('sum').innerHTML = '<h2>このブラウザでは調べられません</h2><p>' + esc(s.error) + '（プライベートブラウズでは、保存の場所が使えないことがあります）</p>'; return; }
+    const free = probe();
+    const limit = free == null ? LIMIT : Math.max(LIMIT, s.total + free);
+    const pct = Math.min(100, Math.round(100 * s.total / limit));
+    const state = free == null ? '' : free < 100e3 ? '<span class="state bad">いっぱい</span>' : free < 600e3 ? '<span class="state warn">残りわずか</span>' : '<span class="state">まだ入る</span>';
+    const bar = s.list.slice(0, COLORS.length).map((g, i) => '<i style="width:' + (100 * g.b / limit).toFixed(2) + '%;background:' + COLORS[i] + '"></i>').join('');
+    $('sum').innerHTML =
+      '<h2>このサイトの保存場所（localStorage）' + state + '</h2>' +
+      '<div class="row"><span class="big">' + fmt(s.total) + '</span><span class="note">／ 約 ' + fmt(limit) + '（' + pct + '%）</span></div>' +
+      '<div class="bar">' + bar + '</div>' +
+      '<p class="note">' + (free == null ? '残りは調べられませんでした。' : 'あと約 <b>' + fmt(free) + '</b> 入ります。') + ' iPhone 本体の空きとは関係なく、この約 ' + fmt(limit) + ' がいっぱいになると、同じサイトのアプリが保存できなくなります。</p>';
+
+    const rows = s.list.map((g, i) => '<tr><td><span class="sw" style="background:' + (COLORS[i] || '#9aa3af') + '"></span>' + esc(g.name) +
+      '<small>' + g.keys.slice(0, 3).map((x) => esc(x.k) + ' ' + fmt(x.b)).join(' ・ ') + (g.keys.length > 3 ? ' ほか ' + (g.keys.length - 3) + ' 項目' : '') + '</small></td><td class="n">' + fmt(g.b) + '</td></tr>').join('');
+    $('apps').hidden = false;
+    $('apps').innerHTML = '<h2>アプリごとの量（多い順）</h2>' + (rows ? '<table>' + rows + '</table>' : '<p class="note">このブラウザには、まだ何も保存されていません。</p>') +
+      '<p class="note">いちばん上のアプリが、いちばん場所を使っています。減らすときは、そのアプリで「書き出す（バックアップ）」をしてから、いらない記録・画像を消してください。</p>';
+
+    const d = await idbInfo();
+    $('idb').hidden = false;
+    $('idb').innerHTML = '<h2>動画などの大きな保存（IndexedDB）</h2>' +
+      '<p>' + (d.usage != null ? '使用 <b>' + fmt(d.usage) + '</b>' + (d.quota ? '／上限 約 ' + fmt(d.quota) : '') : '量は分かりませんでした') + '</p>' +
+      (d.dbs && d.dbs.length ? '<p class="note">中身：' + d.dbs.map((n) => esc(DBS[n] ? DBS[n] + '（' + n + '）' : n)).join('・') + '</p>' : '') +
+      '<p class="note">こちらは localStorage とは別の、ずっと大きな入れ物です（撮影した動画など）。</p>';
+
+    const now = new Date();
+    const pad = (x) => String(x).padStart(2, '0');
+    const lines = [
+      '保存領域チェック（' + location.host + '）' + now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()),
+      '環境：' + osText(),
+      'localStorage：使用 ' + fmt(s.total) + '／約 ' + fmt(limit) + '（' + pct + '%）・あと ' + (free == null ? '不明' : fmt(free)),
+      ...s.list.map((g) => '- ' + g.name + '：' + fmt(g.b) + '（' + g.keys.length + ' 項目）'),
+      '大きい項目：' + s.items.slice(0, 5).map((x) => x.k + ' ' + fmt(x.b)).join(' / '),
+      'IndexedDB：' + (d.usage != null ? '使用 ' + fmt(d.usage) : '不明') + (d.quota ? '／上限 ' + fmt(d.quota) : '') + (d.dbs ? '・' + (d.dbs.join(', ') || 'なし') : '') + (d.persisted != null ? '・自動で消さない設定 ' + (d.persisted ? 'あり' : 'なし') : '')
+    ];
+    $('report').value = lines.join('\n');
+    $('copy').disabled = false;
+  }
+
+  $('copy').addEventListener('click', async () => {
+    const t = $('report').value;
+    try { await navigator.clipboard.writeText(t); $('copy').textContent = 'コピーしました'; }
+    catch (e) { $('report').focus(); $('report').select(); $('copy').textContent = '下の文を長押ししてコピーしてください'; }
+    setTimeout(() => { $('copy').textContent = '結果をコピー'; }, 3000);
+  });
+  window.addEventListener('load', () => { setTimeout(run, 50); });
+})();
+</script>
+</body>
+</html>

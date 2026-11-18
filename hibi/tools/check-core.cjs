@@ -104,6 +104,29 @@ eq(HB.parseConnect('#connect=@@@'), null, 'こわれた接続リンク');
 eq(HB.checkGasUrl('https://script.google.com/macros/s/AB_c-1/exec').ok, true, '正しい URL');
 ok(/\/exec/.test(HB.checkGasUrl('https://script.google.com/macros/s/AB/dev').why), '/dev は止める');
 eq(HB.checkGasUrl('https://example.com/x').ok, false, 'ちがう URL');
+console.log('■ パスキーのユーザー ID（つなぎ先の URL をつめる）');
+{
+  const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  let seed = 7;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const idOf = n => Array.from({ length: n }, () => A[Math.floor(rnd() * 64)]).join('');
+  let round = 0, fits = 0;
+  [1, 2, 3, 4, 5, 55, 56, 57, 71, 72, 73, 80, 82].forEach(n => {
+    for (let k = 0; k < 20; k++) {
+      const url = `https://script.google.com/macros/s/${idOf(n)}/exec`, b = HB.packUrl(url);
+      if (b && b.length <= 64) fits++;
+      if (b && HB.unpackUrl(b) === url) round++;
+    }
+  });
+  eq([round, fits], [260, 260], '1〜82文字の ID は、64バイトに入って、もとにもどる');
+  eq(HB.packUrl('https://script.google.com/macros/s/' + idOf(72) + '/exec').length, 56, 'いまの ID（72文字）は 56 バイト');
+  eq(HB.packUrl('https://script.google.com/macros/s/' + idOf(83) + '/exec'), null, '長すぎる ID は入れない');
+  const all = 'https://script.google.com/macros/s/' + A + '/exec';
+  eq(HB.unpackUrl(HB.packUrl(all)), all, '64 種類の文字が全部もどる');
+  eq(HB.unpackUrl(HB.packUrl('http://localhost:8810/gas')), 'http://localhost:8810/gas', '開発用の URL はそのまま');
+  eq(HB.packUrl('http://localhost:8810/' + 'x'.repeat(60)), null, '長い URL は入れない');
+  eq([HB.unpackUrl(new Uint8Array([])), HB.unpackUrl(new Uint8Array([9, 1, 2])), HB.unpackUrl(new Uint8Array([1, 72, 0, 0])), HB.unpackUrl(new Uint8Array([0, 0xff, 0xfe]))], ['', '', '', ''], '読めないものは空');
+}
 eq(HB.esc('<a href="x">&\'</a>'), '&lt;a href=&quot;x&quot;&gt;&amp;&#39;&lt;/a&gt;', 'HTML をよける');
 eq([HB.safeUrl('javascript:alert(1)'), HB.safeUrl('https://a.b/c')], ['', 'https://a.b/c'], 'http(s) だけ');
 ok(/^m_[a-z0-9]{12}$/.test(HB.uid('m_')), 'ID');

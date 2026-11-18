@@ -1,7 +1,7 @@
 /* ikkan：板書型ワークシートの紙面をつくる道具（画面を持たない。ブラウザでも node の検査でも読める）。
    ワークシートの形：日付・名前 → めあて → 学習課題・例題（1〜3問）。問題の下は、図・グラフ以外は空欄（板書を写す）。
    「解答を表示」で、空欄に教師が板書する内容と、問題文・図の中の空欄（数字）が赤で出る。
-   文字の中：{{答え}}＝空欄、[[1/2]]＝分数、x^2＝累乗、**太字**、\\m＝立体にしない文字、√{12}＝根号。
+   文字の中：{{答え}}＝空欄、[[1/2]]＝分数、x^2＝累乗、**太字**、\\m＝立体にしない文字、√{12}＝根号、⟦x+y=5 ; x−y=1⟧＝連立方程式（; で行を分け、左に { をつける。1行が、罫の1行ぶん）。
    図のきまり（ws.css と同じ）：長さの字は '{{3}}cm' のように書くと、数字だけ空欄になる。 */
 (function () {
   'use strict';
@@ -25,7 +25,7 @@
   const plain = t => italic(esc(String(t).replace(/\\([A-Za-z])/g, '\u0001$1')), '<i class="v">', '</i>').replace(/\n/g, '<br>').replace(/\u0001/g, '');
   function inl(s) {
     s = String(s == null ? '' : s);
-    const re = /\{\{([\s\S]*?)\}\}|\[\[([^\]\/]*)\/([^\]]*)\]\]|\*\*([\s\S]+?)\*\*|\^\{([^}]*)\}|\^([0-9]+|[A-Za-z])|√\{([^{}]*)\}/g;
+    const re = /\{\{([\s\S]*?)\}\}|\[\[([^\]\/]*)\/([^\]]*)\]\]|\*\*([\s\S]+?)\*\*|\^\{([^}]*)\}|\^([0-9]+|[A-Za-z])|√\{([^{}]*)\}|⟦([\s\S]*?)⟧|(（[^（）{}\[\]*^⟦⟧]*?\d+点[^（）{}\[\]*^⟦⟧]*）)/g;
     let out = '', last = 0, m;
     while ((m = re.exec(s))) {
       out += plain(s.slice(last, m.index));
@@ -34,6 +34,8 @@
       else if (m[4] !== undefined) out += `<b>${inl(m[4])}</b>`;
       else if (m[5] !== undefined) out += `<sup>${inl(m[5])}</sup>`;
       else if (m[7] !== undefined) out += `<span class="sq">√<span>${inl(m[7])}</span></span>`;
+      else if (m[8] !== undefined) out += `<span class="sys"><svg class="sysb" viewBox="0 0 10 40" preserveAspectRatio="none" aria-hidden="true"><path d="M9 1C5 1 5 3 5 7L5 15C5 18 3 20 1 20C3 20 5 22 5 25L5 33C5 37 5 39 9 39"/></svg>${m[8].split(';').map(r => `<span class="sysr">${inl(r.trim())}</span>`).join('')}</span>`;   // 連立方程式：⟦x+y=5 ; x−y=1⟧（; で行を分ける。左に大きな { がつく）
+      else if (m[9] !== undefined) out += `<span class="pts">${plain(m[9])}</span>`;   // 配点「（ア 1点＋イ 1点）」は、途中で折り返さない
       else out += `<sup>${plain(m[6])}</sup>`;
       last = re.lastIndex;
     }
@@ -151,7 +153,7 @@
         if (shape === 'hemisphere') circ(0, Math.PI, false); else circ(0, 2 * Math.PI, false);
         ell(Math.PI, 2 * Math.PI, false); ell(0, Math.PI, true);
         V2 = [[0, 0]];
-        dimLines.forEach(d => { if (d.key === 'r') { extra.push({ seg: [[0, 0], [r, 0]], thin: true, dot0: true }); extra.push({ text: d.text, at: [r / 2, 0], dy: -1.4, anchor: 'middle' }); } });
+        dimLines.forEach(d => { if (d.key === 'r') { extra.push({ seg: [[0, 0], [r, 0]], thin: true, dot0: true }); extra.push({ text: d.text, at: [r, 0], dx: 1.8, dy: 0, anchor: 'start' }); } });   // 字は、半径の右はしの外がわ（赤道の点線や、空欄の下線と、かさならないように）
       }
     }
     // 縮尺をきめる
@@ -170,7 +172,7 @@
     const cx = X([(Math.min(...real.map(p => p[0])) + Math.max(...real.map(p => p[0]))) / 2, 0]), cy = Y([0, (Math.min(...real.map(p => p[1])) + Math.max(...real.map(p => p[1]))) / 2]);
     const showHidden = f.hidden !== 'none';
     let out = `<rect x="0" y="0" width="${f2(W)}" height="${f2(H)}" fill="#fff"/>`;
-    if (f.caption) out += tx(0.6, 3.5, svgMath(f.caption), 3, 'start', ' class="cap"');
+    if (f.caption) out += tx(W / 2, 3.5, svgMath(f.caption), 3, 'middle', ' class="cap"');   // 見出し（ア・イ …）は図の中央
     const dash = ' stroke-dasharray="1.2 0.9"';
     segs.forEach(sg => { if (sg.hidden && !showHidden) return; out += ln(X(sg.a), Y(sg.a), X(sg.b), Y(sg.b), '#222', sg.hidden ? 0.22 : 0.32, sg.hidden ? dash : ' stroke-linecap="round"'); });
     curves.forEach(cv => { if (cv.hidden && !showHidden) return; out += `<polyline points="${cv.pts.map(p => f2(X(p)) + ',' + f2(Y(p))).join(' ')}" fill="none" stroke="#222" stroke-width="${cv.hidden ? 0.22 : 0.32}"${cv.hidden ? dash : ''}/>`; });
@@ -213,13 +215,14 @@
     // 底面の円（弧の中点で接する）と、半径
     out += `<circle cx="${f2(X(C))}" cy="${f2(Y(C))}" r="${f2(r * s)}" fill="none" stroke="#222" stroke-width="0.32"/>`;
     out += ln(X(C), Y(C), X(C) + r * s, Y(C), '#222', 0.22, ' stroke-dasharray="1.2 0.9"') + `<circle cx="${f2(X(C))}" cy="${f2(Y(C))}" r="0.5" fill="#222"/>`;
-    if (f.lr) out += rich(X(C) + r * s / 2, Y(C) - 1.2, f.lr, 2.9, 'middle');
+    if (f.lr) out += rich(X(C) + r * s / 2, Y(C) - 2.3, f.lr, 2.9, 'middle');
     // 母線（左のふちの外がわ＝辺から上へはなして）
     if (f.lR) {
       const m = [A1[0] / 2, A1[1] / 2];
       let nx = A1[1], ny = -A1[0]; if (ny > 0) { nx = -nx; ny = -ny; }   // 辺に垂直で、上向きの側
       const L = Math.hypot(nx, ny) || 1;
-      out += rich(X(m) + nx / L * 3.4, Y(m) + ny / L * 3.4 + 1, f.lR, 2.9, 'middle');
+      const hw = (emOf(String(f.lR).replace(/\{\{|\}\}|\\/g, '')) * 2.9 * 0.62 + 4) / 2, off = 2.2 + hw * Math.abs(nx / L) + 1.5 * Math.abs(ny / L);   // 字の幅しだいで、辺からはなす
+      out += rich(X(m) + nx / L * off, Y(m) + ny / L * off + 1, f.lR, 2.9, 'middle');
     }
     // 解答：弧（赤い太線）と、その長さ、中心角
     let ans = '';
@@ -255,15 +258,25 @@
   const rowsOf = b => Math.max(1, Math.round(num(b.rows, 1)));
 
   function blockHTML(b, W, g) {
-    if (b.type === 'meate' || b.type === 'kadai') {
-      const label = b.type === 'meate' ? (b.label || 'めあて') : (b.label == null ? '学習課題' : b.label);
-      return `<div class="wb wb-t${b.type === 'kadai' ? ' box' : ''}" style="height:${rowsOf(b) * g.pitch}mm">${tag('t-' + b.type, label)}<div class="tx">${inl(b.text)}</div></div>`;
+    if (b.type === 'meate' || b.type === 'kadai' || b.type === 'words' || b.type === 'manabi') {
+      const dflt = { meate: 'めあて', kadai: '学習課題', words: 'ことば', manabi: '学び合い' }[b.type];
+      const label = b.type === 'meate' ? (b.label || dflt) : (b.label == null ? dflt : b.label);
+      return `<div class="wb wb-t${b.type === 'meate' ? '' : ' box ' + b.type}" style="height:${rowsOf(b) * g.pitch}mm">${tag('t-' + b.type, label)}<div class="tx">${inl(b.text)}</div></div>`;
+    }
+    if (b.type === 'text') {   // 小問の文（ラベルは（1）など。なくてもよい）
+      return `<div class="wb wb-t" style="height:${rowsOf(b) * g.pitch}mm">${b.label ? tag('t-text', b.label) : ''}<div class="tx">${inl(b.text)}</div></div>`;
+    }
+    if (b.type === 'table') {   // 表：1行＝罫1行。セルの {{ }} は空欄（解答を表示すると赤で出る）
+      const rs = b.data, ncol = Math.max(b.head ? b.head.length : 0, ...rs.map(r => r[1].length)), hw = num(b.hw, 24), tw = W * Math.min(100, Math.max(20, num(b.width, 100))) / 100;
+      const hd = b.head ? `<tr class="hd"><th>${inl(b.corner || '')}</th>${b.head.map(c => `<th>${inl(c)}</th>`).join('')}</tr>` : '';
+      return `<div class="wb wb-tab" style="height:${rowsOf(b) * g.pitch}mm"><table class="wt" style="width:${f2(tw)}mm"><colgroup><col style="width:${f2(hw)}mm">${'<col>'.repeat(ncol)}</colgroup>${hd}${rs.map(r => `<tr><th>${inl(r[0])}</th>${Array.from({ length: ncol }, (_, i) => `<td>${r[1][i] == null ? '' : inl(r[1][i])}</td>`).join('')}</tr>`).join('')}</table></div>`;
     }
     if (b.type === 'board') {   // 板書の写し：ふだんは罫線だけ。解答を表示すると、教師の板書が赤で出る
       const an = b.answer ? `<div class="tx">${inl(b.answer)}</div>` : '';
-      return `<div class="wb wb-b" style="height:${rowsOf(b) * g.pitch}mm">${an}</div>`;
+      return `<div class="wb wb-b${b.cls ? ' ' + b.cls : ''}" style="height:${rowsOf(b) * g.pitch}mm">${an}</div>`;
     }
     if (b.type === 'gap') return `<div class="wb wb-gap" style="height:${rowsOf(b) * g.pitch}mm"></div>`;
+    if (b.type === 'raw') return `<div class="wb wb-raw${b.cls ? ' ' + b.cls : ''}" style="height:${rowsOf(b) * g.pitch}mm">${b.html}</div>`;   // 学習予定表など、HTML をそのまま置く枠（高さは罫の行数）
     if (b.type === 'figure') {
       const figs = b.figs || [], H = rowsOf(b) * g.pitch;
       const ws = figs.map(f => Math.max(0.2, num(f.w, 1))), sum = ws.reduce((a, c) => a + c, 0), avail = W - FIG_GAP * (figs.length - 1);
@@ -290,21 +303,66 @@
     return `<svg class="wsp-rule" viewBox="0 0 ${f2(W)} ${f2(H)}" width="${f2(W)}mm" height="${f2(H)}mm" overflow="visible" aria-hidden="true">${s}</svg>`;
   }
 
+  // 罫線をかかない紙面（演習プリント・小テスト）の、日付・名前と本文のあいだの線（1本）。sheet.topRule で出す
+  function topRuleSVG(g) {
+    const W = f2(g.cw);
+    return `<svg class="wsp-rule" viewBox="0 0 ${W} 1" width="${W}mm" height="1mm" overflow="visible" aria-hidden="true"><line x1="0" y1="0" x2="${W}" y2="0" stroke="#58748e" stroke-width="0.35" stroke-linecap="round"/></svg>`;
+  }
+
   const geo = sheet => { const P = PAPER[sheet.paper] || PAPER.A4, pitch = sheet.pitch || 7; return { P, pitch, rows: Math.floor((P.h - P.top - P.bottom) / pitch + 1e-6), cw: P.w - 2 * P.mx }; };
   // ブロックの高さ（行）。2段組は、高い列
   const heightOf = b => (b.type === 'cols' ? Math.max(...b.cols.map(c => c.blocks.reduce((a, x) => a + heightOf(x), 0))) : rowsOf(b));
   const splitPages = blocks => { const pages = [[]]; blocks.forEach(b => { if (b.type === 'break') pages.push([]); else pages[pages.length - 1].push(b); }); return pages; };
 
+  /* 小テストの紙面の配分：上の問題が約 2/3、チャレンジが約 1/3（チャレンジは枠で囲む）。
+     チャレンジの前に、すき間（G）を入れて、チャレンジを紙の下 1/3 にそろえる。チャレンジの答えらん（B）が、1/3 におさまらないときは、
+     答えの行数（\n の数）を下まわらない範囲で、へらす。 */
+  function shapeQuiz(blocks, pitch) {
+    const P = PAPER.A4, rows = Math.floor((P.h - P.top - P.bottom) / pitch + 1e-6);
+    const ci = blocks.findIndex(b => b.type === 'meate' && b.label === 'チャレンジ');
+    if (ci < 0) return { blocks, chRows: 0 };
+    const third = Math.floor(rows / 3), mainRows = rows - third;
+    const main = blocks.slice(0, ci), ch = blocks.slice(ci);
+    while (main.length && main[main.length - 1].type === 'gap') main.pop();
+    const sum = bl => bl.reduce((a, b) => a + heightOf(b), 0);
+    const boards = [];
+    (function walk(bl) { bl.forEach(b => { if (b.type === 'cols') b.cols.forEach(c => walk(c.blocks)); else if (b.type === 'board') boards.push(b); }); })(ch);
+    const lines = b => String(b.answer || '').split('\n').length;
+    boards.forEach(b => { b.rows0 = b.rows; });
+    for (let guard = 0; sum(ch) > third && guard < 40; guard++) {
+      const b = boards.filter(x => x.rows > Math.max(1, lines(x))).sort((a, c) => (c.rows - lines(c)) - (a.rows - lines(a)))[0];
+      if (!b) break;
+      b.rows -= 1;
+    }
+    // 上の問題の下に余った行は、問題ごとの答えらん（B）に、同じだけ配る（チャレンジが 1/3 より大きいときは、そのぶんを引く）。配りきれない分は、すき間にする
+    let fill = Math.min(mainRows - sum(main), rows - sum(main) - sum(ch));
+    const top = main.filter(b => b.type === 'board');
+    for (let guard = 0; fill > 0 && top.length && guard < 60; guard++) { top[guard % top.length].rows += 1; fill -= 1; }
+    // チャレンジの枠の直前の答えらんは、下に、すき間をあける（枠にくっつかないように）
+    if (!(fill > 0)) { const last = main[main.length - 1]; (last && last.type === 'cols' ? last.cols.map(c => c.blocks[c.blocks.length - 1]) : [last]).forEach(b => { if (b && b.type === 'board') b.cls = 'ch-prev'; }); }
+    const out = main.concat(fill > 0 ? [IK.b.G(fill)] : [], ch);
+    return { blocks: out, chRows: rows - sum(main.concat(fill > 0 ? [IK.b.G(fill)] : [])) };   // チャレンジの枠：チャレンジのはじまりから、紙の下まで
+  }
+
+  // 記録ページの QR コード（演習プリント・小テスト・学習予定表の右上）。sheet.qr に '#/' のあとの場所（例：r/kukan-03/dr）を書く
+  const QR_MM = 14, QR_TOP = 6.5;
+  IK.qrBase = IK.qrBase || 'https://dora9991.github.io/math-dialogue/ikkan/';
+  IK.qrUnits = IK.qrUnits || ['kukan', 'data', 'shiki', 'renritsu', 'ichiji', 'heikou', 'kukan_new', 'data_new', 'shiki_new', 'renritsu_new', 'ichiji_new', 'heikou_new', 'seifu', 'moji', 'hotei', 'hirei', 'heimen', 'sankaku', 'kakuritsu', 'hako', 'takou', 'heihou', 'niji', 'kansu', 'souji', 'en', 'sanhei', 'hyouhon'];   // 記録ページ（コツコツくんにつなぐ）を使う単元
+
   function pagesHTML(sheet) {
     const g = geo(sheet), P = g.P, pages = splitPages(sheet.blocks), hd = sheet.head != null ? sheet.head : '';
-    return pages.map((bl, pi) => `<div class="wsp" style="width:${P.w}mm;height:${P.h}mm;--pitch:${g.pitch}mm">
-      <div class="wsp-head" style="left:${P.mx}mm;right:${P.mx}mm;top:${P.top - 12}mm">
+    const qr = sheet.qr && IK.qr ? IK.qr.svg(IK.qrBase + '#/' + sheet.qr, QR_MM) : '';
+    const qrR = P.mx + (qr ? QR_MM + 2 : 0);
+    return pages.map((bl, pi) => `<div class="wsp${sheet.rule === false ? ' wsp-plain' : ''}" style="width:${P.w}mm;height:${P.h}mm;--pitch:${g.pitch}mm">
+      ${qr ? `<div class="wsp-qr" style="right:${P.mx}mm;top:${QR_TOP}mm;width:${QR_MM}mm;height:${QR_MM}mm">${qr}</div><div class="wsp-qrcap" style="right:${qrR}mm;top:${P.top - 10.6}mm">${esc(sheet.qrCap || '← 読みとって、丸つけ・記録')}</div>` : ''}
+      <div class="wsp-head${qr ? ' has-qr' : ''}" style="left:${P.mx}mm;right:${qrR}mm;top:${P.top - 12}mm">
         <div class="wh-date"><span class="u w2"></span>月<span class="u w2"></span>日（<span class="u w1"></span>）</div>
-        <div class="wh-mid">${esc(hd)}${pages.length > 1 ? `　${pi + 1}／${pages.length}` : ''}</div>
+        <div class="wh-mid"><span>${esc(hd)}</span>${pages.length > 1 ? `<span class="wh-pg">${pi + 1}／${pages.length}</span>` : ''}</div>
         <div class="wh-name"><span class="u w1"></span>年<span class="u w1"></span>組<span class="u w1"></span>号　氏名<span class="u w6"></span></div>
       </div>
       <div class="wsp-body" style="left:${P.mx}mm;top:${P.top}mm;width:${g.cw}mm;height:${g.rows * g.pitch}mm">
-        ${ruleSVG(g, sheet.dots !== false)}
+        ${sheet.rule === false ? (sheet.topRule ? topRuleSVG(g) : '') : ruleSVG(g, sheet.dots !== false)}
+        ${sheet.chRows ? `<div class="ch-frame" style="top:${f2((g.rows - sheet.chRows) * g.pitch - 0.8)}mm;height:${f2(sheet.chRows * g.pitch + 0.8)}mm"></div>` : ''}
         <div class="wsp-flow">${bl.map(b => blockHTML(b, g.cw, g)).join('')}</div>
       </div>
     </div>`).join('');
@@ -317,6 +375,24 @@
     IK.lessons[id] = Object.assign({ id, paper: 'A4', pitch: 7, dots: true }, meta, { blocks });
     if (IK.order.indexOf(id) < 0) IK.order.push(id);
   };
+  IK.drills = IK.drills || {};   // 演習プリント（授業のIDごと）
+  IK.plans = IK.plans || {};     // 授業計画（授業のIDごと）
+  IK.quizzes = IK.quizzes || {}; // 小テスト（授業のIDごと）
+  /* 1 授業ぶん（授業計画・ワークシート・演習プリント・小テスト）を登録する。data/lesson_<単元>_<番号>.js で使う。
+     IK.lesson(ID, { unit, unitName, no, title, summary, head, checks, plan: {…}, ws: [ブロック…], dr: [ブロック…], qz: [ブロック…] })
+     印刷の3点セット：ワークシート（A4 表裏）・演習プリント（A4 表裏：表＝基礎・標準／裏＝応用・入試レベル）・小テスト（A4 片面・5分） */
+  IK.lesson = (id, def) => {
+    const { plan, ws, dr, qz } = def, meta = Object.assign({}, def);
+    delete meta.plan; delete meta.ws; delete meta.dr; delete meta.qz;
+    IK.add(id, meta, ws || []);
+    const rec = k => (IK.qrUnits.indexOf(meta.unit) >= 0 ? { qr: `r/${id}/${k}` } : {});   // 記録ページの QR（IK.qrUnits の単元だけ）
+    // 罫の幅（新しい形は 8mm）は、ワークシートと同じ。演習プリント・小テストは、ノート型にしない（罫線・ドットを印刷しない。字・図の位置は、罫の行にそろえたまま）。
+    // 罫線をもどすときは、IK.rulePrints = true（ぜんぶの授業）か、授業の定義に rule: true（その授業だけ）。
+    const lay = { pitch: meta.pitch || 7, dots: meta.dots !== false, rule: meta.rule === true || IK.rulePrints === true };
+    if (qz) { const sq = meta.chSplit === false ? { blocks: qz, chRows: 0 } : shapeQuiz(qz, lay.pitch); IK.quizzes[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, rule: lay.rule, topRule: meta.topRule !== false, chRows: sq.chRows, head: (meta.head ? meta.head + '・' : '') + '小テスト', blocks: sq.blocks }, rec('qz')); }
+    if (dr) IK.drills[id] = Object.assign({ id, paper: 'A4', pitch: lay.pitch, dots: lay.dots, rule: lay.rule, topRule: meta.topRule !== false, head: (meta.head ? meta.head + '・' : '') + '演習', blocks: dr }, rec('dr'));
+    if (plan) IK.plans[id] = Object.assign({ id }, plan);
+  };
   // ワークシートを書くときの道具（data/ws_<単元>.js で使う）
   IK.b = {
     M: (text, o) => O({ type: 'meate', text, rows: 1 }, o),                                        // めあて
@@ -326,6 +402,11 @@
     F: (rows, ...figs) => ({ type: 'figure', rows, figs }),                                        // 図（印刷する。横に並べられる）
     C2: (left, right, ratio) => ({ type: 'cols', ratio: ratio || '3:2', cols: [{ blocks: left }, { blocks: right }] }),   // 2段組（左に問題と板書、右に図）
     BR: () => ({ type: 'break' }),                                                                 // 改ページ
+    T: (label, text, rows, o) => O({ type: 'text', label, text, rows: rows || 1 }, o),               // 小問の文（ラベルは（1）など）
+    HD: (label, text, o) => O({ type: 'meate', label, text, rows: 1 }, o),                          // 見出し（演習・基礎・標準 など）
+    WD: (text, rows, o) => O({ type: 'words', text, rows: rows || 3 }, o),                          // ことば（重要語句。{{ }} で穴埋め）
+    MA: (text, rows, o) => O({ type: 'manabi', text, rows: rows || 2 }, o),                         // 学び合いの発問（演習プリントなど）
+    TB: (corner, head, data, o) => O({ type: 'table', corner, head, data, rows: data.length + (head ? 1 : 0) }, o),   // 表：rows＝[[行の見出し, [セル…]], …]
     SO: o => O({ kind: 'solid' }, o),                                                              // 立体の見取図
     NET: o => O({ kind: 'conenet' }, o),                                                           // 円錐の展開図
     SVG: (svg, o) => O({ kind: 'svg', svg }, o)                                                    // 自由な図

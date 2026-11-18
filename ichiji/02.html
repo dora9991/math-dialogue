@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>式の形で判断する</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 一次関数 第2時：一次関数かどうかを、式の形で判断しよう（ikkan の lesson_ichiji_new_02 と同じ流れ）。
+   ア〜キの式のカードが、一次関数とそうでないものに分かれる。y＝4−3x の −3x が前に出て a、b を読む。水そうの水が減っていく。
+   数値は ikkan のまま（ア〜キ、水そう 30 L・毎分 4 L、考えよう y＝x(x＋4)−x²、チャレンジ y＝3/4x＋2）。答えはページの中で計算し直している。
+   ことばの代入の例（x＝2 → y＝−2）と、チャレンジの表の y の値は、図のために自作した（検算ずみ）。 */
+(function () {
+  var C = CH.C, S = CH.mnum;
+  /* ---- 分数入りの字（[2/3] をたての分数に）。canvas 用と、右の板書（HTML）用 ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function TX(D, x, y, s, o) {
+    o = o || {}; var g = D.ctx, size = o.size || CH.fs(D), fz = size * .72, parts = String(s).split(/\[([^\/\]]+)\/([^\]]+)\]/), segs = [], w = 0, i;
+    g.save();
+    for (i = 0; i < parts.length; i += 3) {
+      if (parts[i]) { g.font = '600 ' + size + 'px ' + FONT; segs.push({ t: parts[i], w: g.measureText(parts[i]).width }); w += segs[segs.length - 1].w; }
+      if (i + 1 < parts.length) { g.font = '600 ' + fz + 'px ' + FONT; var fw = Math.max(g.measureText(parts[i + 1]).width, g.measureText(parts[i + 2]).width) + fz * .35; segs.push({ n: parts[i + 1], d: parts[i + 2], w: fw }); w += fw; }
+    }
+    g.restore();
+    var x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    segs.forEach(function (sg) {
+      if (sg.t != null) CH.text(D, x0, y, sg.t, Object.assign({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + sg.w / 2; CH.text(D, cx, y - fz * .6, sg.n, Object.assign({ size: fz }, oo)); CH.text(D, cx, y + fz * .66, sg.d, Object.assign({ size: fz }, oo));
+        CH.line(D, x0 + fz * .12, y + fz * .04, x0 + sg.w - fz * .12, y + fz * .04, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += sg.w;
+    });
+    return w;
+  }
+  function fr(s) { return String(s).replace(/\[([^\/\]]+)\/([^\]]+)\]/g, '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.75em;line-height:1.1;margin:0 .12em"><span style="border-bottom:.09em solid currentColor;padding:0 .12em">$1</span><span>$2</span></span>'); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fr(s[k]); }); if (s.notes) s.notes = s.notes.map(fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fr(b.t); }); }); return st; }
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var r = a % b; a = b; b = r; } return a; }
+  function frac(n, d) { var g = gcd(n, d); n /= g; d /= g; if (d < 0) { n = -n; d = -d; } return d === 1 ? S(n) : (n < 0 ? '−' : '') + '[' + Math.abs(n) + '/' + d + ']'; }
+
+  /* ---- 数（ikkan と同じ）と検算 ---- */
+  var CARDS = [['ア', 'y＝2x−5', function (x) { return 2 * x - 5; }], ['イ', 'y＝[6/x]', function (x) { return 6 / x; }], ['ウ', 'y＝−x', function (x) { return -x; }], ['エ', 'y＝x²＋3', function (x) { return x * x + 3; }],
+    ['オ', 'y＝[1/3]x＋2', function (x) { return x / 3 + 2; }], ['カ', 'y＝4', function () { return 4; }], ['キ', 'y＝7−3x', function (x) { return 7 - 3 * x; }]];
+  function isLin(f) { var a = f(2) - f(1), b = f(1) - a; return Math.abs(a) > 1e-9 && [1, 3, 4, 6, -2, -5].every(function (x) { return Math.abs(f(x) - (a * x + b)) < 1e-9; }); }
+  CARDS.forEach(function (c) { c.lin = isLin(c[2]); });
+  CH.check(CARDS.filter(function (c) { return c.lin; }).map(function (c) { return c[0]; }).join('') === 'アウオキ', '今日の問い（一次関数はア・ウ・オ・キ）');
+  CH.check(CARDS[6][2](1) === -3 * 1 + 7 && CARDS[6][2](5) === -3 * 5 + 7, 'キ y＝7−3x＝−3x＋7');
+  CH.check(-3 * 2 + 4 === -2, 'ことば（代入）');
+  var TANK = function (x) { return 30 - 4 * x; };
+  CH.check(TANK(1) === 26 && TANK(5) === 10 && TANK(6) === 6 && (30 - 6) / 4 === 6, '例題（水そう）');
+  CH.check([1, 2, 3, 4, 5].every(function (x) { return x * (x + 4) - x * x === 4 * x; }), '考えよう（ここで確かめるだけ）');
+  var CHX = []; for (var x = 1; x <= 12; x++) if ((3 * x + 8) % 4 === 0) CHX.push(x);
+  CH.check(CHX.join() === '4,8,12', 'チャレンジ');
+
+  /* ---- 式のカード。k：0 でならべる、1 で2つの組に分ける ---- */
+  function cardPos(D, k) {
+    var R = CH.box(D, { l: .04, r: .04, t: .08, b: .1 }), wide = D.W > D.H * .9, s = CH.fs(D), out = [];
+    var cw = wide ? Math.min(R.w / 4.9, R.h / 2.6) : R.w * .42, ch = wide ? cw * .46 : Math.min(cw * .36, R.h / 11);
+    var G = wide ? CH.cols(R, 2, .06) : CH.rows(R, 2, .06), cnt = [0, 0];
+    CARDS.forEach(function (c, i) {
+      var cols = wide ? 4 : 2, rr = Math.floor(i / cols), cc = i % cols, nr = Math.ceil(CARDS.length / cols);
+      var inRow = Math.min(cols, CARDS.length - rr * cols), p0 = [R.x0 + (cc + .5 + (cols - inRow) / 2) * R.w / cols, R.y0 + (rr + .5) * R.h / nr];
+      var g = c.lin ? 0 : 1, j = cnt[g]++, n = g ? 3 : 4, Gb = G[g], head = s * 1.8, gr = Math.ceil(n / 2);
+      var p1 = [Gb.x0 + ((j % 2) + .5) * Gb.w / 2, Gb.y0 + head + (Math.floor(j / 2) + (wide ? .45 : .36)) * (Gb.h - head) / gr];
+      var e = CH.ease(CH.clamp(k * 1.6 - i * .09, 0, 1));
+      out.push({ x: CH.lerp(p0[0], p1[0], e), y: CH.lerp(p0[1], p1[1], e), e: e });
+    });
+    return { P: out, G: G, cw: cw, ch: ch, s: s };
+  }
+  function drawCards(D, k, o) {
+    o = o || {}; var L = cardPos(D, k), s = L.s;
+    if (k > 0) {
+      var ga = CH.smooth(0, .3, k);
+      [['一次関数', C.yel], ['一次関数でない', C.pink]].forEach(function (h, g) { var Gb = L.G[g]; CH.fillRect(D, Gb.x0, Gb.y0, Gb.x1, Gb.y1, { stroke: h[1], sw: 2, dash: true, a: ga * .8 }); CH.text(D, Gb.cx, Gb.y0 + s * .9, h[0], { col: h[1], a: ga }); });
+    }
+    CARDS.forEach(function (c, i) {
+      var p = L.P[i], col = p.e > .5 ? (c.lin ? C.yel : C.pink) : C.blue;
+      CH.card(D, p.x, p.y, L.cw, L.ch, '', { col: col, fill: 'rgba(31,58,44,.92)', sw: 2 });
+      CH.text(D, p.x - L.cw / 2 + s * .55, p.y - L.ch / 2 + s * .5, c[0], { col: col, size: s * .7 });
+      TX(D, p.x + s * .2, p.y, c[1], { size: Math.min(s * 1.05, L.ch * .45) });
+      var why = o.why && o.why[i];
+      if (why) CH.text(D, p.x, p.y + L.ch / 2 + s * .62, why, { col: c.lin ? C.yel : C.pink, size: s * .72, a: o.wa });
+    });
+  }
+
+  /* ---- 式を字のならびで（文字ごとの位置を返す）。pos で、字ごとの x をずらせる ---- */
+  function toks(D, cx, y, list, size) {
+    var g = D.ctx, ws = [], w = 0; g.save(); g.font = '600 ' + size + 'px ' + FONT;
+    list.forEach(function (t) { var ww = g.measureText(t.t).width + size * .08; ws.push(ww); w += ww; }); g.restore();
+    var x = cx - w / 2, out = [];
+    list.forEach(function (t, i) { out.push({ x0: x, x1: x + ws[i], cx: x + ws[i] / 2, w: ws[i] }); x += ws[i]; });
+    list.forEach(function (t, i) { if (t.skip) return; CH.text(D, out[i].cx + (t.dx || 0), y + (t.dy || 0), t.t, { size: size, col: t.col, a: t.a }); });
+    return out;
+  }
+
+  /* ---- 水そう。y：水の量（L） ---- */
+  function tank(D, R, y, o) {
+    o = o || {}; var s = CH.fs(D), h = Math.min(R.h * .78, R.w * 1.1), w = Math.min(R.w * .5, h * .7), x0 = R.cx - w / 2 + s, yb = R.cy + h / 2, Y = function (v) { return yb - v / 30 * h; };
+    CH.fillRect(D, x0, Y(y), x0 + w, yb, { fill: 'rgba(154,216,255,.38)' });
+    CH.line(D, x0, Y(y), x0 + w, Y(y), { col: C.blue, w: 2.4 });
+    CH.poly(D, [[x0, Y(33)], [x0, yb], [x0 + w, yb], [x0 + w, Y(33)]], { close: false, stroke: C.chalk, sw: 2.6 });
+    [0, 5, 10, 15, 20, 25, 30].forEach(function (v) { CH.line(D, x0, Y(v), x0 + (v % 10 ? 6 : 11), Y(v), { w: 1.4 }); if (v % 10 === 0) CH.text(D, x0 - s * .4, Y(v), String(v), { size: s * .78, align: 'right', num: true }); });
+    CH.text(D, x0 - s * .4, Y(33) - s * .6, '（L）', { size: s * .7, align: 'right', col: 'rgba(242,240,230,.75)' });
+    CH.text(D, x0 + w / 2, Y(y) - s * .7, CH.f1(y).replace(/\.0$/, '') + ' L', { col: C.blue, size: s * .95, outline: 'rgba(20,40,30,.9)' });
+    var dx = x0 + w * .8; CH.line(D, dx, yb, dx, yb + s * .7, { w: 5, col: C.chalk });
+    CH.arrow(D, dx, yb + s * .9, dx, yb + s * 2, { col: C.blue, w: 2.4 }); CH.text(D, dx + s * .5, yb + s * 1.5, '毎分 4 L', { col: C.blue, size: s * .8, align: 'left' });
+    (o.marks || []).forEach(function (m) { CH.line(D, x0 - s * .2, Y(m.v), x0 + w + s * .4, Y(m.v), { col: m.col, w: 2, dash: true, a: m.a }); CH.text(D, x0 + w + s * .6, Y(m.v), m.txt, { col: m.col, size: s * .8, align: 'left', a: m.a }); });
+    return { Y: Y, x0: x0, w: w };
+  }
+  function exLay(D) { var R = CH.box(D, { l: .06, r: .05, t: .1, b: .12 }), rs = CH.split(D, R, 2, .06); return rs; }
+
+  /* ---- チャレンジの表（せまい画面では 6列ずつ2段） ---- */
+  function chGrid(D, R, t) {
+    var s = CH.fs(D), wide = (R.w - Math.min(R.w * .17, s * 4.4)) / 12 > s * 2.3, per = wide ? 12 : 6, blocks = wide ? 1 : 2, bh = R.h / blocks, hw = Math.min(R.w * .17, s * 4.4);
+    for (var b = 0; b < blocks; b++) {
+      var y0 = R.y0 + b * bh + bh * .08, rh = Math.min(bh * .84 / 3, s * 2.6), cw = (R.w - hw) / per;
+      ['x', '[3/4]x', 'y'].forEach(function (lab, r) { CH.fillRect(D, R.x0, y0 + r * rh, R.x0 + hw, y0 + (r + 1) * rh, { fill: 'rgba(242,240,230,.06)', stroke: 'rgba(242,240,230,.45)', sw: 1.2 }); TX(D, R.x0 + hw / 2, y0 + (r + .5) * rh, lab, { size: s * .8, col: 'rgba(242,240,230,.85)' }); });
+      for (var j = 0; j < per; j++) {
+        var x = b * per + j + 1, cx = R.x0 + hw + (j + .5) * cw, on = CHX.indexOf(x) >= 0, sh = CH.smooth(.05 + (x - 1) * .065, .1 + (x - 1) * .065, t), hl = on && t > .85;
+        for (var r = 0; r < 3; r++) CH.fillRect(D, R.x0 + hw + j * cw, y0 + r * rh, R.x0 + hw + (j + 1) * cw, y0 + (r + 1) * rh, { fill: hl && r ? 'rgba(255,226,122,.25)' : null, stroke: 'rgba(242,240,230,.45)', sw: 1.2 });
+        TX(D, cx, y0 + rh * .5, String(x), { size: s * .85 });
+        if (sh > 0) { TX(D, cx, y0 + rh * 1.5, frac(3 * x, 4), { size: Math.min(s * .85, cw * .36), a: sh, col: hl ? C.yel : C.chalk }); TX(D, cx, y0 + rh * 2.5, frac(3 * x + 8, 4), { size: Math.min(s * .85, cw * .36), a: sh, col: hl ? C.yel : C.chalk }); }
+      }
+    }
+  }
+
+  var WHY = ['', 'x が分母', '→ y＝−1x＋0', 'x² がある', '', 'x の項がない', '→ y＝−3x＋7'];
+
+  K3.run({
+    no: '第2時', title: '一次関数かどうかを、式の形で判断しよう', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }, { href: '01.html', label: '◀ 第1時' }, { href: '03.html', label: '第3時 ▶' }],
+    steps: fixSteps([
+      { tag: '今日の問い', bh: 'ア〜キの式', q: '次のア〜キの式のうち、y が x の一次関数であるものを選ぼう。どこに目をつけて判断したか、わけも書こう。',
+        notes: ['① 自分の考え（3分）　選んだものと、目のつけどころを書こう。', '② ペアの考え（3分）'],
+        draw: function (D) { drawCards(D, 0); } },
+      { tag: '今日の問い', q: 'ア〜キのうち、一次関数はどれ？', a: 'ア、ウ、オ、キ', sub: 'y＝ax＋b の形で、x の項があるもの', dur: 3,
+        b: { t: '一次関数 … <b>ア・ウ・オ・キ</b>（y＝ax＋b の形）', col: C.yel },
+        draw: function (D) { drawCards(D, D.ph ? D.t : 0); } },
+      { tag: '今日の問い', q: 'イ・エ・カ は、どこがちがう？ ウ・キ は、どう見ればよい？', a: 'イ x が分母　エ x² がある　カ x の項がない', sub: 'ウ y＝−x は y＝−1x＋0、キ y＝7−3x は ならべかえて y＝−3x＋7 と見る', dur: 2,
+        b: { t: 'イ x が分母　エ x² がある　カ x の項がない → 一次関数でない', col: C.yel },
+        draw: function (D) { drawCards(D, 1, { why: D.ph ? WHY : null, wa: CH.smooth(0, .5, D.t) }); } },
+      { tag: 'ことば', bh: 'ことば', q: 'y＝ax＋b の a、b を何という？ y＝4−3x の a、b は？', a: 'x の係数・定数項　a＝−3、b＝4', sub: 'y＝4−3x は、ならべかえて y＝−3x＋4 と読む。x の値を式に代入して、y を求める', dur: 4,
+        b: [{ t: 'y＝ax＋b の a を x の <b>係数</b>、b を <b>定数項</b>', col: C.green }, { t: 'y＝4−3x は y＝−3x＋4 と読む（a＝−3、b＝4）', col: C.green }, { t: 'x の値を式に <b>代入</b> して、y を求める', col: C.green }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .05, r: .05, t: .12, b: .12 }), s = CH.fs(D), t = D.ph ? D.t : 0, big = Math.min(s * 2.2, R.w / 8), y1 = R.y0 + R.h * .22, y2 = R.y0 + R.h * .55, y3 = R.y0 + R.h * .9;
+          toks(D, R.cx, y1, [{ t: 'y' }, { t: '＝' }, { t: '4', col: C.blue }, { t: '−3', col: C.orange }, { t: 'x', col: C.orange }], big);
+          if (t > 0) {
+            var e = CH.ease(CH.smooth(.05, .45, t)), a2 = CH.smooth(.05, .2, t);
+            var B = toks(D, R.cx, y2, [{ t: 'y', a: a2 }, { t: '＝', a: a2 }, { t: '−3', skip: 1 }, { t: 'x', skip: 1 }, { t: '＋', a: CH.smooth(.45, .55, t) }, { t: '4', skip: 1 }], big);
+            var A = toks(D, R.cx, y2, [{ t: 'y', skip: 1 }, { t: '＝', skip: 1 }, { t: '4', skip: 1 }, { t: '−3', skip: 1 }, { t: 'x', skip: 1 }], big);
+            var arc = Math.sin(e * Math.PI) * big * .8;
+            CH.text(D, CH.lerp(A[3].cx, B[2].cx, e), y2 - arc, '−3', { size: big, col: C.orange, a: a2 });
+            CH.text(D, CH.lerp(A[4].cx, B[3].cx, e), y2 - arc, 'x', { size: big, col: C.orange, a: a2 });
+            CH.text(D, CH.lerp(A[2].cx, B[5].cx, e), y2 + arc, '4', { size: big, col: C.blue, a: a2 });
+            var la = CH.smooth(.55, .7, t);
+            CH.text(D, B[2].cx, y2 + big * .95, 'x の係数 a', { col: C.orange, size: s * .85, a: la }); CH.text(D, B[5].cx, y2 + big * .95, '定数項 b', { col: C.blue, size: s * .85, a: la });
+            CH.text(D, R.cx, y3, 'x＝2 を代入 → y＝−3×2＋4＝−2', { col: C.green, size: Math.min(s * 1.05, R.w / 17), a: CH.smooth(.75, .9, t) });
+          }
+        } },
+      { tag: '例題', bh: '例題　水そうの水をぬく', q: '（1）水が 30 L 入った水そうから、毎分 4 L の割合で水をぬく。ぬきはじめて x 分後の水の量を y L とする。y を x の式で表し、a、b の値を答えよう。',
+        a: 'y＝−4x＋30（a＝−4、b＝30）', sub: '1分に 4 L ずつ減るから、x 分で 4×x 減る。y＝30−4x を −4x＋30 と見る', dur: 6,
+        b: { t: '（1）y＝30−4x＝−4x＋30　a＝<b>−4</b>、b＝<b>30</b>', col: C.pink },
+        draw: function (D) {
+          var rs = exLay(D), t = D.ph ? D.t : 0, x = D.ph ? Math.min(4, t * 5.2) : 0, s = CH.fs(D);
+          tank(D, rs[0], TANK(x));
+          var Tr = CH.rect(rs[1].x0, rs[1].y0, rs[1].x1, rs[1].y0 + rs[1].h * .45);
+          CH.table(D, Tr, ['x（分）', '0', '1', '2', '3', '4'], [['y（L）'].concat([0, 1, 2, 3, 4].map(function (k) { return String(TANK(k)); }))], { fw: .28, size: CH.fs(D, .85),
+            show: function (r, c) { return r === 1 && c > 0 ? (D.ph ? CH.smooth(c - 1, c - .8, t * 5.2) : (c === 1 ? 1 : 0)) : 1; } });
+          var fy = rs[1].y0 + rs[1].h * .58, fs = Math.min(s * 1.05, rs[1].w / 13);
+          if (t > .8) { var a = CH.smooth(.8, .9, t); TX(D, rs[1].cx, fy, 'y＝30−4x', { size: fs * 1.2, col: C.yel, a: a }); TX(D, rs[1].cx, fy + fs * 1.7, '＝−4x＋30', { size: fs * 1.2, col: C.yel, a: CH.smooth(.88, .96, t) }); TX(D, rs[1].cx, fy + fs * 3.4, 'a＝−4、b＝30', { size: fs, col: C.pink, a: CH.smooth(.94, 1, t) }); }
+        } },
+      { tag: '例題', q: '（2）x＝5 のときの y の値は？ （3）y＝6 になるのは、何分後？', a: '（2）10 L　（3）6分後', sub: '（2）y＝−4×5＋30＝10　（3）6＝−4x＋30、4x＝24、x＝6', dur: 5,
+        b: { t: '（2）y＝−4×5＋30＝<b>10</b>　（3）6＝−4x＋30 → x＝<b>6</b>（分後）', col: C.pink },
+        draw: function (D) {
+          var rs = exLay(D), t = D.ph ? D.t : 0, s = CH.fs(D), x = D.ph ? (t < .5 ? CH.lerp(0, 5, CH.ease(t / .45)) : CH.lerp(5, 6, CH.ease((t - .55) / .35))) : 0, fs = Math.min(s * 1.05, rs[1].w / 14);
+          var m = []; if (t > .4) m.push({ v: 10, col: C.yel, txt: '5分後 10 L', a: CH.smooth(.4, .5, t) }); if (t > .85) m.push({ v: 6, col: C.pink, txt: '6 L', a: CH.smooth(.85, .95, t) });
+          tank(D, rs[0], TANK(CH.clamp(x, 0, 6)), { marks: m });
+          var y0 = rs[1].y0 + rs[1].h * .15;
+          TX(D, rs[1].cx, y0, 'y＝−4x＋30', { size: fs * 1.2 });
+          if (t > .3) { var a = CH.smooth(.3, .45, t); TX(D, rs[1].x0 + s, y0 + fs * 2.4, '（2）y＝−4×5＋30', { size: fs, align: 'left', col: C.yel, a: a }); TX(D, rs[1].x0 + s * 3, y0 + fs * 3.9, '＝10', { size: fs, align: 'left', col: C.yel, a: a }); }
+          if (t > .6) { var b = CH.smooth(.6, .75, t); TX(D, rs[1].x0 + s, y0 + fs * 6, '（3）6＝−4x＋30', { size: fs, align: 'left', col: C.pink, a: b }); TX(D, rs[1].x0 + s * 3, y0 + fs * 7.5, '4x＝24', { size: fs, align: 'left', col: C.pink, a: CH.smooth(.7, .82, t) }); TX(D, rs[1].x0 + s * 3, y0 + fs * 9, 'x＝6', { size: fs, align: 'left', col: C.pink, a: CH.smooth(.8, .92, t) }); }
+        } },
+      { tag: '考えよう', bh: '考えよう', q: 'ゆうさんは、縦 x cm、横 (x＋4) cm の長方形の紙から、1辺 x cm の正方形を切り取った。残りの面積を y cm² として y＝x(x＋4)−x² と表し、「x² があるから、y は x の一次関数ではない」と考えた。正しいだろうか。',
+        notes: ['x＝1、2、3、4、5 のときの y を表にして、気づいたことを書こう。', 'どうすれば、一次関数かどうかを正しく判断できるか、説明しよう。', 'スライダーで、x を変えられます。'],
+        sliders: [{ key: 'x', label: 'x（cm）', min: 1, max: 5, step: 1, val: 2, fmt: function (x) { return 'x＝' + x; } }],
+        draw: function (D) {
+          var R = CH.box(D, { l: .08, r: .06, t: .14, b: .1 }), s = CH.fs(D), x = D.V.x, u = Math.min(R.w / 10.5, R.h / 6.2), W = (x + 4) * u, H = x * u, x0 = R.x0 + s * 1.5, y0 = R.y0 + s * .5;
+          TX(D, R.cx, R.y0 - s * .6, 'y＝x(x＋4)−x²', { size: s * 1.05, col: C.chalk });
+          CH.fillRect(D, x0, y0, x0 + W, y0 + H, { fill: 'rgba(169,240,176,.22)', stroke: C.green, sw: 2.4 });
+          for (var gx = 1; gx < x + 4; gx++) CH.line(D, x0 + gx * u, y0, x0 + gx * u, y0 + H, { w: 1, col: 'rgba(242,240,230,.18)' });
+          for (var gy = 1; gy < x; gy++) CH.line(D, x0, y0 + gy * u, x0 + W, y0 + gy * u, { w: 1, col: 'rgba(242,240,230,.18)' });
+          CH.fillRect(D, x0, y0, x0 + H, y0 + H, { fill: 'rgba(31,58,44,.9)', stroke: C.pink, sw: 2.4, dash: true });
+          CH.text(D, x0 + H / 2, y0 + H / 2, '切り取る', { col: C.pink, size: Math.min(s * .8, H * .3) });
+          CH.text(D, x0 + H + (W - H) / 2, y0 + H / 2, 'y cm²', { col: C.green, size: s * .9 });
+          CH.text(D, x0 - s * .4, y0 + H / 2, 'x cm', { size: s * .8, align: 'right' });
+          CH.text(D, x0 + W / 2, y0 + H + s * .9, '(x＋4) cm', { size: s * .8 });
+          CH.text(D, x0 + H / 2, y0 - s * .6, 'x cm', { size: s * .75, col: C.pink });
+          for (var i = 0; i <= x + 4; i++) CH.line(D, x0 + i * u, y0 + H, x0 + i * u, y0 + H + 5, { w: 1.2 });
+          CH.text(D, R.x1, R.y1, '1目もり 1 cm', { size: s * .7, align: 'right', col: 'rgba(242,240,230,.6)' });
+        } },
+      { tag: 'チャレンジ', bh: 'チャレンジ', q: '一次関数 y＝[3/4]x＋2 で、x が 1 から 12 までの整数のとき、y が整数になる x の値を、すべて求めよう。', a: 'x＝4、8、12', sub: '[3/4]x が整数になるのは、x が 4 の倍数のとき。そのとき y＝3＋2＝5、6＋2＝8、9＋2＝11', dur: 5,
+        b: { t: 'y が整数 … <b>x＝4、8、12</b>（[3/4]x が整数になるとき）', col: C.orange },
+        draw: function (D) { var R = CH.box(D, { l: .04, r: .04, t: .14, b: .2 }); chGrid(D, R, D.ph ? D.t : 0); } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

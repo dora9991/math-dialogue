@@ -4,6 +4,7 @@
    たどる流れ：つなぐ → メモ（★・日付）→ その日のメモ → 写真を撮って入れる → iPhone の予定が届く（ショートカットのかわりに POST）
      → Claude の朝の結果が届く → けさのまとめ・確認してほしいこと → 答える（分類・リマインダー）→ カレンダー → 資料を開いて直す
      → 設定 → つくり方 → 電波がないときのメモ → おためし → 暗い画面
+     → パスキー（Face ID・Touch ID のかわりに、Chromium の「にせもの」の認証器）：作る → 別の端末でログイン → 消す
    使い方：NODE_PATH=$(npm root -g) node hibi/tools/e2e.cjs [画面写真の出力先]
    playwright が要る（この環境ではグローバルに入っている）。 */
 'use strict';
@@ -94,6 +95,11 @@ const step = s => console.log('■ ' + s);
     await page.waitForSelector(`#top .wday.sel[data-ymd="${T}"]`);
 
     step('今日のメモ（すぐ書く）');
+    // 書いている途中で、うしろの更新が描きなおしても、書きかけは消えない
+    await page.fill('.quick textarea', '書きかけのメモ');
+    await page.click('#top [aria-label="新しくする"]');
+    await page.waitForFunction(() => document.querySelector('#top .sync') && /\bok\b/.test(document.querySelector('#top .sync').className));
+    ok((await page.inputValue('.quick textarea')) === '書きかけのメモ', '描きなおしても、書きかけのメモは残る');
     await page.fill('.quick textarea', '牛乳・パン・軍手');
     await page.click('.quick button[type="submit"]');
     await waitToast(/追加/);
@@ -158,6 +164,13 @@ const step = s => console.log('■ ' + s);
     const blocks = await page.$$eval('.tl-ev', els => els.map(e => e.className));
     ok(blocks.length === 2 && blocks.every(c => /\bp\d\b/.test(c)), '予定はカレンダーの色のブロック：' + blocks.join(' / '));
     ok(!(await page.evaluate(() => document.querySelector('#iosSync').classList.contains('unsynced'))), '同期したら印が消える');
+    await page.click('#tabs a[data-tab="memos"]');
+    await page.click('[data-act="memoFilter"][data-f="rem"]');
+    await page.waitForSelector('.rem-list');
+    const lists = await page.$$eval('.rem-list .sec-h span', els => els.map(e => e.textContent));
+    ok(JSON.stringify(lists) === JSON.stringify(['リマインダー', '仕事']) && (await page.locator('.rem-list .rem').count()) === 2, 'メモの画面で、iPhone のリマインダーをリストごとに：' + lists.join('・'));
+    await page.click('[data-act="memoFilter"][data-f="all"]');
+    await page.click('#tabs a[data-tab="today"]');
     ok(/期限切れ/.test(evText) && /教材の印刷/.test(evText), 'リマインダー（期限切れ・今日）');
 
     step('Claude の朝の結果が届く');
@@ -287,6 +300,7 @@ const step = s => console.log('■ ' + s);
 
     step('電波がないときのメモ');
     await page.click('#tabs a[data-tab="today"]');
+    await page.waitForFunction(() => document.body.dataset.view === 'today');   // 画面が切りかわってから書く（前の画面の入力欄に書かない）
     ok((await page.$$eval('.tl-ev', els => els.map(e => e.className))).every(c => /\bp3\b/.test(c)), '選んだ色が今日の予定にも出る');
     await ctx.setOffline(true);
     await page.fill('.quick textarea', '電波なしで書いたメモ');
@@ -315,6 +329,94 @@ const step = s => console.log('■ ' + s);
     await p2.waitForSelector('.mweeks .bar');
     await p2.screenshot({ path: path.join(OUT, '12-demo-cal-dark.png') });
     await p2.close();
+
+    step('パスキー：この端末で作る → 別の端末（URL も合言葉もない）でログイン → 消す');
+    // 顔・指紋のかわりに、Chromium の WebAuthn の「にせもの」を使う（いつも「本人と確かめた」と答える）。端末ごとに、まっさらな画面で
+    const device = async scheme => {
+      const c = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'ja-JP', timezoneId: 'Asia/Tokyo', colorScheme: scheme || 'light' });
+      const p = await c.newPage();
+      p.on('pageerror', e => errors.push('pageerror(端末): ' + e.message));
+      p.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console(端末): ' + m.text()); });
+      p.on('dialog', d => d.accept());
+      const cdp = await c.newCDPSession(p);
+      await cdp.send('WebAuthn.enable', { enableUI: false });
+      const { authenticatorId } = await cdp.send('WebAuthn.addVirtualAuthenticator', { options: { protocol: 'ctap2', ctap2Version: 'ctap2_1', transport: 'internal',
+        hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
+      return { c, p, cdp, authenticatorId };
+    };
+    const connectByForm = async p => {
+      await p.goto('http://localhost:8810/');
+      await p.fill('#cUrl', srv.gas);
+      await p.fill('#cToken', srv.token);
+      await p.click('[data-form="connect"] button[type="submit"]');
+    };
+    const pkToast = async (p, re) => p.waitForFunction(r => new RegExp(r).test(document.querySelector('#toast').textContent), re.source, { timeout: 8000 });
+
+    // 端末A：URL と合言葉でつなぐ → まだパスキーがないので、作るのをすすめる → あとで → 設定で作る
+    const A = await device('light');
+    await connectByForm(A.p);
+    await A.p.waitForSelector('.sheet .pk-offer');
+    ok(/つながりました/.test(await A.p.textContent('.sheet-head')), 'すすめのシートの題名で「つながりました」');
+    await A.p.waitForTimeout(300);
+    await A.p.screenshot({ path: path.join(OUT, '13-passkey-offer.png') });
+    await A.p.click('.pk-offer .cancel');
+    ok(await A.p.isHidden('#sheet'), '「あとで」で閉じる');
+    await A.p.click('#top [aria-label="設定"]');
+    await A.p.waitForSelector('[data-act="passkeyCreate"]');
+    ok(!(await A.p.$('.pk-list')), 'まだパスキーはない');
+    await A.p.click('[data-act="passkeyCreate"]');
+    await pkToast(A.p, /パスキーを作りました/);
+    await A.p.waitForSelector('.pk-list .pk-row');
+    let pks = (await post('passkey.list')).data.passkeys;
+    ok(pks.length === 1 && pks[0].name && !pks[0].lastUsedAt, '裏側にパスキーが1つ（まだ使っていない）');
+    const creds = (await A.cdp.send('WebAuthn.getCredentials', { authenticatorId: A.authenticatorId })).credentials;
+    ok(creds.length === 1 && creds[0].isResidentCredential, 'この端末にパスキー（さがせる形）');
+    ok(Buffer.from(creds[0].userHandle, 'base64').toString('latin1') === '\u0000' + srv.gas, 'パスキーのユーザー ID に、つなぎ先の URL');
+    await (await A.p.$('.pk-list')).scrollIntoViewIfNeeded();
+    await A.p.evaluate(() => window.scrollBy(0, -140));
+    await A.p.screenshot({ path: path.join(OUT, '14-passkey-settings.png') });
+
+    // 端末B：同じパスキーが iCloud キーチェーンで届いた、とする（鍵だけを移す。この端末は、つなぎ先も合言葉も知らない）
+    const B = await device('dark');
+    await B.cdp.send('WebAuthn.addCredential', { authenticatorId: B.authenticatorId, credential: creds[0] });
+    await B.p.goto('http://localhost:8810/');
+    await B.p.waitForSelector('.welcome [data-act="passkeyLogin"]');
+    ok(!(await B.p.evaluate(() => localStorage.getItem('hibi.conn.v1'))), '新しい端末は、つなぎ先を知らない');
+    await B.p.screenshot({ path: path.join(OUT, '15-passkey-welcome-dark.png') });
+    await B.p.click('[data-act="passkeyLogin"]');
+    await B.p.waitForSelector('.day', { timeout: 10000 });
+    ok(/ログインしました/.test(await B.p.textContent('#toast')), 'ログインしました');
+    const connB = await B.p.evaluate(() => JSON.parse(localStorage.getItem('hibi.conn.v1')));
+    ok(connB.url === srv.gas && connB.token === srv.token, 'パスキーだけで、URL と合言葉がそろう');
+    const nMemos = (await st()).memos.length;
+    ok(nMemos > 0 && (await B.p.evaluate(() => HB.api.cachedState().memos.length)) === nMemos, 'ログインした端末に、同じデータが届く');
+    ok(!(await B.p.$('.sheet .pk-offer')), 'パスキーでログインした端末には、作るのをすすめない');
+    pks = (await post('passkey.list')).data.passkeys;
+    ok(pks[0].lastUsedAt, '最後に使った日が入る');
+    await B.p.click('#top [aria-label="設定"]');
+    await B.p.waitForSelector('.pk-list');
+    ok(/最後のログイン：きょう/.test(await B.p.textContent('.pk-list')), '設定に「最後のログイン：きょう …」');
+
+    // 端末Aで消すと、そのパスキーではログインできない（わけを出す）
+    await A.p.click('[data-act="passkeyDel"]');
+    await pkToast(A.p, /パスキーを消しました/);
+    ok((await post('passkey.list')).data.passkeys.length === 0, '裏側から消える');
+    await B.p.evaluate(() => localStorage.clear());
+    await B.p.goto('http://localhost:8810/');
+    await B.p.click('[data-act="passkeyLogin"]');
+    await B.p.waitForSelector('#pkErr:not([hidden])');
+    ok(/消されています/.test(await B.p.textContent('#pkErr')), '消したパスキーには、わけを出す');
+    ok(!(await B.p.evaluate(() => localStorage.getItem('hibi.conn.v1'))), '消したパスキーでは、つながらない');
+
+    // 端末D：パスキーがない裏側に URL と合言葉でつないで、すすめのシートから作る
+    const D = await device('light');
+    await connectByForm(D.p);
+    await D.p.waitForSelector('.sheet .pk-offer');
+    await D.p.click('.pk-offer [data-act="passkeyCreate"]');
+    await pkToast(D.p, /パスキーを作りました/);
+    ok(await D.p.isHidden('#sheet'), '作ったらシートを閉じる');
+    ok((await post('passkey.list')).data.passkeys.length === 1, 'すすめのシートから作れる');
+    await A.c.close(); await B.c.close(); await D.c.close();
 
     ok(!errors.length, 'ページのエラーなし：' + errors.join(' / '));
   } catch (e) {

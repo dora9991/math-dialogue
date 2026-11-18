@@ -2,7 +2,8 @@
    ・Engine … ミキサー（コンピング／ベース／ドラム／ソロ／クリックのバス）、リバーブ、マスターのコンプレッサー
    ・楽器 … ピアノ、エレピ、オルガン、ギター（弦をはじく物理モデル）、ビブラフォン、ストリングス、
             ベース（ウッド／エレキ／シンセ）、サックス（アルト／テナー）、トランペット、フルート、クラリネット、トロンボーン
-   ・ドラム … キック、スネア、サイドスティック、ハイハット、ライド、クラッシュ、タム、ブラシ
+   ・ドラム … キック、スネア、サイドスティック、ハイハット、ライド、クラッシュ、タム、ブラシ、
+              手拍子、タンバリン、シェイカー、クラーベ、カウベル、コンガ
    ブラウザの AudioContext でも、書き出し用の OfflineAudioContext でも同じように鳴る。 */
 (function () {
   'use strict';
@@ -103,6 +104,7 @@
       return s;
     }
     stopSession(fade) {
+      if (this.midiOut && this.midiOut.active()) this.midiOut.panic();   // MIDI で送っている先（Kontakt など）の音も止める
       const s = this.session; if (!s) return;
       this.session = null;
       const t = this.ctx.currentTime, f = fade == null ? 0.06 : fade;
@@ -126,6 +128,8 @@
 
     /* ---- 音を鳴らす ---- */
     play(part, t, midi, dur, vel, instId) {
+      // MIDI で送るパート：ブラウザでは鳴らさず、合図だけ送る（消してあるパートは送らない）
+      if (this.midiOut && this.midiOut.takes(part)) { if (!this.muted[part]) this.midiOut.note(this.ctx, part, midi, vel, t, t + Math.max(0.03, dur)); return; }
       const id = instId || this.inst[part];
       const fn = VOICES[id] || VOICES.piano;
       let dest = this.dest(part);
@@ -133,6 +137,7 @@
       fn(this, dest, t, midi, Math.max(0.03, dur), clamp(vel, 1, 127), part);
     }
     drum(kind, t, vel) {
+      if (this.midiOut && this.midiOut.takes('drums')) { if (!this.muted.drums) this.midiOut.drum(this.ctx, kind, vel, t); return; }
       const fn = DRUMS[kind];
       if (fn) fn(this, this.dest('drums'), t, clamp(vel, 1, 127) / 127, this.inst.drums);
     }
@@ -232,7 +237,7 @@
     o.setPeriodicWave(tone(E, 'organ')); o.frequency.value = f; sub.type = 'sine'; sub.frequency.value = f / 2; sg.gain.value = 0.16;
     const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 6.3; lg.gain.value = 5; lfo.connect(lg); lg.connect(o.detune);
     o.connect(g); sub.connect(sg); sg.connect(g); g.connect(lp); lp.connect(dest);
-    const stop = adsr(g.gain, t, dur, 0.008, 0.09 * Math.pow(v, 0.9), 0, 1, 0.05);
+    const stop = adsr(g.gain, t, dur, 0.008, 0.15 * Math.pow(v, 0.9), 0, 1, 0.05);   // ピアノと同じくらいの大きさに（0.09 では、レゲエの裏打ちなど短い刻みが埋もれた）
     [o, sub, lfo].forEach(x => { x.start(t); x.stop(stop); });
     E.noise(dest, t, 0.02, { hp: 2500, gain: 0.015 * v, decay: 0.006 });   // キークリック
   };
@@ -290,10 +295,10 @@
   VOICES.synbass = (E, dest, t, m, dur, vel) => {
     const ctx = E.ctx, f = freq(m), v = vel / 127, g = ctx.createGain(), lp = lowpass(ctx, 1800, 6);
     const o1 = ctx.createOscillator(), o2 = ctx.createOscillator();
-    o1.type = 'sawtooth'; o1.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f / 2; const sg = ctx.createGain(); sg.gain.value = 0.2;
+    o1.type = 'sawtooth'; o1.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f / 2; const sg = ctx.createGain(); sg.gain.value = 0.3;
     o1.connect(g); o2.connect(sg); sg.connect(g); g.connect(lp); lp.connect(dest);
     lp.frequency.setValueAtTime(f * 12 + 1200 * v, t); lp.frequency.setTargetAtTime(f * 2.5, t + 0.005, 0.12);
-    const stop = adsr(g.gain, t, dur, 0.004, 0.12 * Math.pow(v, 1.0), 0.4, 0.5, 0.05);
+    const stop = adsr(g.gain, t, dur, 0.004, 0.19 * Math.pow(v, 1.0), 0.4, 0.5, 0.05);   // エレキベースと同じくらいの大きさに
     o1.start(t); o2.start(t); o1.stop(stop); o2.stop(stop);
   };
   /* ---- 管楽器 ---- */
@@ -375,6 +380,36 @@
   };
   DRUMS.tomHigh = tom(240, 160, 0.09); DRUMS.tomMid = tom(180, 115, 0.11); DRUMS.tomLow = tom(130, 80, 0.14);
   DRUMS.brush = (E, dest, t, v) => E.noise(dest, t, 0.4, { bp: 4200, q: 0.4, hp: 1500, gain: 0.3 * v, attack: 0.07, decay: 0.12 });
+  /* ---- ジャズ以外のスタイルで使う打楽器 ---- */
+  // 短い「ポン」という音程のある打音（サイン波の音程を少し下げながら、すぐ消す）
+  const blip = (E, dest, t, f0, f1, gain, decay, type) => {
+    const ctx = E.ctx, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f0, t); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + 0.05);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(gain, t + 0.0015); g.gain.setTargetAtTime(0.0001, t + 0.003, decay);
+    o.connect(g); g.connect(dest); o.start(t); o.stop(t + decay * 8 + 0.05);
+  };
+  // 手拍子：短いノイズを3つ重ねて、最後だけ少しのばす
+  DRUMS.clap = (E, dest, t, v) => { [0, 0.011, 0.023].forEach((d, i) => E.noise(dest, t + d, 0.03, { bp: 1300, q: 1.1, hp: 600, gain: 0.4 * v, decay: i === 2 ? 0.07 : 0.008 })); };
+  // タンバリン：高いノイズ（ジングル）を2回ぶつける
+  DRUMS.tambourine = (E, dest, t, v) => {
+    E.noise(dest, t, 0.12, { hp: 7000, bp: 9500, q: 1.5, gain: 0.5 * v, attack: 0.002, decay: 0.045 });
+    E.noise(dest, t + 0.018, 0.08, { hp: 8000, gain: 0.1 * v, decay: 0.03 });
+  };
+  // シェイカー：立ち上がりのやわらかい高いノイズ
+  DRUMS.shaker = (E, dest, t, v) => E.noise(dest, t, 0.08, { hp: 5500, bp: 7500, q: 0.8, gain: 0.34 * v, attack: 0.012, decay: 0.025 });
+  // クラーベ：かたい木の棒。高い音程が、すぐ消える
+  DRUMS.clave = (E, dest, t, v) => { blip(E, dest, t, 2450, 2450, 0.34 * v, 0.016); E.noise(dest, t, 0.01, { bp: 2500, q: 2, gain: 0.12 * v, decay: 0.004 }); };
+  // カウベル：2つの矩形波（540Hz と 800Hz）を帯域フィルターに通す
+  DRUMS.cowbell = (E, dest, t, v) => {
+    const ctx = E.ctx, bp = ctx.createBiquadFilter(), g = ctx.createGain();
+    bp.type = 'bandpass'; bp.frequency.value = 1700; bp.Q.value = 1.4;
+    [562, 845].forEach(f => { const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = f; o.connect(bp); o.start(t); o.stop(t + 0.5); });
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.26 * v, t + 0.0015); g.gain.setTargetAtTime(0.0001, t + 0.004, 0.055);
+    bp.connect(g); g.connect(dest);
+  };
+  // コンガ：高いほう（スラップ：短く、ノイズまじり）と、低いほう（オープン：よく響く）
+  DRUMS.congaHi = (E, dest, t, v) => { blip(E, dest, t, 420, 330, 0.42 * v, 0.045); E.noise(dest, t, 0.02, { bp: 2200, q: 1.5, gain: 0.2 * v, decay: 0.008 }); };
+  DRUMS.congaLo = (E, dest, t, v) => { blip(E, dest, t, 250, 205, 0.5 * v, 0.1); E.noise(dest, t, 0.02, { bp: 1200, q: 1.2, gain: 0.08 * v, decay: 0.008 }); };
 
   Au.Engine = Engine; Au.VOICES = VOICES; Au.DRUMS = DRUMS; Au.adsr = adsr;
   if (typeof module !== 'undefined' && module.exports) module.exports = AL;

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>直角三角形の合同条件</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 三角形と四角形 第5時：直角三角形が合同といえる条件を見つけよう（ikkan の lesson_sankaku_05 と同じ流れ）。
+   図の座標・数値は ikkan のデータ（自作）をもとにした。直角三角形は「斜辺の長さと角」から座標で作り、合同な組・長さは座標で測り直して CH.check で照らし合わせる。
+   △DEF の角や辺を変えて △ABC に重ねる。BC＝EF のときは、裏返してつなぐと二等辺三角形 ABD ができる。正方形の問題は、△ABE が 90° 回って △DAF に重なる。 */
+(function () {
+  var C = CH.C, R = Math.PI / 180;
+  /* ---- このページの道具 ---- */
+  function box(D, o) { return CH.box(D, o || { l: .06, r: .06, t: .1, b: .12 }); }
+  function ext(F, Q) { return Object.assign({}, F, { P: Object.assign({}, F.P, Q), X: function (p) { return F.X(typeof p === 'string' && Q[p] ? Q[p] : p); } }); }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D), g = D.ctx; g.save(); g.font = '600 ' + size + 'px "Klee One",sans-serif'; var w = g.measureText(s).width; g.restore(); if (o.maxW && w > o.maxW) size *= o.maxW / w; CH.text(D, x, y, s, Object.assign({}, o, { size: size })); }
+  function lerpObj(P, Q, k) { var o = {}; Object.keys(P).forEach(function (n) { o[n] = GE.lerpP(P[n], Q[n] || P[n], k); }); return o; }
+  /* 直角三角形：C が直角（原点）、AB が斜辺（長さ c）、∠B＝th°。rot 度まわし、flip で裏返し、at だけずらす */
+  function rt(c, th, rot, flip, at) {
+    var raw = { A: [0, c * Math.sin(th * R)], B: [c * Math.cos(th * R), 0], C: [0, 0] }, o = {};
+    Object.keys(raw).forEach(function (k) { var p = raw[k]; if (flip) p = [-p[0], p[1]]; p = GE.rot(p, [0, 0], rot || 0); o[k] = GE.add(p, at || [0, 0]); });
+    return o;
+  }
+  /* 辺 ab の外がわに字 */
+  function sideLab(F, a, b, s, o) { o = o || {}; var P = F.P, c = [(P.A[0] + P.B[0] + P.C[0]) / 3, (P.A[1] + P.B[1] + P.C[1]) / 3], m = GE.mid(P[a], P[b]), X = F.X(m), Cx = F.X(c), v = [X[0] - Cx[0], X[1] - Cx[1]], L = Math.hypot(v[0], v[1]) || 1; CH.text(F.D, X[0] + v[0] / L * F.s * (o.k || 1.1), X[1] + v[1] / L * F.s * (o.k || 1.1), s, { col: o.col || C.chalk, size: F.s * .85, a: o.a, outline: 'rgba(20,40,30,.9)' }); }
+  function sorted(P) { return ['AB', 'BC', 'CA'].map(function (s) { return GE.len(P, s); }).sort(function (a, b) { return a - b; }); }
+  function cong(P, Q) { var a = sorted(P), b = sorted(Q); return a.every(function (x, i) { return GE.near(x, b[i], 1e-6); }); }
+
+  /* ---- 今日の問い：斜辺 5 の直角三角形 2つ ---- */
+  var T1 = { A: [0, 3], B: [4, 0], C: [0, 0] };
+  var D0 = { D: [6.2, 5 * Math.sin(55 * R)], E: [6.2 + 5 * Math.cos(55 * R), 0], F: [6.2, 0] };   /* ∠E＝55° */
+  var D1 = { D: [6.2, 3], E: [10.2, 0], F: [6.2, 0] };                                               /* ∠E＝∠B */
+  var D2 = { D: [0, -3], E: [4, 0], F: [0, 0] };                                                     /* 裏返して BC に重ねた位置 */
+  var AL = Object.assign({}, T1, D0);
+  CH.check(GE.verify(AL, 'AB＝DE＝5') && GE.verify(AL, '∠ACB＝∠DFE＝90°') && !GE.near(GE.ang(AL, 'ABC'), GE.ang(AL, 'DEF')), '今日の問い：斜辺が等しい 2つの直角三角形');
+  var K2 = Object.assign({}, T1, D2);
+  CH.check(GE.verify(K2, 'AB＝DB＝5') && GE.verify(K2, '∠BAD＝∠BDA') && GE.near(GE.ang(K2, 'ACD'), 180) && GE.verify(Object.assign({}, T1, D1), '∠ABC＝∠DEF'), '今日の問い：裏返してつなぐと二等辺三角形');
+  function two(D, P, o) {
+    o = o || {}; var fr = o.fr || { p: [-.4, -.4], q: [10.6, 4.4] }, F = ext(GE.fit(D, box(D, { l: .06, r: .06, t: .08, b: .14 }), fr, { pad: .04 }), P);
+    GE.poly(F, 'ABC', { col: C.blue, fa: .18 }); GE.poly(F, 'DEF', { col: C.orange, fa: .18, a: o.a2 });
+    GE.right(F, 'ACB'); GE.right(F, 'DFE', { a: o.a2 }); GE.tick(F, 'AB', 1); GE.tick(F, 'DE', 1, { a: o.a2 });
+    GE.labels(F, ['A', 'B', 'C'], { dir: { A: 'n', B: 'se', C: 'sw' } }); GE.labels(F, ['D', 'E', 'F'], { dir: o.dir || { D: 'n', E: 'se', F: 'sw' }, a: o.la != null ? o.la : o.a2 });
+    return F;
+  }
+
+  /* ---- 例題：ア〜オ ---- */
+  var EX = [
+    { n: 'ア', P: rt(5, 40, 0, false), lab: [['AB', '5cm']], ang: '50°' },
+    { n: 'イ', P: rt(5, Math.acos(.8) / R, 90, false), lab: [['AB', '5cm'], ['BC', '4cm']] },
+    { n: 'ウ', P: rt(5, 40, 200, true), lab: [['AB', '5cm']], ang: '50°' },
+    { n: 'エ', P: rt(5, Math.acos(.8) / R, 300, true), lab: [['AB', '5cm'], ['BC', '4cm']] },
+    { n: 'オ', P: rt(5 / Math.cos(40 * R), 40, 150, false), lab: [['BC', '5cm']], ang: '50°' }];
+  CH.check(EX.every(function (e) { return GE.near(GE.ang(e.P, 'ACB'), 90); }) && [0, 2, 4].every(function (i) { return GE.near(GE.ang(EX[i].P, 'BAC'), 50); }) && GE.near(GE.len(EX[1].P, 'BC'), 4) && GE.near(GE.len(EX[3].P, 'BC'), 4) && GE.near(GE.len(EX[4].P, 'BC'), 5), '例題：図の字');
+  (function () { var pr = []; for (var i = 0; i < 5; i++) for (var j = i + 1; j < 5; j++) if (cong(EX[i].P, EX[j].P)) pr.push(EX[i].n + EX[j].n); CH.check(pr.join() === 'アウ,イエ' && GE.len(EX[4].P, 'AB') > 5, '例題：合同な組は ア・ウ と イ・エ'); })();
+
+  /* ---- 考えよう：斜辺でない1辺 3cm と 鋭角 40° ---- */
+  var KX = { A: [0, 3 * Math.tan(40 * R)], B: [3, 0], C: [0, 0] }, KY = { A: [0, 3 / Math.tan(40 * R)], B: [3, 0], C: [0, 0] };
+  CH.check(GE.verify(KX, '∠ABC＝40°') && GE.verify(KY, '∠BAC＝40°') && GE.verify(KX, 'BC＝3') && !cong(KX, KY), '考えよう：2通りの三角形');
+
+  /* ---- チャレンジ：正方形 ABCD と、A を通る直線 ℓ ---- */
+  var SQ = { A: [0, 0], B: [-3, 5], C: [2, 8], D: [5, 3], E: [-3, 0], F: [5, 0], L: [-5.4, 0], M: [7.4, 0] }, O = [1, 4];
+  CH.check(GE.verify(SQ, 'AB＝BC＝CD＝DA') && GE.verify(SQ, '∠DAB＝90°') && GE.verify(SQ, 'BE＝5') && GE.verify(SQ, 'DF＝3') && GE.verify(SQ, '∠AEB＝∠AFD＝90°') && GE.verify(SQ, '△ABE≡△DAF') && GE.verify(SQ, 'EF＝AE＋AF＝DF＋BE＝8'), 'チャレンジ（EF＝8cm）');
+  CH.check(['A', 'B', 'E'].every(function (k, i) { var q = GE.rot(SQ[k], O, 90); return GE.near(q[0], SQ['DAF'[i]][0]) && GE.near(q[1], SQ['DAF'[i]][1]); }), 'チャレンジ：90° まわすと重なる');
+
+  var steps = [
+    { tag: '今日の問い', bh: '∠C＝∠F＝90°、AB＝DE', q: '∠C＝∠F＝90° の △ABC、△DEF で、直角に向かい合う辺 AB、DE が等しい。あと何がわかれば、合同といえるだろう。いくつか考えよう。',
+      notes: ['① 自分の考え（3分）　あと何がわかればよいか、わけもつけて。', '② ペアの考え（3分）　自分とちがう考えは？'],
+      draw: function (D) { two(D, Object.assign({}, T1, D0)); } },
+    { tag: '今日の問い', q: '∠B＝∠E がわかれば、合同といえる？', a: '合同といえる', sub: '残りの鋭角 ∠A＝∠D も等しい（内角の和）。斜辺 AB と その両端の角が等しいから、1組の辺とその両端の角', dur: 4,
+      b: { t: '∠B＝∠E がわかれば → ∠A＝∠D も等しい → 合同', col: C.yel },
+      draw: function (D) {
+        var t = D.ph ? D.t : 0, k1 = CH.smooth(0, .35, t), k2 = CH.smooth(.5, .95, t), P = Object.assign({}, T1, lerpObj(D0, D1, k1));
+        if (k2 > 0) P = Object.assign(P, lerpObj(D1, { D: T1.A, E: T1.B, F: T1.C }, CH.ease(k2)));
+        var F = two(D, P, { la: 1 - CH.smooth(.85, .95, t) });
+        GE.arc(F, 'ABC', { col: C.yel, fill: .4, r: F.s * 1.4 }); GE.arc(F, 'DEF', { col: C.yel, fill: .4, r: F.s * 1.4 });
+        if (D.ph) { GE.arc(F, 'BAC', { col: C.green, r: F.s * 1.2, a: CH.smooth(.35, .5, t) }); GE.arc(F, 'EDF', { col: C.green, r: F.s * 1.2, a: CH.smooth(.35, .5, t) }); }
+      } },
+    { tag: '今日の問い', q: 'BC＝EF がわかれば、合同といえる？', a: '合同といえる', sub: '△DEF を裏返して、EF を BC に重ねると、AB＝DB の二等辺三角形 ABD ができる。底角 ∠A＝∠D だから、斜辺と1つの鋭角が等しくなる', dur: 5,
+      b: { t: 'BC＝EF がわかれば → 裏返してつなぐと 二等辺三角形 ABD → ∠A＝∠D → 合同', col: C.yel },
+      draw: function (D) {
+        var t = D.ph ? D.t : 0, k1 = CH.smooth(0, .25, t), k2 = CH.smooth(.3, .75, t), D1b = { D: [6.2, 3], E: [10.2, 0], F: [6.2, 0] };
+        var P = Object.assign({}, T1, lerpObj(D0, D1b, k1));
+        if (k2 > 0) { var Q = Object.assign({}, T1, D1b, { X: D2.D, Y: D2.E, Z: D2.F }), m = GE.moveTri(Q, 'DEF', 'XYZ', k2); P.D = m[0]; P.E = m[1]; P.F = m[2]; }
+        var zk = CH.smooth(.3, .75, t), fr = { p: [CH.lerp(-.4, -1.6, zk), CH.lerp(-.4, -3.4, zk)], q: [CH.lerp(10.6, 8.6, zk), 4.4] };
+        var F = two(D, P, { fr: fr, dir: k2 >= 1 ? { D: 's', E: 'e', F: 'w' } : null, a2: k2 >= 1 ? 0 : 1 });
+        GE.tick(F, 'BC', 2, { col: C.yel }); GE.tick(F, 'EF', 2, { col: C.yel, a: k2 >= 1 ? 0 : 1 });
+        if (k2 >= 1) {
+          var a3 = CH.smooth(.78, .92, t);
+          GE.poly(F, 'DEF', { col: C.orange, fa: .18 }); GE.right(F, 'DFE');
+          GE.seg(F, 'AB', { col: C.yel, w: 4, a: a3, glow: true }); GE.seg(F, 'DB', { col: C.yel, w: 4, a: a3, glow: true });
+          GE.arc(F, 'BAC', { col: C.pink, fill: .45, r: F.s * 1.3, a: a3 }); GE.arc(F, 'BDC', { col: C.pink, fill: .45, r: F.s * 1.3, a: a3 });
+          var pD = F.X(D2.D); say(D, pD[0], pD[1] + F.s * 1.1, 'D', { size: F.s, a: 1 });
+          say(D, F.X([6.4, 0])[0], F.X([0, -1.6])[1], '二等辺三角形 ABD', { col: C.yel, a: a3, size: F.s, maxW: F.X([8.6, 0])[0] - F.X([4.6, 0])[0] });
+        }
+      } },
+    { tag: 'ことば', bh: 'ことば', q: '直角三角形で、直角に対する辺を何という？ 直角三角形が合同になる条件は？', a: '斜辺。① 斜辺と1つの鋭角　② 斜辺と他の1辺', sub: 'どちらも「それぞれ等しい」。等しい辺が、どちらも斜辺であることを確かめる', dur: 2.5,
+      b: [{ t: '直角に対する辺 … <b>斜辺</b>', col: C.green }, { t: '直角三角形の合同条件　① <b>斜辺と1つの鋭角</b> が、それぞれ等しい', col: C.green }, { t: '② <b>斜辺と他の1辺</b> が、それぞれ等しい', col: C.green }],
+      draw: function (D) {
+        var Rb = box(D, { l: .04, r: .04, t: .14, b: .14 }), cs = CH.split(D, Rb, 2, .12), t = D.ph ? D.t : 0;
+        [0, 1].forEach(function (i) {
+          var P = { A: [0, 3], B: [4, 0], C: [0, 0] }, F = ext(GE.fit(D, cs[i], P, { pad: .18 }), {});
+          GE.figure(F, { segs: ['AB', 'BC', 'CA'], rights: ['ACB'], labels: false });
+          var k1 = D.ph ? CH.smooth(.05, .35, t) : 0, k2 = D.ph ? CH.smooth(.45 + i * .15, .75 + i * .15, t) : 0;
+          GE.seg(F, 'AB', { col: C.yel, w: 4.5, a: k1, glow: true }); sideLab(F, 'A', 'B', '斜辺', { col: C.yel, a: k1 });
+          if (i === 0) GE.arc(F, 'ABC', { col: C.pink, fill: .45, r: F.s * 1.6, a: k2, lab: '鋭角' });
+          else { GE.seg(F, 'BC', { col: C.pink, w: 4.5, a: k2, glow: true }); sideLab(F, 'B', 'C', '他の1辺', { col: C.pink, a: k2 }); }
+          say(D, cs[i].cx, cs[i].y0 - F.s * .4, i ? '② 斜辺と他の1辺' : '① 斜辺と1つの鋭角', { col: C.chalk, size: F.s * .95, maxW: cs[i].w });
+        });
+      } },
+    { tag: '例題', bh: '例題　合同な直角三角形', q: '直角三角形ア〜オの中から、合同な組を2組見つけよう。使った合同条件も答えよう。', a: 'ア と ウ、イ と エ', sub: 'ア・ウ … 斜辺と1つの鋭角（5cm・50°）　イ・エ … 斜辺と他の1辺（5cm・4cm）', dur: 2,
+      b: [{ t: 'ア と ウ … 斜辺と1つの鋭角が、それぞれ等しい', col: C.pink }, { t: 'イ と エ … 斜辺と他の1辺が、それぞれ等しい', col: C.pink }],
+      draw: function (D) { exDraw(D, D.ph ? D.t : 0, 0); } },
+    { tag: '例題', q: 'オ は、ア と合同といえる？', a: 'いえない', sub: 'オ の 5cm の辺は、斜辺ではない（直角のとなりの辺）。合同条件を使う前に、等しい辺がどちらも斜辺かを確かめる', dur: 2,
+      b: { t: 'オ … 5cm の辺は斜辺ではない → ア と合同とはいえない（斜辺かどうかを確かめる）', col: C.pink },
+      draw: function (D) { exDraw(D, 1, D.ph ? D.t : 0); } },
+    { tag: '考えよう', q: '2つの直角三角形で、斜辺でない1辺が 3cm、1つの鋭角が 40° である。この2つは、いつも合同といえるだろうか。',
+      notes: ['40° の角が、3cm の辺の「となり」にあるときと、「向かい側」にあるときで、図をかいてみよう。', '気づいたことを書こう。', 'スライダーで、40° の角の場所を変えられます。'],
+      sliders: [{ key: 'k', label: '40° の角', min: 0, max: 1, step: 1, val: 0, fmt: function (x) { return x ? '3cm の辺の向かい側' : '3cm の辺のとなり'; } }],
+      draw: function (D) {
+        var P = D.V.k ? KY : KX, F = ext(GE.fit(D, box(D, { l: .1, r: .1, t: .08, b: .1 }), { p: [-.2, -.2], q: [3.2, 3.8] }, { pad: .1 }), P);
+        GE.poly(F, 'ABC', { col: C.blue, fa: .15 }); GE.right(F, 'ACB'); GE.labels(F, ['A', 'B', 'C'], { dir: { A: 'n', B: 'se', C: 'sw' } });
+        GE.seg(F, 'BC', { col: C.yel, w: 4 }); sideLab(F, 'B', 'C', '3cm', { col: C.yel });
+        GE.arc(F, D.V.k ? 'BAC' : 'ABC', { col: C.pink, fill: .4, r: F.s * 1.5, lab: '40°' });
+      } },
+    { tag: 'チャレンジ', bh: 'チャレンジ', q: '四角形 ABCD は正方形。頂点 A を通る直線 ℓ に、B、D から垂線 BE、DF をひく。BE＝5cm、DF＝3cm のとき、EF は何 cm？', a: '8cm', sub: '△ABE≡△DAF（斜辺 AB＝DA、∠BAE＝∠ADF … どちらも 90°−∠DAF）。AE＝DF＝3cm、AF＝BE＝5cm、EF＝3＋5＝8', dur: 4,
+      notes: ['ヒント：AB と DA は同じ長さ。直角三角形で見ると、どこにあたるかな。'],
+      b: { t: '△ABE≡△DAF（斜辺と1つの鋭角）→ AE＝3cm、AF＝5cm → <b>EF＝8cm</b>', col: C.orange },
+      draw: function (D) {
+        var F = GE.fit(D, box(D, { l: .06, r: .06, t: .06, b: .1 }), SQ, { pad: .06 }), t = D.ph ? D.t : 0, k = CH.ease(CH.smooth(.1, .7, t));
+        GE.poly(F, 'ABCD', { col: C.blue, fa: .08 }); GE.seg(F, 'LM', { w: 2 }); GE.seg(F, 'BE'); GE.seg(F, 'DF');
+        GE.right(F, 'AEB'); GE.right(F, 'AFD'); GE.right(F, 'DAB', { a: .6 });
+        GE.labels(F, ['A', 'B', 'C', 'D', 'E', 'F'], { dir: { A: 's', B: 'w', C: 'n', D: 'e', E: 's', F: 's' } });
+        var pl = F.X(SQ.M); say(D, pl[0] + F.s * .6, pl[1], 'ℓ', { size: F.s });
+        sideLab(ext(F, { A: SQ.B, B: SQ.E, C: SQ.A }), 'A', 'B', '5cm', {}); sideLab(ext(F, { A: SQ.D, B: SQ.F, C: SQ.A }), 'A', 'B', '3cm', {});
+        if (!D.ph) return;
+        var pts = ['A', 'B', 'E'].map(function (n) { return GE.rot(SQ[n], O, 90 * k); });
+        GE.polyP(F, pts, { col: C.yel, fa: .3 }); GE.poly(F, 'DAF', { col: C.orange, fa: .2, a: CH.smooth(.7, .8, t) });
+        if (t > .75) {
+          var a = CH.smooth(.75, .9, t), y = F.X([0, 0])[1] + F.s * 1.9;
+          [['E', 'A', '3cm', C.green], ['A', 'F', '5cm', C.pink]].forEach(function (g) { var p = F.X(SQ[g[0]]), q = F.X(SQ[g[1]]); CH.line(D, p[0], y - F.s * .5, q[0], y - F.s * .5, { col: g[3], w: 3, a: a }); CH.text(D, (p[0] + q[0]) / 2, y + F.s * .3, g[2], { col: g[3], a: a, size: F.s * .9 }); });
+          GE.seg(F, 'EA', { col: C.green, w: 4.5, a: a, glow: true }); GE.seg(F, 'AF', { col: C.pink, w: 4.5, a: a, glow: true });
+        }
+      } }
+  ];
+
+  /* 例題の図。t：組に色をつける進み、u：オ を調べる進み */
+  function exDraw(D, t, u) {
+    var Rb = CH.box(D, { l: .03, r: .03, t: .04, b: .06 }), s = CH.fs(D, .8), all = {}, ofs = [];
+    EX.forEach(function (e, i) {
+      var o = [(i % 3) * 7.4 + (i >= 3 ? 3.7 : 0), -Math.floor(i / 3) * 7.6];
+      var c = [(e.P.A[0] + e.P.B[0] + e.P.C[0]) / 3, (e.P.A[1] + e.P.B[1] + e.P.C[1]) / 3]; o = GE.sub(o, c); ofs.push(o);
+      ['A', 'B', 'C'].forEach(function (k) { all[k + i] = GE.add(e.P[k], o); });
+    });
+    var F0 = GE.fit(D, Rb, all, { pad: .08, size: s }), cols = [C.yel, C.green, C.yel, C.green, C.pink];
+    EX.forEach(function (e, i) {
+      var F = ext(F0, { A: all['A' + i], B: all['B' + i], C: all['C' + i] }), hl = t > .2 && i < 4, a = i < 4 || u === 0 ? 1 : 1;
+      var dim = u > 0 && i !== 0 && i !== 4 ? .3 : 1;
+      GE.poly(F, 'ABC', { col: hl ? cols[i] : C.blue, fa: hl ? .3 * CH.smooth(.2, .6, t) + .1 : .12, a: dim });
+      GE.right(F, 'ACB', { a: dim });
+      e.lab.forEach(function (l) { sideLab(F, l[0][0], l[0][1], l[1], { a: dim }); });
+      if (e.ang) GE.arc(F, 'BAC', { r: F.s * 1.1, lab: e.ang, a: dim });
+      var top = Math.min(F.X('A')[1], F.X('B')[1], F.X('C')[1]);
+      CH.text(D, F.X([(all['A' + i][0] + all['B' + i][0] + all['C' + i][0]) / 3, 0])[0], top - s * 1.5, e.n, { col: hl ? cols[i] : C.chalk, size: s * 1.1, a: dim });
+      if (i === 4 && u > 0) { var k = CH.smooth(.1, .5, u); GE.seg(F, 'BC', { col: C.pink, w: 4.5, a: k, glow: true }); GE.seg(F, 'AB', { col: C.yel, w: 4.5, a: CH.smooth(.5, .9, u), glow: true }); sideLab(F, 'A', 'B', '斜辺', { col: C.yel, a: CH.smooth(.5, .9, u), k: 1.3 }); }
+      if (i === 0 && u > 0) { GE.seg(F, 'AB', { col: C.yel, w: 4.5, a: CH.smooth(.5, .9, u), glow: true }); }
+    });
+  }
+
+  K3.run({
+    no: '第5時', title: '直角三角形が合同といえる条件を見つけよう', flat: true, hint: '', alt: '図形の図',
+    links: [{ href: 'index.html', label: '目次' }, { href: '04.html', label: '◀ 第4時' }, { href: '06.html', label: '第6時 ▶' }],
+    steps: steps
+  });
+})();
+</script>
+</body>
+</html>

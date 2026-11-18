@@ -11,7 +11,7 @@
         const v = attrs[k];
         if (v == null || v === false) continue;
         if (k === 'class') el.className = v;
-        else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+        else if (k === 'style' && typeof v === 'object') { for (const sk in v) { if (sk.startsWith('--')) el.style.setProperty(sk, v[sk]); else el.style[sk] = v[sk]; } }   // --team などの変数は setProperty でないと入らない
         else if (k === 'html') el.innerHTML = v;
         else if (k === 'text') el.textContent = v;
         else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
@@ -39,9 +39,10 @@
 
   let modalClose = null;
   function modal(opts) {
+    if (modalClose) modalClose();      // 開いている小窓を閉じてから（その小窓の後かたづけ onClose も呼ぶ）
     const m = $('#modal');
     m.innerHTML = '';
-    const card = h('div', { class: 'modal-card', role: 'dialog', 'aria-modal': 'true' });
+    const card = h('div', { class: 'modal-card' + (opts.cls ? ' ' + opts.cls : ''), role: 'dialog', 'aria-modal': 'true' });
     const close = () => { m.hidden = true; m.innerHTML = ''; modalClose = null; if (opts.onClose) opts.onClose(); };
     card.appendChild(h('header', null, h('b', null, opts.title || ''), h('button', { class: 'x', 'aria-label': '閉じる', onclick: close }, '×')));
     const body = h('div', { class: 'modal-body' });

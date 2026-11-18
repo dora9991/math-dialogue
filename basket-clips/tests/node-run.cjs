@@ -63,7 +63,7 @@ async function run(movie, t0, t1, opts) {
     if (opts.trace) trace.push({ t, st: live.status.map((s) => ({ tr: s.tracked && s.inFrame, acq: s.acquired, sc: +s.score.toFixed(2), rs: s.rimScore == null ? null : +s.rimScore.toFixed(2), rim: [Math.round(s.rim.cx), Math.round(s.rim.cy), +s.rim.w.toFixed(1)], occ: !!s.occluded })) });
   });
   const res = an.finish();
-  return { res, trace, truth };
+  return { res, trace, truth, an };
 }
 module.exports = { run, loadBS };
 
