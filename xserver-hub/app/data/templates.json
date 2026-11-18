@@ -1,0 +1,484 @@
+{
+ "source": "line-hub src/templates.js（line-hub-demo a76dd9f）から書き出し",
+ "templates": [
+  {
+   "key": "genie-attributes",
+   "title": "ジーニーの属性アンケート（校種・性別・年代・エリア・役職）",
+   "summary": "友だち追加の返事に1問目を添え、ボタンで答えると「校種:中学校」のような属性のタグが付きます。全部答えると、ZOOM教員会の案内と日程のボタン。すべて返信なので、通数を使いません。"
+  },
+  {
+   "key": "welcome-react",
+   "title": "はじめての方へ（紹介→ZOOM教員会・反応で分かれる）",
+   "summary": "友だち追加から3日間で3通。感想（返事）をくれた方は「感想をくださった方へ」に移り、くれなかった方には教員会の案内が続きます。紹介動画（動画特典「genie-intro」）があれば、1通目に入ります。"
+  },
+  {
+   "key": "by-school",
+   "title": "校種別：中学校の先生へ（3日間のコラム→教員会へのお誘い）",
+   "summary": "アンケートで「校種:中学校」のタグが付くと始まります。ママ先生向け・小学校向けなどは、複製してタグと文面を変えます。"
+  },
+  {
+   "key": "video-matching",
+   "title": "紹介動画→期限つきの「マッチング権利」（動画特典）",
+   "summary": "紹介動画を最後まで見た方に、期限つきで特典を案内します。受け取ると「話してみたい先生」を選び、ZOOM教員会の日程を選べます。動画とプレビュー画像の URL を入れてから、有効にしてください。"
+  },
+  {
+   "key": "zoom-kyoinkai",
+   "title": "「#ZOOM教員会」の返事（日程のボタンつき）",
+   "summary": "リッチメニューの「ZOOM教員会」を押した方に、案内と日程のボタンを返します（「参加希望日を直接LINEに打つ」代わり）。日程は「イベント」に、キーが kyoinkai- で始まる名前で登録します。"
+  },
+  {
+   "key": "event-reminder",
+   "title": "イベントのリマインド（前日18時・1時間前）",
+   "summary": "イベントの申込から始まります。イベントの編集で「リマインドのステップ配信」に選んでください。"
+  }
+ ],
+ "genie_attributes": [
+  {
+   "name": "校種",
+   "choices": [
+    "小学校",
+    "中学校",
+    "高校",
+    "特別支援学校",
+    "その他"
+   ],
+   "question": "よろしければ、お勤めの学校の種類を教えてください。"
+  },
+  {
+   "name": "性別",
+   "choices": [
+    "女性",
+    "男性",
+    "答えない"
+   ],
+   "question": "性別を教えてください（答えなくても大丈夫です）。"
+  },
+  {
+   "name": "年代",
+   "choices": [
+    "20代以下",
+    "30代",
+    "40代",
+    "50代",
+    "60代以上"
+   ],
+   "question": "年代を教えてください。"
+  },
+  {
+   "name": "エリア",
+   "choices": [
+    "北海道・東北",
+    "関東",
+    "中部",
+    "近畿",
+    "中国・四国",
+    "九州・沖縄",
+    "海外"
+   ],
+   "question": "お住まいの地域を教えてください。"
+  },
+  {
+   "name": "役職",
+   "choices": [
+    "教諭",
+    "主幹・主任",
+    "管理職",
+    "講師",
+    "養護・栄養",
+    "学生",
+    "その他"
+   ],
+   "question": "いまのお立場を教えてください。"
+  }
+ ],
+ "defs": {
+  "genie-attributes": {
+   "attributes": [
+    {
+     "name": "校種",
+     "choices": [
+      "小学校",
+      "中学校",
+      "高校",
+      "特別支援学校",
+      "その他"
+     ],
+     "question": "よろしければ、お勤めの学校の種類を教えてください。"
+    },
+    {
+     "name": "性別",
+     "choices": [
+      "女性",
+      "男性",
+      "答えない"
+     ],
+     "question": "性別を教えてください（答えなくても大丈夫です）。"
+    },
+    {
+     "name": "年代",
+     "choices": [
+      "20代以下",
+      "30代",
+      "40代",
+      "50代",
+      "60代以上"
+     ],
+     "question": "年代を教えてください。"
+    },
+    {
+     "name": "エリア",
+     "choices": [
+      "北海道・東北",
+      "関東",
+      "中部",
+      "近畿",
+      "中国・四国",
+      "九州・沖縄",
+      "海外"
+     ],
+     "question": "お住まいの地域を教えてください。"
+    },
+    {
+     "name": "役職",
+     "choices": [
+      "教諭",
+      "主幹・主任",
+      "管理職",
+      "講師",
+      "養護・栄養",
+      "学生",
+      "その他"
+     ],
+     "question": "いまのお立場を教えてください。"
+    }
+   ],
+   "surveys": [
+    {
+     "name": "属性アンケート",
+     "enabled": false,
+     "startOnFollow": true,
+     "questions": [
+      {
+       "attribute": "校種",
+       "text": "よろしければ、お勤めの学校の種類を教えてください。",
+       "choices": [
+        "小学校",
+        "中学校",
+        "高校",
+        "特別支援学校",
+        "その他"
+       ]
+      },
+      {
+       "attribute": "性別",
+       "text": "性別を教えてください（答えなくても大丈夫です）。",
+       "choices": [
+        "女性",
+        "男性",
+        "答えない"
+       ]
+      },
+      {
+       "attribute": "年代",
+       "text": "年代を教えてください。",
+       "choices": [
+        "20代以下",
+        "30代",
+        "40代",
+        "50代",
+        "60代以上"
+       ]
+      },
+      {
+       "attribute": "エリア",
+       "text": "お住まいの地域を教えてください。",
+       "choices": [
+        "北海道・東北",
+        "関東",
+        "中部",
+        "近畿",
+        "中国・四国",
+        "九州・沖縄",
+        "海外"
+       ]
+      },
+      {
+       "attribute": "役職",
+       "text": "いまのお立場を教えてください。",
+       "choices": [
+        "教諭",
+        "主幹・主任",
+        "管理職",
+        "講師",
+        "養護・栄養",
+        "学生",
+        "その他"
+       ]
+      }
+     ],
+     "doneMessage": "ご回答ありがとうございました！\n{{display_name}}さんに合った情報を、お届けします。\n\n毎週水曜と木曜の夜21〜22時にやっている【ZOOM教員会】に1度でもご参加いただければ、\"永年無料\"でコミュニティに入れます👍\n\nキャリアや人間関係の相談など、\"職員室では出来ない話\"もできる、ざっくばらんなトーク会です😊\n顔出し任意＆お名前も変更できますので、お気軽にどうぞ！\n\n※ZOOM教員会についてのQ&A\nhttps://genie-teacher.com/guidance/",
+     "doneTag": "アンケート回答済み",
+     "doneExtra": [
+      {
+       "type": "event_picker",
+       "keyPrefix": "kyoinkai-",
+       "text": "参加したい日を、下のボタンから選んでください（カレンダーからも選べます）。",
+       "quietIfNone": true
+      }
+     ]
+    }
+   ]
+  },
+  "welcome-react": {
+   "scenarios": [
+    {
+     "name": "感想をくださった方へ",
+     "description": "「はじめての方へ」で、感想（返事）をくださった方に移る（ひな形から作成）",
+     "enabled": true,
+     "steps": [
+      {
+       "anchor": "enrolled",
+       "offsetDays": 1,
+       "atTime": "19:00",
+       "messages": [
+        "{{display_name}}さん、感想をありがとうございました！\nいただいた声は、運営みんなで読んでいます😊\n\nよかったら、ZOOM教員会で、直接お話ししませんか？\n毎週水曜と木曜の夜21〜22時にやっている【ZOOM教員会】に1度でもご参加いただければ、\"永年無料\"でコミュニティに入れます👍\n\nキャリアや人間関係の相談など、\"職員室では出来ない話\"もできる、ざっくばらんなトーク会です😊\n顔出し任意＆お名前も変更できますので、お気軽にどうぞ！\n\n※ZOOM教員会についてのQ&A\nhttps://genie-teacher.com/guidance/",
+        {
+         "type": "event_picker",
+         "keyPrefix": "kyoinkai-",
+         "text": "参加したい日を、下のボタンから選んでください（カレンダーからも選べます）。",
+         "quietIfNone": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "はじめての方へ",
+     "description": "友だち追加から3日間。返事（感想）があったら「感想をくださった方へ」に移る（ひな形から作成）",
+     "enabled": false,
+     "startOnFollow": true,
+     "stopOnReply": true,
+     "replyScenario": "感想をくださった方へ",
+     "steps": [
+      {
+       "anchor": "enrolled",
+       "offsetMinutes": 10,
+       "messages": [
+        "{{display_name}}さん、はじめまして。教員コミュニティ「ジーニー」です。\n\"職員室ではできない話\"ができる、先生どうしの居場所です。\n\nジーニーのことを、紹介動画にまとめました。見終わったら、感想を一言いただけると、とても嬉しいです😊",
+        {
+         "type": "video_offer",
+         "offer": "genie-intro"
+        }
+       ]
+      },
+      {
+       "anchor": "enrolled",
+       "offsetDays": 1,
+       "atTime": "19:00",
+       "messages": [
+        "こんばんは。ジーニーには、全国の先生が集まっています。\n「学校にいても、離れても、先生でいたい」――そんな気持ちを、気軽に話せる場所です。\n\n毎週水曜と木曜の夜21〜22時にやっている【ZOOM教員会】に1度でもご参加いただければ、\"永年無料\"でコミュニティに入れます👍\n\nキャリアや人間関係の相談など、\"職員室では出来ない話\"もできる、ざっくばらんなトーク会です😊\n顔出し任意＆お名前も変更できますので、お気軽にどうぞ！\n\n※ZOOM教員会についてのQ&A\nhttps://genie-teacher.com/guidance/",
+        {
+         "type": "event_picker",
+         "keyPrefix": "kyoinkai-",
+         "text": "参加したい日を、下のボタンから選んでください（カレンダーからも選べます）。",
+         "quietIfNone": true
+        }
+       ]
+      },
+      {
+       "anchor": "enrolled",
+       "offsetDays": 3,
+       "atTime": "19:00",
+       "messages": [
+        "（ここに、ZOOM教員会に参加した先生の声を書きます）\n\n次の教員会でも、お待ちしています。",
+        {
+         "type": "event_picker",
+         "keyPrefix": "kyoinkai-",
+         "text": "参加したい日を、下のボタンから選んでください（カレンダーからも選べます）。",
+         "quietIfNone": true
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "by-school": {
+   "attributes": [
+    {
+     "name": "校種",
+     "choices": [
+      "小学校",
+      "中学校",
+      "高校",
+      "特別支援学校",
+      "その他"
+     ],
+     "question": "よろしければ、お勤めの学校の種類を教えてください。"
+    }
+   ],
+   "scenarios": [
+    {
+     "name": "中学校の先生へ",
+     "description": "「校種:中学校」のタグが付いたら始まる。3日間のコラム→ZOOM教員会へのお誘い（ひな形から作成。ほかの校種・ママ先生向けは、複製して直す）",
+     "enabled": false,
+     "startOnTags": [
+      "校種:中学校"
+     ],
+     "steps": [
+      {
+       "anchor": "enrolled",
+       "offsetDays": 1,
+       "atTime": "19:00",
+       "messages": [
+        "中学校の先生に読まれているコラムを、3日間お届けします。\n1日目：（ここに、中学校の先生のインタビュー記事などの URL を入れます）"
+       ]
+      },
+      {
+       "anchor": "enrolled",
+       "offsetDays": 2,
+       "atTime": "19:00",
+       "messages": [
+        "2日目：（ここに、2つ目のコラムを入れます）"
+       ]
+      },
+      {
+       "anchor": "enrolled",
+       "offsetDays": 3,
+       "atTime": "19:00",
+       "messages": [
+        "3日間お読みいただき、ありがとうございました。\n「こんな先生と話してみたい」と思ったら、ZOOM教員会へどうぞ。\n\n毎週水曜と木曜の夜21〜22時にやっている【ZOOM教員会】に1度でもご参加いただければ、\"永年無料\"でコミュニティに入れます👍\n\nキャリアや人間関係の相談など、\"職員室では出来ない話\"もできる、ざっくばらんなトーク会です😊\n顔出し任意＆お名前も変更できますので、お気軽にどうぞ！\n\n※ZOOM教員会についてのQ&A\nhttps://genie-teacher.com/guidance/",
+        {
+         "type": "event_picker",
+         "keyPrefix": "kyoinkai-",
+         "text": "参加したい日を、下のボタンから選んでください（カレンダーからも選べます）。",
+         "quietIfNone": true
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "video-matching": {
+   "surveys": [
+    {
+     "name": "話してみたい先生",
+     "enabled": true,
+     "questions": [
+      {
+       "attribute": "話したい先生",
+       "text": "あなたが「話してみたい！」と思う先生は？",
+       "choices": [
+        "副業・起業している先生",
+        "教員を辞めた先生",
+        "AIを活用している先生",
+        "子育て中の先生",
+        "管理職の先生",
+        "その他"
+       ]
+      }
+     ],
+     "doneMessage": "ありがとうございます！\nご希望の先生と、ZOOM教員会でつながれるようにご案内します😊",
+     "doneTag": "マッチング希望",
+     "doneExtra": [
+      {
+       "type": "event_picker",
+       "keyPrefix": "kyoinkai-",
+       "text": "参加したい日を、下のボタンから選んでください（カレンダーからも選べます）。",
+       "quietIfNone": true
+      }
+     ]
+    }
+   ],
+   "videoOffers": [
+    {
+     "key": "genie-intro",
+     "name": "ジーニー紹介動画",
+     "enabled": false,
+     "videoUrl": "https://example.com/genie-intro.mp4",
+     "previewUrl": "https://example.com/genie-intro.jpg",
+     "deadlineHours": 72,
+     "watchedMessage": "ご視聴ありがとうございました！\n動画をご覧になった方限定で、\"話してみたい先生\"とZOOM教員会でつながれる「マッチング権利」をお渡しします。\n{{deadline}} までに、下の［特典を受け取る］を押してください。",
+     "bonusMessages": [
+      "マッチング権利をお受け取りください🎁\nあなたが話してみたい先生を、1つ選んでください。",
+      {
+       "type": "survey",
+       "survey": "話してみたい先生"
+      }
+     ],
+     "expiredMessage": "申し訳ありません。マッチング権利の受付は終了しました。\nZOOM教員会には、いつでも参加できますので、お気軽にどうぞ！",
+     "watchedTag": "動画視聴:紹介動画",
+     "claimedTag": "特典受取:マッチング権利"
+    }
+   ],
+   "rules": [
+    {
+     "name": "特典希望（動画特典を渡す）",
+     "enabled": false,
+     "trigger_type": "keyword",
+     "pattern": "#特典希望",
+     "priority": 50,
+     "actions": [
+      {
+       "type": "bonus_claim",
+       "offer": "genie-intro"
+      }
+     ]
+    }
+   ]
+  },
+  "zoom-kyoinkai": {
+   "rules": [
+    {
+     "name": "#ZOOM教員会（日程のボタンつき）",
+     "enabled": false,
+     "trigger_type": "keyword",
+     "pattern": "#ZOOM教員会",
+     "priority": 50,
+     "actions": [
+      {
+       "type": "reply",
+       "messages": [
+        "毎週水曜と木曜の夜21〜22時にやっている【ZOOM教員会】に1度でもご参加いただければ、\"永年無料\"でコミュニティに入れます👍\n\nキャリアや人間関係の相談など、\"職員室では出来ない話\"もできる、ざっくばらんなトーク会です😊\n顔出し任意＆お名前も変更できますので、お気軽にどうぞ！\n\n※ZOOM教員会についてのQ&A\nhttps://genie-teacher.com/guidance/",
+        {
+         "type": "event_picker",
+         "keyPrefix": "kyoinkai-",
+         "text": "参加したい日を、下のボタンから選んでください（カレンダーからも選べます）。",
+         "quietIfNone": false
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "event-reminder": {
+   "scenarios": [
+    {
+     "name": "イベントのリマインド",
+     "description": "申込した人への、前日18時と1時間前のお知らせ（ひな形から作成）",
+     "enabled": true,
+     "steps": [
+      {
+       "anchor": "event",
+       "offsetDays": -1,
+       "atTime": "18:00",
+       "messages": [
+        "明日は【{{event.title}}】です。\n日時：{{event.starts_at}}\n{{event.url}}"
+       ]
+      },
+      {
+       "anchor": "event",
+       "offsetDays": 0,
+       "offsetMinutes": -60,
+       "messages": [
+        "まもなく【{{event.title}}】が始まります（1時間前）。\n{{event.url}}"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

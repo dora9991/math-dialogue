@@ -1,0 +1,13 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+
+// ハブのコマンド。例：/usr/bin/php8.3 ~/hub/app/bin/hub doctor
+// （Xserver では、PHP のバージョンつきのパスで動かす。パスはサーバーパネル「サーバー情報」の「コマンドパス一覧」）
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+require __DIR__ . '/../bootstrap.php';
+exit((new Hub\Cli\Main())->run($argv));

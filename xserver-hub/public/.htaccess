@@ -1,0 +1,59 @@
+# xserver-hub：ハブの公開フォルダ（Xserver の public_html の中に置く）。Xserver は nginx の後ろで Apache が .htaccess を読む。
+#
+#   ・https だけにする（http は https へ）
+#   ・index.php と /assets/ 以外は、すべて index.php に渡す（ほかの PHP やファイルを直接開かせない）
+#   ・ドットで始まるファイル・バックアップらしいファイルは、見せない
+#   ・フォルダの中身の一覧を出さない
+#   ・安全のためのヘッダー（PHP からも付けるが、画像などの静的なファイルにも付けるため）
+
+Options -Indexes -MultiViews
+DirectoryIndex index.php
+ServerSignature Off
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # https へ
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+  # ドットで始まるもの（.git・.env など）と、置き忘れのバックアップ・設定らしいファイルは 404
+  RewriteRule (^|/)\. - [R=404,L]
+  RewriteRule \.(sql|bak|old|orig|swp|zip|tar|gz|log|ini|conf|env|json|lock|md|sh|cjs|mjs)$ - [R=404,L]
+
+  # /assets/ の実在するファイルと robots.txt は、そのまま出す
+  RewriteCond %{REQUEST_URI} /assets/
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+  RewriteRule ^robots\.txt$ - [L]
+
+  # それ以外は全部 index.php へ（index.php 以外の PHP を直接動かさない）
+  RewriteCond %{REQUEST_FILENAME} !/index\.php$
+  RewriteRule ^ index.php [L,QSA]
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "no-referrer"
+  Header always set Strict-Transport-Security "max-age=31536000"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+  Header always unset X-Powered-By
+</IfModule>
+
+# 画面の部品（js・css）は、長めに覚えさせる（URL に ?v= を付けているので、変えたらすぐ切り替わる）
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+  ExpiresByType text/javascript "access plus 7 days"
+</IfModule>
+
+# 念のため：index.php 以外の PHP を直接開かせない（mod_rewrite が無い環境でも効く）
+<FilesMatch "\.php$">
+  Require all denied
+</FilesMatch>
+<Files "index.php">
+  Require all granted
+</Files>
