@@ -375,6 +375,21 @@ async function layoutCheck(page) {
       ok((await pg.textContent('#endScore')).includes('5 − 3') && (await pg.textContent('#score0')) === '0' && (await pg.textContent('#cover')).includes('記録を終えました'), '終えたあとの札は、最後までの得点（5 − 3。上の帯は、いまの時刻までの 0 − 0）', await pg.textContent('#endScore'));
       await pg.click('#cover .btn:has-text("続きを記録する")');
       ok(!(await pg.textContent('#lastbar')).includes('時計は進んだまま'), '「続きを記録する」のお知らせ（時計の話はしない）', await pg.textContent('#lastbar'));
+      // メニューのいちばん上「🎬 記録を終えて、場面を見る・動画にする」→ 見ていた動画のまま、時刻あわせなしで切り出しの画面
+      await pg.tap('#btnMenu');
+      {
+        const first = await pg.evaluate(() => { const b = document.querySelector('.menu .mitem'); return { t: b.textContent, totrim: b.classList.contains('totrim') }; });
+        ok(first.totrim && first.t.includes('記録を終えて、場面を見る・動画にする') && first.t.includes('いま見ている動画のまま'), 'メニューのいちばん上に「🎬 記録を終えて、場面を見る・動画にする」（いま見ている動画のまま）', first);
+      }
+      await pg.click('.menu .totrim');
+      await pg.click('.sheet-foot .btn.primary');
+      await pg.waitForFunction(() => BT.trim.state && BT.trim.state.media && BT.trim.state.media.ready && document.querySelector('#tSyncOk'), null, { timeout: 15000 });
+      {
+        const r = await pg.evaluate(() => ({ view: BT.app.S.view, ended: !!BT.app.S.game.endedAt, how: BT.trim.state.st.how, name: BT.trim.state.file && BT.trim.state.file.name, n: document.querySelectorAll('#tList .tclip').length }));
+        ok(r.view === 'trim' && r.ended && r.how === 'review' && r.name === 'rv120.mp4' && r.n === 3, '記録を終えて、見ていた動画のまま場面の切り出しへ（動画を選び直さない・時刻あわせなし・場面 3 つ）', r);
+      }
+      await pg.tap('#tDone');
+      ok(await pg.evaluate(() => BT.app.S.view) === 'game', '「✓ 終わる」で試合のページへ');
       ok(P.errors.length === 0, 'ページのエラーがない', P.errors.slice(0, 3));
       await P.ctx.close();
 
