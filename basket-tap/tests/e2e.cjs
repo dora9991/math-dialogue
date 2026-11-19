@@ -121,6 +121,11 @@ const pb = (tm, no, type) => `#panel${tm} .prow[data-no="${no == null ? '' : no}
     ok(!/null|undefined/.test(await page.textContent('#lastbar')), '下の帯に「null」などの文字が出ない');
 
     console.log('\n■ スタート → 選手の行のボタンを1回押して記録');
+    {
+      await tap(page, '#btnMenu');
+      ok(!(await page.$('.menu .totrim')), 'スタート前のメニューには「試合を終えて、場面を切り出す」を出さない');
+      await page.click('.sheet-card header .x');
+    }
     await tap(page, '#btnStartBig');
     g = await game(page);
     ok(g.startedAt === T0.getTime() && g.events.length === 1 && g.events[0].type === 'period', 'スタートの時刻と「1Q 開始」');
@@ -297,6 +302,34 @@ const pb = (tm, no, type) => `#panel${tm} .prow[data-no="${no == null ? '' : no}
     await page.click('#cover button:has-text("続きを記録する")');
     ok(!(await game(page)).endedAt && !(await page.isVisible('#cover')), '「続きを記録する」で戻せる');
     ok(errors.length === 0, 'ページのエラーがない', errors.slice(0, 3));
+
+    console.log('\n■ メニューから「✂️ 試合を終えて、場面を切り出す」（記録の途中から、そのまま切り出しの画面へ）');
+    await tap(page, '#btnMenu');
+    {
+      const m = await page.evaluate(() => { const b = document.querySelectorAll('.menu .mitem'); return { first: b[0].textContent, strong: b[0].classList.contains('strong'), n: document.querySelectorAll('.menu .totrim').length }; });
+      ok(m.n === 1 && m.first.includes('試合を終えて、場面を切り出す') && m.strong, 'メニューのいちばん上に「✂️ 試合を終えて、場面を切り出す」（目立つ形）', m);
+    }
+    await shot(page, 'phone-menu-totrim');
+    await page.click('.menu .totrim');
+    ok((await page.textContent('.sheet-card header')).includes('試合を終えて、場面を切り出しますか？'), '押すと、確かめる小窓（やめる・終えて、切り出す）');
+    await page.click('.sheet-foot .btn:has-text("やめる")');
+    ok(!(await game(page)).endedAt && await page.evaluate(() => BT.app.S.view) === 'live', '「やめる」なら、記録の途中のまま');
+    await tap(page, '#btnMenu');
+    await page.click('.menu .totrim');
+    await page.click('.sheet-foot .btn.primary');
+    await page.waitForFunction(() => BT.app.S.view === 'trim' && document.querySelector('#tPick'));
+    g = await game(page);
+    ok(g.endedAt > g.startedAt && plays(g).length === n0, '試合を終えて（記録はそのまま）');
+    ok(await page.isVisible('#tPick') && !(await page.$('#askTrimYes')), 'そのまま「✂️ 場面を切り出す」の ① 動画を選ぶ（「動画のトリミングを行いますか？」は聞かない）');
+    await shot(page, 'phone-totrim');
+    await page.click('#tDone');
+    ok(await page.evaluate(() => BT.app.S.view) === 'game' && await page.isVisible('#hubReopen'), '切り出しの画面から、試合のページへ戻れる');
+    await page.evaluate(() => BT.app.go('live'));
+    await tap(page, '#btnMenu');
+    ok(!(await page.$('.menu .totrim')) && await page.$('.menu .mitem:has-text("試合のページへ")'), '終えた試合のメニューには出さない（「📄 試合のページへ」）');
+    await page.click('.menu .mitem:has-text("続きを記録する")');
+    ok(!(await game(page)).endedAt, '「続きを記録する」で、記録の途中に戻る');
+    ok(errors.length === 0, 'ページのエラーがない（試合を終えて、場面を切り出す）', errors.slice(0, 3));
 
     console.log('\n■ 設定（「？」の行・名前）');
     await tap(page, '#btnMenu');

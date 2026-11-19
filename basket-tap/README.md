@@ -183,6 +183,7 @@ select public.btap_code_revoke('XXXX-XXXX-XXXX');            -- 止める
 | チーム・背番号を直す | 試合の途中でも |
 | 設定 | 名前の表示・「？」の行・タップ音・画面の色（端末に合わせる／明るい／暗い） |
 | 書き出す | **選手ごとの集計（CSV）**、**記録の一覧（CSV）**、**記録のファイル（JSON）**＝開き直し用・ほかの端末へ渡す用。CSV は Excel でそのまま開ける形（BOM 付き UTF-8）。スマホでは「共有」（AirDrop・ファイルに保存・LINE など） |
+| ✂️ 試合を終えて、場面を切り出す | いちばん上（記録が 1 つ以上あるとき）。試合を終えて、そのまま**場面を切り出す画面**（① 動画を選ぶ）へ。動画を見ながら記録しているときは「🎬 記録を終えて、場面を見る・動画にする」（見ていた動画のまま。時刻あわせなし）。試合を終えていないと切り出しの画面には行けないので、迷わないように |
 | 試合を終える | 時計を止めて、**試合のページ**へ。「動画のトリミングを行いますか？」と聞く（まちがえて終えたら、試合のページの「▶ 続きを記録する」） |
 | 📄 試合のページへ・🏠 ホームへ | 終えたあとは試合のページ。ホームへは、記録の途中でも（記録は保存されたまま） |
 
@@ -377,7 +378,7 @@ node basket-tap/build.mjs                 # 1ファイル版を作り直す（�
 node basket-tap/tests/unit.cjs            # 回帰テスト（221件）
 node basket-tap/tests/unit-agg.cjs        # これまでの集計の計算（67件）
 node basket-tap/tests/fmp4.cjs            # MP4 の組み直し（15件。ffmpeg が必要）
-node basket-tap/tests/e2e.cjs built       # 画面を通した確認（153件・約1分）。dev で開発版
+node basket-tap/tests/e2e.cjs built       # 画面を通した確認（163件・約1分）。dev で開発版
 node basket-tap/tests/e2e-camera.cjs      # 撮影しながら記録する（86件・約1分半。先に basket-tap の build.mjs。保存した MP4 の確かめに ffprobe）
 node basket-tap/tests/e2e-review.cjs built  # 撮った動画を見ながら記録する（87件・約2分。テスト用の動画は ffmpeg、なければ Chrome で作る。60 コマ/秒・縦長の動画の確認は ffmpeg があるときだけ）
 node basket-tap/tests/e2e-shot.cjs built     # シュートの場所（67件・約1分）
