@@ -7841,7 +7841,8 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     updateLive();
     say('スタートを取り消しました', 'ok');
   }
-  async function endGame() {
+  /* then：'trim'（終えたら、そのまま ✂️ 場面を切り出す画面へ。メニューの「試合を終えて、場面を切り出す」） */
+  async function endGame(then) {
     const g = S.game;
     rvPause();
     g.endedAt = now();
@@ -7858,6 +7859,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     if (S.guarded && root.history) { S.guarded = false; S.skipPop = true; try { history.back(); } catch (e) { S.skipPop = false; } }
     // 試合のページへ。試合を見ながら記録した試合は「動画のトリミングを行いますか？」
     go('game');
+    if (then === 'trim') { openTrim({}); return; }          // 動画を見ながら記録した試合は、見ていた動画のまま（選び直さなくてよい）
     if (BT.isReview(g)) BT.ui.toast('記録を終えました。集計・場面・書き出しは、この画面からできます', 'ok', 5000);
     else if (g.events.some((e) => e.type !== 'period')) askTrim(g);
   }
@@ -9170,9 +9172,16 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
     rvPause();
     const plays = g.events.filter((e) => e.type !== 'period').length;
     const item = (icon, label, sub, fn, cls) => h('button', { class: 'mitem' + (cls ? ' ' + cls : ''), onclick: () => { s.close(); fn(); } }, h('span', { class: 'mi' }, icon), h('span', { class: 'mt' }, h('b', null, label), sub ? h('small', null, sub) : null));
+    // 記録の途中から、そのまま場面の切り出しへ（終えないと切り出しの画面に行けないので、迷わないように）
+    const toTrim = g.startedAt && !g.endedAt && plays ? (rv
+      ? item('🎬', '記録を終えて、場面を見る・動画にする', S.rv && S.rv.file ? `いま見ている動画のまま（時刻あわせなし）。あとで「続きを記録する」で戻せます` : '記録した動画を選んで、場面を見る（あとで「続きを記録する」で戻せます）',
+        () => BT.ui.confirm('記録を終えて、場面を見ますか？', '記録を終えて、場面を見る・動画にする画面を開きます。まちがえて終えたときは、試合のページの「▶ 続きを記録する」で戻せます。', '終えて、場面を見る', () => endGame('trim')), 'strong totrim')
+      : item('✂️', '試合を終えて、場面を切り出す', '試合の動画を選んで、記録した場面を切り出す（あとで「続きを記録する」で戻せます）',
+        () => BT.ui.confirm('試合を終えて、場面を切り出しますか？', (camOn() ? '録画も止めて、動画を仕上げてから、' : '時計が止まり、') + '場面を切り出す画面（① 動画を選ぶ）を開きます。まちがえて終えたときは、試合のページの「▶ 続きを記録する」で戻せます。', '終えて、切り出す', () => endGame('trim')), 'strong totrim')) : null;
     const s = BT.ui.sheet({
       title: g.startedAt ? `メニュー（${rv ? '動画 ' : ''}${BT.fmtTime(elapsed())}・${plays}件の記録）` : 'メニュー',
       body: h('div', { class: 'menu' },
+        toTrim,
         item('📋', '記録の一覧', rv ? '番号・プレー・時刻を直す、消す、その場面を見る' : '番号・プレー・時刻を直す、消す', openLog),
         rv ? item('💬', `コメントの一覧（${(g.notes || []).length}件）`, 'コメント・スタンプを見る、直す', openNotes) : null,
         item('📊', '集計', '選手ごとの得点・リバウンド・パスミスなど', openStats),
@@ -9181,8 +9190,8 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
         item('👥', 'チーム・背番号を直す', '名前・色・背番号', () => { S.setupFor = 'edit'; S.editBack = 'live'; go('setup'); }),
         item('🎛', '設定', '名前の表示・「？」の行・音・画面の色', openSettings),
         item('💾', '書き出す', '動画の切り出し用のファイル・CSV', () => openExport(g)),
-        g.startedAt && !g.endedAt ? (rv ? item('⏹', '記録を終える', '集計を見る（あとで「続きを記録する」で戻せます）', () => BT.ui.confirm('記録を終えますか？', 'まちがえて終えたときは「続きを記録する」で戻せます。', '終える', endGame))
-          : item('⏹', '試合を終える', '時計を止めて、集計を見る', () => BT.ui.confirm('試合を終えますか？', '時計が止まります。まちがえて終えたときは「続きを記録する」で戻せます。', '終える', endGame))) : null,
+        g.startedAt && !g.endedAt ? (rv ? item('⏹', '記録を終える', '集計を見る（あとで「続きを記録する」で戻せます）', () => BT.ui.confirm('記録を終えますか？', 'まちがえて終えたときは「続きを記録する」で戻せます。', '終える', () => endGame()))
+          : item('⏹', '試合を終える', '時計を止めて、集計を見る', () => BT.ui.confirm('試合を終えますか？', '時計が止まります。まちがえて終えたときは「続きを記録する」で戻せます。', '終える', () => endGame()))) : null,
         g.endedAt ? item('▶', '続きを記録する', 'まちがえて終えたとき', reopen) : null,
         g.startedAt && !plays && !rv ? item('↺', 'スタートを取り消す', 'まちがえて押したとき（記録がまだないときだけ）', () => BT.ui.confirm('スタートを取り消しますか？', '時計が 0:00 に戻ります。', '取り消す', cancelStart)) : null,
         item('❓', '使い方', null, help),
@@ -9471,6 +9480,7 @@ body.demo-on .toasts { bottom: calc(150px + env(safe-area-inset-bottom)); }
         h('ul', null,
           h('li', null, h('b', null, '🏠 ホーム'), '：どの画面にも「🏠」のボタンがあります（記録の途中は「≡ メニュー」→「🏠 ホームへ」。記録は保存されたままです）'),
           h('li', null, h('b', null, '📄 試合のページ'), '：試合を終えると開きます。ホームの「これまでの試合」を押しても開きます。集計・書き出し・場面の切り出し・記録を直す・続きを記録する、はここから'),
+          h('li', null, h('b', null, '✂️ 記録の途中から、場面の切り出しへ'), '：「≡ メニュー」のいちばん上の「✂️ 試合を終えて、場面を切り出す」（動画を見ながら記録しているときは「🎬 記録を終えて、場面を見る・動画にする」）。試合を終えていないと、場面を切り出す画面には行けません（ホームで記録の途中の試合を押すと、記録の画面に戻ります）'),
           h('li', null, h('b', null, '✂️ 場面を切り出す'), '：① 動画を選ぶ → ② 記録と動画の時刻を合わせる → ③ 場面を選んで、見る・動画にする。終わったら「✓ 終わる」で試合のページへ')),
         h('h4', null, '記録の画面'),
         h('ul', null,
