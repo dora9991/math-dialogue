@@ -79,7 +79,7 @@
   /* 同じ動画で記録した試合（ファイル名と大きさが同じ。新しいものから） */
   function findBySrc(file) {
     if (!file || !file.name) return null;
-    const hit = games().find((g) => g.src && g.src.name === file.name && (!g.src.size || !file.size || g.src.size === file.size));
+    const hit = games().find((g) => !g.demo && g.src && g.src.name === file.name && (!g.src.size || !file.size || g.src.size === file.size));
     return hit ? hit.id : null;
   }
 

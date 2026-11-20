@@ -138,7 +138,7 @@
   }
   function gotVideo(file) {
     if (S.view === 'work' && S.game) { attach(file); return; }
-    const id = SC.store.findBySrc(file);
+    const id = SC.store.findBySrc(file);          // （見本の試合は、findBySrc が外す）
     const g = id ? SC.store.loadGame(id) : null;
     if (!g) { newGameSheet(file); return; }
     const sum = BT.summary(g);
@@ -246,7 +246,7 @@
     document.body.dataset.view = 'home';
     const V = $('#view');
     V.innerHTML = '';
-    const list = SC.store.games();
+    const list = SC.store.games().filter((g) => !g.demo);          // 見本の試合（js/sc-demo.js）は、一覧に出さない
     const row = (g) => h('button', { class: 'sc-game', dataset: { id: g.id }, onclick: () => { const game = SC.store.loadGame(g.id); if (game) openGame(game, null); else { BT.ui.toast('この試合の記録が見つかりませんでした', 'err'); renderHome(); } } },
       h('span', { class: 'when' }, g.date),
       h('span', { class: 'vs' }, (g.names || [])[0], h('b', null, ` ${(g.score || [0, 0])[0]} − ${(g.score || [0, 0])[1]} `), (g.names || [])[1]),

@@ -108,6 +108,31 @@ const MODE = process.argv[2] || 'dev';
     T.ok(errors.length === 0, 'ページのエラーなし', errors);
     await ctx.close();
 
+    T.section('見本の試合（ホームの「▶ 見本の試合で試す」）');
+    {
+      // テスト用の Chromium は H.264（見本の動画）を再生できないので、同じ長さの VP9 の動画に差しかえる
+      const DEMO = await T.video('demo78.mp4', 78, '960x540');
+      const P = await T.open(browser, srv.url, { width: 390, height: 844 });
+      await P.ctx.route('**/demo/demo.mp4', (r) => r.fulfill({ status: 200, contentType: 'video/mp4', body: require('fs').readFileSync(DEMO) }));
+      T.ok(await P.page.isVisible('#scDemo') && (await P.page.textContent('#scDemo')).includes('見本の試合で試す'), 'ホームに「▶ 見本の試合で試す」');
+      await P.page.click('#scDemo');
+      await T.ready(P.page);
+      await T.sleep(300);
+      const g = await T.game(P.page);
+      T.ok(g.demo === true && g.teams[0].name === 'ブルーウィングス' && g.teams[0].players.length === 10 && g.teams[1].name === 'レッドホークス' && g.teams[1].players.length === 0, '見本の試合が開く（自分のチームの名簿つき・相手は名前だけ）');
+      T.eq(T.plays(g).map((e) => `${e.team}:${e.no}:${e.type}`), ['0:15:dreb', '0:5:fg2', '1:null:fg3', '0:15:fg2', '0:5:fg3'], '記録が入っている（自分のプレー 4 つ・相手は得点だけ 1 つ）');
+      T.ok((await P.page.textContent('#scScore')).replace(/\s+/g, '') === 'ブルーウィングス7−3レッドホークス' && await P.page.evaluate(() => SC.app.S.tab === 'tap'), '得点 7 − 3・タブは「① 記録」から');
+      T.ok((await P.page.textContent('#toasts')).includes('見本の試合です'), '「見本の試合です…② 場面・③ スタッツを押してみてください」');
+      await P.page.click('#scHome');
+      await P.page.waitForSelector('#scPick');
+      T.ok(!(await P.page.$('#scGames')), 'ホームの「これまでの試合」には出さない');
+      await P.page.click('#scDemo');
+      await T.ready(P.page);
+      T.ok(T.plays(await T.game(P.page)).length === 5, 'もう一度開くと、はじめの状態から');
+      T.ok(P.errors.length === 0, 'ページのエラーなし', P.errors);
+      await P.ctx.close();
+    }
+
     T.section('画面の大きさ');
     for (const [name, vp] of [['小さなスマホ 320×568', { width: 320, height: 568 }], ['スマホの横 844×390', { width: 844, height: 390 }], ['iPad 横 1180×820', { width: 1180, height: 820 }], ['iPad 縦 820×1180', { width: 820, height: 1180 }]]) {
       const P = await T.open(browser, srv.url, vp);
