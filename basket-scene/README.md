@@ -66,13 +66,22 @@ tests/            helpers.cjs（共通の道具）・e2e-*.cjs（Playwright の 
 
 ```bash
 node build.mjs                      # 1ファイル版を作り直す（docs/）
-node tests/e2e-shell.cjs built      # 土台（ホーム・動画・タブ・ピリオド・設定・見本の試合）
-node tests/e2e-tap.cjs built        # ① 記録
-node tests/e2e-scenes.cjs built     # ② 場面
-node tests/e2e-stats.cjs built      # ③ スタッツ・反省会の画面
-node tests/e2e-flow.cjs built       # はじめての人の流れ（動画を選ぶ → タップ → 場面 → スタッツ → 反省会）
+node tests/unit-tap.cjs             # ① 記録の、画面なしの部分（22件）
+node tests/unit-scenes.cjs          # ② 場面の、画面なしの部分（49件：場面の長さ・しぼりこみ・つなぎ方）
+node tests/unit-stats.cjs           # ③ スタッツの、画面なしの部分（62件：数字・よかったところ・画像の割りつけ）
+node tests/e2e-shell.cjs built      # 土台（51件：ホーム・動画・タブ・ピリオド・設定・見本の試合）
+node tests/e2e-tap.cjs built        # ① 記録（122件）
+node tests/e2e-scenes.cjs built     # ② 場面（103件：再生・続けて再生・動画にする・設定）
+node tests/e2e-stats.cjs built      # ③ スタッツ・反省会の画面・画像（109件）
+node tests/e2e-flow.cjs built       # はじめての人の流れ（54件：動画を選ぶ → タップ → 場面 → スタッツ → 反省会。スマホと iPad）
 node tests/server.cjs               # 開発用サーバー → http://127.0.0.1:5194/
 SHOTS=/tmp/shots node tests/e2e-flow.cjs dev   # 画面の写真も撮る
 ```
 
 テストは Playwright（`npm i -g playwright`）と、その Chromium を使います。テスト用の動画は ffmpeg で作ります（VP9。テスト用の Chromium は H.264 を再生できないため。本物の iPhone の動画は H.264 で、そのまま使えます）。
+
+## 確かめたこと・まだのこと（2026-11-21）
+
+- 上のテストは、1ファイル版（`docs/index.html`）で全部通過（Playwright の Chromium）。画面は、スマホ（320・390px）・スマホの横・iPad の縦横で、はみ出し・重なりがないことを確かめた
+- **記録のあと、タブ「② 場面」と場面の行の 2 回押すだけで、その場面が再生される**こと（小窓・動画の選び直し・時刻あわせがないこと）を `tests/e2e-flow.cjs` で確かめている
+- まだ：本物の iPhone・iPad（Safari）での確かめ。iPhone の動画（H.264・HEVC）での再生と書き出し（テスト用の Chromium は H.264 を再生できないので、VP9 の動画で確かめた。もとのアプリと同じ部品なので、同じように動くはず）。共有の画面（「画像を保存」・LINE）・印刷の紙。試合時間（止められる時計）・コメントとスタンプ・これまでの集計（何試合もまとめて）・クラウドは、このアプリには、まだ入れていない（もとの「バスケ タップ記録」にある）

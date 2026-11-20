@@ -30,6 +30,7 @@
   const SC = root.SC = root.SC || {};
   const { h, $, $$ } = BT.ui;
   SC.APP = 'バスケ シーン';
+  BS.APP = SC.APP;          // 切り出しの部品（js/lib/export.js）が、書き出す動画の終わりの札に出す名前
   SC.TAGLINE = '動画を見ながら記録 → 場面 → スタッツ';
 
   const bus = BS.emitter();
@@ -352,7 +353,7 @@
     const W = S.W;
     if (!W) return;
     TABS.forEach(([id]) => {
-      const el = W.tabs.querySelector(`[data-tab="${id}"] .bdg`);
+      const el = W.tabs.querySelector(`#scTab-${id} .bdg`);          // （W.root にも data-tab が付くので、id で選ぶ）
       let t = '';
       try { t = panels[id] && panels[id].badge ? panels[id].badge() || '' : ''; } catch (e) { t = ''; }
       el.textContent = t; el.hidden = !t;
@@ -419,7 +420,7 @@
     S.tab = id;
     TABS.forEach(([k]) => {
       W.panes[k].hidden = k !== id;
-      const b = W.tabs.querySelector(`[data-tab="${k}"]`);
+      const b = W.tabs.querySelector(`#scTab-${k}`);
       b.classList.toggle('on', k === id);
       b.setAttribute('aria-selected', k === id ? 'true' : 'false');
     });

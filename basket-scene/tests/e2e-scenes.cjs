@@ -110,7 +110,17 @@ function many(n) {
     T.ok(await page.$$eval('.sn-edit', (els) => els.length) === 8, '「細かい手直し（✎）を出す」で、行に ✎');
     await page.click('[data-snadj="e2"]');
     await page.waitForSelector('#snAdj');
-    T.ok(!(await page.$('#snAdjEdit')), '「記録を直す」は、記録のタブの SC.tap.edit がないときは出ない');
+    T.ok(await page.isVisible('#snAdjEdit'), '手直しの小窓に「記録を直す」（① 記録の SC.tap.edit があるとき）');
+    {
+      // SC.tap.edit がないとき（記録のタブなしで使うとき）は、出さない
+      await page.evaluate(() => { BT.ui.closeSheet(); window.__tapEdit = SC.tap.edit; delete SC.tap.edit; });
+      await page.click('[data-snadj="e2"]');
+      await page.waitForSelector('#snAdj');
+      T.ok(!(await page.$('#snAdjEdit')), '「記録を直す」は、SC.tap.edit がないときは出ない');
+      await page.evaluate(() => { BT.ui.closeSheet(); SC.tap.edit = window.__tapEdit; });
+      await page.click('[data-snadj="e2"]');
+      await page.waitForSelector('#snAdj');
+    }
     await page.click('#snS0m'); await page.click('#snS0m'); await page.click('#snS1p');
     let g = await T.game(page);
     T.eq(g.sceneAdj, { e2: { d0: -2, d1: 1 } }, '手直し：はじめを 2 秒前・おわりを 1 秒後 → game.sceneAdj');
@@ -235,7 +245,7 @@ function many(n) {
     await page.waitForFunction(() => parseFloat(document.querySelector('#snExpBar').style.width) > 25, null, { timeout: 20000 });
     await T.shot(page, 'scenes-export');
     await page.waitForSelector('#snExpSave', { timeout: 40000 });
-    T.ok(await page.evaluate(() => BS.APP === 'バスケ得点クリップ'), '書き出しのあと、BS.APP は もとに戻る');
+    T.ok(await page.evaluate(() => BS.APP === SC.APP && SC.APP === 'バスケ シーン'), '書き出す動画の終わりの札の名前は、このアプリの名前（BS.APP ＝ SC.APP。土台が決める）');
     const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#snExpSave')]);
     const file = await dl.path();
     const size = fs.statSync(file).size;

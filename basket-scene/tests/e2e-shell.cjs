@@ -74,6 +74,9 @@ const MODE = process.argv[2] || 'dev';
     T.ok((await page.textContent('#toasts')).includes('「② 場面」で、すぐ見られます'), '3 つ記録すると、1回だけ「記録した場面は ② 場面で、すぐ見られます」');
     await page.click('#toasts .tbtn');
     T.ok(await page.evaluate(() => SC.app.S.tab === 'scenes'), 'その「見る」で、② 場面へ');
+    await page.evaluate(() => { BT.addEvent(SC.app.S.game, { t: 33, type: 'ast', team: 0, no: '5' }); SC.app.save(); });
+    T.eq(await page.evaluate(() => ['tap', 'scenes', 'stats'].map((id) => { const b = document.querySelector(`#scTab-${id} .bdg`); return b.hidden ? '' : b.textContent; })), ['', '5', ''], '② 場面にいるあいだに記録が増えても、数字は「② 場面」のタブに出る（5）');
+    await page.evaluate(() => { const g = SC.app.S.game; BT.removeEvent(g, g.events[g.events.length - 1].id); SC.app.save(); });
     // 設定（チーム・色・データ）
     await page.click('#scSettings');
     T.ok(await page.isVisible('#scSec-team') && await page.isVisible('#scSec-theme') && await page.isVisible('#scSec-data'), '設定：チーム・背番号／画面の色／データ');
