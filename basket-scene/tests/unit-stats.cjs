@@ -46,7 +46,7 @@ ok(m1.unknown && m1.unknown.s.pts === 2 && m1.unknown.s.to === 1, '番号なし�
 const t1 = m1.total.s;
 eq([t1.pts, t1.fgm, t1.fga, t1.fg3m, t1.fg3a, t1.ftm, t1.fta, t1.reb, t1.oreb, t1.ast, t1.stl, t1.blk, t1.to, t1.foul], [12, 5, 8, 1, 2, 1, 2, 2, 1, 1, 1, 0, 2, 1], '合計（チームなしのパスミス・★ は入らない）');
 eq(m1.cols.map((c) => c.k), ['pts', 'fg2', 'fg3', 'ft', 'fg', 'reb', 'ast', 'stl', 'to', 'foul'], '列は記録のあるものだけ（ブロック・Oリバ・Dリバなし）');
-eq(m1.tiles.map((t) => [t.id, t.value, t.sub]), [['fg', '63%', '5/8（2P＋3P）'], ['fg2', '67%', '4/6'], ['fg3', '50%', '1/2'], ['ft', '50%', '1/2'], ['efg', '69%', '3P を 1.5 本として'], ['reb', '2', ''], ['ast', '1', ''], ['stl', '1', ''], ['to', '2', 'パスミスも入れて'], ['foul', '1', '']], 'タイル：FG 5/8=63%・2P 4/6=67%・eFG (4+1.5)/8=69%・…');
+eq(m1.tiles.map((t) => [t.id, t.value, t.sub]), [['fg', '63%', '5/8'], ['fg2', '67%', '4/6'], ['fg3', '50%', '1/2'], ['ft', '50%', '1/2'], ['efg', '69%', '3P を 1.5 本に'], ['reb', '2', ''], ['ast', '1', ''], ['stl', '1', ''], ['to', '2', 'パスミスも入れて'], ['foul', '1', '']], 'タイル：FG 5/8=63%・2P 4/6=67%・eFG (4+1.5)/8=69%・…');
 ok(m1.tiles.find((t) => t.id === 'efg').tabOnly && m1.tiles.filter((t) => t.tabOnly).length === 1, 'eFG% はタブだけ（反省会・画像には出さない）');
 const C = (k) => ST.COLS.find((c) => c.k === k);
 eq([ST.cellOf(C('fg2'), r7, true).text, ST.cellOf(C('fg'), r7, true).text, ST.cellOf(C('reb'), r7, true).text, ST.cellOf(C('reb'), r7, true).zero], ['2/3', '60%', '0', true], 'マス：2P「2/3」・FG%「60%」（3/5）・0 は zero');
@@ -71,7 +71,7 @@ const g3 = game(roster, [[1, 'oreb', 0, '7'], [2, 'dreb', 0, '7'], [3, 'dreb', 0
 const m3 = ST.model(g3);
 ok(m3.split, 'O/D を分けている');
 eq(m3.cols.map((c) => c.k), ['pts', 'reb', 'oreb', 'dreb', 'blk'], '列：リバ・Oリバ・Dリバ・ブロック');
-eq(m3.tiles.map((t) => [t.id, t.value, t.sub]), [['reb', '3', 'オフェンス 1・ディフェンス 2'], ['blk', '1', '']], 'タイル：リバウンド 3（オフェンス 1・ディフェンス 2）');
+eq(m3.tiles.map((t) => [t.id, t.value, t.sub]), [['reb', '3', 'Oリバ 1・Dリバ 2'], ['blk', '1', '']], 'タイル：リバウンド 3（Oリバ 1・Dリバ 2）');
 eq(ST.highlights(m3).map((x) => [x.k, x.items.map((i) => [i.no, i.v, i.rank])]), [['reb', [['7', 2, 1], ['9', 1, 2]]]], 'よかったところ：リバだけ（得点・アシストは 0 なので出さない）');
 
 section('名簿が空・番号なし・相手の得点だけ');

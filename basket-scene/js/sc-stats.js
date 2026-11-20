@@ -91,19 +91,19 @@
     const tiles = [];
     const tile = (id, label, value, sub, types, more) => tiles.push(Object.assign({ id, label, value, sub: sub || '', types }, more || {}));
     if (withA) {
-      if (t.fga > 0) tile('fg', 'シュート成功率', pctText(t.fgm, t.fga), `${t.fgm}/${t.fga}（2P＋3P）`, FG);
+      if (t.fga > 0) tile('fg', 'シュート成功率', pctText(t.fgm, t.fga), `${t.fgm}/${t.fga}`, FG);
       [['fg2', '2P'], ['fg3', '3P'], ['ft', 'フリースロー']].forEach(([k, lab]) => {
         const c = COL[k], m = t[c.shot[0]], a = t[c.shot[1]];
         if (a > 0) tile(k, lab, pctText(m, a), `${m}/${a}`, c.types);
       });
-      if (t.fga > 0 && t.fg3a > 0) tile('efg', 'eFG%', pctText(t.fg2m + 1.5 * t.fg3m, t.fga), '3P を 1.5 本として', FG, { tabOnly: true });
+      if (t.fga > 0 && t.fg3a > 0) tile('efg', 'eFG%', pctText(t.fg2m + 1.5 * t.fg3m, t.fga), '3P を 1.5 本に', FG, { tabOnly: true });
     } else {
       [['fg2', '2P'], ['fg3', '3P'], ['ft', 'フリースロー']].forEach(([k, lab]) => {
         const c = COL[k], m = t[c.shot[0]];
         if (m > 0) tile(k, lab, `${m}本`, '入った本数', [k]);
       });
     }
-    if (t.reb > 0) tile('reb', 'リバウンド', String(t.reb), split ? `オフェンス ${t.oreb}・ディフェンス ${t.dreb}` : '', COL.reb.types);
+    if (t.reb > 0) tile('reb', 'リバウンド', String(t.reb), split ? `Oリバ ${t.oreb}・Dリバ ${t.dreb}` : '', COL.reb.types);
     ['ast', 'stl', 'blk', 'to', 'foul'].forEach((k) => { const c = COL[k]; if (c.sum(t) > 0) tile(k, c.label, String(c.sum(t)), k === 'to' ? 'パスミスも入れて' : '', c.types); });
     const score = BT.score(game);
     return {
@@ -387,12 +387,15 @@
     const rcols = ST.REPORT_COLS.map((k) => COL[k]).filter((c) => c.k === 'pts' || (c.k === 'shot' ? m.total.s.fga > 0 : colHas(c, m.total.s, m.withA, m.split)));
     const extra = m.cols.filter((c) => !ST.REPORT_COLS.includes(c.k) && c.k !== 'pts');
     const cols = more ? rcols.concat(extra) : rcols;
-    const colHead = (c) => (c.k === 'shot' ? (m.withA ? 'シュート（成功/本数）' : 'シュート（入った本数）') : c.k === 'to' ? 'ターンオーバー' : c.k === 'reb' ? 'リバウンド' : c.short);
+    /* 見出し：広い画面では長い名前、せまい画面（スマホ）では短い名前（css の .st-wide・.st-narrow） */
+    const FULL = { shot: m.withA ? 'シュート（成功/本数）' : 'シュート（入った本数）', to: 'ターンオーバー', reb: 'リバウンド' };
+    const SHORT = { shot: m.withA ? 'シュート' : 'シュート', to: 'TO', reb: 'リバ' };
+    const colHead = (c) => (FULL[c.k] ? [h('span', { class: 'st-wide' }, FULL[c.k]), h('span', { class: 'st-narrow', 'aria-hidden': 'true' }, SHORT[c.k])] : c.short);
     const line = (row) => h('tr', { class: 'st-' + row.kind, dataset: { no: row.kind === 'p' ? row.no : row.kind === 'u' ? '?' : '*' } },
       h('td', { class: 'st-c-no' }, row.kind === 'p' ? h('b', { class: 'st-jersey' }, row.no) : row.kind === 'u' ? '—' : ''),
       h('td', { class: 'st-c-nm' }, row.kind === 'p' ? row.name || '' : row.kind === 'u' ? '番号なし' : '合計'),
       cols.map((c) => { const v = cellOf(c, row.s, m.withA); return h('td', { class: 'st-c-v' + (v.zero ? ' st-zero' : ''), dataset: { col: c.k } }, v.text); }),
-      h('td', { class: 'st-c-go st-noprint' }, h('button', { class: 'st-rgo', dataset: { jumprow: '1' }, 'aria-label': `${whoOf(m, row)} の場面を見る`, onclick: () => go(ST.rowJump(m, row)) }, play())));
+      h('td', { class: 'st-c-go st-noprint' }, h('button', { class: 'st-rgo', dataset: { jumprow: '1' }, 'aria-label': `${whoOf(m, row)} の場面を見る`, onclick: () => go(ST.rowJump(m, row)) }, h('span', { class: 'st-play' }, '▶', h('span', { class: 'st-wide' }, ' 場面を見る')))));
     rep.append(
       h('header', { class: 'st-rbar st-noprint' },
         h('b', { class: 'st-rtitle' }, '📺 反省会'),
@@ -420,9 +423,9 @@
               h('b', { class: 'st-jersey' }, it.no), h('span', { class: 'st-hlname' }, it.name || ''), h('b', { class: 'st-hlv' }, String(it.v), hl.unit ? h('small', null, hl.unit) : null), h('span', { class: 'st-go st-noprint', 'aria-hidden': 'true' }, '▶'))))))))) : null,
         !m.empty ? h('section', { class: 'st-rsec', id: 'stRPlayers' }, h('h2', null, '選手', extra.length ? h('button', { class: 'st-rbtn st-more st-noprint', id: 'stMore', 'aria-pressed': more ? 'true' : 'false', onclick: () => { more = !more; drawReport(); } }, more ? 'たたむ' : 'くわしく') : null),
           h('div', { class: 'st-rtblwrap' }, h('table', { class: 'st-rtbl', id: 'stRTable' },
-            h('thead', null, h('tr', null, h('th', { class: 'st-c-no' }, '#'), h('th', { class: 'st-c-nm' }, '名前'), cols.map((c) => h('th', { class: 'st-c-v', dataset: { col: c.k } }, colHead(c))), h('th', { class: 'st-c-go st-noprint' }, ''))),
+            h('thead', null, h('tr', null, h('th', { class: 'st-c-no' }, '#'), h('th', { class: 'st-c-nm' }, '名前'), cols.map((c) => h('th', { class: 'st-c-v', dataset: { col: c.k }, title: FULL[c.k] || c.label }, colHead(c))), h('th', { class: 'st-c-go st-noprint' }, ''))),
             h('tbody', null, ST.sortRows(m, 'no', 1).map(line), m.unknown ? line(m.unknown) : null, line(m.total)))),
-          h('p', { class: 'st-rnote' }, '背番号の順。' + (m.withA ? '' : 'シュートは、入った本数。') + (cols.some((c) => c.k === 'to') ? 'ターンオーバーは、パスミスも入れて。' : ''))) : null,
+          h('p', { class: 'st-rnote' }, '背番号の順。シュートは 2P＋3P' + (m.withA ? '（成功/本数）。' : '（入った本数）。') + (cols.some((c) => c.k === 'to') ? 'ターンオーバーは、パスミスも入れて。' : ''))) : null,
         m.located ? h('section', { class: 'st-rsec', id: 'stRShots' }, h('h2', null, 'シュートの場所'), shotView(g, null, { table: 'stRZones', note: 'stRShotNote' })) : null,
         h('footer', { class: 'st-rfoot' }, SC.APP || 'バスケ シーン')));
     rep.scrollTop = keep;

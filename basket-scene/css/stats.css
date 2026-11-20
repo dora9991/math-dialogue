@@ -47,14 +47,14 @@
 .st-per tr.st-opp .st-sum { color: var(--text); }
 
 /* チームの数字 */
-.st-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
-.st-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 0; min-width: 0; text-align: left; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 22px 8px 10px; color: var(--text); }
+.st-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 8px; }
+.st-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 0; min-width: 0; text-align: left; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px 8px 10px; color: var(--text); }
 .st-tile:active { transform: scale(0.98); }
-.st-tl { font-size: 12.5px; font-weight: 700; color: var(--muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-tl { font-size: 12.5px; font-weight: 700; color: var(--muted); max-width: 100%; line-height: 1.3; }
 .st-tv { font-size: 24px; font-weight: 900; line-height: 1.2; font-variant-numeric: tabular-nums; }
-.st-ts { font-size: 11.5px; color: var(--muted); line-height: 1.3; }
+.st-ts { font-size: 11.5px; color: var(--muted); line-height: 1.3; padding-right: 12px; }
 .st-go { font-style: normal; color: var(--accent); font-size: 10px; }
-.st-tile > .st-go { position: absolute; right: 8px; top: 9px; }
+.st-tile > .st-go { position: absolute; right: 8px; bottom: 8px; }
 
 /* 選手の表（横にすべる。背番号と名前は、すべっても見える） */
 .st-tblwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -12px; padding: 0 12px; }
@@ -90,7 +90,9 @@
 .st-zones thead th { color: var(--muted); font-size: 12px; }
 .st-zones tbody th { font-weight: 600; }
 .st-zones tr.st-t th, .st-zones tr.st-t td { font-weight: 900; border-top: 2px solid var(--line2); }
-@media (min-width: 640px) { .st-shotgrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+/* 2列にするのは、タブの中身が広いときだけ（スマホの横では、タブは右の 370 px くらい） */
+.st-tab { container-type: inline-size; }
+@container (min-width: 560px) { .st-tab .st-shotgrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
 
 /* ボタン */
 .st-actions { display: flex; flex-direction: column; gap: 8px; padding: 4px 0 8px; }
@@ -126,23 +128,24 @@
 .st-rbtn { min-height: 40px; min-width: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid #475569; background: #1e293b; color: #fff; font-size: 15px; font-weight: 700; white-space: nowrap; }
 .st-rbtn.on { background: #facc15; border-color: #facc15; color: #111827; }
 .st-rclose { background: #fff; color: #0b1220; border-color: #fff; }
-@media (max-width: 560px) { .st-wide { display: none; } .st-rtitle { display: none; } }
+.st-narrow { display: none; }
+@media (max-width: 560px) { .st-wide { display: none; } .st-narrow { display: inline; } .st-rtitle { display: none; } }
 .st-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 .st-rmain { max-width: 1560px; margin: 0 auto; padding: 0.9em max(16px, 1.4em) calc(1.6em + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 1.3em; }
 .st-rsec h2 { display: flex; align-items: center; gap: 0.6em; margin: 0 0 0.5em; font-size: 1.3em; font-weight: 900; border-bottom: 0.12em solid var(--r-ink); padding-bottom: 0.15em; }
 .st-rdate { margin: 0; text-align: center; font-size: 1.05em; font-weight: 700; color: var(--r-muted); }
-.st-rscore { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 0.4em 0.8em; margin: 0.2em 0 0.5em; }
+.st-rscore { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 0.4em 0.5em; margin: 0.2em 0 0.5em; }
 .st-rteam { display: flex; flex-direction: column; align-items: center; min-width: 0; }
 .st-rname { display: flex; align-items: center; gap: 0.35em; max-width: 100%; font-size: 1.45em; font-weight: 900; }
 .st-rname > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st-rname .st-dot { width: 0.7em; height: 0.7em; }
 .st-rteam.st-opp .st-rname { color: var(--r-muted); font-weight: 800; }
-.st-rnum { font-size: 5.6em; line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-.st-rdash { font-size: 3.6em; line-height: 1.2; font-weight: 900; color: var(--r-muted); padding-bottom: 0.08em; }
+.st-rnum { font-size: min(5.6em, 18vw); line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.st-rdash { font-size: min(3.6em, 10vw); line-height: 1.2; font-weight: 900; color: var(--r-muted); padding-bottom: 0.08em; }
 .st-report .st-perwrap { margin-top: 0; }
 .st-rper { font-size: 1.15em; }
-.st-rper th, .st-rper td { padding: 0.25em 0.75em; border-bottom: 0.08em solid var(--r-line); }
+.st-rper th, .st-rper td { padding: 0.25em 0.75em; border-bottom: 1px solid var(--r-line); }
 .st-rper thead th { color: var(--r-muted); font-size: 0.85em; }
 .st-rper tbody th span { max-width: 9em; }
 .st-rper tr.st-opp, .st-rper tr.st-opp th { color: var(--r-muted); }
@@ -174,7 +177,7 @@
 .st-more[aria-pressed="true"] { background: var(--r-ink); color: #fff; }
 .st-rtblwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .st-rtbl { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 1.1em; font-variant-numeric: tabular-nums; }
-.st-rtbl th, .st-rtbl td { padding: 0.3em 0.55em; text-align: center; white-space: nowrap; border-bottom: 0.06em solid var(--r-line); }
+.st-rtbl th, .st-rtbl td { padding: 0.3em 0.55em; text-align: center; white-space: nowrap; border-bottom: 1px solid var(--r-line); }
 .st-rtbl thead th { background: var(--r-ink); color: #fff; font-size: 0.75em; font-weight: 800; padding: 0.55em 0.6em; }
 .st-rtbl thead th:first-child { border-radius: 0.4em 0 0 0; }
 .st-rtbl thead th:last-child { border-radius: 0 0.4em 0 0; }
@@ -184,9 +187,9 @@
 .st-rtbl .st-c-no { left: 0; width: 3em; min-width: 3em; }
 .st-rtbl .st-c-nm { left: 3em; text-align: left; font-weight: 800; max-width: 9em; overflow: hidden; text-overflow: ellipsis; }
 .st-rtbl .st-c-v { font-weight: 800; }
-.st-rtbl td[data-col="pts"] { font-size: 1.2em; font-weight: 900; }
+.st-rtbl td[data-col="pts"] { font-weight: 900; }
 .st-rtbl .st-zero { color: #8a96ab; opacity: 1; font-weight: 500; }
-.st-rtbl tr.st-t td { border-top: 0.12em solid var(--r-ink); background: #e2e8f0 !important; font-weight: 900; }
+.st-rtbl tr.st-t td { border-top: 3px solid var(--r-ink); background: #e2e8f0 !important; font-weight: 900; }
 .st-rtbl tr.st-u .st-c-nm { color: var(--r-muted); }
 .st-rtbl .st-c-go { padding: 0.15em 0.3em; text-align: right; }
 .st-rgo { min-height: 2.1em; padding: 0 0.7em; border-radius: 0.4em; border: 0.06em solid var(--r-line); background: #fff; color: var(--r-acc); font-size: 0.75em; }
@@ -214,4 +217,13 @@
   .st-rtblwrap { overflow: visible; }
   .st-rtbl .st-c-no, .st-rtbl .st-c-nm { position: static; }
   .st-report * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* スマホのたて：反省会の表を少しつめる（それでも入らなければ、表だけが横にすべる。背番号と名前は止まったまま） */
+@media (max-width: 560px) {
+  .st-rtbl { font-size: 1em; }
+  .st-rtbl th, .st-rtbl td { padding: 0.3em 0.3em; }
+  .st-rtbl .st-c-no { width: 2.6em; min-width: 2.6em; }
+  .st-rtbl .st-c-nm { left: 2.6em; max-width: 5.2em; }
+  .st-rmain { padding-left: 12px; padding-right: 12px; }
 }
