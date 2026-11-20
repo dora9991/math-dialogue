@@ -1,5 +1,10 @@
 /* バスケ シーン — タブ「② 場面」（js/sc-scenes.js）。クラスは、どれも sn- で始まる */
-.sn-wrap { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.sn-wrap { display: flex; flex-direction: column; gap: 8px; min-width: 0; container-type: inline-size; }
+/* 広いとき（iPad・パソコン）：しぼりこみのボタンは、すべらせずに 折り返して全部見せる */
+@container (min-width: 640px) {
+  .sn-chips { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+  .sn-chips::after { display: none; }
+}
 
 /* ---------- 記録がまだないとき ---------- */
 .sn-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 28px 16px; color: var(--muted); }
@@ -10,9 +15,9 @@
 
 /* ---------- 動画がないとき・しぼりこみのバー ---------- */
 .sn-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; background: var(--warn-soft); border: 1px solid var(--warn); border-radius: 12px; padding: 8px 10px; }
-.sn-banner p { margin: 0; flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; }
-.sn-banner .note { flex-basis: 100%; order: 3; }
-.sn-banner .btn { flex: none; }
+.sn-banner p { margin: 0; flex: 1 1 auto; min-width: 0; }
+.sn-banner .btn { flex: none; min-height: 44px; }
+@container (max-width: 520px) { .sn-banner p { flex-basis: 100%; } .sn-banner .btn { flex: 1 1 auto; } }
 .sn-fbar { display: flex; align-items: center; gap: 8px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 12px; padding: 4px 4px 4px 10px; min-width: 0; }
 .sn-ftitle { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
 .sn-fbar .btn { flex: none; min-height: 40px; }
@@ -124,5 +129,4 @@
 @media (max-height: 460px) {
   .sn-wrap { gap: 6px; }
   .sn-big { min-height: 42px; }
-  .sn-play { min-height: 44px; }
 }

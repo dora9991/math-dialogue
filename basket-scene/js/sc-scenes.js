@@ -224,7 +224,6 @@
     if (!vid) {
       wrap.append(h('div', { class: 'sn-banner', id: 'snBanner' },
         h('p', null, h('b', null, '🎬 動画を選ぶと、場面を見られます')),
-        g.src && g.src.name ? h('p', { class: 'note' }, `記録した動画：${g.src.name}`) : null,
         h('button', { class: 'btn primary', id: 'snPickVideo', onclick: () => A.pickVideo() }, '🎬 動画を選ぶ')));
     }
     if (st.title) {
@@ -302,7 +301,7 @@
     });
     if (E.playAll) {
       const reel = !!(P && P.mode === 'reel');
-      E.playAll.textContent = reel ? '■ 止める' : '▶ 続けて再生';
+      E.playAll.textContent = reel ? '■ やめる' : '▶ 続けて再生';
       E.playAll.classList.toggle('stop', reel);
     }
     const bar = E.reelBar;
