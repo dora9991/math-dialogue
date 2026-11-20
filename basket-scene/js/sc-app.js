@@ -21,7 +21,9 @@
      SC.app.settings(def)         設定の節を登録する：{ id, title, order, render(box, redraw) }（redraw()：設定の小窓を描き直す）
      SC.app.openSettings(id)      設定を開く（id の節まで動かす）
      SC.app.pickVideo()           動画を選んでもらう（作業の画面では、いまの試合につなぐ）
-     SC.app.wide()                横に並べる広い画面か（動画が左・タブが右） */
+     SC.app.wide()                横に並べる広い画面か（動画が左・タブが右）
+     SC.app.S.overlay             画面いっぱいに重ねた画面（反省会の画面など）を開いているあいだ、その「閉じる」関数を入れておく（閉じたら null）。
+                                  ブラウザの「戻る」で、ホームへ行かずに、それを閉じる */
 (function (root) {
   'use strict';
   const BT = root.BT, BS = root.BS;
@@ -31,7 +33,7 @@
   SC.TAGLINE = '動画を見ながら記録 → 場面 → スタッツ';
 
   const bus = BS.emitter();
-  const S = { view: 'home', game: null, prefs: SC.store.prefs(), media: null, file: null, tab: 'tap', W: null, guarded: false };
+  const S = { view: 'home', game: null, prefs: SC.store.prefs(), media: null, file: null, tab: 'tap', W: null, guarded: false, overlay: null };
   const panels = {};
   const sections = [];
   const TABS = [['tap', '①', '記録'], ['scenes', '②', '場面'], ['stats', '③', 'スタッツ']];
@@ -506,6 +508,7 @@
       if (S.skipPop) { S.skipPop = false; return; }
       S.guarded = false;
       if (BT.ui.sheetOpen()) { BT.ui.closeSheet(); if (S.view === 'work') guard(); return; }
+      if (S.overlay) { const f = S.overlay; S.overlay = null; try { f(); } catch (e) { /* 無視 */ } if (S.view === 'work') guard(); return; }
       if (S.view === 'work') goHome();
     });
     document.addEventListener('keydown', (e) => {

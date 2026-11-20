@@ -168,7 +168,7 @@ const toStats = async (page) => { await page.click('#scTab-stats'); await page.w
     const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#stCsv')]);
     const csvPath = path.join(T.WORK, 'stats-' + MODE + '.csv');
     await dl.saveAs(csvPath);
-    const want = await page.evaluate(() => '﻿' + BT.boxCSV(SC.app.S.game));
+    const want = await page.evaluate(() => '\ufeff' + BT.boxCSV(SC.app.S.game));
     T.ok(fs.readFileSync(csvPath, 'utf8') === want && dl.suggestedFilename().endsWith('_スタッツ.csv'), `CSV ＝ BOM ＋ BT.boxCSV（${dl.suggestedFilename()}）`);
     const img = await page.evaluate(async () => { const b = await SC.stats.image(); const bm = await createImageBitmap(b); return [b.type, bm.width, bm.height, b.size]; });
     T.ok(img[0] === 'image/png' && img[1] === 1600 && img[2] > 900 && img[2] < 2600 && img[3] > 20000, `画像：PNG・幅 1600・高さ ${img[2]}`, img);

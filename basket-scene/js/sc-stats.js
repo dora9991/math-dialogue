@@ -363,6 +363,7 @@
       document.body.append(rep);
       document.body.classList.add('st-rep-on');
       app.pause();
+      app.S.overlay = closeReport;          // ブラウザの「戻る」で、ホームへ行かずに、この画面を閉じる（土台の約束）
     }
     drawReport();
     rep.scrollTop = 0;
@@ -372,6 +373,7 @@
     if (!rep) return;
     rep.remove();
     rep = null;
+    if (app.S.overlay === closeReport) app.S.overlay = null;
     document.body.classList.remove('st-rep-on');
   }
   function drawReport() {
@@ -541,7 +543,7 @@
       return r;
     } catch (e) { BT.ui.toast('画像を作れませんでした：' + ((e && e.message) || e), 'err', 6000); return null; } finally { busy = false; }
   }
-  const csv = () => '﻿' + BT.boxCSV(app.S.game);
+  const csv = () => '\ufeff' + BT.boxCSV(app.S.game);
   async function saveCSV() {
     const g = app.S.game;
     if (!g) return null;
