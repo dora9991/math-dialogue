@@ -16,14 +16,13 @@
 .tp-low .tp-opprow, .tp-low .tp-more { grid-column: auto; }
 
 /* いまの状態 */
-.tp-hint { display: flex; align-items: center; gap: 6px; margin: 0; min-height: 26px; padding: 0 8px; border-radius: 8px; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; }
+.tp-hint { display: flex; align-items: center; gap: 6px; margin: 0; min-height: 40px; padding: 0 8px; border-radius: 8px; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; }
 .tp-hint b { color: var(--text); flex: none; max-width: 40%; overflow: hidden; text-overflow: ellipsis; }
 .tp-hint > span { overflow: hidden; text-overflow: ellipsis; }
-.tp-hint.tp-on { background: var(--warn-soft); color: var(--text); font-size: 15px; font-weight: 700; }
+.tp-hint.tp-on { padding-right: 2px; background: var(--warn-soft); color: var(--text); font-size: 15px; font-weight: 700; }
 .tp-hint.tp-on b { font-size: 16px; font-weight: 900; }
 .tp-ht { color: var(--muted); font-weight: 400; font-size: 12px; font-variant-numeric: tabular-nums; }
-.tp-cancel { margin-left: auto; flex: none; min-height: 26px; padding: 0 10px; border: 1px solid var(--line2); border-radius: 13px; background: var(--panel); font-size: 13px; font-weight: 700; color: var(--text); }
-.tp-low .tp-hint { min-height: 22px; }
+.tp-cancel { margin-left: auto; flex: none; min-height: 40px; padding: 0 12px; border: 1px solid var(--line2); border-radius: 20px; background: var(--panel); font-size: 13px; font-weight: 700; color: var(--text); }
 
 /* プレーのボタン */
 .tp-plays, .tp-nos { display: flex; flex-direction: column; gap: var(--tp-gap); border-radius: 12px; transition: background 0.15s, box-shadow 0.15s; }
@@ -69,10 +68,12 @@
 .tp-low .tp-more > button { flex: 0 0 auto; width: 46px; height: 40px; font-size: 17px; padding: 0; }
 .tp-low .tp-full { display: none; }
 .tp-low .tp-more { justify-content: flex-end; }
-.tp-low .tp-hint { min-height: 20px; }
-.tp-low .tp-cancel { min-height: 20px; }
+.tp-low .tp-hint:not(.tp-on) { display: none; }
+.tp-low .tp-hint { flex: 1 1 auto; min-width: 0; min-height: 40px; font-size: 14px; padding-right: 0; }
+.tp-low.tp-picking .tp-lastmain, .tp-low.tp-picking .tp-lb { display: none; }
+.tp-low .tp-cancel { min-height: 40px; }
 .tp-low .tp-last { padding: 2px; }
-.tp-low .tp-lb, .tp-low .tp-lastmain { min-height: 38px; }
+.tp-low .tp-lb, .tp-low .tp-lastmain { min-height: 40px; }
 
 /* いちばん新しい記録（下に止まる） */
 .tp-last { position: sticky; bottom: 0; z-index: 2; margin-top: auto; display: flex; align-items: stretch; gap: 4px; padding: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06); }
@@ -108,7 +109,7 @@
 .tp-egrid.tp-e3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .tp-egrid.tp-etypes { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); }
 .tp-ebtn { min-height: 44px; font-size: 17px; font-weight: 800; padding: 0; }
-.tp-etypes .tp-pt { height: 44px; }
+.tp-etypes .tp-pt { height: 44px; white-space: normal; line-height: 1.1; }
 .tp-etypes .tp-pt b { font-size: 14px; }
 .tp-etypes .tp-pt:not(.tp-k-fg2):not(.tp-k-fg3):not(.tp-k-ft):not(.tp-k-fg2x):not(.tp-k-fg3x):not(.tp-k-ftx) b { font-size: 13px; }
 .tp-time { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto repeat(3, minmax(0, 1fr)); gap: 4px; align-items: center; }

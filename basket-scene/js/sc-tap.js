@@ -218,7 +218,7 @@
         box.append(sec('背番号', h('div', { class: 'tp-egrid tp-enos' }, list.map(([no, l]) => h('button', { class: 'btn tp-ebtn' + (e.no === no ? ' on' : ''), dataset: { eno: no == null ? '' : no }, 'aria-pressed': e.no === no ? 'true' : 'false', onclick: () => { e.no = no; changed(); } }, l)))));
         const types = plays(S.prefs.rec);
         if (!types.includes(e.type)) types.push(e.type);
-        box.append(sec('プレー', h('div', { class: 'tp-egrid tp-etypes' }, types.map((ty) => h('button', { class: 'tp-pt tp-k-' + ty + (e.type === ty ? ' tp-sel' : ''), dataset: { etype: ty }, 'aria-pressed': e.type === ty ? 'true' : 'false', 'aria-label': (LAB[ty] || [])[2] || what({ type: ty }), onclick: () => { e.type = ty; if (!BT.isLocShot(ty)) { delete e.x; delete e.y; } changed(); } }, h('b', null, lab(ty)))))));
+        box.append(sec('プレー', h('div', { class: 'tp-egrid tp-etypes' }, types.map((ty) => h('button', { class: 'tp-pt tp-k-' + ty + (BT.TYPE[ty].made === false ? ' tp-miss' : '') + (e.type === ty ? ' tp-sel' : ''), dataset: { etype: ty }, 'aria-pressed': e.type === ty ? 'true' : 'false', 'aria-label': (LAB[ty] || [])[2] || what({ type: ty }), onclick: () => { e.type = ty; if (!BT.isLocShot(ty)) { delete e.x; delete e.y; } changed(); } }, ty === 'tov' ? h('b', null, 'ターン', h('br'), 'オーバー') : h('b', null, lab(ty)))))));
       }
       const nb = (d) => h('button', { class: 'btn tp-nudge', dataset: { nudge: String(d) }, onclick: () => nudge(d) }, (d > 0 ? '+' : '−') + Math.abs(d));
       box.append(sec('時刻（動画の時刻）',
@@ -291,7 +291,7 @@
       roster.map((no) => numBtn(no, no, '#' + no + (BT.playerName(g, 0, no) ? ' ' + BT.playerName(g, 0, no) : ''))),
       numBtn(null, roster.length ? '？' : 'チーム', roster.length ? '番号が分からない（？）' : 'チーム（背番号なし）'));
     W.opp = h('div', { class: 'tp-opprow', id: 'tpOpp', role: 'group', 'aria-label': '相手の得点' },
-      h('span', { class: 'tp-opplab' }, h('i', { class: 'chip', style: { background: g.teams[1].color } }), h('span', null, BT.teamName(g, 1) + 'の得点')),
+      h('span', { class: 'tp-opplab' }, h('i', { class: 'chip', style: { background: g.teams[1].color } }), h('span', null, BT.teamName(g, 1), h('span', { class: 'tp-full' }, 'の得点'))),
       [1, 2, 3].map((p) => h('button', { class: 'tp-op', dataset: { opp: p }, 'aria-label': `${BT.teamName(g, 1)}の得点 +${p}`, onclick: () => tapOpp(p) }, '+' + p)));
     W.more = h('div', { class: 'tp-more' },
       rec.mark !== false ? h('button', { class: 'tp-mark', id: 'tpMark', 'aria-label': '★ あとで見る（いまの場面に印）', title: '★ あとで見る', onclick: tapMark }, '★', h('span', { class: 'tp-full' }, ' あとで見る')) : null,
@@ -317,7 +317,11 @@
     const w = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     const H = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
     const R = P.root;
-    R.classList.toggle('tp-low', H < 330);
+    const low = H < 330;
+    R.classList.toggle('tp-low', low);
+    // 低い画面（スマホの横）：選びかけは、下の帯の中に出す（上の1行ぶんを、ボタンに回す）
+    if (low && W.hint.parentNode !== W.last) W.last.prepend(W.hint);
+    else if (!low && W.hint.parentNode !== W.in) W.in.prepend(W.hint);
     const gap = H < 330 ? 4 : 6;
     R.style.setProperty('--tp-gap', gap + 'px');
     const n = W.nos.children.length;
@@ -343,6 +347,7 @@
     const pk = P.pick;
     W.hint.innerHTML = '';
     W.hint.classList.toggle('tp-on', !!pk);
+    P.root.classList.toggle('tp-picking', !!pk);
     if (!pk) {
       W.hint.append(h('i', { class: 'chip', style: { background: g.teams[0].color } }), h('b', null, BT.teamName(g, 0)),
         h('span', null, hasNo(g) ? 'プレーと背番号をタップ（どちらが先でも）' : 'プレー → 「チーム」をタップ'));
@@ -395,7 +400,7 @@
   /* ---------- 設定 ---------- */
   const REC = [
     ['miss', 'シュートの失敗（2P×・3P×・FT×）', '成功率が出ます'],
-    ['reb', 'リバウンド', ''],
+    ['reb', 'リバウンド', '外れたシュートのボールを取った'],
     ['ast', 'アシスト', '得点につながったパス'],
     ['stl', 'スティール', '相手のボールをうばった'],
     ['blk', 'ブロック', '相手のシュートを止めた'],
