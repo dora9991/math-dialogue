@@ -69,11 +69,11 @@ node build.mjs                      # 1ファイル版を作り直す（docs/）
 node tests/unit-tap.cjs             # ① 記録の、画面なしの部分（22件）
 node tests/unit-scenes.cjs          # ② 場面の、画面なしの部分（49件：場面の長さ・しぼりこみ・つなぎ方）
 node tests/unit-stats.cjs           # ③ スタッツの、画面なしの部分（62件：数字・よかったところ・画像の割りつけ）
-node tests/e2e-shell.cjs built      # 土台（51件：ホーム・動画・タブ・ピリオド・設定・見本の試合）
+node tests/e2e-shell.cjs built      # 土台（52件：ホーム・動画・タブ・ピリオド・設定・見本の試合）
 node tests/e2e-tap.cjs built        # ① 記録（122件）
 node tests/e2e-scenes.cjs built     # ② 場面（103件：再生・続けて再生・動画にする・設定）
 node tests/e2e-stats.cjs built      # ③ スタッツ・反省会の画面・画像（109件）
-node tests/e2e-flow.cjs built       # はじめての人の流れ（54件：動画を選ぶ → タップ → 場面 → スタッツ → 反省会。スマホと iPad）
+node tests/e2e-flow.cjs built       # はじめての人の流れ（56件：動画を選ぶ → タップ → 場面 → スタッツ → 反省会。スマホと iPad）
 node tests/server.cjs               # 開発用サーバー → http://127.0.0.1:5194/
 SHOTS=/tmp/shots node tests/e2e-flow.cjs dev   # 画面の写真も撮る
 ```

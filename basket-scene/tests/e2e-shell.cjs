@@ -72,6 +72,8 @@ const MODE = process.argv[2] || 'dev';
     T.ok((await page.textContent('#scScore')).replace(/\s+/g, '') === 'ミライ5−2ヒガシ', '記録すると、上の帯の得点が変わる（5 − 2）');
     T.eq(await page.evaluate(() => [document.querySelectorAll('.sc-seek .marks i.me').length, document.querySelectorAll('.sc-seek .marks i.opp').length]), [3, 1], '位置のバーに、記録の印（自分 3・相手 1）');
     T.ok((await page.textContent('#toasts')).includes('「② 場面」で、すぐ見られます'), '3 つ記録すると、1回だけ「記録した場面は ② 場面で、すぐ見られます」');
+    const tb = await page.$eval('#toasts .tbtn', (e) => { const c = getComputedStyle(e), r = e.getBoundingClientRect(); return { bg: c.backgroundColor, fg: c.color, h: r.height, w: r.width }; });
+    T.ok(tb.bg === 'rgb(255, 255, 255)' && tb.fg === 'rgb(17, 24, 39)' && tb.h >= 36 && tb.w >= 44, 'お知らせの「見る」は、暗い帯の上で はっきり読める（白地に濃い字・押しやすい大きさ）');
     await page.click('#toasts .tbtn');
     T.ok(await page.evaluate(() => SC.app.S.tab === 'scenes'), 'その「見る」で、② 場面へ');
     await page.evaluate(() => { BT.addEvent(SC.app.S.game, { t: 33, type: 'ast', team: 0, no: '5' }); SC.app.save(); });

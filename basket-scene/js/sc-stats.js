@@ -363,6 +363,7 @@
       document.body.append(rep);
       document.body.classList.add('st-rep-on');
       app.pause();
+      const tb = document.querySelector('#toasts'); if (tb) tb.textContent = '';      // 前のお知らせ（「保存しました」など）を、みんなで見る画面に残さない
       app.S.overlay = closeReport;          // ブラウザの「戻る」で、ホームへ行かずに、この画面を閉じる（土台の約束）
     }
     drawReport();

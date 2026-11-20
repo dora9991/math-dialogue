@@ -100,5 +100,8 @@ body[data-view="work"] { overflow: hidden; }
 .sc-names input { flex: 1; min-width: 0; min-height: 38px; background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 4px 8px; font-size: 15px; }
 .sc-colors .sw { width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgba(128, 128, 128, 0.6); padding: 0; }
 .sc-colors .sw.on { box-shadow: 0 0 0 3px var(--accent); }
+/* お知らせの帯の中のボタン（「見る」など。暗い帯の上で、はっきり読める白） */
+.toast .tbtn { flex: none; min-height: 38px; padding: 6px 16px; border: 0; border-radius: 9px; background: #fff; color: #111827; font-size: 14.5px; font-weight: 800; }
+.toast .tbtn:active { transform: scale(0.96); }
 /* まだ中身のないタブ */
 .sc-stub { padding: 24px 12px; text-align: center; color: var(--muted); }

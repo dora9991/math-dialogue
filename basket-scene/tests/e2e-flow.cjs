@@ -92,6 +92,7 @@ const strip = (s) => String(s || '').replace(/\s+/g, '');
       await page.waitForSelector('#stReport');
       const rs = await page.evaluate(() => { const r = document.querySelector('#stReport').getBoundingClientRect(); const n = document.querySelector('#stRScore'); return { full: r.width >= innerWidth - 1 && r.height >= innerHeight - 1, score: n.textContent.replace(/\s+/g, ''), px: Math.round(parseFloat(getComputedStyle(n.querySelector('b, .st-rnum, span') || n).fontSize)) }; });
       T.ok(rs.full && rs.score.includes('7') && rs.score.includes('2') && rs.score.includes('ミライ'), '「📺 反省会の画面」：画面いっぱいに、大きな得点', rs);
+      T.ok((await page.$$eval('#toasts .toast', (e) => e.length)) === 0, '反省会の画面を開くと、前のお知らせ（「保存しました」など）は消えている');
       await T.shot(page, `flow-${tag}-4-report`);
       await page.goBack();
       await T.sleep(200);
