@@ -62,11 +62,13 @@
 .tp-more > button { flex: 1 1 0; min-width: 0; height: 42px; border-radius: 10px; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 8px; }
 .tp-mark { border: 0; background: var(--k-mark); color: var(--k-mark-ink); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15); }
 .tp-listbtn { border: 1px solid var(--line2); background: var(--panel2); color: var(--text); }
+.tp-more > .tp-addno { flex: 0 0 auto; border: 1.5px dashed var(--line2); background: transparent; color: var(--muted); }
 .tp-low .tp-opplab { flex: none; }
 .tp-low .tp-opplab span { max-width: 4.5em; }
 .tp-low .tp-op { width: 44px; height: 40px; }
 .tp-low .tp-more > button { flex: 0 0 auto; width: 46px; height: 40px; font-size: 17px; padding: 0; }
 .tp-low .tp-full { display: none; }
+.tp-low .tp-more > .tp-addno { display: none; }      /* 低い画面（スマホの横など）は、並べる余裕がない。⚙ 設定の「背番号」から足せる */
 .tp-low .tp-more { justify-content: flex-end; }
 .tp-low .tp-hint:not(.tp-on) { display: none; }
 .tp-low .tp-hint { flex: 1 1 auto; min-width: 0; min-height: 40px; font-size: 14px; padding-right: 0; }
