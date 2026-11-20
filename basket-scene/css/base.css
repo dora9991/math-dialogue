@@ -1,0 +1,129 @@
+/* バスケ シーン — もとになる色・部品（basket-tap/css/app.css のはじめの部分と同じ。小窓・お知らせ・ボタン・札） */
+:root {
+  --bg: #eef1f6;
+  --panel: #ffffff;
+  --panel2: #f2f4f8;
+  --line: #d6dce6;
+  --line2: #b9c3d2;
+  --text: #0f172a;
+  --muted: #566276;
+  --accent: #2563eb;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(37, 99, 235, 0.12);
+  --good: #15803d;
+  --warn: #b45309;
+  --warn-soft: rgba(245, 158, 11, 0.16);
+  --bad: #dc2626;
+  /* プレーのボタンの色（2P 緑・3P 紫・FT 茶・リバ 青。となりどうしで見分けやすく） */
+  --k-fg2: #15803d;
+  --k-fg3: #7c3aed;
+  --k-ft: #b45309;
+  --k-rb: #1d4ed8;
+  --k-orb: #1d4ed8;
+  --k-drb: #0369a1;
+  --k-ast: #0f766e;
+  --k-stl: #be185d;
+  --k-made: #15803d;
+  --k-reb: #1d4ed8;
+  --k-good: #0f766e;
+  --k-bad: #c2410c;
+  --k-foul: #a16207;
+  --k-mark: #facc15;
+  --k-mark-ink: #3b2a00;
+  --k-miss-bg: #ffffff;
+  --k-miss-line: #8b97aa;
+  --k-miss-ink: #0f172a;
+  --k-miss-x: #b91c1c;
+  --ask: #f59e0b;
+  --radius: 14px;
+  --font: system-ui, -apple-system, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a0e15; --panel: #131a26; --panel2: #1b2433; --line: #283447; --line2: #3a4860; --text: #eef2f8; --muted: #95a3ba;
+    --accent: #4f8cff; --accent-soft: rgba(79, 140, 255, 0.18); --good: #22c55e; --warn: #fbbf24; --warn-soft: rgba(251, 191, 36, 0.16); --bad: #f87171;
+    --k-made: #16a34a; --k-reb: #2563eb; --k-good: #0d9488; --k-bad: #ea580c; --k-foul: #ca8a04; --k-mark: #facc15;
+    --k-fg2: #16a34a; --k-fg3: #8b5cf6; --k-ft: #c26a0e; --k-rb: #2563eb; --k-orb: #2563eb; --k-drb: #0284c7; --k-ast: #0d9488; --k-stl: #db2777;
+    --k-miss-bg: #1b2433; --k-miss-line: #64748b; --k-miss-ink: #eef2f8; --k-miss-x: #f87171;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0a0e15; --panel: #131a26; --panel2: #1b2433; --line: #283447; --line2: #3a4860; --text: #eef2f8; --muted: #95a3ba;
+  --accent: #4f8cff; --accent-soft: rgba(79, 140, 255, 0.18); --good: #22c55e; --warn: #fbbf24; --warn-soft: rgba(251, 191, 36, 0.16); --bad: #f87171;
+  --k-made: #16a34a; --k-reb: #2563eb; --k-good: #0d9488; --k-bad: #ea580c; --k-foul: #ca8a04; --k-mark: #facc15;
+  --k-fg2: #16a34a; --k-fg3: #8b5cf6; --k-ft: #c26a0e; --k-rb: #2563eb; --k-orb: #2563eb; --k-drb: #0284c7; --k-ast: #0d9488; --k-stl: #db2777;
+  --k-miss-bg: #1b2433; --k-miss-line: #64748b; --k-miss-ink: #eef2f8; --k-miss-x: #f87171;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; overscroll-behavior: none; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; touch-action: manipulation; }
+[hidden] { display: none !important; }
+a { color: var(--accent); }
+
+/* ---------- ボタン ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 7px 14px; font-size: 14px; line-height: 1.3; text-decoration: none; color: var(--text); transition: background 0.12s, border-color 0.12s, transform 0.06s; }
+.btn:active { transform: scale(0.97); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.btn.danger { color: var(--bad); }
+.btn.danger-fill { background: var(--bad); border-color: var(--bad); color: #fff; font-weight: 700; }
+.btn.small { min-height: 34px; padding: 4px 11px; font-size: 13px; border-radius: 9px; }
+.btn.huge { width: 100%; min-height: 58px; font-size: 18px; font-weight: 800; border-radius: 14px; }
+.btn.icon { width: 40px; padding: 0; font-weight: 800; }
+.btn.on { background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 700; box-shadow: inset 0 0 0 1px var(--accent); }
+.btn[disabled] { opacity: 0.45; }
+.linkbtn { background: none; border: 0; color: var(--accent); padding: 4px 0; font-size: 13px; }
+.chip { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(128, 128, 128, 0.7); vertical-align: -2px; flex: none; }
+.chip.neutral { background: var(--line2); }
+.note { color: var(--muted); font-size: 13px; }
+.note.warn { color: var(--warn); }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.row.center { justify-content: center; }
+.spacer { flex: 1; }
+
+/* ---------- 試合の一覧・準備（ふつうのページ） ---------- */
+.hbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px; padding: calc(8px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left)); background: var(--panel); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.brand .logo { font-size: 28px; }
+.brand b { display: block; font-size: 17px; }
+.brand small { display: block; color: var(--muted); font-size: 12px; margin-top: -2px; }
+.htitle { font-size: 16px; }
+.home, .setup { max-width: 920px; margin: 0 auto; padding: 14px max(16px, env(safe-area-inset-left)) calc(28px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.card h2 { font-size: 15px; margin: 0 0 8px; }
+.card p { margin: 6px 0; }
+.going { border: 2px solid var(--bad); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > span { font-size: 13px; font-weight: 700; color: var(--muted); }
+.field input[type="text"], .nostext { background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 9px 12px; font-size: 16px; width: 100%; }
+.sheet { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-end; justify-content: center; }
+.sheet-card { background: var(--panel); width: 100%; max-width: 640px; max-height: 88vh; max-height: 88dvh; border-radius: 18px 18px 0 0; display: flex; flex-direction: column; box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3); animation: up 0.18s ease-out; -webkit-user-select: text; user-select: text; }
+.sheet-card.wide { max-width: 860px; }
+@keyframes up { from { transform: translateY(30px); opacity: 0.4; } }
+@media (min-width: 700px) and (min-height: 560px) {
+  .sheet { align-items: center; padding: 20px; }
+  .sheet-card { border-radius: 18px; max-height: 86vh; }
+}
+.sheet-card header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.sheet-card header b { font-size: 16px; }
+.sheet-card header .x { background: none; border: 0; font-size: 28px; line-height: 1; color: var(--muted); padding: 0 6px; min-width: 40px; min-height: 40px; }
+.sheet-body { padding: 12px 16px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.sheet-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); flex-wrap: wrap; }
+.chk { display: flex; align-items: center; gap: 8px; font-size: 14px; min-height: 34px; }
+.chk input { width: 20px; height: 20px; }
+.help ol, .help ul { padding-left: 20px; margin: 6px 0; }
+.help li { margin: 4px 0; }
+.help h4 { margin: 14px 0 4px; }
+
+/* ---------- お知らせ ---------- */
+.toasts { position: fixed; left: 50%; bottom: calc(66px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 80; width: min(560px, calc(100% - 24px)); pointer-events: none; }
+.toast { display: flex; align-items: center; gap: 10px; background: #1f2937; color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); border-left: 5px solid #64748b; pointer-events: auto; }
+.toast span { flex: 1; }
+.toast.ok { border-left-color: #22c55e; }
+.toast.warn { border-left-color: #f59e0b; }
+.toast.err { border-left-color: #ef4444; }
