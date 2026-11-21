@@ -1,0 +1,140 @@
+# patch_ai.py — 「AIのおすすめ」の出し方の見直し（solo バンドルへの重ねパッチ）
+# 使い方: python3 patch_ai.py <元の solo-*.js> <出力する solo-*.js>
+# 共有チャンク summary-*.js は変えない。solo の中だけで、既存エンジン In(=Ob) の出力を並べかえ・選びなおしする。
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+s = open(src, encoding='utf-8').read()
+def rep(old, new):
+    global s
+    assert s.count(old) == 1, (s.count(old), old[:90])
+    s = s.replace(old, new)
+
+CORE = r'''/* ===== kt-ai：AIのおすすめの出し方（いまの単元・同じ学年を中心に）=====
+   既存のエンジン In(=Ob) の候補を材料にして、並べかえ・選びなおしをする。記録(state)は書きかえない。
+   方針：①いまの単元と同じ学年の抜けているところが中心 ②前の学年は「証拠があるとき」だけ（最大2件）
+         ③得意なときだけ、応用(L3〜4)と予習を後ろにまぜる（最大2件）                                  */
+function ktAi(s, o) {
+  o = o || {};
+  try { return ktAiMake(s, o.now || Date.now()).slice(0, o.limit == null ? 6 : o.limit); }
+  catch (er) { try { console.warn("ktAi", er); } catch (_) {} return In(s, o); }
+}
+function ktPlan(s, n) {   // 「おすすめを解く」の10問（元の A5 と同じ：上位5件に 3,2,2,2,1 問。5件に満たないときは、上から順に1問ずつ足して10問にする）
+  const t = ktAi(s, { limit: 5 });
+  if (!t.length) return [];
+  const w = [3, 2, 2, 2, 1], c = t.map((_, i) => w[i]), r = [];
+  for (let i = 0, m = c.reduce((a, b) => a + b, 0); m < n; i = (i + 1) % t.length, m++) c[i]++;
+  t.forEach((x, i) => { for (let k = 0; k < c[i]; k++) r.push({ unitId: x.unitId, level: x.level }); });
+  return r.slice(0, n);
+}
+function ktAiMake(s, now) {
+  const DAY = 864e5, pr = s.profile;
+  if (!pr || !pr.grade) return In(s, { limit: 60, now });
+  const g = dc(pr);                                                    // 学年の番号
+  const same = Ft.filter(u => u.gi === g && u.maxLevel > 0 && wt(u, pr) > 0);   // 同じ学年の単元（授業の順・目標の範囲内）
+  const pos = new Map(same.map((u, i) => [u.id, i]));
+  const nowId = N0(pr);                                                // 授業でいまやっている単元
+  // ---- 「いま学習している単元」の目印：授業の範囲の最後・授業のつづき(14日)=0、最近(14日)解いた3単元=1
+  const anch = new Map();
+  const put = (id, w) => { if (pos.has(id) && !(anch.has(id) && anch.get(id) <= w)) anch.set(id, w); };
+  put(nowId, 0);
+  for (const j of s.jugyo || []) if (j && now - (j.at || 0) < 14 * DAY) put(j.unitId, 0);
+  let nr = 0;
+  for (const e of s.log || []) { if (!e || e.s === "rf" || now - e.t > 14 * DAY || !pos.has(e.u) || anch.has(e.u)) continue; put(e.u, 1); if (++nr >= 3) break; }
+  const dist = id => { if (!pos.has(id)) return 99; if (!anch.size) return pos.get(id); let d = 99; for (const [a, w] of anch) d = Math.min(d, Math.abs(pos.get(id) - pos.get(a)) + w); return d; };
+  // ---- 授業の範囲を「仮に」ひろげる：同じ学年で解いた単元、記録が何もない生徒は学年の先頭5単元（state は変えない）
+  const real = new Set(pr.learned || []), known = new Set(real);
+  for (const u of same) { const us = (s.units || {})[u.id]; if (us && (us.est != null || Object.keys(us.lv || {}).length)) known.add(u.id); }
+  if (pr.grade !== "R" && !same.some(u => known.has(u.id))) same.slice(0, 5).forEach(u => known.add(u.id));
+  const s2 = known.size === real.size ? s : { ...s, profile: { ...pr, learned: [...known] } };
+  const info = os(s2), pool = In(s2, { info, limit: 999, now });
+  const gOf = id => info.get(id).u.gi, mk = (id, kind, reason) => { const w = info.get(id); return { unitId: id, kind, reason, score: 0, level: Fn(w.us, w.req, w.u.maxLevel) }; };
+  // ---- 「はっきり弱い」＝診断・分析・くり返しのまちがいで弱い／3問以上解いて半分以下
+  const tot = us => { let n = 0, c = 0; for (const k in (us && us.lv) || {}) { n += us.lv[k].n || 0; c += us.lv[k].c || 0; } return [n, c]; };
+  const hard = w => { if (!w || !w.req || !w.learned) return false; if (w.status === "weak") return true; const [n, c] = tot(w.us); return w.level < 1 && n >= 3 && c <= n / 2; };
+  const root = (id, seen = new Set()) => { if (seen.has(id)) return null; seen.add(id); for (const p of Ut(id)) if (hard(info.get(p))) return root(p, seen) || p; return null; };
+  const whyWeak = id => { const us = (s.units || {})[id], t = us && us.why && us.why[0], m = t && s.misc && s.misc[t]; return m && m.title ? `分析で見つかったクセ「${m.title}」。ここを直そう` : us && us.weak ? "診断でつまずきが見つかった単元。ここを越えると一気に進む" : "最近まちがいが多い単元。今のうちに立て直そう"; };
+  // ---- 1) 同じ学年の候補：つまずき > いまの単元 > 自信がない > 練習中 > 復習 > 未確認 > 診断OK（種類の順は元のエンジンと同じ）
+  const KR = { weak: 1, shaky: 3, goal: 4, review: 5, check: 6, confirm: 7 };
+  const rk = p => (anch.has(p.unitId) && KR[p.kind] >= 4 ? 2 : KR[p.kind]);
+  const cand = pool.filter(p => gOf(p.unitId) === g && KR[p.kind]);
+  const stum = same.filter(u => known.has(u.id) && info.get(u.id).req && info.get(u.id).status === "weak");
+  for (const u of stum) if (!cand.some(p => p.unitId === u.id)) cand.push(mk(u.id, "weak", whyWeak(u.id)));
+  cand.sort((a, b) => rk(a) - rk(b) || dist(a.unitId) - dist(b.unitId) || b.score - a.score || pos.get(a.unitId) - pos.get(b.unitId));
+  let list = cand.slice();
+  // ---- 2) つまずいている単元の「根っこ」：前の学年は最大2件。つまずいた単元のすぐ後ろに置く（同じ学年の根っこは前）
+  const tied = new Set(); let prevN = 0;
+  for (const p of cand.slice()) {
+    const w = info.get(p.unitId); if (w.status !== "weak" || list.findIndex(q => q.unitId === p.unitId) < 0) continue;
+    const r = root(p.unitId); if (!r || tied.has(r)) continue;
+    const same_ = gOf(r) === g; if (!same_ && prevN >= 2) continue;
+    if (!same_) prevN++; tied.add(r);
+    const it = mk(r, "sakanobori", same_ ? `「${w.u.name}」のつまずきの根っこかも。先にこの単元で、土台から固めよう` : `「${w.u.name}」のつまずきの根っこかも。${Pe[info.get(r).u.grade]}にさかのぼって、土台から固めよう`);
+    list = list.filter(q => q.unitId !== r); const xi = list.findIndex(q => q.unitId === p.unitId); list.splice(same_ ? xi : xi + 1, 0, it);
+  }
+  // ---- 3) 根っことは別に、前の学年に「証拠」があるもの（診断・分析で弱い／くり返しまちがい／授業でまちがえた／自信がない と選んだ）。上の根っこと合わせて2件まで
+  //      いまの単元の前提（の前提…）になっているものを先に。3番目・5番目に入れる
+  const zone = new Set(anch.keys()), ni = pos.has(nowId) ? pos.get(nowId) : -1;
+  if (ni >= 0) for (let k = 1; k <= 2; k++) if (same[ni + k]) zone.add(same[ni + k].id);
+  if (!zone.size) same.slice(0, 3).forEach(u => zone.add(u.id));
+  const rel = new Set(), stk = [...zone]; while (stk.length) for (const q of Ut(stk.pop())) if (!rel.has(q)) { rel.add(q); stk.push(q); }
+  const SW = { weak: 0, sakanobori: 0, shaky: 1 };
+  const ev = pool.filter(p => gOf(p.unitId) < g && SW[p.kind] != null && !tied.has(p.unitId) && (p.kind !== "sakanobori" || hard(info.get(p.unitId))))
+    .sort((a, b) => (rel.has(a.unitId) ? 0 : 1) - (rel.has(b.unitId) ? 0 : 1) || SW[a.kind] - SW[b.kind] || gOf(b.unitId) - gOf(a.unitId) || b.score - a.score).slice(0, 2 - prevN);
+  let slot = 2; for (const it of ev) { list.splice(Math.min(slot, list.length), 0, it); slot += 2; }
+  // ---- 4) 得意なときだけ：応用・入試レベル(L3〜4)と予習（次の単元・次の学年の入口）を、後ろに1〜2件
+  const okPre = id => { const w = info.get(id); if (!w || !w.req || w.level >= 1) return true; if (hard(w)) return false; return w.u.gi < g || known.has(id); };
+  const aheadList = () => Ft.filter(u => (u.gi === g ? info.get(u.id).req > 0 : u.gi === g + 1 && !(u.rikei && !(pr.goal && pr.goal.track === "rikei"))) && u.maxLevel > 0 && !known.has(u.id) && !Object.keys(((s.units || {})[u.id] || {}).lv || {}).length && Ut(u.id).every(okPre))
+    .sort((a, b) => a.gi - b.gi || (pos.get(a.id) ?? 0) - (pos.get(b.id) ?? 0) || Ft.indexOf(a) - Ft.indexOf(b));
+  const mkAhead = u => ({ ...mk(u.id, "ahead", u.gi === g ? "前提はそろっている。次の単元を、予習してみよう" : `前提はそろっている。${Pe[u.grade]}の入口を、予習してみよう`) });
+  // 「得意」の判定（保守的）：授業で習った同学年の単元が3つ以上／その70%以上（最低3つ）が、解いた結果で標準(L2)に到達／
+  //   同学年につまずいている単元が無い／直近30問（20問以上・最後の解答が30日以内）の正答率80%以上で、直近15問のまちがいが2問以下
+  const L0 = same.filter(u => real.has(u.id));
+  const strong = (() => {
+    if (L0.length < 3 || stum.length) return false;
+    const reached = L0.filter(u => info.get(u.id).mastered >= Math.min(2, u.maxLevel)).length;
+    if (reached < Math.max(3, Math.ceil(L0.length * 0.7))) return false;
+    const rec = (s.log || []).filter(e => e && e.s !== "rf").slice(0, 30);
+    if (rec.length < 20 || now - rec[0].t > 30 * DAY || rec.filter(e => e.ok).length / rec.length < 0.8) return false;
+    return rec.slice(0, 15).filter(e => !e.ok).length <= 2;
+  })();
+  const moreCh = [];
+  if (strong) {
+    const ch = same.filter(u => known.has(u.id)).map(u => {
+      const w = info.get(u.id); if (!w.req || w.status === "weak" || w.mastered < Math.min(2, u.maxLevel)) return null;
+      const lv = t0(u, Math.max(3, w.mastered + 1)), q = ((w.us || {}).lv || {})[lv];
+      return lv >= 3 && lv > w.mastered && !(q && q.n >= 2 && (q.p ?? 1) < 0.45) ? { u, w, lv } : null;
+    }).filter(Boolean).sort((a, b) => dist(a.u.id) - dist(b.u.id) || a.lv - b.lv || pos.get(a.u.id) - pos.get(b.u.id));
+    const mkCh = c => ({ ...mk(c.u.id, "goal", `「${we[c.w.mastered].label}」まではできている。得意なところは、「${we[c.lv].label}」にチャレンジしよう`), level: c.lv });
+    const ah = aheadList(), ex = [];
+    if (ch[0]) ex.push(mkCh(ch[0]));
+    if (ah[0]) ex.push(mkAhead(ah[0]));
+    if (ex.length < 2) { const c2 = ch.slice(1).sort((a, b) => b.lv - a.lv)[0]; if (c2) ex.push(mkCh(c2)); else if (ah[1]) ex.push(mkAhead(ah[1])); }
+    ex.forEach((it, i) => { list = list.filter(q => q.unitId !== it.unitId); list.splice(Math.min(3 + i, list.length), 0, it); });
+    ch.filter(c => !ex.some(x => x.unitId === c.u.id)).sort((a, b) => b.lv - a.lv || dist(a.u.id) - dist(b.u.id)).forEach(c => moreCh.push(mkCh(c)));
+  }
+  // ---- 5) 少なすぎるときだけ、予習・前提の確認でおぎなう（3件まで）
+  const seen = new Set(); list = list.filter(p => !seen.has(p.unitId) && seen.add(p.unitId));
+  if (list.length < 3) {
+    for (const it of moreCh) { if (list.length >= 3) break; if (!seen.has(it.unitId)) { seen.add(it.unitId); list.push(it); } }
+    for (const u of aheadList()) { if (list.length >= 3) break; if (!seen.has(u.id)) { seen.add(u.id); list.push(mkAhead(u)); } }
+    const low = pool.filter(p => !seen.has(p.unitId) && gOf(p.unitId) < g && gOf(p.unitId) >= g - 2 && ["check", "confirm", "review"].includes(p.kind))
+      .sort((a, b) => (rel.has(a.unitId) ? 0 : 1) - (rel.has(b.unitId) ? 0 : 1) || gOf(b.unitId) - gOf(a.unitId) || b.score - a.score);
+    for (const p of low) { if (list.length >= 3) break; seen.add(p.unitId); list.push(p); }
+  }
+  return list.map((p, i) => ({ ...p, score: 1000 - i }));
+}
+'''
+
+# 1) 新しい関数 ktAi / ktPlan / ktAiMake を、Nn（種類の表）の手前に置く
+rep('const Nn={sakanobori:{icon:"🌱"', CORE + '\nconst Nn={sakanobori:{icon:"🌱"')
+# 2) 呼び出し3か所（中学以外のホーム I2 の「今日のおすすめ」／中学のホーム B2 の「いまの1番」／AIのおすすめの画面）
+rep('v=J.useMemo(()=>In(s,{info:f,limit:5}),[s,f])', 'v=J.useMemo(()=>ktAi(s,{info:f,limit:5}),[s,f])')
+rep('Z=J.useMemo(()=>In(s,{info:k,limit:1})[0]||null,[s,k])', 'Z=J.useMemo(()=>ktAi(s,{info:k,limit:1})[0]||null,[s,k])')
+rep('x=J.useMemo(()=>In(s,{info:p,limit:6}),[s,p])', 'x=J.useMemo(()=>ktAi(s,{info:p,limit:6}),[s,p])')
+# 3) 「おすすめを解く」の10問も、同じ並びから作る（元は zo=A5 が元のエンジンで作っていた）
+rep('const O=zo(u.current,10);', 'const O=ktPlan(u.current,10);')
+# 4) 「AIは、どうやって順番を決めているの？」の最後の1行
+rep('e.jsx(o,{children:"ほかの単元の土台になっている単元ほど、少し上にくるよ。"})',
+    'e.jsx(o,{e:"まずは「いま習っている単元」と「同じ学年のぬけているところ」から。前の学年は、つまずいている証拠があるときだけ出すよ。得意なときは、応用や予習もまぜるよ。",children:"まずは「いま習っている単元」と「同じ学年の抜けているところ」から。前の学年は、つまずいている証拠があるときだけ出すよ。得意なときは、応用や予習もまぜるよ。"})')
+open(dst, 'w', encoding='utf-8').write(s)
+print('ok')

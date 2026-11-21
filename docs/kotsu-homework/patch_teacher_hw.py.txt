@@ -1,0 +1,19 @@
+"""先生の画面（solo/teacher）に、宿題のページ（solo/teacher/homework/）への入り口を足すパッチ。
+使い方: python3 patch_teacher_hw.py <土台の teacher-*.js> <出力 teacher-*.js>
+(1) クラスを開いたあとの見出しの並び（📝 学習の一覧 …）の最後に「📌 宿題を出す・見る」を足す。(2) 最初の「担当のクラス」の画面にも、同じ名前のボタンを足す。押すと、同じタブで solo/teacher/homework/ に移る（ログインは localStorage / sessionStorage の kotsu-staff-v1 を、宿題のページが読む）。
+anchor は「ちょうど1回」出ることを assert する。"""
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+s = open(src, encoding='utf-8').read()
+old1 = 's.jsx(te,{cur:x,onChange:y,tabs:[{id:"call",icon:"📝",label:"学習の一覧"},'
+assert s.count(old1) == 1, s.count(old1)
+s = s.replace(old1, 's.jsx(te,{cur:x,onChange:ktId=>ktId==="hw"?(location.href=new URL("homework/",location.href).href):y(ktId),tabs:[{id:"call",icon:"📝",label:"学習の一覧"},')
+old2 = '{id:"refl",icon:"💬",label:"振り返り・質問",badge:k||null}]}),x==="call"'
+assert s.count(old2) == 1, s.count(old2)
+s = s.replace(old2, '{id:"refl",icon:"💬",label:"振り返り・質問",badge:k||null},{id:"hw",icon:"📌",label:"宿題を出す・見る"}]}),x==="call"')
+# 担当のクラスの一覧（先生の最初の画面）にも、入り口のボタンを足す
+old3 = 'children:"クラスをえらぶと、生徒のようすが見られます"})]}),e.classes.length?s.jsxs('
+assert s.count(old3) == 1, s.count(old3)
+s = s.replace(old3, 'children:"クラスをえらぶと、生徒のようすが見られます"})]}),s.jsx("div",{style:{margin:"2px 0 14px"},children:s.jsx("a",{className:"k-btn",href:new URL("homework/",location.href).href,children:"📌 宿題を出す・見る"})}),e.classes.length?s.jsxs(')
+open(dst, 'w', encoding='utf-8').write(s)
+print('ok', len(s))

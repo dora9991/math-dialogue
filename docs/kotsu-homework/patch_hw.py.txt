@@ -1,0 +1,62 @@
+"""宿題（先生からの宿題）：生徒の画面へのパッチ。
+使い方: python3 patch_hw.py <土台の solo-*.js> <出力 solo-hw.js>
+土台は、ほかの人のパッチ込みのバンドル（study/solo-H6dRn4gC.js）。各 old が「ちょうど1回」出ることを assert する。
+置く場所：
+  (1) モジュールの関数（ktWk のあと。hw_module.js をそのまま入れる）
+  (2) ホーム B2（中学以上）／I2（それ以外）：学習時間のカードの直後（B2）／ヒーローの直後（I2）に宿題のカード
+  (3) jp の中：宿題を取りにいく・達成を見る（hooks）／B2・I2 に onHw（押したときの行き先）を渡す
+  (4) 問題画面 L0：「⏱ 今日」のチップのとなりに「📌 宿題 あと○問」
+"""
+import sys, os
+src, dst = sys.argv[1], sys.argv[2]
+here = os.path.dirname(os.path.abspath(__file__))
+s = open(src, encoding='utf-8').read()
+
+def rep(old, new):
+    global s
+    assert s.count(old) == 1, (s.count(old), old[:100])
+    s = s.replace(old, new)
+
+# コメントの行だけ外して、そのまま入れる（行頭が // の行。それ以外の // は、このファイルには無い）
+mod_lines = []
+for ln in open(os.path.join(here, 'hw_module.js'), encoding='utf-8').read().split('\n'):
+    if ln.lstrip().startswith('//'):
+        continue
+    assert '//' not in ln, ln
+    mod_lines.append(ln)
+MODULE = '\n'.join(l for l in mod_lines if l.strip())
+
+# (1) モジュールの関数。ktWk（学習時間の「1週間」）のあとに置く
+KTWK_END = 'return{t:o[0],y:o[1],w:o.reduce((a,b)=>a+b,0)}}'
+rep(KTWK_END, KTWK_END + '\n' + MODULE + '\n')
+
+# (2) ホーム B2：学習時間のカードの直後（s1＝記録のリンクの直前）
+rep('onFeedback:f,onYoji:v}){var Ne,Se,Ke,at,Xe,je,U,he,A,I,re;', 'onFeedback:f,onYoji:v,onHw:ktHwOn}){var Ne,Se,Ke,at,Xe,je,U,he,A,I,re;')
+rep('e.jsx(s1,{onAll:()=>u("records")}),v&&e.jsx(Gl,{state:s,onSet:v}),', 'ktHwCard(s,ktHwOn),e.jsx(s1,{onAll:()=>u("records")}),v&&e.jsx(Gl,{state:s,onSet:v}),')
+# (2') ホーム I2：ヒーローの直後
+rep('onFeedback:p,onYoji:x}){var ge,fe;', 'onFeedback:p,onYoji:x,onHw:ktHwOn}){var ge,fe;')
+rep('e.jsx(s1,{onAll:()=>c("records")}),x&&e.jsx(Gl,{state:s,onSet:x}),', 'ktHwCard(s,ktHwOn),e.jsx(s1,{onAll:()=>c("records")}),x&&e.jsx(Gl,{state:s,onSet:x}),')
+
+# (3) jp：描くたびに宿題の進み具合を出す／取りにいく／達成を見る
+HOOKS = ('ktHwP=ktHwCalc(s);'
+         'const[ktHwV,ktHwB]=J.useState(0);'
+         'J.useEffect(()=>{ktHwSub=()=>ktHwB(ktHwN=>ktHwN+1);const ktHwOff=y2(()=>ktHwAcct()),ktHwVis=()=>{document.hidden||ktHwGet()};'
+         'document.addEventListener("visibilitychange",ktHwVis);ktHwGet();'
+         'return()=>{ktHwSub=null;ktHwOff();document.removeEventListener("visibilitychange",ktHwVis)}},[]);'
+         'J.useEffect(()=>{r.name==="home"&&ktHwGet()},[r.name]);'
+         'J.useEffect(()=>{ktHwWatch(s,l,c)},[s.log,s.daily,ktHwV]);')
+rep('ktTn=Math.max(0,Number(((s.daily||{})[Mt()]||{}).n)||0);let Me=null;switch(r.name){',
+    'ktTn=Math.max(0,Number(((s.daily||{})[Mt()]||{}).n)||0);' + HOOKS + 'let Me=null;switch(r.name){')
+# (3') 押したときの行き先：N問の宿題はその単元（中学以上は hub、それ以外は unit）、分だけの宿題は学習一覧
+HW_ON = 'onHw:L=>L&&se(L)?Se(L):w("plist"),'
+rep('onFeedback:()=>w("feedback",{from:"home"}),onYoji:(L,O)=>h(zr(u.current,L,O))}):e.jsx(I2,{',
+    'onFeedback:()=>w("feedback",{from:"home"}),' + HW_ON + 'onYoji:(L,O)=>h(zr(u.current,L,O))}):e.jsx(I2,{')
+rep('onFeedback:()=>w("feedback",{from:"home"}),onYoji:(L,O)=>h(zr(u.current,L,O))})}const Ns=',
+    'onFeedback:()=>w("feedback",{from:"home"}),' + HW_ON + 'onYoji:(L,O)=>h(zr(u.current,L,O))})}const Ns=')
+
+# (4) 問題画面：「⏱ 今日 ○分 ・ ○問」のとなり（診断・模試のときは、今日のチップと同じく出さない）
+rep('children:["⏱ 今日 ",ktFm(ktTd)," ・ ",ktTn,"問"]}),!h&&e.jsx(Wu,{level:s.level})',
+    'children:["⏱ 今日 ",ktFm(ktTd)," ・ ",ktTn,"問"]}),!h&&ktHwChip(s.unitId),!h&&e.jsx(Wu,{level:s.level})')
+
+open(dst, 'w', encoding='utf-8').write(s)
+print('ok', len(s))

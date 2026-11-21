@@ -1,0 +1,28 @@
+"""中3「解説ごとの演習」を、公開中の solo バンドルに足すパッチ。
+使い方: python3 patch_k3.py <土台の solo-*.js> <build-chunks.mjs の出力フォルダ> <出力 solo-*.js>
+やること（どちらも、各 anchor が「ちょうど1回」出ることを assert する）:
+  (1) 解説の索引 Wn の最後に、中3の授業 102 本（{f:<ファイル名のキー>, u:[単元], n:[5,5,5,5]}）を足す
+  (2) 読みこみの表（./<キー>.json → import("./<キー>-<hash>.js")）に、8章ぶんを足す
+"""
+import sys, json, os
+src, chunkdir, dst = sys.argv[1], sys.argv[2], sys.argv[3]
+s = open(src, encoding='utf-8').read()
+L = json.load(open(os.path.join(chunkdir, 'lessons.json'), encoding='utf-8'))
+lessons, files = L['lessons'], L['files']
+
+def rep(old, new):
+    global s
+    assert s.count(old) == 1, (s.count(old), old[:90])
+    s = s.replace(old, new)
+
+# 既に入っていたら二重に足さない
+assert '"g3u1-01":{f:"g3' not in s, 'すでに中3の索引が入っています'
+
+wn = ''.join(',"%s":{f:"%s",u:%s,n:%s}' % (k, v['f'], json.dumps(v['u'], ensure_ascii=False, separators=(',', ':')), json.dumps(v['n'], separators=(',', ':'))) for k, v in sorted(lessons.items()))
+rep('"g2u1-11":{f:"shiki",u:["J2-g2c1u5"],n:[5,5,5,5]}};let Rc={}', '"g2u1-11":{f:"shiki",u:["J2-g2c1u5"],n:[5,5,5,5]}' + wn + '};let Rc={}')
+
+rc = ''.join(',"./%s.json":()=>_(()=>import("./%s"),[])' % (k, v) for k, v in sorted(files.items()))
+rep('"./shiki.json":()=>_(()=>import("./shiki-QeFEbBOM.js"),[])})}catch{}', '"./shiki.json":()=>_(()=>import("./shiki-QeFEbBOM.js"),[])' + rc + '})}catch{}')
+
+open(dst, 'w', encoding='utf-8').write(s)
+print('ok', len(s), '授業', len(lessons), 'ファイル', len(files))

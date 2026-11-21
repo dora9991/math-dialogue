@@ -1,0 +1,93 @@
+:root{--ink:#1d2b27;--ink2:#51635d;--bg:#f1f6f3;--card:#fff;--teal:#13a07f;--teal2:#0b8f73;--soft:#e2f5ee;--sun:#ffd166;--line:#dbe6e1;--new:#ff7a1a;--red:#e0383e}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+button{font:inherit;color:inherit}
+a{color:var(--teal2)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px 40px}
+.top{background:linear-gradient(135deg,#13a07f,#0b8f73);color:#fff;padding:14px 16px 18px}
+.top .in{max-width:1040px;margin:0 auto}
+.top a.back{color:#fff;text-decoration:none;font-size:14px;font-weight:700;opacity:.95}
+.top h1{margin:6px 0 2px;font-size:22px;line-height:1.3}
+.top p{margin:0;font-size:14px;opacity:.95}
+.howto{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:16px 0;font-size:14px;color:var(--ink2)}
+.howto b{color:var(--ink)}
+.sec{margin:22px 0 8px;font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px}
+.sec small{font-weight:600;color:var(--ink2);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card{display:flex;align-items:center;gap:10px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;cursor:pointer;min-height:58px;box-shadow:0 1px 0 rgba(0,0,0,.03)}
+.card:hover{border-color:var(--teal)}
+.card .no{flex:none;min-width:44px;height:44px;border-radius:12px;background:var(--soft);color:var(--teal2);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;line-height:1.1;text-align:center}
+.card .no small{display:block;font-size:10px;font-weight:700}
+.card .tt{flex:1;font-weight:700;font-size:15px;line-height:1.35}
+.card .go{flex:none;color:var(--teal2);font-size:18px}
+.card.seen .no{background:var(--teal);color:#fff}
+.card.seen .go::before{content:"✓ ";font-size:14px}
+.card.wait{opacity:.55;cursor:default}
+/* ── プレイヤー画面 ── */
+#overlay{position:fixed;inset:0;background:var(--bg);overflow:auto;z-index:10;-webkit-overflow-scrolling:touch}
+#overlay[hidden]{display:none}
+.ov-top{position:sticky;top:0;z-index:2;background:rgba(241,246,243,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.ov-top .in{max-width:1040px;margin:0 auto;padding:8px 12px;display:flex;align-items:center;gap:8px}
+.ov-top .ttl{flex:1;min-width:0;font-weight:800;font-size:16px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pbtn{flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px;cursor:pointer;min-height:40px}
+.pbtn:disabled{opacity:.35;cursor:default}
+.ov-body{max-width:1040px;margin:0 auto;padding:12px 12px 80px}
+.prob{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:12px;font-size:15px}
+.prob .lb{display:inline-block;background:var(--soft);color:var(--teal2);font-weight:800;font-size:12px;border-radius:6px;padding:0 8px;margin-right:6px}
+.prob.long{max-height:7.2em;overflow:auto}
+.pl-root{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:860px){.pl-root{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);align-items:start}.fig{max-height:62vh}}
+.fig-wrap{position:relative}
+.fig{width:100%;height:auto;max-height:50vh;display:block;background:#fff;border-radius:14px;border:1px solid var(--line)}
+.el{--c:var(--c0)}
+.el.new:not(.keepc){--c:var(--new)}
+.el .s{stroke:var(--c)}
+.el .fill{fill:var(--c)}
+.el .lab{fill:var(--c);font-weight:700;font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;paint-order:stroke;stroke:#fff;stroke-width:3.5px;stroke-linejoin:round}
+.el .lab.nb{font-weight:500}
+.el.pulse .s{stroke:var(--new);stroke-width:4}
+.el.pulse .fill,.el.pulse .lab{fill:var(--new)}
+.anim.new .draw{stroke-dasharray:1;stroke-dashoffset:1;animation:dr .95s ease-in-out forwards;animation-delay:var(--d)}
+.anim.new .fade{opacity:0;animation:fi .55s ease forwards;animation-delay:var(--d)}
+@keyframes dr{to{stroke-dashoffset:0}}
+@keyframes fi{to{opacity:1}}
+.cap{background:#fff8e1;border:2px solid #ffe29a;border-radius:16px;padding:12px 14px 12px 56px;position:relative;min-height:84px;display:flex;align-items:center}
+.cap::before{content:"🦉";position:absolute;left:10px;top:10px;font-size:32px;line-height:1}
+.cap-in{font-size:19px;font-weight:600;line-height:1.7}
+.cap-in b{color:var(--teal2)}
+.cap-in.in{animation:up .45s ease both}
+@keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.board{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+.board[hidden]{display:none}
+.ln{font-size:20px;line-height:1.9;font-variant-numeric:tabular-nums}
+.ln.hd{font-size:16px;font-weight:800;color:var(--teal2);margin-top:6px;line-height:1.6;border-bottom:2px solid var(--soft)}
+.ln.hd:first-child{margin-top:0}
+.ln.note{font-size:15px;color:var(--ink2);line-height:1.6}
+.ln.fin{background:#fff3d6;border-radius:10px;padding:2px 10px;font-weight:800;margin:2px 0}
+.ln.in{animation:up .45s ease both;opacity:0}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.2;margin:0 .15em;font-size:.92em}
+.fr>span:first-child{border-bottom:1.6px solid currentColor;padding:0 .25em}
+.fr>span:last-child{padding:0 .25em}
+mark{background:#ffe9a8;color:var(--red);padding:0 .22em;border-radius:5px;font-weight:800}
+sup,sub{font-size:.7em;line-height:0}
+.ans{display:flex;gap:10px;align-items:baseline;background:var(--soft);border:2px solid var(--teal);border-radius:14px;padding:10px 14px;animation:up .45s ease both}
+.ans[hidden]{display:none}
+.ans .lbl{flex:none;background:var(--teal);color:#fff;font-weight:800;border-radius:8px;padding:0 10px;font-size:14px}
+.ans .tx{font-size:18px;font-weight:800;line-height:1.6}
+.bar{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.dots{display:flex;gap:4px;flex-wrap:wrap}
+.dt{flex:1 1 0;min-width:10px;max-width:46px;height:10px;border-radius:5px;border:0;background:#cfdcd6;cursor:pointer;padding:0}
+.dt.done{background:var(--teal)}
+.dt.on{background:var(--new)}
+.ctrl{display:flex;gap:8px;justify-content:center}
+.cbtn{min-width:52px;height:46px;border-radius:14px;border:1px solid var(--line);background:#fff;font-size:18px;font-weight:800;cursor:pointer}
+.cbtn.play{background:var(--teal);color:#fff;border-color:var(--teal);min-width:72px}
+.cbtn:disabled{opacity:.35}
+.next-box{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
+.next-box .pbtn{flex:1;min-width:150px;text-align:center}
+.next-box .pbtn.main{background:var(--teal);color:#fff;border-color:var(--teal)}
+.foot{margin:28px 0 0;font-size:12px;color:var(--ink2)}
+@media (max-width:520px){.cap-in{font-size:17px}.ln{font-size:18px}.top h1{font-size:19px}}
+
+.top .today{display:inline-block;margin-left:6px;background:rgba(255,255,255,.22);border-radius:999px;padding:0 10px;font-weight:800;font-size:13px}

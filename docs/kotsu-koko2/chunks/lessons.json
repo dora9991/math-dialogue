@@ -1,0 +1,938 @@
+{
+ "lessons": {
+  "m2a-01": {
+   "f": "h2shiki",
+   "u": [
+    "HII-shiki"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2a-02": {
+   "f": "h2shiki",
+   "u": [
+    "HII-shiki"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2a-03": {
+   "f": "h2shiki",
+   "u": [
+    "HII-shiki"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2a-04": {
+   "f": "h2shiki",
+   "u": [
+    "HII-shiki"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2a-05": {
+   "f": "h2shiki",
+   "u": [
+    "HII-shiki"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2a-06": {
+   "f": "h2shiki",
+   "u": [
+    "HII-shiki"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2a-07": {
+   "f": "h2shiki",
+   "u": [
+    "HII-shiki"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2a-08": {
+   "f": "h2shiki",
+   "u": [
+    "HII-fukuso"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2a-09": {
+   "f": "h2shiki",
+   "u": [
+    "HII-fukuso"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2a-10": {
+   "f": "h2shiki",
+   "u": [
+    "HII-fukuso"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2a-11": {
+   "f": "h2shiki",
+   "u": [
+    "HII-kouji"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2a-12": {
+   "f": "h2shiki",
+   "u": [
+    "HII-kouji"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2b-01": {
+   "f": "h2zuhou",
+   "u": [
+    "HII-zuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2b-02": {
+   "f": "h2zuhou",
+   "u": [
+    "HII-zuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2b-03": {
+   "f": "h2zuhou",
+   "u": [
+    "HII-zuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2b-04": {
+   "f": "h2zuhou",
+   "u": [
+    "HII-zuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2b-05": {
+   "f": "h2zuhou",
+   "u": [
+    "HII-zuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2b-06": {
+   "f": "h2zuhou",
+   "u": [
+    "HII-zuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2b-07": {
+   "f": "h2zuhou",
+   "u": [
+    "HII-zuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2b-08": {
+   "f": "h2zuhou",
+   "u": [
+    "HII-zuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2b-09": {
+   "f": "h2zuhou",
+   "u": [
+    "HII-zuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2b-10": {
+   "f": "h2zuhou",
+   "u": [
+    "HII-zuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2b-11": {
+   "f": "h2zuhou",
+   "u": [
+    "HII-zuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2b-12": {
+   "f": "h2zuhou",
+   "u": [
+    "HII-zuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2c-01": {
+   "f": "h2sankaku",
+   "u": [
+    "HII-sankaku"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2c-02": {
+   "f": "h2sankaku",
+   "u": [
+    "HII-sankaku"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2c-03": {
+   "f": "h2sankaku",
+   "u": [
+    "HII-sankaku"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2c-04": {
+   "f": "h2sankaku",
+   "u": [
+    "HII-sankaku"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2c-05": {
+   "f": "h2sankaku",
+   "u": [
+    "HII-sankaku"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2c-06": {
+   "f": "h2sankaku",
+   "u": [
+    "HII-sankaku"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2c-07": {
+   "f": "h2sankaku",
+   "u": [
+    "HII-sankaku"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2c-08": {
+   "f": "h2sankaku",
+   "u": [
+    "HII-sankaku"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2c-09": {
+   "f": "h2sankaku",
+   "u": [
+    "HII-sankaku"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2c-10": {
+   "f": "h2sankaku",
+   "u": [
+    "HII-sankaku"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2d-01": {
+   "f": "h2shitai",
+   "u": [
+    "HII-shisu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2d-02": {
+   "f": "h2shitai",
+   "u": [
+    "HII-shisu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2d-03": {
+   "f": "h2shitai",
+   "u": [
+    "HII-shisu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2d-04": {
+   "f": "h2shitai",
+   "u": [
+    "HII-taisu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2d-05": {
+   "f": "h2shitai",
+   "u": [
+    "HII-taisu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2d-06": {
+   "f": "h2shitai",
+   "u": [
+    "HII-taisu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2d-07": {
+   "f": "h2shitai",
+   "u": [
+    "HII-taisu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2e-01": {
+   "f": "h2bibun",
+   "u": [
+    "HII-bibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2e-02": {
+   "f": "h2bibun",
+   "u": [
+    "HII-bibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2e-03": {
+   "f": "h2bibun",
+   "u": [
+    "HII-bibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2e-04": {
+   "f": "h2bibun",
+   "u": [
+    "HII-bibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2e-05": {
+   "f": "h2bibun",
+   "u": [
+    "HII-bibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2e-06": {
+   "f": "h2bibun",
+   "u": [
+    "HII-bibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2e-07": {
+   "f": "h2bibun",
+   "u": [
+    "HII-sekibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2e-08": {
+   "f": "h2bibun",
+   "u": [
+    "HII-sekibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2e-09": {
+   "f": "h2bibun",
+   "u": [
+    "HII-sekibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2e-10": {
+   "f": "h2bibun",
+   "u": [
+    "HII-sekibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m2e-11": {
+   "f": "h2bibun",
+   "u": [
+    "HII-sekibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb1-01": {
+   "f": "h2suretsu",
+   "u": [
+    "HB-suretsu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb1-02": {
+   "f": "h2suretsu",
+   "u": [
+    "HB-suretsu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb1-03": {
+   "f": "h2suretsu",
+   "u": [
+    "HB-suretsu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb1-04": {
+   "f": "h2suretsu",
+   "u": [
+    "HB-suretsu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb1-05": {
+   "f": "h2suretsu",
+   "u": [
+    "HB-suretsu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb1-06": {
+   "f": "h2suretsu",
+   "u": [
+    "HB-sigma"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb1-07": {
+   "f": "h2suretsu",
+   "u": [
+    "HB-sigma"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb1-08": {
+   "f": "h2suretsu",
+   "u": [
+    "HB-sigma"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb1-09": {
+   "f": "h2suretsu",
+   "u": [
+    "HB-zenka"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb1-10": {
+   "f": "h2suretsu",
+   "u": [
+    "HB-zenka"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb1-11": {
+   "f": "h2suretsu",
+   "u": [
+    "HB-zenka"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb2-01": {
+   "f": "h2toukei",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb2-02": {
+   "f": "h2toukei",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb2-03": {
+   "f": "h2toukei",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb2-04": {
+   "f": "h2toukei",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb2-05": {
+   "f": "h2toukei",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb2-06": {
+   "f": "h2toukei",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb2-07": {
+   "f": "h2toukei",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb2-08": {
+   "f": "h2toukei",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb2-09": {
+   "f": "h2toukei",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb2-10": {
+   "f": "h2toukei",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb2-11": {
+   "f": "h2toukei",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb3-01": {
+   "f": "h2shakai",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb3-02": {
+   "f": "h2shakai",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mb3-03": {
+   "f": "h2shakai",
+   "u": [
+    "HB-toukei"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  }
+ },
+ "files": {
+  "h2shiki": "h2shiki-UIeJhMvv.js",
+  "h2zuhou": "h2zuhou-lDnzoG1h.js",
+  "h2sankaku": "h2sankaku--i9Jgc_r.js",
+  "h2shitai": "h2shitai-gpG0X9r4.js",
+  "h2bibun": "h2bibun-Qvg0YpsX.js",
+  "h2suretsu": "h2suretsu-jqx8F_Q1.js",
+  "h2toukei": "h2toukei-Joz1jvd4.js",
+  "h2shakai": "h2shakai-hu5-DzQ1.js"
+ }
+}

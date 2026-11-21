@@ -1,0 +1,13 @@
+"""ご意見ばこ：ログインしていない送信が {"error":"login"} で止められたときの、生徒の画面の文。
+使い方: python3 patch_fb.py <土台の solo-*.js> <出力 solo-*.js>
+S2（エラーの文の表）に login を足すだけ。anchor は「ちょうど1回」出ることを assert する。"""
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+s = open(src, encoding='utf-8').read()
+old = 'もういちど おくってね。書いた文は のこしてあるよ。"};function K2(s){'
+assert s.count(old) == 1, s.count(old)
+new = 'もういちど おくってね。書いた文は のこしてあるよ。",login:"ご意見ばこは、ログインしてから おくる しくみだよ。ログインしてから、もういちど おくってね。書いた文は のこしてあるよ。"};function K2(s){'
+s = s.replace(old, new)
+assert 'login:"ご意見ばこは' in s
+open(dst, 'w', encoding='utf-8').write(s)
+print('ok', len(s))
