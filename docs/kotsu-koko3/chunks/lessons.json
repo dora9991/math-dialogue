@@ -1,0 +1,636 @@
+{
+ "lessons": {
+  "m3a-01": {
+   "f": "h3kyokugen",
+   "u": [
+    "HIII-kansu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3a-02": {
+   "f": "h3kyokugen",
+   "u": [
+    "HIII-kansu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3a-03": {
+   "f": "h3kyokugen",
+   "u": [
+    "HIII-kansu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3a-04": {
+   "f": "h3kyokugen",
+   "u": [
+    "HIII-kyokugen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3a-05": {
+   "f": "h3kyokugen",
+   "u": [
+    "HIII-kyokugen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3a-06": {
+   "f": "h3kyokugen",
+   "u": [
+    "HIII-kyokugen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3a-07": {
+   "f": "h3kyokugen",
+   "u": [
+    "HIII-kyokugen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3a-08": {
+   "f": "h3kyokugen",
+   "u": [
+    "HIII-kyokugen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3a-09": {
+   "f": "h3kyokugen",
+   "u": [
+    "HIII-kyokugen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3b-01": {
+   "f": "h3bibun",
+   "u": [
+    "HIII-bibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3b-02": {
+   "f": "h3bibun",
+   "u": [
+    "HIII-bibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3b-03": {
+   "f": "h3bibun",
+   "u": [
+    "HIII-bibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3b-04": {
+   "f": "h3bibun",
+   "u": [
+    "HIII-bibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3b-05": {
+   "f": "h3bibun",
+   "u": [
+    "HIII-bibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3b-06": {
+   "f": "h3bibun",
+   "u": [
+    "HIII-bibunouyo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3b-07": {
+   "f": "h3bibun",
+   "u": [
+    "HIII-bibunouyo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3b-08": {
+   "f": "h3bibun",
+   "u": [
+    "HIII-bibunouyo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3b-09": {
+   "f": "h3bibun",
+   "u": [
+    "HIII-bibunouyo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3b-10": {
+   "f": "h3bibun",
+   "u": [
+    "HIII-bibunouyo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3b-11": {
+   "f": "h3bibun",
+   "u": [
+    "HIII-bibunouyo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3b-12": {
+   "f": "h3bibun",
+   "u": [
+    "HIII-bibunouyo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3c-01": {
+   "f": "h3sekibun",
+   "u": [
+    "HIII-sekibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3c-02": {
+   "f": "h3sekibun",
+   "u": [
+    "HIII-sekibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3c-03": {
+   "f": "h3sekibun",
+   "u": [
+    "HIII-sekibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3c-04": {
+   "f": "h3sekibun",
+   "u": [
+    "HIII-sekibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3c-05": {
+   "f": "h3sekibun",
+   "u": [
+    "HIII-sekibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3c-06": {
+   "f": "h3sekibun",
+   "u": [
+    "HIII-sekibun"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3c-07": {
+   "f": "h3sekibun",
+   "u": [
+    "HIII-sekibunouyo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3c-08": {
+   "f": "h3sekibun",
+   "u": [
+    "HIII-sekibunouyo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "m3c-09": {
+   "f": "h3sekibun",
+   "u": [
+    "HIII-sekibunouyo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc1-01": {
+   "f": "h3vector",
+   "u": [
+    "HC-vector"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc1-02": {
+   "f": "h3vector",
+   "u": [
+    "HC-vector"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc1-03": {
+   "f": "h3vector",
+   "u": [
+    "HC-vector"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc1-04": {
+   "f": "h3vector",
+   "u": [
+    "HC-vector"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc1-05": {
+   "f": "h3vector",
+   "u": [
+    "HC-vector"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc1-06": {
+   "f": "h3vector",
+   "u": [
+    "HC-vector"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc1-07": {
+   "f": "h3vector",
+   "u": [
+    "HC-kukan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc1-08": {
+   "f": "h3vector",
+   "u": [
+    "HC-kukan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc1-09": {
+   "f": "h3vector",
+   "u": [
+    "HC-kukan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc1-10": {
+   "f": "h3vector",
+   "u": [
+    "HC-kukan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc2-01": {
+   "f": "h3kyokusen",
+   "u": [
+    "HC-fukuso"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc2-02": {
+   "f": "h3kyokusen",
+   "u": [
+    "HC-fukuso"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc2-03": {
+   "f": "h3kyokusen",
+   "u": [
+    "HC-fukuso"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc2-04": {
+   "f": "h3kyokusen",
+   "u": [
+    "HC-fukuso"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc2-05": {
+   "f": "h3kyokusen",
+   "u": [
+    "HC-kyokusen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc2-06": {
+   "f": "h3kyokusen",
+   "u": [
+    "HC-kyokusen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc2-07": {
+   "f": "h3kyokusen",
+   "u": [
+    "HC-kyokusen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc2-08": {
+   "f": "h3kyokusen",
+   "u": [
+    "HC-kyokusen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc2-09": {
+   "f": "h3kyokusen",
+   "u": [
+    "HC-kyokusen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc2-10": {
+   "f": "h3kyokusen",
+   "u": [
+    "HC-kyokusen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc3-01": {
+   "f": "h3hyogen",
+   "u": [
+    "HI-data"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "mc3-02": {
+   "f": "h3hyogen",
+   "u": [
+    "HC-vector"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  }
+ },
+ "files": {
+  "h3kyokugen": "h3kyokugen-zB8TJvgE.js",
+  "h3bibun": "h3bibun-mC_cn35b.js",
+  "h3sekibun": "h3sekibun-bbcsG4rA.js",
+  "h3vector": "h3vector-c36LwtHN.js",
+  "h3kyokusen": "h3kyokusen-i_4fXcGb.js",
+  "h3hyogen": "h3hyogen-cHiMDYcD.js"
+ }
+}
