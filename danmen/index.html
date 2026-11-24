@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>立方体の切り口</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<style>
+:root{
+  /* 黒板1枚。左＝立方体の舞台（canvas）、右＝板書（切り口の形・点の位置・数値）。黒板なので1テーマだけ。 */
+  --wall:#1a1814;
+  --frame:#7b522f;
+  --board-hi:#2d6150;
+  --board:#25503f;
+  --board-deep:#173829;
+  --board-veil:rgba(23,56,41,.78);
+  --chalk:#f2f0e6;
+  --chalk-2:rgba(242,240,230,.66);
+  --chalk-3:rgba(242,240,230,.30);
+  --chalk-4:rgba(242,240,230,.10);
+  --yel:#ffe27a;
+  --pink:#ff9db2;
+  --blue:#9ad8ff;
+  --orange:#ffc078;
+  --cP:#ff7a96; --cQ:#7be0a0; --cR:#c9b0ff;
+  --f-chalk:"Klee One","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-ui:"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html{font-size:clamp(14px,.5vw + .85vh,22px)}
+html,body{height:100%}
+body{margin:0;background:var(--wall);color:var(--chalk);font-family:var(--f-ui);-webkit-font-smoothing:antialiased}
+.app{word-break:auto-phrase;box-sizing:border-box;height:100%;display:flex;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.board{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;border:10px solid var(--frame);border-radius:10px;overflow:hidden;
+  background:
+    radial-gradient(ellipse 50% 18% at 70% 30%,var(--chalk-4),transparent 70%),
+    radial-gradient(ellipse at 25% 15%,var(--board-hi) 0%,var(--board) 55%,var(--board-deep) 100%);
+  box-shadow:inset 0 0 70px rgba(0,0,0,.45),0 8px 24px rgba(0,0,0,.45)}
+
+/* 上の帯 */
+.bar{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem 1rem;padding:.7rem 1.1rem .5rem}
+.bar h1{margin:0;flex:1 1 13rem;min-width:0;font-family:var(--f-chalk);font-weight:600;font-size:1.4rem;letter-spacing:.02em;text-wrap:balance}
+.bar h1 small{font-size:.7em;color:var(--chalk-2);margin-left:.6em;font-weight:400}
+.ctl{display:flex;gap:.45rem;flex-wrap:wrap}
+.btn{font:inherit;font-size:.92rem;color:var(--chalk);background:var(--chalk-4);border:2px solid var(--chalk-3);border-radius:10px;padding:.3rem .75rem;cursor:pointer;white-space:nowrap}
+.btn:hover{background:rgba(242,240,230,.18)}
+.btn[aria-pressed="true"]{border-color:var(--yel);color:var(--yel);background:rgba(255,226,122,.10)}
+.btn:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+
+/* 舞台と板書 */
+.main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);border-top:2px dashed var(--chalk-4)}
+.stage{position:relative;min-width:0;min-height:0}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#cv.over{cursor:pointer}
+#cv.drag{cursor:grabbing}
+.toast{position:absolute;left:50%;top:.8rem;transform:translateX(-50%);box-sizing:border-box;max-width:calc(100% - 2rem);
+  font-family:var(--f-chalk);font-weight:600;font-size:1.7rem;line-height:1.25;text-align:center;
+  padding:.15rem 1rem .25rem;border-radius:12px;background:var(--board-veil);color:var(--yel);pointer-events:none;white-space:nowrap}
+.toast.ng{color:var(--pink);font-size:1.15rem;white-space:normal}
+.toast small{font-size:.55em;color:var(--chalk-2);margin-left:.4em}
+.dock{position:absolute;left:.8rem;right:.8rem;bottom:.6rem;display:flex;align-items:center;gap:.4rem .8rem;flex-wrap:wrap;pointer-events:none}
+.dock > *{pointer-events:auto}
+.dock .sl{flex:1 1 17rem;min-width:0;display:flex;align-items:center;gap:.6rem;background:var(--board-veil);border-radius:10px;padding:.3rem .7rem}
+.dock label{font-family:var(--f-chalk);font-weight:600;font-size:1rem;white-space:nowrap}
+.dock input[type=range]{flex:1;min-width:4rem;accent-color:var(--yel)}
+.dock .btn{background:var(--board-veil)}
+.dock .btn[aria-pressed="false"]{opacity:.55}
+.sw{display:inline-block;width:.8rem;height:.8rem;border-radius:3px;margin-right:.35rem;vertical-align:-.05rem;box-shadow:0 0 0 1.5px rgba(0,0,0,.5)}
+.hint{position:absolute;left:.9rem;bottom:3.7rem;font-size:.78rem;color:var(--chalk-2);pointer-events:none;line-height:1.5}
+
+.panel{min-width:0;min-height:0;overflow:auto;border-left:2px dashed var(--chalk-4);padding:.6rem 1.1rem 1rem;display:flex;flex-direction:column;gap:.85rem}
+.sec{display:flex;flex-direction:column;gap:.35rem}
+.sec h2{margin:0;font-family:var(--f-chalk);font-weight:600;font-size:.95rem;color:var(--blue);letter-spacing:.04em}
+.shape{margin:0;font-family:var(--f-chalk);font-weight:600;font-size:2.3rem;line-height:1.2;color:var(--yel);text-wrap:balance}
+.shape.ng{color:var(--pink);font-size:1.5rem}
+.sub{margin:0;font-size:.92rem;color:var(--chalk-2);line-height:1.6}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.18rem;font-size:.95rem;line-height:1.5}
+.list li{display:flex;gap:.5rem;align-items:baseline;font-variant-numeric:tabular-nums}
+.list .k{flex:none;width:1.4rem;font-family:var(--f-chalk);font-weight:600}
+.list .pt{font-weight:700}
+.list .dim{color:var(--chalk-2)}
+.stat{margin:0;display:grid;grid-template-columns:auto 1fr;gap:.2rem .8rem;font-size:.95rem;line-height:1.55}
+.stat dt{color:var(--chalk-2)}
+.stat dd{margin:0;font-variant-numeric:tabular-nums}
+.stat dd b{font-family:var(--f-chalk);font-weight:600;color:var(--yel)}
+.row{display:flex;flex-wrap:wrap;gap:.4rem .5rem;align-items:center}
+.row .lab{font-size:.88rem;color:var(--chalk-2);margin-right:.2rem}
+select,input[type=number]{font:inherit;font-size:.92rem;color:var(--chalk);background:var(--chalk-4);border:2px solid var(--chalk-3);border-radius:8px;padding:.2rem .4rem}
+select option{color:#111}
+input[type=number]{width:4.2rem}
+.presets{display:flex;flex-wrap:wrap;gap:.4rem}
+.note{margin:0;font-size:.8rem;color:var(--chalk-2);line-height:1.6}
+
+@media (max-width:899px){
+  html,body{height:auto}
+  .app{height:auto;min-height:100%}
+  .main{display:flex;flex-direction:column}
+  .stage{width:100%;height:min(105vw,76vh);flex:none}
+  .panel{border-left:0;border-top:2px dashed var(--chalk-4);overflow:visible}
+  .toast{font-size:1.35rem}
+  .hint{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app" lang="ja">
+  <div class="board">
+    <header class="bar">
+      <h1>立方体の切り口<small>3点 P・Q・R を通る平面で切る</small></h1>
+      <div class="ctl">
+        <button class="btn" id="fs" type="button">全画面</button>
+      </div>
+    </header>
+    <div class="main">
+      <div class="stage" id="stage">
+        <canvas id="cv" role="img" aria-label="立方体と、3点を通る平面の切り口"></canvas>
+        <div class="hint">● P・Q・R をドラッグで動かす<br>空いているところをドラッグで回す／ホイール・ピンチで拡大<br>ダブルクリックで向きをもどす</div>
+        <div class="toast" id="toast" hidden></div>
+        <div class="dock">
+          <div class="sl"><label for="split">立体を2つに分ける</label><input type="range" id="split" min="0" max="100" value="0"></div>
+          <button class="btn" id="showNeg" type="button" aria-pressed="true"><span class="sw" style="background:#9ad8ff"></span><span id="negName">こちら側</span></button>
+          <button class="btn" id="showPos" type="button" aria-pressed="true"><span class="sw" style="background:#ffc078"></span><span id="posName">反対側</span></button>
+        </div>
+      </div>
+      <section class="panel" id="panel" aria-live="polite">
+        <div class="sec">
+          <h2>切り口の形</h2>
+          <p class="shape" id="shape"></p>
+          <p class="sub" id="shapeSub"></p>
+        </div>
+        <div class="sec">
+          <h2>3点の位置（A を原点、AB・AD・AE を x・y・z、1辺を 1 とする）</h2>
+          <ul class="list" id="ptList"></ul>
+        </div>
+        <div class="sec" id="vtxSec">
+          <h2>切り口の頂点</h2>
+          <ul class="list" id="vtxList"></ul>
+        </div>
+        <div class="sec" id="statSec">
+          <h2>大きさ</h2>
+          <div class="row"><span class="lab">立方体の1辺 a =</span><input type="number" id="edgeLen" value="6" min="0.1" step="0.5" inputmode="decimal" aria-label="立方体の1辺の長さ（cm）"><span class="lab">cm</span></div>
+          <dl class="stat" id="stat"></dl>
+        </div>
+        <div class="sec">
+          <h2>点の動かし方</h2>
+          <div class="row">
+            <button class="btn" id="mFace" type="button" aria-pressed="true">面の上を自由に</button>
+            <button class="btn" id="mEdge" type="button" aria-pressed="false">辺の上だけ</button>
+          </div>
+          <div class="row"><span class="lab">そろえる</span>
+            <select id="snap" aria-label="点を何分のいくつの位置にそろえるか">
+              <option value="0">なし（なめらか）</option>
+              <option value="2">1/2 ずつ</option>
+              <option value="3">1/3 ずつ</option>
+              <option value="4" selected>1/4 ずつ</option>
+              <option value="6">1/6 ずつ</option>
+              <option value="12">1/12 ずつ</option>
+            </select>
+          </div>
+        </div>
+        <div class="sec">
+          <h2>見せ方</h2>
+          <div class="row">
+            <button class="btn" id="tPlane" type="button" aria-pressed="true">平面を広げる</button>
+            <button class="btn" id="tTri" type="button" aria-pressed="true">三角形 PQR</button>
+            <button class="btn" id="tLab" type="button" aria-pressed="true">頂点の記号</button>
+          </div>
+          <div class="row">
+            <button class="btn" id="vHome" type="button">もとの向き</button>
+            <button class="btn" id="vFront" type="button">正面</button>
+            <button class="btn" id="vTop" type="button">真上</button>
+            <button class="btn" id="vPlane" type="button">切り口を正面から</button>
+          </div>
+        </div>
+        <div class="sec">
+          <h2>やってみよう（3点の置き方の例）</h2>
+          <div class="presets" id="presets"></div>
+          <p class="note">3点を動かして、切り口を 三角形・四角形・五角形・六角形 にしてみよう。正三角形や正六角形になるのは、どんなときだろう？</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ================= 立方体のデータ（1辺 1、A が原点） =================
+     A(0,0,0) B(1,0,0) C(1,1,0) D(0,1,0)  E(0,0,1) F(1,0,1) G(1,1,1) H(0,1,1)  （E は A の真上） */
+  var NAMES = 'ABCDEFGH';
+  var V = [[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
+  var EDGES = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  /* 面：v＝頂点の並び（多角形の向き用）、ax・val＝その面が x_ax＝val、name＝呼び名 */
+  var FACES = [
+    { v: [0,3,2,1], ax: 2, val: 0, name: 'ABCD' },
+    { v: [4,5,6,7], ax: 2, val: 1, name: 'EFGH' },
+    { v: [0,1,5,4], ax: 1, val: 0, name: 'ABFE' },
+    { v: [3,2,6,7], ax: 1, val: 1, name: 'DCGH' },
+    { v: [0,4,7,3], ax: 0, val: 0, name: 'AEHD' },
+    { v: [1,2,6,5], ax: 0, val: 1, name: 'BCGF' }
+  ];
+  var CEN = [.5, .5, .5];
+
+  /* ================= ベクトル ================= */
+  function sub(a, b) { return [a[0]-b[0], a[1]-b[1], a[2]-b[2]]; }
+  function add(a, b) { return [a[0]+b[0], a[1]+b[1], a[2]+b[2]]; }
+  function mul(a, k) { return [a[0]*k, a[1]*k, a[2]*k]; }
+  function dot(a, b) { return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]; }
+  function cross(a, b) { return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]; }
+  function len(a) { return Math.sqrt(dot(a, a)); }
+  function lerp(a, b, t) { return add(mul(a, 1 - t), mul(b, t)); }
+  function clamp(x, lo, hi) { return Math.min(hi, Math.max(lo, x)); }
+  function normFace(f) { var n = [0,0,0]; n[f.ax] = f.val ? 1 : -1; return n; }
+  function faceOutN(fi) { return normFace(FACES[fi]); }
+
+  /* ================= 切り口の計算 ================= */
+  var EPS = 1e-7;
+
+  /* 3点から平面（単位法線 n と、n·x = d）。一直線上・重なりなら null */
+  function planeFrom(P, Q, R) {
+    var n = cross(sub(Q, P), sub(R, P)), l = len(n);
+    if (l < 1e-6) return null;
+    n = mul(n, 1 / l);
+    return { n: n, d: dot(n, P) };
+  }
+
+  /* 平面と立方体の12辺の交わり → 切り口の多角形（順に並べた頂点） */
+  function sectionPoly(n, d) {
+    var pts = [];
+    function pushU(p) { for (var i = 0; i < pts.length; i++) if (len(sub(p, pts[i])) < EPS) return; pts.push(p); }
+    EDGES.forEach(function (e) {
+      var a = V[e[0]], b = V[e[1]], fa = dot(n, a) - d, fb = dot(n, b) - d;
+      if (Math.abs(fa) < EPS) pushU(a);
+      if (Math.abs(fb) < EPS) pushU(b);
+      if (fa * fb < 0 && Math.abs(fa) > EPS && Math.abs(fb) > EPS) pushU(lerp(a, b, fa / (fa - fb)));
+    });
+    if (pts.length < 3) return pts;
+    var c = [0,0,0]; pts.forEach(function (p) { c = add(c, p); }); c = mul(c, 1 / pts.length);
+    var e1 = sub(pts[0], c); e1 = mul(e1, 1 / (len(e1) || 1));
+    var e2 = cross(n, e1);
+    var ang = pts.map(function (p) { var q = sub(p, c); return Math.atan2(dot(q, e2), dot(q, e1)); });
+    var idx = pts.map(function (_, i) { return i; }).sort(function (i, j) { return ang[i] - ang[j]; });
+    return idx.map(function (i) { return pts[i]; });
+  }
+
+  function centroid(poly) { var c = [0,0,0]; poly.forEach(function (p) { c = add(c, p); }); return mul(c, 1 / poly.length); }
+  function polyArea(poly) {
+    var s = [0,0,0];
+    for (var i = 1; i < poly.length - 1; i++) s = add(s, cross(sub(poly[i], poly[0]), sub(poly[i+1], poly[0])));
+    return len(s) / 2;
+  }
+
+  /* 凸多角形を半空間で切る（g(x)<=0 の側を残す）。g(x) = sgn*(n·x − d) */
+  function clipPoly(poly, n, d, sgn) {
+    var out = [], m = poly.length;
+    function g(x) { return sgn * (dot(n, x) - d); }
+    for (var i = 0; i < m; i++) {
+      var a = poly[i], b = poly[(i + 1) % m], ga = g(a), gb = g(b), ina = ga <= EPS, inb = gb <= EPS;
+      if (ina && inb) out.push(b);
+      else if (ina && !inb) out.push(lerp(a, b, ga / (ga - gb)));
+      else if (!ina && inb) { out.push(lerp(a, b, ga / (ga - gb))); out.push(b); }
+    }
+    var res = [];
+    out.forEach(function (p) { if (!res.length || len(sub(p, res[res.length - 1])) > EPS) res.push(p); });
+    if (res.length > 1 && len(sub(res[0], res[res.length - 1])) <= EPS) res.pop();
+    if (res.length < 3 || polyArea(res) < 1e-9) return null;
+    return res;
+  }
+
+  /* 立体の半分：切った面たち＋切り口。sgn=-1 → n·x<=d（n の反対側）、+1 → n の側 */
+  function halfSolid(n, d, sgn, sec) {
+    var faces = [], vol = 0;
+    FACES.forEach(function (f, fi) {
+      var poly = clipPoly(f.v.map(function (i) { return V[i]; }), n, d, sgn);
+      if (poly) { faces.push({ poly: poly, n: faceOutN(fi) }); }
+    });
+    var cutN = sgn < 0 ? n : mul(n, -1);   // 切り口でのそと向き
+    faces.push({ poly: sec, n: cutN, cut: true });
+    faces.forEach(function (f) { vol += dot(sub(f.poly[0], CEN), f.n) * polyArea(f.poly) / 3; });
+    return { faces: faces, vol: vol };
+  }
+
+  /* 3点の組 → 切り口のすべて */
+  function buildModel(P3) {
+    var pl = planeFrom(P3[0], P3[1], P3[2]);
+    if (!pl) return { ok: false };
+    var n = pl.n, d = pl.d;
+    var ref = -1, i, s;
+    for (i = 0; i < 8; i++) { s = dot(n, V[i]) - d; if (Math.abs(s) > EPS) { ref = i; if (s > 0) { n = mul(n, -1); d = -d; } break; } }
+    var sec = sectionPoly(n, d);
+    var m = { ok: true, n: n, d: d, sec: sec, ref: ref };
+    /* 平面が立方体の面そのもの？ */
+    for (i = 0; i < 3; i++) if (Math.abs(Math.abs(n[i]) - 1) < 1e-9) {
+      var pos = d / n[i];
+      if (Math.abs(pos) < EPS || Math.abs(pos - 1) < EPS) m.onFace = true;
+    }
+    m.cls = classify(sec);
+    m.area = polyArea(sec);
+    if (!m.onFace) {
+      m.neg = halfSolid(n, d, -1, sec);
+      m.pos = halfSolid(n, d, +1, sec);
+    }
+    return m;
+  }
+
+  /* 多角形の名前（辺の長さ・平行・直角で調べる） */
+  function classify(P) {
+    var m = P.length, E = [], L = [], i;
+    for (i = 0; i < m; i++) { E[i] = sub(P[(i + 1) % m], P[i]); L[i] = len(E[i]); }
+    function eq(a, b) { return Math.abs(a - b) < 1e-6; }
+    function par(i, j) { return len(cross(E[i], E[j])) < 1e-6 * L[i] * L[j]; }
+    function perp(i, j) { return Math.abs(dot(E[i], E[j])) < 1e-6 * L[i] * L[j]; }
+    var name = '', kind = '';
+    if (m === 3) {
+      var all = eq(L[0], L[1]) && eq(L[1], L[2]);
+      var right = perp(0, 1) || perp(1, 2) || perp(2, 0);
+      var iso = eq(L[0], L[1]) || eq(L[1], L[2]) || eq(L[2], L[0]);
+      name = all ? '正三角形' : right && iso ? '直角二等辺三角形' : right ? '直角三角形' : iso ? '二等辺三角形' : '三角形';
+      kind = 'tri';
+    } else if (m === 4) {
+      var p02 = par(0, 2), p13 = par(1, 3);
+      if (p02 && p13) {
+        var rt = perp(0, 1), rh = eq(L[0], L[1]);
+        name = rt && rh ? '正方形' : rt ? '長方形' : rh ? 'ひし形' : '平行四辺形';
+      } else if (p02 || p13) {
+        var legsEq = p02 ? eq(L[1], L[3]) : eq(L[0], L[2]);
+        name = legsEq ? '等脚台形' : '台形';
+      } else name = '四角形';
+      kind = 'quad';
+    } else if (m === 5) { name = '五角形'; kind = 'pent'; }
+    else if (m === 6) {
+      var reg = true, c0 = dot(E[0], E[1]) / (L[0] * L[1]);
+      for (i = 0; i < 6; i++) { if (!eq(L[i], L[0])) reg = false; if (Math.abs(dot(E[i], E[(i + 1) % 6]) / (L[i] * L[(i + 1) % 6]) - c0) > 1e-6) reg = false; }
+      name = reg ? '正六角形' : '六角形'; kind = 'hex';
+    } else { name = m + '角形'; }
+    return { name: name, n: m, kind: kind };
+  }
+
+  /* ================= 数の見せ方 ================= */
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = a % b; a = b; b = t; } return a; }
+  /* x を p/q（q は 12 まで）の形で。合わなければ小数 */
+  function frac(x) {
+    if (Math.abs(x) < 1e-6) return '0';
+    var sg = x < 0 ? '−' : '', v = Math.abs(x);
+    for (var q = 1; q <= 12; q++) {
+      var p = Math.round(v * q);
+      if (Math.abs(v - p / q) < 1e-6) { var g = gcd(p, q); p /= g; var qq = q / g; return sg + (qq === 1 ? String(p) : p + '/' + qq); }
+    }
+    return sg + (Math.round(v * 100) / 100);
+  }
+  function fixed(x, k) { return (Math.round(x * Math.pow(10, k)) / Math.pow(10, k)).toLocaleString('ja-JP', { maximumFractionDigits: k }); }
+  /* a : b（合計 1）を整数の比に。だめなら null */
+  function ratioText(a) {
+    for (var q = 1; q <= 2000; q++) {
+      var p = Math.round(a * q);
+      if (p > 0 && p < q && Math.abs(a - p / q) < 1e-7) { var g = gcd(p, q - p); return (p / g) + ' : ' + ((q - p) / g); }
+    }
+    return null;
+  }
+  /* 面積（a² を単位）を √ の形に。area² が分数のとき */
+  function exactArea(A) {
+    var A2 = A * A;
+    for (var q = 1; q <= 40000; q++) {
+      var p = Math.round(A2 * q);
+      if (p > 0 && Math.abs(A2 - p / q) < 1e-9 * Math.max(1, A2)) {
+        var k = p * q, f;
+        /* k から平方数のかたまりを取りだす */
+        var kk = k, out = 1;
+        for (f = 2; f * f <= kk; f++) { while (kk % (f * f) === 0) { kk /= f * f; out *= f; } }
+        var g = gcd(out, q), c = out / g, den = q / g, rad = kk;
+        if (rad === 1) return den === 1 ? String(c) : c + '/' + den;
+        var top = (c === 1 ? '' : c) + '√' + rad;
+        return den === 1 ? top : '(' + top + ')/' + den;
+      }
+    }
+    return null;
+  }
+
+  /* 点の位置のことば */
+  function bound(v) { return v < 1e-6 ? 0 : v > 1 - 1e-6 ? 1 : null; }
+  function locate(p) {
+    var b = p.map(bound), fixedN = b.filter(function (x) { return x !== null; }).length, i;
+    if (fixedN === 3) {
+      for (i = 0; i < 8; i++) if (V[i][0] === b[0] && V[i][1] === b[1] && V[i][2] === b[2]) return { kind: 'vertex', text: '頂点 ' + NAMES[i] };
+    }
+    if (fixedN === 2) {
+      for (i = 0; i < 12; i++) {
+        var a = V[EDGES[i][0]], c = V[EDGES[i][1]], k = a[0] !== c[0] ? 0 : a[1] !== c[1] ? 1 : 2, ok = true;
+        for (var j = 0; j < 3; j++) if (j !== k && Math.abs(a[j] - p[j]) > 1e-6) ok = false;
+        if (ok) {
+          var t = Math.abs(p[k] - a[k]);
+          return { kind: 'edge', edge: i, t: t, text: '辺 ' + NAMES[EDGES[i][0]] + NAMES[EDGES[i][1]] + ' 上（' + NAMES[EDGES[i][0]] + ' から ' + frac(t) + (Math.abs(t - .5) < 1e-6 ? '・中点' : '') + '）' };
+        }
+      }
+    }
+    if (fixedN === 1) {
+      for (i = 0; i < 6; i++) if (b[FACES[i].ax] === FACES[i].val) return { kind: 'face', face: i, text: '面 ' + FACES[i].name + ' 上' };
+    }
+    return { kind: 'in', text: '立方体の中' };
+  }
+  /* 切り口の頂点のことば */
+  function vtxText(p) {
+    for (var i = 0; i < 8; i++) if (len(sub(p, V[i])) < 1e-6) return '頂点 ' + NAMES[i];
+    var L = locate(p);
+    if (L.kind === 'edge') {
+      var e = EDGES[L.edge], nm = NAMES[e[0]] + NAMES[e[1]], r = ratioText(L.t);
+      return '辺 ' + nm + ' を ' + (r ? r : ('始めの頂点から ' + frac(L.t))) + ' に分ける点';
+    }
+    return L.text;
+  }
+
+  /* ================= 状態 ================= */
+  var HOME = { yaw: 0.62, pitch: 0.42, zoom: 1 };
+  var view = { yaw: HOME.yaw, pitch: HOME.pitch, zoom: HOME.zoom };
+  var opt = { mode: 'face', snap: 4, plane: true, tri: true, lab: true, split: 0, showNeg: true, showPos: true, edgeLen: 6 };
+  var PCOL = ['#ff7a96', '#7be0a0', '#c9b0ff'], PNAME = ['P', 'Q', 'R'];
+  /* 正六角形になる例で始める */
+  var pts = [[.5,0,0],[1,1,.5],[0,.5,1]].map(function (p) { return mk(p); });
+  var model = null;
+
+  function mk(p) { return { p: p.slice(), f: faceOf(p), e: edgeOf(p) }; }
+  function faceOf(p) {
+    var b = p.map(bound);
+    for (var i = 0; i < 6; i++) if (b[FACES[i].ax] === FACES[i].val) return i;
+    return -1;
+  }
+  function edgeOf(p) {
+    var L = locate(p); return L.kind === 'edge' ? L.edge : -1;
+  }
+
+  /* ================= 見る向き（正射影） ================= */
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var W = 300, H = 300, DPR = 1;
+  var Rv, Uv, Dv, S, cx0, cy0;
+  function setupView() {
+    var th = view.yaw, ph = view.pitch;
+    Dv = [Math.sin(th) * Math.cos(ph), -Math.cos(th) * Math.cos(ph), Math.sin(ph)];  // 立方体から目のほうへ
+    Rv = [Math.cos(th), Math.sin(th), 0];
+    Uv = [-Math.sin(th) * Math.sin(ph), Math.cos(th) * Math.sin(ph), Math.cos(ph)];
+    S = Math.min(W, H) * 0.27 * view.zoom;
+    cx0 = W / 2; cy0 = H / 2 + 14;
+  }
+  function project(p) {
+    var q = sub(p, CEN);
+    return [cx0 + S * dot(q, Rv), cy0 - S * dot(q, Uv), dot(q, Dv)];
+  }
+  /* 画面の点 → 目の方向の直線（原点 o、方向 Dv） */
+  function unprojectOrigin(mx, my) {
+    var a = (mx - cx0) / S, b = -(my - cy0) / S;
+    return add(CEN, add(mul(Rv, a), mul(Uv, b)));
+  }
+
+  /* ================= 点をつかむ・動かす ================= */
+  function snapV(x) { return opt.snap ? Math.round(x * opt.snap) / opt.snap : x; }
+  function magnet(x) { return x < 0.02 ? 0 : x > 0.98 ? 1 : x; }
+
+  /* 面の上：画面上でカーソルにいちばん近い面の点（うらの面もえらべる） */
+  function pickOnFaces(mx, my, curFace) {
+    var o = unprojectOrigin(mx, my), best = null;
+    for (var fi = 0; fi < 6; fi++) {
+      var f = FACES[fi], ax = f.ax;
+      if (Math.abs(Dv[ax]) < 0.06) continue;           // 真横から見ている面は選ばない
+      var t = (f.val - o[ax]) / Dv[ax], p = add(o, mul(Dv, t)), j;
+      for (j = 0; j < 3; j++) p[j] = clamp(p[j], 0, 1);
+      p[ax] = f.val;
+      var s = project(p), dist = Math.hypot(s[0] - mx, s[1] - my);
+      var back = (f.val ? Dv[ax] : -Dv[ax]) < 0;
+      var score = dist + (back ? 10 : 0) - (fi === curFace ? 14 : 0);
+      if (!best || score < best.score) best = { score: score, p: p, f: fi };
+    }
+    if (!best) return null;
+    var f2 = FACES[best.f];
+    for (var k = 0; k < 3; k++) if (k !== f2.ax) best.p[k] = clamp(snapV(magnet(best.p[k])), 0, 1);
+    best.p[f2.ax] = f2.val;
+    return best;
+  }
+  /* 辺の上：画面上でカーソルにいちばん近い辺の点 */
+  function pickOnEdges(mx, my, curEdge) {
+    var best = null;
+    for (var ei = 0; ei < 12; ei++) {
+      var a = V[EDGES[ei][0]], b = V[EDGES[ei][1]], sa = project(a), sb = project(b);
+      var vx = sb[0] - sa[0], vy = sb[1] - sa[1], l2 = vx * vx + vy * vy;
+      var t = l2 < 1e-6 ? .5 : clamp(((mx - sa[0]) * vx + (my - sa[1]) * vy) / l2, 0, 1);
+      var dist = Math.hypot(sa[0] + vx * t - mx, sa[1] + vy * t - my);
+      var score = dist - (ei === curEdge ? 12 : 0);
+      if (!best || score < best.score) best = { score: score, t: t, e: ei };
+    }
+    var t2 = clamp(snapV(magnet(best.t)), 0, 1);
+    best.p = lerp(V[EDGES[best.e][0]], V[EDGES[best.e][1]], t2);
+    return best;
+  }
+  function nearestOnEdges(p) {
+    var best = null;
+    for (var ei = 0; ei < 12; ei++) {
+      var a = V[EDGES[ei][0]], b = V[EDGES[ei][1]], ab = sub(b, a);
+      var t = clamp(dot(sub(p, a), ab) / dot(ab, ab), 0, 1), q = lerp(a, b, t), d = len(sub(p, q));
+      if (!best || d < best.d) best = { d: d, e: ei, t: t };
+    }
+    return best;
+  }
+  function setMode(m) {
+    opt.mode = m;
+    if (m === 'edge') {
+      pts.forEach(function (o) {
+        var n = nearestOnEdges(o.p), t = clamp(snapV(n.t), 0, 1);
+        o.e = n.e; o.p = lerp(V[EDGES[n.e][0]], V[EDGES[n.e][1]], t); o.f = faceOf(o.p);
+      });
+    } else {
+      pts.forEach(function (o) { o.f = faceOf(o.p); o.e = edgeOf(o.p); });
+    }
+    syncButtons(); refresh();
+  }
+  function applySnap() {
+    pts.forEach(function (o) {
+      if (opt.mode === 'edge') {
+        var n = nearestOnEdges(o.p), t = clamp(snapV(n.t), 0, 1);
+        o.e = n.e; o.p = lerp(V[EDGES[n.e][0]], V[EDGES[n.e][1]], t);
+      } else {
+        var f = o.f >= 0 ? FACES[o.f] : null;
+        if (f) for (var k = 0; k < 3; k++) if (k !== f.ax) o.p[k] = clamp(snapV(o.p[k]), 0, 1);
+      }
+      o.f = faceOf(o.p); o.e = edgeOf(o.p);
+    });
+    refresh();
+  }
+
+  /* 点の画面位置（「分ける」でずれているときも合わせる） */
+  function pointOffset() {
+    if (!model || !model.ok || model.onFace || opt.split <= 0) return [0,0,0];
+    var off = opt.split * 0.6;
+    if (opt.showNeg) return mul(model.n, -off);   // 見えている側の切り口に乗せる
+    if (opt.showPos) return mul(model.n, off);
+    return [0,0,0];
+  }
+  function pointScreen(i) { return project(add(pts[i].p, pointOffset())); }
+  function hitPoint(m, rad) {
+    var best = -1, bd = rad;
+    for (var i = 0; i < 3; i++) { var s = pointScreen(i), d = Math.hypot(s[0] - m[0], s[1] - m[1]); if (d <= bd) { bd = d; best = i; } }
+    return best;
+  }
+
+  /* ================= 入力（ポインタ） ================= */
+  var ptrs = {}, drag = null, pinch = null, hover = -1;
+  function pos(e) { var r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+  function nptr() { return Object.keys(ptrs).length; }
+  cv.addEventListener('pointerdown', function (e) {
+    var m = pos(e); ptrs[e.pointerId] = m;
+    try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+    cancelTween();
+    if (nptr() === 2) {
+      var k = Object.keys(ptrs), a = ptrs[k[0]], b = ptrs[k[1]];
+      pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), z: view.zoom }; drag = null; return;
+    }
+    var h = hitPoint(m, e.pointerType === 'mouse' ? 18 : 28);
+    if (h >= 0) {
+      if (opt.split > 0) { opt.split = 0; document.getElementById('split').value = 0; refresh(); }
+      drag = { type: 'pt', i: h }; cv.className = 'drag';
+    } else { drag = { type: 'orbit', last: m }; cv.className = 'drag'; }
+    e.preventDefault();
+  });
+  cv.addEventListener('pointermove', function (e) {
+    var m = pos(e);
+    if (ptrs[e.pointerId]) ptrs[e.pointerId] = m;
+    if (pinch && nptr() === 2) {
+      var k = Object.keys(ptrs), a = ptrs[k[0]], b = ptrs[k[1]];
+      view.zoom = clamp(pinch.z * Math.hypot(a[0] - b[0], a[1] - b[1]) / pinch.d, .5, 2.6); draw(); return;
+    }
+    if (!drag) {
+      var h = hitPoint(m, 18);
+      if (h !== hover) { hover = h; cv.className = h >= 0 ? 'over' : ''; draw(); }
+      return;
+    }
+    if (drag.type === 'orbit') {
+      view.yaw -= (m[0] - drag.last[0]) * 0.011;
+      view.pitch = clamp(view.pitch + (m[1] - drag.last[1]) * 0.011, -1.55, 1.55);
+      drag.last = m; draw();
+    } else {
+      var o = pts[drag.i];
+      if (opt.mode === 'edge') { var r = pickOnEdges(m[0], m[1], o.e); o.p = r.p; o.e = r.e; o.f = faceOf(o.p); }
+      else { var r2 = pickOnFaces(m[0], m[1], o.f); if (r2) { o.p = r2.p; o.f = r2.f; o.e = edgeOf(o.p); } }
+      refresh();
+    }
+  });
+  function up(e) {
+    delete ptrs[e.pointerId];
+    if (nptr() < 2) pinch = null;
+    if (nptr() === 0) { drag = null; cv.className = hover >= 0 ? 'over' : ''; }
+    else if (nptr() === 1 && !drag) { var k = Object.keys(ptrs)[0]; drag = { type: 'orbit', last: ptrs[k] }; }
+  }
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', up);
+  cv.addEventListener('pointerleave', function () { if (!drag && hover !== -1) { hover = -1; cv.className = ''; draw(); } });
+  cv.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    view.zoom = clamp(view.zoom * Math.exp(-e.deltaY * 0.0012), .5, 2.6); draw();
+  }, { passive: false });
+  cv.addEventListener('dblclick', function () { tweenTo(HOME); });
+
+  /* ================= 向きの切りかえ（なめらかに） ================= */
+  var tw = null;
+  function cancelTween() { if (tw) { cancelAnimationFrame(tw.raf); tw = null; } }
+  function tweenTo(t) {
+    cancelTween();
+    var from = { yaw: view.yaw, pitch: view.pitch, zoom: view.zoom };
+    var dy = t.yaw - from.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));   // 近いほうの回り方
+    var t0 = performance.now(), dur = 520;
+    tw = {};
+    (function step(now) {
+      var k = clamp((now - t0) / dur, 0, 1), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      view.yaw = from.yaw + dy * e; view.pitch = from.pitch + (t.pitch - from.pitch) * e; view.zoom = from.zoom + ((t.zoom || 1) - from.zoom) * e;
+      draw();
+      if (k < 1) tw.raf = requestAnimationFrame(step); else tw = null;
+    })(t0);
+  }
+  function lookAlong(n) {
+    /* 平面に垂直な向きから見る。いまの目に近いほうの側へ */
+    var s = dot(n, Dv) >= 0 ? 1 : -1, d = mul(n, s), ph = Math.asin(clamp(d[2], -1, 1));
+    var yaw = Math.abs(Math.cos(ph)) < 1e-3 ? view.yaw : Math.atan2(d[0], -d[1]);
+    tweenTo({ yaw: yaw, pitch: clamp(ph, -1.55, 1.55), zoom: 1 });
+  }
+
+  /* ================= 描く ================= */
+  var LIGHT = mul([-.35, -.55, .76], 1 / len([-.35, -.55, .76]));
+  var BASE = { neg: [154, 216, 255], pos: [255, 192, 120], whole: [200, 225, 255], cut: [255, 226, 122] };
+  function rgba(c, a, sh) {
+    sh = sh == null ? 1 : sh;
+    return 'rgba(' + Math.round(clamp(c[0] * sh, 0, 255)) + ',' + Math.round(clamp(c[1] * sh, 0, 255)) + ',' + Math.round(clamp(c[2] * sh, 0, 255)) + ',' + a + ')';
+  }
+
+  var raf = 0;
+  function draw() { if (raf) return; raf = requestAnimationFrame(function () { raf = 0; render(); }); }
+
+  function render() {
+    setupView();
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    var items = [], m = model, off = [0,0,0];
+
+    /* 広げた平面（いちばんうしろに、うすく） */
+    if (m && m.ok && opt.plane) {
+      var c0 = centroid(m.sec), e1 = sub(m.sec[0], c0); e1 = mul(e1, 1 / (len(e1) || 1));
+      if (m.onFace) e1 = [1,0,0];
+      var e2 = cross(m.n, e1), h = 1.15;
+      var q = [add(c0, add(mul(e1, h), mul(e2, h))), add(c0, add(mul(e1, -h), mul(e2, h))), add(c0, add(mul(e1, -h), mul(e2, -h))), add(c0, add(mul(e1, h), mul(e2, -h)))];
+      ctx.beginPath(); q.forEach(function (p, i) { var s = project(p); if (i) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); }); ctx.closePath();
+      ctx.fillStyle = 'rgba(255,226,122,.09)'; ctx.fill();
+      ctx.setLineDash([7, 6]); ctx.strokeStyle = 'rgba(255,226,122,.5)'; ctx.lineWidth = 1.4; ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    /* 立体の面 */
+    function addItems(faces, base, shift) {
+      faces.forEach(function (f) {
+        items.push({ poly: f.poly.map(function (p) { return add(p, shift); }), n: f.n, base: f.cut ? BASE.cut : base, cut: !!f.cut });
+      });
+    }
+    var whole = !m || !m.ok || m.onFace;
+    if (whole) {
+      FACES.forEach(function (f, fi) {
+        var hl = m && m.ok && m.onFace && f.ax !== undefined && Math.abs(m.n[f.ax]) > .99 && Math.abs(m.d / m.n[f.ax] - f.val) < 1e-6;
+        items.push({ poly: f.v.map(function (i) { return V[i]; }), n: faceOutN(fi), base: hl ? BASE.cut : BASE.whole, cut: hl });
+      });
+    } else {
+      var sp = opt.split * 0.6;
+      if (opt.showNeg) addItems(m.neg.faces, BASE.neg, mul(m.n, -sp));
+      if (opt.showPos) addItems(m.pos.faces, BASE.pos, mul(m.n, sp));
+    }
+    items.forEach(function (it) {
+      var cc = centroid(it.poly); it.depth = dot(sub(cc, CEN), Dv);
+      it.back = dot(it.n, Dv) < 0;
+    });
+    items.sort(function (a, b) { return a.depth - b.depth; });
+    items.forEach(function (it) {
+      ctx.beginPath();
+      it.poly.forEach(function (p, i) { var s = project(p); if (i) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); });
+      ctx.closePath();
+      var sh = .78 + .3 * Math.max(0, dot(it.n, LIGHT));
+      var al = it.cut ? .62 : (it.back ? .13 : .22);
+      if (!it.cut && opt.split > 0 && !whole) al = it.back ? .2 : .36;
+      ctx.fillStyle = rgba(it.base, al, sh);
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      if (it.back) { ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(242,240,230,.38)'; }
+      else { ctx.setLineDash([]); ctx.strokeStyle = 'rgba(242,240,230,.92)'; }
+      ctx.stroke(); ctx.setLineDash([]);
+    });
+
+    /* 切り口のふち（いつも手前に） */
+    if (m && m.ok) {
+      var shifts = whole ? [[0,0,0]] : [];
+      if (!whole) { var sp2 = opt.split * 0.6; if (opt.showNeg) shifts.push(mul(m.n, -sp2)); if (opt.showPos) shifts.push(mul(m.n, sp2)); }
+      shifts.forEach(function (sh) {
+        ctx.beginPath();
+        m.sec.forEach(function (p, i) { var s = project(add(p, sh)); if (i) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); });
+        ctx.closePath(); ctx.strokeStyle = '#ffe27a'; ctx.lineWidth = 3; ctx.stroke();
+      });
+    }
+
+    off = pointOffset();
+
+    /* 三角形 PQR */
+    if (opt.tri && m && m.ok) {
+      ctx.beginPath();
+      pts.forEach(function (o, i) { var s = project(add(o.p, off)); if (i) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); });
+      ctx.closePath(); ctx.setLineDash([3, 5]); ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.4; ctx.stroke(); ctx.setLineDash([]);
+    } else if (opt.tri && !m.ok) {
+      ctx.beginPath();
+      pts.forEach(function (o, i) { var s = project(o.p); if (i) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); });
+      ctx.closePath(); ctx.setLineDash([3, 5]); ctx.strokeStyle = 'rgba(255,157,178,.8)'; ctx.lineWidth = 1.4; ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    /* 切り口の頂点 */
+    if (m && m.ok) {
+      m.sec.forEach(function (p) {
+        var sh = [0,0,0];
+        if (!whole) { var side = (opt.showNeg ? 1 : 0) + (opt.showPos ? 1 : 0); if (side === 1) sh = mul(m.n, (opt.showNeg ? -1 : 1) * opt.split * 0.6); }
+        var s = project(add(p, sh));
+        ctx.beginPath(); ctx.arc(s[0], s[1], 3.6, 0, 7); ctx.fillStyle = '#fff6c8'; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = '#7a5d00'; ctx.stroke();
+      });
+    }
+
+    /* 頂点の記号 */
+    if (opt.lab) {
+      var sc = project(CEN);
+      ctx.font = '700 15px "BIZ UDPGothic","Hiragino Kaku Gothic ProN",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (var i = 0; i < 8; i++) {
+        var shv = [0,0,0];
+        if (m && m.ok && !m.onFace) {
+          var sd = dot(m.n, V[i]) - m.d;
+          if (sd < -EPS) shv = mul(m.n, -opt.split * 0.6); else if (sd > EPS) shv = mul(m.n, opt.split * 0.6);
+        }
+        var s = project(add(V[i], shv)), dx = s[0] - sc[0], dy = s[1] - sc[1], dl = Math.hypot(dx, dy) || 1;
+        var tx = s[0] + dx / dl * 15, ty = s[1] + dy / dl * 15, vis = FACES.some(function (f) { return f.v.indexOf(i) >= 0 && dot(faceOutN(FACES.indexOf(f)), Dv) > 0; });
+        ctx.globalAlpha = vis ? 1 : .5;
+        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(23,56,41,.85)'; ctx.strokeText(NAMES[i], tx, ty);
+        ctx.fillStyle = '#f2f0e6'; ctx.fillText(NAMES[i], tx, ty);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    /* 3点 P Q R（いちばん手前に） */
+    pts.forEach(function (o, i) {
+      var s = project(add(o.p, off)), act = (drag && drag.type === 'pt' && drag.i === i), hov = hover === i;
+      ctx.beginPath(); ctx.arc(s[0], s[1], act ? 15 : hov ? 14 : 12, 0, 7); ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(s[0], s[1], act ? 10 : 8.5, 0, 7); ctx.fillStyle = PCOL[i]; ctx.fill();
+      ctx.lineWidth = 2.2; ctx.strokeStyle = '#fff'; ctx.stroke();
+      ctx.font = '700 17px "Klee One","BIZ UDPGothic",sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(23,56,41,.9)'; ctx.strokeText(PNAME[i], s[0] + 13, s[1] - 11);
+      ctx.fillStyle = PCOL[i]; ctx.fillText(PNAME[i], s[0] + 13, s[1] - 11);
+    });
+  }
+
+  /* ================= 板書（右の欄）をつくる ================= */
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
+
+  function updatePanel() {
+    var m = model, toast = $('toast');
+    /* 3点の位置 */
+    $('ptList').innerHTML = pts.map(function (o, i) {
+      var L = locate(o.p);
+      return '<li><span class="k" style="color:' + PCOL[i] + '">' + PNAME[i] + '</span><span><span class="pt">(' + o.p.map(frac).join(', ') + ')</span> <span class="dim">' + esc(L.text) + '</span></span></li>';
+    }).join('');
+
+    if (!m.ok) {
+      $('shape').className = 'shape ng'; $('shape').textContent = '平面が決まりません';
+      $('shapeSub').textContent = '3点が一直線上にあるか、重なっています。どれか1つの点を動かしてみよう。';
+      $('vtxSec').hidden = true; $('statSec').hidden = true;
+      toast.hidden = false; toast.className = 'toast ng'; toast.textContent = '3点が一直線上にあるので、平面が決まりません';
+      return;
+    }
+    $('vtxSec').hidden = false; $('statSec').hidden = false;
+    var name = m.onFace ? '正方形' : m.cls.name;
+    $('shape').className = 'shape'; $('shape').textContent = name;
+    $('shapeSub').textContent = m.onFace
+      ? '3点が立方体の同じ面の上にあるので、切り口はその面そのもの（立体は切れません）。'
+      : '切り口は ' + m.cls.n + ' つの辺をもつ多角形です。' + (m.cls.kind === 'tri' ? '（頂点を3つ通る 3 つの面で切れています）' : '');
+    toast.hidden = false; toast.className = 'toast'; toast.innerHTML = esc(name) + (m.onFace ? '<small>立方体の面そのもの</small>' : name.indexOf('角形') >= 0 ? '' : '<small>' + m.cls.n + '角形</small>');
+
+    $('vtxList').innerHTML = m.sec.map(function (p, i) {
+      return '<li><span class="k dim">' + (i + 1) + '</span><span>' + esc(vtxText(p)) + '</span></li>';
+    }).join('');
+
+    /* 大きさ */
+    var a = parseFloat($('edgeLen').value); if (!(a > 0)) a = 1;
+    var ex = exactArea(m.area), st = '';
+    st += '<dt>切り口の面積</dt><dd><b>' + (ex ? ex + ' a²' : fixed(m.area, 3) + ' a²') + '</b><br>≒ ' + fixed(m.area, 3) + ' a² ＝ ' + fixed(m.area * a * a, 2) + ' cm²</dd>';
+    if (!m.onFace) {
+      var vNeg = m.neg.vol, vPos = m.pos.vol, rt = ratioText(Math.min(vNeg, vPos));
+      st += '<dt>体積の分かれ方</dt><dd><span class="sw" style="background:#9ad8ff"></span><span class="sw" style="background:#ffc078"></span><b>' + (rt ? esc(vNeg <= vPos ? rt : rt.split(' : ').reverse().join(' : ')) : fixed(vNeg * 100, 1) + '% : ' + fixed(vPos * 100, 1) + '%') + '</b><br>' +
+        '<span class="sw" style="background:#9ad8ff"></span>' + fixed(vNeg * a * a * a, 2) + ' cm³（' + fixed(vNeg * 100, 1) + '%）<br>' +
+        '<span class="sw" style="background:#ffc078"></span>' + fixed(vPos * a * a * a, 2) + ' cm³（' + fixed(vPos * 100, 1) + '%）</dd>';
+    }
+    $('stat').innerHTML = st;
+    $('negName').textContent = '頂点 ' + NAMES[m.ref] + ' のほう';
+    $('posName').textContent = 'はんたい側';
+  }
+
+  function refresh() {
+    model = buildModel(pts.map(function (o) { return o.p; }));
+    var split = $('split'), dis = !model.ok || model.onFace;
+    split.disabled = dis; $('showNeg').disabled = dis; $('showPos').disabled = dis;
+    updatePanel(); draw();
+  }
+
+  function syncButtons() {
+    function pr(id, on) { $(id).setAttribute('aria-pressed', on ? 'true' : 'false'); }
+    pr('mFace', opt.mode === 'face'); pr('mEdge', opt.mode === 'edge');
+    pr('tPlane', opt.plane); pr('tTri', opt.tri); pr('tLab', opt.lab);
+    pr('showNeg', opt.showNeg); pr('showPos', opt.showPos);
+  }
+
+  /* ================= 例（3点の置き方） ================= */
+  /* 例：名前はボタンに出す（切り口の形はページの中で調べている） */
+  var PRESETS = [
+    { pts: [[0,0,1],[1,0,0],[0,1,0]] },                       // E・B・D
+    { pts: [[0,0,0],[1,.5,0],[1,0,1]] },                      // A・BC の中点・F
+    { pts: [[0,0,0],[1,1,0],[1,1,1]] },                       // A・C・G
+    { pts: [[.5,0,0],[.5,1,0],[.5,0,1]] },                    // x＝1/2 の平面
+    { pts: [[0,0,0],[1,0,.5],[1,1,1]] },                      // A・BF の中点・G
+    { pts: [[0,0,0],[1,.5,0],[.5,0,1]] },                     // 台形
+    { pts: [[0,1,1],[0,0,.75],[1,1,.5]] },                    // 平行四辺形
+    { pts: [[0,0,0],[1,.5,0],[.5,1,1]] },                     // 五角形
+    { pts: [[.5,0,0],[1,1,.5],[0,.5,1]] }                     // 辺の中点3つ → 正六角形
+  ];
+  function loadPreset(pr) {
+    pts = pr.pts.map(function (p) { return mk(p); });
+    if (opt.mode === 'edge') setMode('edge'); else refresh();
+  }
+  function buildPresets() {
+    var box = $('presets'); box.innerHTML = '';
+    PRESETS.forEach(function (pr) {
+      var mm = buildModel(pr.pts);
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'btn';
+      b.textContent = (pr.label || (mm.ok ? mm.cls.name : '例'));
+      b.addEventListener('click', function () { loadPreset(pr); });
+      box.appendChild(b);
+    });
+  }
+
+  /* ================= つなぐ ================= */
+  $('split').addEventListener('input', function () { opt.split = this.value / 100; refresh(); });
+  $('showNeg').addEventListener('click', function () { opt.showNeg = !opt.showNeg; syncButtons(); refresh(); });
+  $('showPos').addEventListener('click', function () { opt.showPos = !opt.showPos; syncButtons(); refresh(); });
+  $('mFace').addEventListener('click', function () { setMode('face'); });
+  $('mEdge').addEventListener('click', function () { setMode('edge'); });
+  $('snap').addEventListener('change', function () { opt.snap = parseInt(this.value, 10); applySnap(); });
+  $('edgeLen').addEventListener('input', function () { updatePanel(); });
+  $('tPlane').addEventListener('click', function () { opt.plane = !opt.plane; syncButtons(); draw(); });
+  $('tTri').addEventListener('click', function () { opt.tri = !opt.tri; syncButtons(); draw(); });
+  $('tLab').addEventListener('click', function () { opt.lab = !opt.lab; syncButtons(); draw(); });
+  $('vHome').addEventListener('click', function () { tweenTo(HOME); });
+  $('vFront').addEventListener('click', function () { tweenTo({ yaw: 0, pitch: 0, zoom: 1 }); });
+  $('vTop').addEventListener('click', function () { tweenTo({ yaw: 0, pitch: 1.55, zoom: 1 }); });
+  $('vPlane').addEventListener('click', function () { if (model && model.ok) lookAlong(model.n); });
+  $('fs').addEventListener('click', function () {
+    var el = document.documentElement;
+    if (document.fullscreenElement) document.exitFullscreen(); else if (el.requestFullscreen) el.requestFullscreen();
+  });
+
+  function resize() {
+    var r = $('stage').getBoundingClientRect();
+    DPR = Math.min(window.devicePixelRatio || 1, 3);
+    W = Math.max(200, r.width); H = Math.max(200, r.height);
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    draw();
+  }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe($('stage')); else window.addEventListener('resize', resize);
+
+  /* テストと授業中の確認用 */
+  window.DANMEN = { buildModel: buildModel, classify: classify, setPoints: function (a) { pts = a.map(mk); refresh(); }, get model() { return model; }, view: view, opt: opt, pts: function () { return pts; }, screen: function (i) { return pointScreen(i); } };
+
+  buildPresets(); syncButtons(); resize(); refresh();
+})();
+</script>
+</body>
+</html>
