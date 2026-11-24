@@ -253,6 +253,20 @@
     BT.ui.toast(`消しました：${fmt(e.t)} ${who(g, e)} ${what(e)}`.replace(/\s+/g, ' '), 'ok', 4500, { label: 'もとに戻す', onClick: () => { if (S.game !== g || BT.findEvent(g, e.id)) return; g.events.splice(Math.min(i, g.events.length), 0, e); A.save(); drawLast(); } });
   }
 
+  /* ---------- 背番号を足す（記録の途中で、名簿にない番号が出たとき。設定の「チーム・背番号」と同じマス） ---------- */
+  function addNo() {
+    const g = game();
+    if (!g) return;
+    A.stopRange();
+    const t = g.teams[0];
+    const grid = A.ui.noGrid(() => t.players.map((p) => p.no), (list) => { t.players = BT.playersFromNos(list, t.players); SC.store.saveTeam(t); A.save(); A.emit('team'); });
+    const s = BT.ui.sheet({
+      title: '背番号を足す',
+      body: h('div', { class: 'sc-form' }, grid.el, h('p', { class: 'note' }, '押した番号が、記録のボタンに入ります（もう一度押すと外れます。記録ずみのものは消えません）。')),
+      foot: [h('button', { class: 'btn primary', id: 'tpAddDone', onclick: () => s.close() }, '閉じる')]
+    });
+  }
+
   /* ---------- 記録の一覧 ---------- */
   function list() {
     const g = game();
@@ -295,7 +309,8 @@
       [1, 2, 3].map((p) => h('button', { class: 'tp-op', dataset: { opp: p }, 'aria-label': `${BT.teamName(g, 1)}の得点 +${p}`, onclick: () => tapOpp(p) }, '+' + p)));
     W.more = h('div', { class: 'tp-more' },
       rec.mark !== false ? h('button', { class: 'tp-mark', id: 'tpMark', 'aria-label': '★ あとで見る（いまの場面に印）', title: '★ あとで見る', onclick: tapMark }, '★', h('span', { class: 'tp-full' }, ' あとで見る')) : null,
-      h('button', { class: 'tp-listbtn', id: 'tpList', 'aria-label': '📋 記録の一覧', title: '記録の一覧', onclick: list }, '📋', h('span', { class: 'tp-full' }, ' 記録の一覧')));
+      h('button', { class: 'tp-listbtn', id: 'tpList', 'aria-label': '📋 記録の一覧', title: '記録の一覧', onclick: list }, '📋', h('span', { class: 'tp-full' }, ' 記録の一覧')),
+      h('button', { class: 'tp-addno', id: 'tpAddNo', 'aria-label': '背番号を足す', title: '名簿にない背番号を足す', onclick: addNo }, '＋', h('span', { class: 'tp-full' }, ' 番号')));
     W.lastMain = h('button', { class: 'tp-lastmain', id: 'tpLast', 'aria-label': 'いちばん新しい記録（押すと直せます）', onclick: () => { const e = last(game()); if (e) edit(e.id); } });
     W.undo = h('button', { class: 'tp-lb', id: 'tpUndo', 'aria-label': 'いちばん新しい記録を取り消す', onclick: undo }, '↶ 取り消す');
     W.redo = h('button', { class: 'tp-lb', id: 'tpRedo', 'aria-label': '取り消した記録をやり直す', hidden: true, onclick: redo }, '↷');
@@ -389,7 +404,9 @@
   });
   A.on('open', () => { P.redo = []; P.gid = S.game ? S.game.id : null; P.pick = null; });
   A.on('change', () => { if (S.game && P.W) drawLast(); });
-  A.on('prefs', () => { if (S.game && P.el) { const pk = P.pick; build(); P.pick = pk; drawPick(); } });
+  const rebuild = () => { if (S.game && P.el) { const pk = P.pick; build(); P.pick = pk; drawPick(); } };
+  A.on('prefs', rebuild);
+  A.on('team', rebuild);          // 背番号・名前・色を変えた（設定・「＋」）：番号のボタンを作りなおす
   A.on('media', () => { if (P.root) P.root.classList.toggle('tp-off', !A.hasVideo()); });
   A.on('range', (r) => { if (!r && P.watching) { P.watching = null; drawLast(); } });
   A.on('time', (t) => {
