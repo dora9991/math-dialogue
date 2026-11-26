@@ -1,0 +1,28 @@
+"""生徒のログイン画面：組織コードを 自動で 入れる ＋ パスワード保存（Face ID などでの 自動入力）に 対応しやすく する。
+使い方: python3 patch_login.py <solo-*.js> <出力 solo-*.js>
+  (1) 組織コードの はじめの 値：URL の ?org=XXXX（アプリが URL を 書きかえる 前、読みこみの とき に 拾って 端末に 覚える）→ この 端末で 前に ログインした 組織コード（localStorage "kotsu-student-org"）→ 空
+  (2) ログインに 成功したら、組織コードを この 端末に 覚える（ID・パスワードは 覚えない）
+  (3) 入力欄に name を つけ、form を ふつうの ログインフォームの 形に する（iPhone・iPad・Mac の「パスワード」に 保存・自動入力されやすく する）
+anchor は ちょうど1回 出ることを assert する。"""
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+s = open(src, encoding='utf-8').read()
+def rep(old, new):
+    global s
+    assert s.count(old) == 1, (s.count(old), old[:80])
+    s = s.replace(old, new)
+assert 'kotsu-student-org' not in s, 'すでに入っています'
+rep('function Cn({state:s,onClose:t,onAdopt:a,onFresh:n}){const r=Zn(),[i,c]=J.useState(""),',
+    ';(()=>{try{const q=new URLSearchParams(location.search).get("org");q&&localStorage.setItem("kotsu-student-org",String(q).toUpperCase().replace(/[^0-9A-Z]/g,"").slice(0,8))}catch{}})();function Cn({state:s,onClose:t,onAdopt:a,onFresh:n}){const r=Zn(),[i,c]=J.useState(()=>{try{const q=new URLSearchParams(location.search).get("org")||localStorage.getItem("kotsu-student-org")||"";return String(q).toUpperCase().replace(/[^0-9A-Z]/g,"").slice(0,8)}catch{return""}}),')
+rep('const E=await j2(i,l,h),P=E.server.empty?null:Jn(E.server.state);',
+    'const E=await j2(i,l,h);try{localStorage.setItem("kotsu-student-org",i.trim().toUpperCase())}catch{}const P=E.server.empty?null:Jn(E.server.state);')
+rep('}):e.jsxs("form",{onSubmit:w,children:[e.jsxs("h2",{children:["🏫 ",e.jsx(o,{children:"学校・塾のアカウントでログイン"})',
+    '}):e.jsxs("form",{onSubmit:w,method:"post",action:"#",name:"kotsu-student-login",autoComplete:"on",children:[e.jsxs("h2",{children:["🏫 ",e.jsx(o,{children:"学校・塾のアカウントでログイン"})')
+rep('e.jsx("input",{value:i,onChange:N=>c(N.target.value.toUpperCase()),autoCapitalize:"characters",autoComplete:"organization",',
+    'e.jsx("input",{name:"organization",value:i,onChange:N=>c(N.target.value.toUpperCase()),autoCapitalize:"characters",autoComplete:"organization",')
+rep('e.jsx("input",{value:l,onChange:N=>u(N.target.value),autoCapitalize:"none",autoComplete:"username",',
+    'e.jsx("input",{name:"username",autoFocus:!!i,value:l,onChange:N=>u(N.target.value),autoCapitalize:"none",autoCorrect:"off",spellCheck:!1,autoComplete:"username",')
+rep('e.jsx("input",{type:"password",value:h,onChange:N=>p(N.target.value),autoComplete:"current-password",maxLength:64})',
+    'e.jsx("input",{type:"password",name:"password",value:h,onChange:N=>p(N.target.value),autoComplete:"current-password",maxLength:64})')
+open(dst, 'w', encoding='utf-8').write(s)
+print('ok', len(s))
