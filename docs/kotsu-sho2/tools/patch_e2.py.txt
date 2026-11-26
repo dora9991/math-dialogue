@@ -1,0 +1,25 @@
+"""小2の「解説ごとの演習」を、公開中の solo バンドルに足すパッチ（中3〜高3の patch_*.py と同じ考え方）。
+使い方: python3 patch_e1.py <土台の solo-*.js（高3・小1まで入ったもの）> <build-chunks_e1.mjs の出力フォルダ> <出力 solo-*.js>
+  (1) 解説の索引 Wn の最後に、小2の授業（{f:<キー>, u:[単元], n:[5,5,5,5]}）を足す
+  (2) 読みこみの表（./<キー>.json → import("./<キー>-<hash>.js")）の最後（いまの いちばん さいご のあと）に、担当ごとのファイルを足す
+anchor は「ちょうど1回」出ることを assert する。"""
+import sys, json, os, re
+src, chunkdir, dst = sys.argv[1], sys.argv[2], sys.argv[3]
+s = open(src, encoding='utf-8').read()
+L = json.load(open(os.path.join(chunkdir, 'lessons.json'), encoding='utf-8'))
+lessons, files = L['lessons'], L['files']
+def rep(old, new):
+    global s
+    assert s.count(old) == 1, (s.count(old), old[:90])
+    s = s.replace(old, new)
+assert '"hyo-01":{f:"e2' not in s, 'すでに小2の索引が入っています'
+wn = ''.join(',"%s":{f:"%s",u:%s,n:%s}' % (k, v['f'], json.dumps(v['u'], ensure_ascii=False, separators=(',', ':')), json.dumps(v['n'], separators=(',', ':'))) for k, v in sorted(lessons.items()))
+rep(',n:[5,5,5,5]}};let Rc={}', ',n:[5,5,5,5]}' + wn + '};let Rc={}')
+ms = list(re.finditer(r'"\./([a-z0-9]+)\.json":\(\)=>_\(\(\)=>import\("\./\1-[A-Za-z0-9_-]+\.js"\),\[\]\)\}\)\}catch\{\}', s))
+assert len(ms) == 1, len(ms)   # 読みこみの表の いちばん さいご（高3 または 小1 の あと）
+m = ms[0]
+tail = m.group(0)
+add = ''.join(',"./%s.json":()=>_(()=>import("./%s"),[])' % (k, v) for k, v in sorted(files.items()))
+rep(tail, tail[:-len('})}catch{}')] + add + '})}catch{}')
+open(dst, 'w', encoding='utf-8').write(s)
+print('ok', len(s), '授業', len(lessons), 'ファイル', len(files))
