@@ -1,0 +1,793 @@
+{
+ "lessons": {
+  "gaisu4-01": {
+   "f": "e4gaisu",
+   "u": [
+    "E4-gaisu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "gaisu4-02": {
+   "f": "e4gaisu",
+   "u": [
+    "E4-gaisu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "gaisu4-03": {
+   "f": "e4gaisu",
+   "u": [
+    "E4-gaisu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "gaisu4-04": {
+   "f": "e4gaisu",
+   "u": [
+    "E4-gaisu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "ookii4-01": {
+   "f": "e4gaisu",
+   "u": [
+    "E4-ookina"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "ookii4-02": {
+   "f": "e4gaisu",
+   "u": [
+    "E4-ookina"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "ookii4-03": {
+   "f": "e4gaisu",
+   "u": [
+    "E4-ookina"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "ookii4-04": {
+   "f": "e4gaisu",
+   "u": [
+    "E4-ookina"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "kawari4-01": {
+   "f": "e4graph",
+   "u": [
+    "E4-henka"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "kawari4-02": {
+   "f": "e4graph",
+   "u": [
+    "E4-henka"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "kawari4-03": {
+   "f": "e4graph",
+   "u": [
+    "E4-henka"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "oresen4-01": {
+   "f": "e4graph",
+   "u": [
+    "E4-oresen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "oresen4-02": {
+   "f": "e4graph",
+   "u": [
+    "E4-oresen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "oresen4-03": {
+   "f": "e4graph",
+   "u": [
+    "E4-oresen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "oresen4-04": {
+   "f": "e4graph",
+   "u": [
+    "E4-oresen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "shiryo4-01": {
+   "f": "e4graph",
+   "u": [
+    "E4-oresen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "shiryo4-02": {
+   "f": "e4graph",
+   "u": [
+    "E4-oresen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "shiryo4-03": {
+   "f": "e4graph",
+   "u": [
+    "E4-oresen"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "wari41-01": {
+   "f": "e4wari",
+   "u": [
+    "E4-warihissan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "wari41-02": {
+   "f": "e4wari",
+   "u": [
+    "E4-warihissan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "wari41-03": {
+   "f": "e4wari",
+   "u": [
+    "E4-warihissan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "wari41-04": {
+   "f": "e4wari",
+   "u": [
+    "E4-warihissan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "wari41-05": {
+   "f": "e4wari",
+   "u": [
+    "E4-warihissan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "wari42-01": {
+   "f": "e4wari",
+   "u": [
+    "E4-warihissan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "wari42-02": {
+   "f": "e4wari",
+   "u": [
+    "E4-warihissan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "wari42-03": {
+   "f": "e4wari",
+   "u": [
+    "E4-warihissan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "wari42-04": {
+   "f": "e4wari",
+   "u": [
+    "E4-warihissan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "kaku-01": {
+   "f": "e4zukei",
+   "u": [
+    "E4-kakudo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "kaku-02": {
+   "f": "e4zukei",
+   "u": [
+    "E4-kakudo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "kaku-03": {
+   "f": "e4zukei",
+   "u": [
+    "E4-kakudo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "kaku-04": {
+   "f": "e4zukei",
+   "u": [
+    "E4-kakudo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "kaku-05": {
+   "f": "e4zukei",
+   "u": [
+    "E4-kakudo"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "suichoku4-01": {
+   "f": "e4zukei",
+   "u": [
+    "E4-heikou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "suichoku4-02": {
+   "f": "e4zukei",
+   "u": [
+    "E4-heikou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "suichoku4-03": {
+   "f": "e4zukei",
+   "u": [
+    "E4-heikou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "suichoku4-04": {
+   "f": "e4zukei",
+   "u": [
+    "E4-heikou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "suichoku4-05": {
+   "f": "e4zukei",
+   "u": [
+    "E4-heikou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "shokake4-01": {
+   "f": "e4shosu",
+   "u": [
+    "E4-shosu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "shokake4-02": {
+   "f": "e4shosu",
+   "u": [
+    "E4-shosu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "shokake4-03": {
+   "f": "e4shosu",
+   "u": [
+    "E4-shosu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "shokake4-04": {
+   "f": "e4shosu",
+   "u": [
+    "E4-shosu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "shosu4-01": {
+   "f": "e4shosu",
+   "u": [
+    "E4-shosu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "shosu4-02": {
+   "f": "e4shosu",
+   "u": [
+    "E4-shosu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "shosu4-03": {
+   "f": "e4shosu",
+   "u": [
+    "E4-shosu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "shosu4-04": {
+   "f": "e4shosu",
+   "u": [
+    "E4-shosu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "shosu4-05": {
+   "f": "e4shosu",
+   "u": [
+    "E4-shosu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "keisan4-01": {
+   "f": "e4menseki",
+   "u": [
+    "E4-keisan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "keisan4-02": {
+   "f": "e4menseki",
+   "u": [
+    "E4-keisan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "keisan4-03": {
+   "f": "e4menseki",
+   "u": [
+    "E4-keisan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "keisan4-04": {
+   "f": "e4menseki",
+   "u": [
+    "E4-keisan"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "menseki4-01": {
+   "f": "e4menseki",
+   "u": [
+    "E4-menseki"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "menseki4-02": {
+   "f": "e4menseki",
+   "u": [
+    "E4-menseki"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "menseki4-03": {
+   "f": "e4menseki",
+   "u": [
+    "E4-menseki"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "menseki4-04": {
+   "f": "e4menseki",
+   "u": [
+    "E4-menseki"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "menseki4-05": {
+   "f": "e4menseki",
+   "u": [
+    "E4-menseki"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "bunsu4-01": {
+   "f": "e4bunsu",
+   "u": [
+    "E4-bunsu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "bunsu4-02": {
+   "f": "e4bunsu",
+   "u": [
+    "E4-bunsu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "bunsu4-03": {
+   "f": "e4bunsu",
+   "u": [
+    "E4-bunsu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "bunsu4-04": {
+   "f": "e4bunsu",
+   "u": [
+    "E4-bunsu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "bunsu4-05": {
+   "f": "e4bunsu",
+   "u": [
+    "E4-bunsu"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "chokuho4-01": {
+   "f": "e4bunsu",
+   "u": [
+    "E4-chokuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "chokuho4-02": {
+   "f": "e4bunsu",
+   "u": [
+    "E4-chokuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "chokuho4-03": {
+   "f": "e4bunsu",
+   "u": [
+    "E4-chokuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "chokuho4-04": {
+   "f": "e4bunsu",
+   "u": [
+    "E4-chokuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  },
+  "chokuho4-05": {
+   "f": "e4bunsu",
+   "u": [
+    "E4-chokuhou"
+   ],
+   "n": [
+    5,
+    5,
+    5,
+    5
+   ]
+  }
+ },
+ "files": {
+  "e4gaisu": "e4gaisu-AaGxrEkm.js",
+  "e4graph": "e4graph-2g22-sre.js",
+  "e4wari": "e4wari-tB03KN9d.js",
+  "e4zukei": "e4zukei-CkMGwXo3.js",
+  "e4shosu": "e4shosu-knWuY5k-.js",
+  "e4menseki": "e4menseki-sJxob3uk.js",
+  "e4bunsu": "e4bunsu-PR8AtKgp.js"
+ }
+}
