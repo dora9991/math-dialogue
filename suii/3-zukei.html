@@ -152,7 +152,7 @@
   }
 
   /* ================= 類題3　円周角とシュートの角度 ================= */
-  var Q3 = {}; Q3.O = [0, 0]; Q3.P = GE.polar([0, 0], 1, 234); Q3.Q = GE.polar([0, 0], 1, 306); Q3.A = GE.polar([0, 0], 1, 125); Q3.B = GE.polar([0, 0], 1, 28); Q3.C = GE.polar([0, 0], .42, 78);
+  var Q3 = {}; Q3.O = [0, 0]; Q3.P = GE.polar([0, 0], 1, 234); Q3.Q = GE.polar([0, 0], 1, 306); Q3.A = GE.polar([0, 0], 1, 103); Q3.B = GE.polar([0, 0], 1, 14); Q3.C = GE.polar([0, 0], .42, 78);
   (function () { var P = Q3.P, d = GE.sub(Q3.C, P), s = -2 * (P[0] * d[0] + P[1] * d[1]) / (d[0] * d[0] + d[1] * d[1]); Q3.E = [P[0] + d[0] * s, P[1] + d[1] * s]; })();
   CH.check(GE.near(GE.ang(Q3, 'PAQ'), 36) && GE.near(GE.ang(Q3, 'PBQ'), 36) && GE.near(GE.ang(Q3, 'POQ'), 72) && GE.near(GE.ang(Q3, 'OPQ'), 54) && GE.near(GE.ang(Q3, 'PEQ'), 36), '類題3 円周角');
   CH.check(Math.hypot(Q3.C[0], Q3.C[1]) < 1 && GE.ang(Q3, 'PCQ') > 36 && GE.near(GE.ang(Q3, 'PCQ'), GE.ang(Q3, 'CEQ') + GE.ang(Q3, 'CQE')) && Q3.E[1] > Q3.P[1], '類題3 内側の点');
