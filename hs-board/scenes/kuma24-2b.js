@@ -50,7 +50,7 @@
       lead: '座標平面上に、原点 O を中心とする半径 2 の円 $K$ がある。$K$ 上の点 X における $K$ の接線を $\\ell_{\\mathrm X}$ と書く。',
       parts: [
         '(1)　$K$ 上の 2 点 A, B は、一致せず、直径の両端でもないとする。$\\overrightarrow{\\mathrm{OA}}=\\vec a,\\ \\overrightarrow{\\mathrm{OB}}=\\vec b$ とし、$\\ell_{\\mathrm A}$ と $\\ell_{\\mathrm B}$ の交点を P とする。このとき $\\overrightarrow{\\mathrm{OP}}=\\dfrac{4(\\vec a+\\vec b)}{4+\\vec a\\cdot\\vec b}$ であることを示せ。',
-        '(2)　$K$ 上の 3 点 A, B, C が $5\\overrightarrow{\\mathrm{OA}}+12\\overrightarrow{\\mathrm{OB}}+13\\overrightarrow{\\mathrm{OC}}=\\vec 0$ をみたしている。$\\overrightarrow{\\mathrm{OC}}=\\vec c$ とする。内積 $\\vec a\\cdot\\vec b,\\ \\vec b\\cdot\\vec c,\\ \\vec c\\cdot\\vec a$ を求めよ。また、$\\ell_{\\mathrm A}$ と $\\ell_{\\mathrm B}$、$\\ell_{\\mathrm B}$ と $\\ell_{\\mathrm C}$、$\\ell_{\\mathrm C}$ と $\\ell_{\\mathrm A}$ の交点をそれぞれ P, Q, R とするとき、OP, OQ, OR を求めよ。',
+        '(2)　$K$ 上の 3 点 A, B, C が $5\\overrightarrow{\\mathrm{OA}}+12\\overrightarrow{\\mathrm{OB}}+13\\overrightarrow{\\mathrm{OC}}=\\vec 0$ をみたしている。$\\overrightarrow{\\mathrm{OC}}=\\vec c$ とする。内積 $\\vec a\\cdot\\vec b,\\ \\vec b\\cdot\\vec c,\\ \\vec c\\cdot\\vec a$ を求めよ。また、$\\ell_{\\mathrm A}$ と $\\ell_{\\mathrm B}$、$\\ell_{\\mathrm B}$ と $\\ell_{\\mathrm C}$、$\\ell_{\\mathrm C}$ と $\\ell_{\\mathrm A}$ の交点をそれぞれ P, Q, R とするとき、線分の長さ OP, OQ, OR を求めよ。',
         '(3)　(2) のとき、三角形 PQR の面積を求めよ。'
       ],
       src: '※ 2024年度 熊本大学 前期 理系（数学②）第2問と同じ分野・ねらいの自作問題（類題②。元の問題ではありません）'
