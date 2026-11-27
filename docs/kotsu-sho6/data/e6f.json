@@ -1,0 +1,2838 @@
+[
+ {
+  "id": "data-01-L1-01",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 1,
+  "q": "ソフトボール投げの 記録が 5人 分 あります。20m、32m、14m、26m、18m。平均値は 何mですか。",
+  "c": [
+   {
+    "t": "22m",
+    "k": 1
+   },
+   {
+    "t": "110m",
+    "w": "ぜんぶ たした だけで、人数で わらなかった"
+   },
+   {
+    "t": "27.5m",
+    "w": "人数を 4人と まちがえて わった"
+   },
+   {
+    "t": "20m",
+    "w": "まん中の 数を 答えた"
+   }
+  ],
+  "e": "20 + 32 + 14 + 26 + 18 = 110\n110 ÷ 5 = 22\nこたえ 22m",
+  "h": "全部の 数を たして、人数で わろう。"
+ },
+ {
+  "id": "data-01-L1-02",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 1,
+  "q": "7人が 1分間に とんだ なわとびの 回数は 12回、5回、9回、15回、7回、20回、10回です。中央値は 何回ですか。",
+  "c": [
+   {
+    "t": "15回",
+    "w": "小さい 順に ならべずに、まん中の 4番目を 答えた"
+   },
+   {
+    "t": "9回",
+    "w": "小さい 順の 3番目を 答えた"
+   },
+   {
+    "t": "12回",
+    "w": "小さい 順の 5番目を 答えた"
+   },
+   {
+    "t": "10回",
+    "k": 1
+   }
+  ],
+  "e": "小さい 順に ならべる：5、7、9、10、12、15、20\n7こ なので、まん中は 4番目。\nこたえ 10回",
+  "h": "まず 小さい 順に ならべかえよう。"
+ },
+ {
+  "id": "data-01-L1-03",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 1,
+  "q": "わなげを 8回 して、得点は 3点、5点、2点、5点、4点、5点、1点、3点でした。最頻値は 何点ですか。",
+  "c": [
+   {
+    "t": "3点",
+    "w": "「3点」は 2回 しか 出ていない。もっと 多い 数が ある"
+   },
+   {
+    "t": "28点",
+    "w": "得点の 合計を 答えた"
+   },
+   {
+    "t": "1点",
+    "w": "いちばん 小さい 数を 答えた"
+   },
+   {
+    "t": "5点",
+    "k": 1
+   }
+  ],
+  "e": "5点が 3回 出ていて、いちばん 多い。\nこたえ 5点",
+  "h": "同じ 数が 何回 出てくるか、かぞえよう。"
+ },
+ {
+  "id": "data-01-L1-04",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 1,
+  "q": "8人の ソフトボール投げの 記録の 合計は 184mです。平均値は 何mですか。",
+  "c": [
+   {
+    "t": "184m",
+    "w": "合計の まま 答えた"
+   },
+   {
+    "t": "23m",
+    "k": 1
+   },
+   {
+    "t": "8m",
+    "w": "人数を 答えた"
+   },
+   {
+    "t": "24m",
+    "w": "わり算の 答えを まちがえた（8 × 24 は 184より 大きい）"
+   }
+  ],
+  "e": "184 ÷ 8 = 23\nたしかめ：8 × 23 = 184\nこたえ 23m",
+  "h": "合計を 人数で わろう。"
+ },
+ {
+  "id": "data-01-L1-05",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 1,
+  "q": "データを 小さい 順に ならべた とき、まん中に ある 数を 何と いいますか。",
+  "c": [
+   {
+    "t": "平均値",
+    "w": "合計を 個数で わって 出す 数と ごちゃごちゃに した"
+   },
+   {
+    "t": "最頻値",
+    "w": "いちばん 多く 出てくる 数と ごちゃごちゃに した"
+   },
+   {
+    "t": "中央値",
+    "k": 1
+   },
+   {
+    "t": "合計",
+    "w": "ぜんぶを たした 数と まちがえた"
+   }
+  ],
+  "e": "小さい 順に ならべて、まん中に ある 数が 中央値。\nこたえ 中央値",
+  "h": "「中」「央」は まん中という いみだよ。"
+ },
+ {
+  "id": "data-01-L2-01",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 2,
+  "q": "5回の 漢字テストの 点数は 90点、60点、100点、70点、95点でした。平均値は 何点ですか。",
+  "c": [
+   {
+    "t": "415点",
+    "w": "合計の まま 答えた"
+   },
+   {
+    "t": "83点",
+    "k": 1
+   },
+   {
+    "t": "90点",
+    "w": "まん中の 数を 答えた"
+   },
+   {
+    "t": "82点",
+    "w": "415 ÷ 5 の 計算を まちがえた"
+   }
+  ],
+  "e": "90 + 60 + 100 + 70 + 95 = 415\n415 ÷ 5 = 83\nこたえ 83点",
+  "h": "合計を 5で わろう。"
+ },
+ {
+  "id": "data-01-L2-02",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 2,
+  "q": "6人の ともだちが もっている シールの 数は 8まい、3まい、12まい、6まい、15まい、9まいです。中央値は 何まいですか。",
+  "c": [
+   {
+    "t": "17まい",
+    "w": "まん中の 2つを たした だけで、2で わらなかった"
+   },
+   {
+    "t": "8.5まい",
+    "k": 1
+   },
+   {
+    "t": "8まい",
+    "w": "まん中の 2つの うち 小さい ほうだけを 答えた"
+   },
+   {
+    "t": "9まい",
+    "w": "まん中の 2つの うち 大きい ほうだけを 答えた"
+   }
+  ],
+  "e": "小さい 順：3、6、8、9、12、15\n6こ なので、まん中は 3番目の 8 と 4番目の 9。\n(8 + 9) ÷ 2 = 8.5\nこたえ 8.5まい",
+  "h": "データが 偶数こ の ときは、まん中の 2つを つかうよ。"
+ },
+ {
+  "id": "data-01-L2-03",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 2,
+  "q": "クラスの 14人の くつの サイズを 調べました。22cmが 3人、23cmが 5人、24cmが 4人、25cmが 2人です。最頻値は 何cmですか。",
+  "c": [
+   {
+    "t": "24cm",
+    "w": "24cmは 2番目に 多い サイズ"
+   },
+   {
+    "t": "22cm",
+    "w": "いちばん 小さい サイズを 答えた"
+   },
+   {
+    "t": "25cm",
+    "w": "いちばん 大きい サイズを 答えた"
+   },
+   {
+    "t": "23cm",
+    "k": 1
+   }
+  ],
+  "e": "人数が いちばん 多いのは 23cm（5人）。\nこたえ 23cm",
+  "h": "人数が いちばん 多い サイズを さがそう。"
+ },
+ {
+  "id": "data-01-L2-04",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 2,
+  "q": "ある 子が 1週間に 読書を した 時間は 毎日 40分、30分、0分、45分、20分、35分、5分でした。平均値は 何分ですか。",
+  "c": [
+   {
+    "t": "25分",
+    "k": 1
+   },
+   {
+    "t": "175分",
+    "w": "合計の まま 答えた"
+   },
+   {
+    "t": "30分",
+    "w": "まん中の 数を 答えた"
+   },
+   {
+    "t": "24分",
+    "w": "175 ÷ 7 の 計算を まちがえた"
+   }
+  ],
+  "e": "40 + 30 + 0 + 45 + 20 + 35 + 5 = 175\n175 ÷ 7 = 25\nこたえ 25分",
+  "h": "0分の 日も 1日と して かぞえるよ。"
+ },
+ {
+  "id": "data-01-L2-05",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 2,
+  "q": "9人の ボール投げの 記録は 18m、25m、31m、22m、27m、35m、20m、29m、24mです。中央値は 何mですか。",
+  "c": [
+   {
+    "t": "25m",
+    "k": 1
+   },
+   {
+    "t": "27m",
+    "w": "小さい 順に ならべずに、5番目を 答えた"
+   },
+   {
+    "t": "24m",
+    "w": "小さい 順の 4番目を 答えた"
+   },
+   {
+    "t": "22m",
+    "w": "小さい 順の 3番目を 答えた"
+   }
+  ],
+  "e": "小さい 順：18、20、22、24、25、27、29、31、35\n9こ なので、まん中は 5番目。\nこたえ 25m",
+  "h": "小さい 順に ならべて、左右の 数が 同じに なる ところを さがそう。"
+ },
+ {
+  "id": "data-01-L3-01",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 3,
+  "q": "4人の テストの 平均点は 20点でした。5人目が 30点を とりました。5人 ぜんぶの 平均点は 何点ですか。",
+  "c": [
+   {
+    "t": "25点",
+    "w": "20と 30の 平均を とって しまった"
+   },
+   {
+    "t": "22点",
+    "k": 1
+   },
+   {
+    "t": "30点",
+    "w": "5人目の 点数を 答えた"
+   },
+   {
+    "t": "21点",
+    "w": "110 ÷ 5 の 計算を まちがえた"
+   }
+  ],
+  "e": "4人の 合計：20 × 4 = 80\n5人の 合計：80 + 30 = 110\n110 ÷ 5 = 22\nこたえ 22点",
+  "h": "まず 4人の 合計を 平均から 出そう。"
+ },
+ {
+  "id": "data-01-L3-02",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 3,
+  "q": "9人の ソフトボール投げの 記録は 10m、12m、12m、14m、15m、16m、18m、20m、53mです。ただしい ものは どれですか。",
+  "c": [
+   {
+    "t": "中央値は 12mである",
+    "w": "12mが 2回 出るのは 最頻値。中央値は 5番目の 数"
+   },
+   {
+    "t": "平均値と 中央値は 同じ 数である",
+    "w": "53mの 人が いて、平均値だけ 引っぱられる"
+   },
+   {
+    "t": "最頻値は 15mである",
+    "w": "15mは まん中の 数（中央値）"
+   },
+   {
+    "t": "最頻値は 12mで、平均値は 中央値より 大きい",
+    "k": 1
+   }
+  ],
+  "e": "最頻値は 12m（2回）。中央値は 5番目の 15m。\n平均値は 170 ÷ 9 で 約18.9m だから、中央値より 大きい。\nこたえ 最頻値は 12mで、平均値は 中央値より 大きい",
+  "h": "3つの 代表値を ぜんぶ 出して くらべよう。"
+ },
+ {
+  "id": "data-01-L3-03",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 3,
+  "q": "くつ屋さんで ある 日に 売れた くつの サイズは 22cm、23cm、22cm、24cm、25cm、22cm、26cm、24cm、22cm、25cmでした。いちばん 多く 売れた サイズは 何cmですか。",
+  "c": [
+   {
+    "t": "22cm",
+    "k": 1
+   },
+   {
+    "t": "23.5cm",
+    "w": "ぜんぶの 平均を 答えた"
+   },
+   {
+    "t": "24cm",
+    "w": "24cmは 2足 しか 売れていない"
+   },
+   {
+    "t": "26cm",
+    "w": "いちばん 大きい サイズを 答えた"
+   }
+  ],
+  "e": "22cmが 4足で いちばん 多い。\nこたえ 22cm",
+  "h": "「いちばん 多く」は、どの 代表値を 見ると いいかな。"
+ },
+ {
+  "id": "data-01-L3-04",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 3,
+  "q": "ボール投げで 6人の 平均値は 25mでした。6人の 記録の 合計は 何mですか。",
+  "c": [
+   {
+    "t": "31m",
+    "w": "平均値と 人数を たして しまった"
+   },
+   {
+    "t": "19m",
+    "w": "平均値から 人数を ひいて しまった"
+   },
+   {
+    "t": "150m",
+    "k": 1
+   },
+   {
+    "t": "125m",
+    "w": "かける 数を 5に して しまった"
+   }
+  ],
+  "e": "平均値 ＝ 合計 ÷ 個数 だから、合計 ＝ 平均値 × 個数。\n25 × 6 = 150\nこたえ 150m",
+  "h": "平均値 ＝ 合計 ÷ 個数 を 思い出そう。"
+ },
+ {
+  "id": "data-01-L3-05",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 3,
+  "q": "データが 11こ あります。小さい 順に ならべた とき、中央値は 左から 何番目の 数ですか。",
+  "c": [
+   {
+    "t": "6番目",
+    "k": 1
+   },
+   {
+    "t": "5番目",
+    "w": "11 ÷ 2 ＝ 5.5 の 5を 答えた（左が 4こ、右が 6こで かたよる）"
+   },
+   {
+    "t": "7番目",
+    "w": "左が 6こ、右が 4こで かたよる"
+   },
+   {
+    "t": "5番目と 6番目の 平均",
+    "w": "偶数この ときの 求め方を つかった"
+   }
+  ],
+  "e": "6番目の 左右に 5こずつ のこる。\nこたえ 6番目",
+  "h": "左と 右に 同じ 数ずつ のこる 場所を さがそう。"
+ },
+ {
+  "id": "data-01-L4-01",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 4,
+  "q": "4人の テストの 平均点は 15点でした。5人目が 入ると、5人の 平均点が 17点に なりました。5人目の 点数は 何点ですか。",
+  "c": [
+   {
+    "t": "17点",
+    "w": "新しい 平均点と 同じと 考えた"
+   },
+   {
+    "t": "32点",
+    "w": "2つの 平均点を たして しまった"
+   },
+   {
+    "t": "25点",
+    "k": 1
+   },
+   {
+    "t": "2点",
+    "w": "平均点の ちがいを 答えた"
+   }
+  ],
+  "e": "4人の 合計：15 × 4 = 60\n5人の 合計：17 × 5 = 85\n85 − 60 = 25\nこたえ 25点",
+  "h": "どちらも 「平均 × 人数」で 合計に もどして 考えよう。"
+ },
+ {
+  "id": "data-01-L4-02",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 4,
+  "q": "5この 数 8、12、□、16、20 の 平均値が 15です。□に はいる 数は いくつですか。",
+  "c": [
+   {
+    "t": "15",
+    "w": "平均値と 同じ 数と 考えた"
+   },
+   {
+    "t": "75",
+    "w": "5この 数の 合計を 答えた"
+   },
+   {
+    "t": "17",
+    "w": "75 − 56 の 計算を まちがえた"
+   },
+   {
+    "t": "19",
+    "k": 1
+   }
+  ],
+  "e": "5この 合計：15 × 5 = 75\nわかっている 4こ の 合計：8 + 12 + 16 + 20 = 56\n75 − 56 = 19\nこたえ 19",
+  "h": "まず 5この 数の 合計を 出そう。"
+ },
+ {
+  "id": "data-01-L4-03",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 4,
+  "q": "9人の ソフトボール投げの 記録は ぜんぶ ちがいます。中央値は 22mです。22mより 遠くへ 投げた 人は 何人ですか。",
+  "c": [
+   {
+    "t": "5人",
+    "w": "まん中の 人（22m）も かぞえた"
+   },
+   {
+    "t": "4人",
+    "k": 1
+   },
+   {
+    "t": "8人",
+    "w": "22mの 人 いがい ぜんいんを かぞえた"
+   },
+   {
+    "t": "3人",
+    "w": "9 ÷ 3 と 考えた"
+   }
+  ],
+  "e": "小さい 順に ならべると、22mは 5番目。\n22mより 遠くへ 投げた 人は 6番目から 9番目の 4人。\nこたえ 4人",
+  "h": "9人を 小さい 順に ならべて、まん中の 右がわを 数えよう。"
+ },
+ {
+  "id": "data-01-L4-04",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 4,
+  "q": "5人の ボール投げの 平均値は 24mでした。32mの 人が 1人 ぬけました。のこりの 4人の 平均値は 何mですか。",
+  "c": [
+   {
+    "t": "24m",
+    "w": "平均値は かわらないと 考えた"
+   },
+   {
+    "t": "88m",
+    "w": "のこりの 合計を 答えた"
+   },
+   {
+    "t": "22m",
+    "k": 1
+   },
+   {
+    "t": "28m",
+    "w": "24と 32の 平均を とって しまった"
+   }
+  ],
+  "e": "5人の 合計：24 × 5 = 120\nのこりの 合計：120 − 32 = 88\n88 ÷ 4 = 22\nこたえ 22m",
+  "h": "まず 合計に もどして、ぬけた 人の 分を ひこう。"
+ },
+ {
+  "id": "data-01-L4-05",
+  "u": "E6-TK",
+  "s": "E6-TK-01",
+  "l": "data-01",
+  "d": 4,
+  "q": "6この 数を 小さい 順に ならべました。中央値は 15で、まん中の 2つの うち 小さい ほうは 12です。大きい ほうは いくつですか。",
+  "c": [
+   {
+    "t": "15",
+    "w": "中央値と 同じと 考えた"
+   },
+   {
+    "t": "27",
+    "w": "12と 15を たして しまった"
+   },
+   {
+    "t": "18",
+    "k": 1
+   },
+   {
+    "t": "30",
+    "w": "中央値を 2ばいに した"
+   }
+  ],
+  "e": "中央値 ＝ (12 + □) ÷ 2 ＝ 15\n12 + □ ＝ 30\n□ ＝ 18\nこたえ 18",
+  "h": "偶数この 中央値は、まん中の 2つの 平均だったね。"
+ },
+ {
+  "id": "data-02-L1-01",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 1,
+  "q": "ドットプロットは、12人が 先月 読んだ 本の 冊数です。●は 1人を あらわします。いちばん 多い 冊数（最頻値）は 何冊ですか。",
+  "c": [
+   {
+    "t": "3冊",
+    "k": 1
+   },
+   {
+    "t": "8冊",
+    "w": "いちばん 右の ●の 数を 答えた"
+   },
+   {
+    "t": "5冊",
+    "w": "●が 2こ つんで ある 数を 答えた"
+   },
+   {
+    "t": "4冊",
+    "w": "●が 1こ しか ない 数を 答えた"
+   }
+  ],
+  "e": "●が いちばん 高く つまれて いるのは 3冊（4人）。\nこたえ 3冊",
+  "h": "●が いちばん 多く つまれて いる ところを 見よう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 302 124\" width=\"302\" height=\"124\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"90\" x2=\"266\" y2=\"90\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"86\" x2=\"24\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"86\" x2=\"50\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"86\" x2=\"76\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"86\" x2=\"102\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"86\" x2=\"128\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"86\" x2=\"154\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"86\" x2=\"180\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"86\" x2=\"206\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"86\" x2=\"232\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"258\" y1=\"86\" x2=\"258\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><circle cx=\"50\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"50\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"35\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"232\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><text x=\"262\" y=\"120\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-02-L1-02",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 1,
+  "q": "ドットプロットは、12人が 先月 読んだ 本の 冊数です。いちばん 多く 読んだ 人は 何冊 読みましたか。",
+  "c": [
+   {
+    "t": "2冊",
+    "w": "いちばん ●が 多い 数を 答えた"
+   },
+   {
+    "t": "7冊",
+    "w": "いちばん 右から 2番目の ●の 数を 答えた"
+   },
+   {
+    "t": "9冊",
+    "k": 1
+   },
+   {
+    "t": "12冊",
+    "w": "人数を 答えた"
+   }
+  ],
+  "e": "いちばん 右の ●は 9冊の ところ。\nこたえ 9冊",
+  "h": "右の ほうほど、読んだ 冊数が 多いよ。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 328 108\" width=\"328\" height=\"108\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"74\" x2=\"292\" y2=\"74\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"70\" x2=\"24\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"70\" x2=\"50\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"70\" x2=\"76\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"70\" x2=\"102\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"70\" x2=\"128\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"70\" x2=\"154\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"70\" x2=\"180\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"70\" x2=\"206\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"70\" x2=\"232\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"258\" y1=\"70\" x2=\"258\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><line x1=\"284\" y1=\"70\" x2=\"284\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"284\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><circle cx=\"24\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"50\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"50\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"34\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"206\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"258\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><text x=\"288\" y=\"104\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-02-L1-03",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 1,
+  "q": "ドットプロットは、12人が 先月 読んだ 本の 冊数です。いちばん 少なく 読んだ 人は 何冊 読みましたか。",
+  "c": [
+   {
+    "t": "2冊",
+    "k": 1
+   },
+   {
+    "t": "0冊",
+    "w": "数直線の いちばん 左の 数を 答えた"
+   },
+   {
+    "t": "3冊",
+    "w": "●が 2こ ある 数を 答えた"
+   },
+   {
+    "t": "9冊",
+    "w": "いちばん 多く 読んだ 冊数を 答えた"
+   }
+  ],
+  "e": "いちばん 左の ●は 2冊の ところ。\nこたえ 2冊",
+  "h": "●が ある ところの うち、いちばん 左を さがそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 328 108\" width=\"328\" height=\"108\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"74\" x2=\"292\" y2=\"74\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"70\" x2=\"24\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"70\" x2=\"50\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"70\" x2=\"76\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"70\" x2=\"102\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"70\" x2=\"128\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"70\" x2=\"154\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"70\" x2=\"180\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"70\" x2=\"206\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"70\" x2=\"232\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"258\" y1=\"70\" x2=\"258\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><line x1=\"284\" y1=\"70\" x2=\"284\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"284\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><circle cx=\"76\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"34\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"206\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"232\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"258\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><text x=\"288\" y=\"104\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-02-L1-04",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 1,
+  "q": "ドットプロットは、12人が 先月 読んだ 本の 冊数です。はんい（最大 − 最小）は 何冊ですか。",
+  "c": [
+   {
+    "t": "9冊",
+    "w": "最大の 数を そのまま 答えた"
+   },
+   {
+    "t": "8冊",
+    "k": 1
+   },
+   {
+    "t": "10冊",
+    "w": "最大と 最小を たして しまった"
+   },
+   {
+    "t": "7冊",
+    "w": "9 − 1 の 計算を まちがえた"
+   }
+  ],
+  "e": "最大は 9冊、最小は 1冊。\n9 − 1 = 8\nこたえ 8冊",
+  "h": "いちばん 右の ●と いちばん 左の ●の 差を 求めよう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 328 108\" width=\"328\" height=\"108\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"74\" x2=\"292\" y2=\"74\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"70\" x2=\"24\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"70\" x2=\"50\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"70\" x2=\"76\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"70\" x2=\"102\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"70\" x2=\"128\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"70\" x2=\"154\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"70\" x2=\"180\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"70\" x2=\"206\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"70\" x2=\"232\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"258\" y1=\"70\" x2=\"258\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><line x1=\"284\" y1=\"70\" x2=\"284\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"284\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><circle cx=\"50\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"34\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"206\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"258\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><text x=\"288\" y=\"104\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-02-L1-05",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 1,
+  "q": "ドットプロットは、12人が 先月 読んだ 本の 冊数です。3冊 読んだ 人は 何人 いますか。",
+  "c": [
+   {
+    "t": "6人",
+    "w": "3冊と 4冊の 人を あわせた"
+   },
+   {
+    "t": "12人",
+    "w": "クラスの 全員の 人数を 答えた"
+   },
+   {
+    "t": "3人",
+    "w": "冊数の 「3」を 人数と まちがえた"
+   },
+   {
+    "t": "4人",
+    "k": 1
+   }
+  ],
+  "e": "3冊の ところに ●が 4こ つんで ある。\nこたえ 4人",
+  "h": "3冊の ところの ●を かぞえよう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 302 124\" width=\"302\" height=\"124\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"90\" x2=\"266\" y2=\"90\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"86\" x2=\"24\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"86\" x2=\"50\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"86\" x2=\"76\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"86\" x2=\"102\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"86\" x2=\"128\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"86\" x2=\"154\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"86\" x2=\"180\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"86\" x2=\"206\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"86\" x2=\"232\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"258\" y1=\"86\" x2=\"258\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><circle cx=\"50\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"50\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"35\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"232\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><text x=\"262\" y=\"120\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-02-L2-01",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 2,
+  "q": "ドットプロットは、15人の 漢字テストの 点数（10点まんてん）です。はんい（最大 − 最小）は 何点ですか。",
+  "c": [
+   {
+    "t": "10点",
+    "w": "最大の 点数を そのまま 答えた"
+   },
+   {
+    "t": "4点",
+    "w": "最小の 点数を 答えた"
+   },
+   {
+    "t": "14点",
+    "w": "最大と 最小を たして しまった"
+   },
+   {
+    "t": "6点",
+    "k": 1
+   }
+  ],
+  "e": "最大は 10点、最小は 4点。\n10 − 4 = 6\nこたえ 6点",
+  "h": "最大 − 最小 で はんいが 出るよ。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 250 124\" width=\"250\" height=\"124\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"90\" x2=\"214\" y2=\"90\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"86\" x2=\"24\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"50\" y1=\"86\" x2=\"50\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"76\" y1=\"86\" x2=\"76\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"102\" y1=\"86\" x2=\"102\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"128\" y1=\"86\" x2=\"128\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"154\" y1=\"86\" x2=\"154\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"180\" y1=\"86\" x2=\"180\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><line x1=\"206\" y1=\"86\" x2=\"206\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><circle cx=\"50\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"50\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"50\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"35\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"206\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"206\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><text x=\"210\" y=\"120\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（点）</text></svg>"
+ },
+ {
+  "id": "data-02-L2-02",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 2,
+  "q": "ドットプロットは、20人が 先月 読んだ 本の 冊数です。5冊より 多く 読んだ 人は 何人 いますか。",
+  "c": [
+   {
+    "t": "7人",
+    "w": "ちょうど 5冊の 人も 入れて しまった"
+   },
+   {
+    "t": "5人",
+    "k": 1
+   },
+   {
+    "t": "15人",
+    "w": "5冊 いかの 人を かぞえた"
+   },
+   {
+    "t": "4人",
+    "w": "1人 かぞえ おとした"
+   }
+  ],
+  "e": "5冊より 多いのは、6冊が 2人、7冊が 1人、8冊が 1人、10冊が 1人。\n2 + 1 + 1 + 1 = 5\nこたえ 5人",
+  "h": "「5冊より 多い」には 5冊は 入らないよ。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 328 124\" width=\"328\" height=\"124\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"90\" x2=\"292\" y2=\"90\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"86\" x2=\"24\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"86\" x2=\"50\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"86\" x2=\"76\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"86\" x2=\"102\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"86\" x2=\"128\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"86\" x2=\"154\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"86\" x2=\"180\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"86\" x2=\"206\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"86\" x2=\"232\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"258\" y1=\"86\" x2=\"258\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><line x1=\"284\" y1=\"86\" x2=\"284\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"284\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><circle cx=\"24\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"50\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"50\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"50\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"50\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"35\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"50\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"206\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"232\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"284\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><text x=\"288\" y=\"120\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-02-L2-03",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 2,
+  "q": "ドットプロットで、●は 1人を あらわします。このクラスの 人数は 何人ですか。",
+  "c": [
+   {
+    "t": "17人",
+    "w": "●を 1こ かぞえ おとした"
+   },
+   {
+    "t": "18人",
+    "k": 1
+   },
+   {
+    "t": "19人",
+    "w": "●を 1こ 多く かぞえた"
+   },
+   {
+    "t": "9人",
+    "w": "数直線の いちばん 右の 数を 答えた"
+   }
+  ],
+  "e": "●は ぜんぶで 18こ。1こが 1人だから 18人。\nこたえ 18人",
+  "h": "●を 左から じゅんに かぞえて いこう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 328 124\" width=\"328\" height=\"124\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"90\" x2=\"292\" y2=\"90\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"86\" x2=\"24\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"86\" x2=\"50\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"86\" x2=\"76\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"86\" x2=\"102\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"86\" x2=\"128\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"86\" x2=\"154\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"86\" x2=\"180\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"86\" x2=\"206\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"86\" x2=\"232\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"258\" y1=\"86\" x2=\"258\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><line x1=\"284\" y1=\"86\" x2=\"284\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"284\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><circle cx=\"50\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"50\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"50\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"35\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"50\" r=\"6\" class=\"fg-dot\"/><circle cx=\"206\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"232\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"258\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><text x=\"288\" y=\"120\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-02-L2-04",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 2,
+  "q": "漢字テストの 12人の 点数は 7点、9点、6点、8点、9点、10点、7点、9点、5点、8点、9点、6点でした。最頻値は 何点ですか。",
+  "c": [
+   {
+    "t": "7点",
+    "w": "7点は 2人。もっと 多い 点数が ある"
+   },
+   {
+    "t": "10点",
+    "w": "いちばん 高い 点数を 答えた"
+   },
+   {
+    "t": "5点",
+    "w": "いちばん 低い 点数を 答えた"
+   },
+   {
+    "t": "9点",
+    "k": 1
+   }
+  ],
+  "e": "9点が 4人で いちばん 多い。\nこたえ 9点",
+  "h": "同じ 点数の 人が 何人 いるか、数えよう。"
+ },
+ {
+  "id": "data-02-L2-05",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 2,
+  "q": "ドットプロットは、11人が 先月 読んだ 本の 冊数です。中央値は 何冊ですか。",
+  "c": [
+   {
+    "t": "7冊",
+    "w": "いちばん ●が 多い 数（最頻値）を 答えた"
+   },
+   {
+    "t": "5冊",
+    "w": "いちばん 左と いちばん 右の まん中を 答えた"
+   },
+   {
+    "t": "4冊",
+    "k": 1
+   },
+   {
+    "t": "3冊",
+    "w": "左から 4番目の ●の 数を 答えた"
+   }
+  ],
+  "e": "●は 左から 小さい 順に ならんで いる。11こ だから、まん中は 6番目の ●。\n6番目は 4冊の ところ。\nこたえ 4冊",
+  "h": "●を 左から 数えて、6番目を さがそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 328 108\" width=\"328\" height=\"108\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"74\" x2=\"292\" y2=\"74\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"70\" x2=\"24\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"70\" x2=\"50\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"70\" x2=\"76\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"70\" x2=\"102\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"70\" x2=\"128\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"70\" x2=\"154\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"70\" x2=\"180\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"70\" x2=\"206\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"70\" x2=\"232\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"258\" y1=\"70\" x2=\"258\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><line x1=\"284\" y1=\"70\" x2=\"284\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"284\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><circle cx=\"50\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"206\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"206\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"206\" cy=\"34\" r=\"6\" class=\"fg-dot\"/><circle cx=\"258\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><text x=\"288\" y=\"104\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-02-L3-01",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 3,
+  "q": "ドットプロットは、20人が 先月 読んだ 本の 冊数です。ただしい ものは どれですか。",
+  "c": [
+   {
+    "t": "はんいは 8冊である",
+    "w": "10冊と 2冊の 差だと 思った（いちばん 左は 0冊）"
+   },
+   {
+    "t": "いちばん 多く 読んだ 人は 8冊である",
+    "w": "8冊は 右から 2番目の ●。いちばん 右は 10冊"
+   },
+   {
+    "t": "0冊の 人は 3人 いる",
+    "w": "0冊は ●が 1こ だけ"
+   },
+   {
+    "t": "最頻値は 3冊で、右がわに すそが のびている",
+    "k": 1
+   }
+  ],
+  "e": "3冊の ●が 5こで いちばん 多い。右に 10冊まで すそが のびている。はんいは 10 − 0 = 10冊。\nこたえ 最頻値は 3冊で、右がわに すそが のびている",
+  "h": "図の 形と、最大・最小・最頻値を 見くらべよう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 328 140\" width=\"328\" height=\"140\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"106\" x2=\"292\" y2=\"106\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"102\" x2=\"24\" y2=\"110\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"122\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"102\" x2=\"50\" y2=\"110\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"122\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"102\" x2=\"76\" y2=\"110\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"122\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"102\" x2=\"102\" y2=\"110\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"122\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"102\" x2=\"128\" y2=\"110\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"122\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"102\" x2=\"154\" y2=\"110\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"122\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"102\" x2=\"180\" y2=\"110\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"122\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"102\" x2=\"206\" y2=\"110\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"122\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"102\" x2=\"232\" y2=\"110\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"122\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"258\" y1=\"102\" x2=\"258\" y2=\"110\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"122\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><line x1=\"284\" y1=\"102\" x2=\"284\" y2=\"110\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"284\" y=\"122\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><circle cx=\"24\" cy=\"96\" r=\"6\" class=\"fg-dot\"/><circle cx=\"50\" cy=\"96\" r=\"6\" class=\"fg-dot\"/><circle cx=\"50\" cy=\"81\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"96\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"81\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"66\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"96\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"81\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"66\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"51\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"36\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"96\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"81\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"66\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"96\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"81\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"96\" r=\"6\" class=\"fg-dot\"/><circle cx=\"206\" cy=\"96\" r=\"6\" class=\"fg-dot\"/><circle cx=\"232\" cy=\"96\" r=\"6\" class=\"fg-dot\"/><circle cx=\"284\" cy=\"96\" r=\"6\" class=\"fg-dot\"/><text x=\"288\" y=\"136\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-02-L3-02",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 3,
+  "q": "A班と B班の 8人ずつの 点数です。A班は 5点、6点、6点、7点、7点、8点、8点、9点、B班は 2点、4点、5点、7点、8点、9点、10点、10点。はんいが 大きい のは どちらで、はんいは 何点ですか。",
+  "c": [
+   {
+    "t": "A班で 4点",
+    "w": "A班の はんいは 4点だが、B班の ほうが 大きい"
+   },
+   {
+    "t": "B班で 8点",
+    "k": 1
+   },
+   {
+    "t": "B班で 10点",
+    "w": "最大の 点数を はんいと まちがえた"
+   },
+   {
+    "t": "A班で 9点",
+    "w": "最大の 点数を はんいと まちがえた"
+   }
+  ],
+  "e": "A班：9 − 5 = 4点\nB班：10 − 2 = 8点\nこたえ B班で 8点",
+  "h": "それぞれの 最大と 最小を 見つけて、ひき算しよう。"
+ },
+ {
+  "id": "data-02-L3-03",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 3,
+  "q": "ドットプロットは、12人が 先月 読んだ 本の 冊数です。10冊の 人 1人を のぞくと、はんいは 何冊に なりますか。",
+  "c": [
+   {
+    "t": "5冊",
+    "k": 1
+   },
+   {
+    "t": "9冊",
+    "w": "のぞく まえの はんいを 答えた"
+   },
+   {
+    "t": "6冊",
+    "w": "新しい 最大の 数を そのまま 答えた"
+   },
+   {
+    "t": "4冊",
+    "w": "6 − 1 の 計算を まちがえた"
+   }
+  ],
+  "e": "10冊の 人を のぞくと、最大は 6冊、最小は 1冊。\n6 − 1 = 5\nこたえ 5冊",
+  "h": "のぞいた あとの 最大は 何冊かな。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 328 108\" width=\"328\" height=\"108\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"74\" x2=\"292\" y2=\"74\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"70\" x2=\"24\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"70\" x2=\"50\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"70\" x2=\"76\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"70\" x2=\"102\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"70\" x2=\"128\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"70\" x2=\"154\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"70\" x2=\"180\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"70\" x2=\"206\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"70\" x2=\"232\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"258\" y1=\"70\" x2=\"258\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><line x1=\"284\" y1=\"70\" x2=\"284\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"284\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><circle cx=\"50\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"34\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"284\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><text x=\"288\" y=\"104\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-02-L3-04",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 3,
+  "q": "ドットプロットは、12人の 漢字テストの 点数です。中央値は 何点ですか。",
+  "c": [
+   {
+    "t": "5点",
+    "w": "6番目の 数だけを 答えた"
+   },
+   {
+    "t": "7点",
+    "w": "7番目の 数だけを 答えた"
+   },
+   {
+    "t": "6点",
+    "k": 1
+   },
+   {
+    "t": "12点",
+    "w": "まん中の 2つを たした だけで、2で わらなかった"
+   }
+  ],
+  "e": "12こ だから、まん中は 6番目の 5と 7番目の 7。\n(5 + 7) ÷ 2 = 6\nこたえ 6点",
+  "h": "偶数こ の ときは、まん中の 2つの 平均だよ。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 302 92\" width=\"302\" height=\"92\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"58\" x2=\"266\" y2=\"58\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"54\" x2=\"24\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"50\" y1=\"54\" x2=\"50\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"76\" y1=\"54\" x2=\"76\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"102\" y1=\"54\" x2=\"102\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"128\" y1=\"54\" x2=\"128\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"154\" y1=\"54\" x2=\"154\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"180\" y1=\"54\" x2=\"180\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"206\" y1=\"54\" x2=\"206\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"232\" y1=\"54\" x2=\"232\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><line x1=\"258\" y1=\"54\" x2=\"258\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><circle cx=\"50\" cy=\"48\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"48\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"33\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"48\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"48\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"33\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"48\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"33\" r=\"6\" class=\"fg-dot\"/><circle cx=\"206\" cy=\"48\" r=\"6\" class=\"fg-dot\"/><circle cx=\"206\" cy=\"33\" r=\"6\" class=\"fg-dot\"/><circle cx=\"232\" cy=\"48\" r=\"6\" class=\"fg-dot\"/><circle cx=\"258\" cy=\"48\" r=\"6\" class=\"fg-dot\"/><text x=\"262\" y=\"88\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（点）</text></svg>"
+ },
+ {
+  "id": "data-02-L3-05",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 3,
+  "q": "10人の 点数は 5点、7点、8点、8点、9点、6点、8点、10点、7点、4点でした。ただしい ものは どれですか。",
+  "c": [
+   {
+    "t": "最頻値は 7点で、はんいは 6点",
+    "w": "7点は 2人。8点は 3人"
+   },
+   {
+    "t": "最頻値は 8点で、はんいは 10点",
+    "w": "最大の 点数を はんいと まちがえた"
+   },
+   {
+    "t": "最頻値は 8点で、はんいは 6点",
+    "k": 1
+   },
+   {
+    "t": "最頻値は 8点で、はんいは 7点",
+    "w": "4点から 10点まで 7この 数だが、はんいは ひき算で 出す"
+   }
+  ],
+  "e": "8点が 3人で 最頻値。\nはんいは 10 − 4 = 6点。\nこたえ 最頻値は 8点で、はんいは 6点",
+  "h": "最頻値と はんいを べつべつに 求めよう。"
+ },
+ {
+  "id": "data-02-L4-01",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 4,
+  "q": "ドットプロットは、12人が 先月 読んだ 本の 冊数です。平均値は 何冊ですか。",
+  "c": [
+   {
+    "t": "4冊",
+    "k": 1
+   },
+   {
+    "t": "3冊",
+    "w": "いちばん 多い ●の 数（最頻値）を 答えた"
+   },
+   {
+    "t": "5冊",
+    "w": "いちばん 左と 右の まん中を 答えた"
+   },
+   {
+    "t": "48冊",
+    "w": "合計の まま 答えた"
+   }
+  ],
+  "e": "合計：0 + 1 + 2 + 2 + 3 + 3 + 3 + 4 + 5 + 6 + 9 + 10 = 48\n48 ÷ 12 = 4\nこたえ 4冊",
+  "h": "●の 位置の 数を ぜんぶ たしてから、人数で わろう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 328 108\" width=\"328\" height=\"108\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"74\" x2=\"292\" y2=\"74\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"70\" x2=\"24\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"70\" x2=\"50\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"70\" x2=\"76\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"70\" x2=\"102\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"70\" x2=\"128\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"70\" x2=\"154\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"70\" x2=\"180\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"70\" x2=\"206\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"70\" x2=\"232\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"258\" y1=\"70\" x2=\"258\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><line x1=\"284\" y1=\"70\" x2=\"284\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"284\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><circle cx=\"24\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"50\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"34\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"258\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"284\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><text x=\"288\" y=\"104\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-02-L4-02",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 4,
+  "q": "ドットプロットで、最頻値は 3冊（4人）、4冊の 人は 2人です。4冊の 人が あと 何人 ふえると、はじめて 最頻値が 4冊だけに なりますか。",
+  "c": [
+   {
+    "t": "2人",
+    "w": "同じ 人数に なる だけ（最頻値が 2つに なる）"
+   },
+   {
+    "t": "1人",
+    "w": "1人 ふえるだけで 足りると 考えた"
+   },
+   {
+    "t": "3人",
+    "k": 1
+   },
+   {
+    "t": "4人",
+    "w": "3冊の 人数と 同じ 数だけ 考えた"
+   }
+  ],
+  "e": "4冊の 人が 2人 ふえると 4人で、3冊と 同じに なる。\nもう 1人 ふえると 5人で 4冊が いちばん 多く なる。\n2 + 1 = 3\nこたえ 3人",
+  "h": "同じ 人数に なった あと、もう 1人 ふえると どうなるかな。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 302 124\" width=\"302\" height=\"124\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"90\" x2=\"266\" y2=\"90\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"86\" x2=\"24\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"86\" x2=\"50\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"86\" x2=\"76\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"86\" x2=\"102\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"86\" x2=\"128\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"86\" x2=\"154\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"86\" x2=\"180\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"86\" x2=\"206\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"86\" x2=\"232\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"258\" y1=\"86\" x2=\"258\" y2=\"94\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"106\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><circle cx=\"50\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"50\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"35\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"65\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><circle cx=\"232\" cy=\"80\" r=\"6\" class=\"fg-dot\"/><text x=\"262\" y=\"120\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-02-L4-03",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 4,
+  "q": "ドットプロットは、11人が 先月 読んだ 本の 冊数です。このほかに、11冊 読んだ 人が 1人 いました。この 人も 入れると、はんいは 何冊に なりますか。",
+  "c": [
+   {
+    "t": "7冊",
+    "w": "11冊の 人を 入れる まえの はんいを 答えた"
+   },
+   {
+    "t": "10冊",
+    "k": 1
+   },
+   {
+    "t": "11冊",
+    "w": "最大の 数を そのまま 答えた"
+   },
+   {
+    "t": "3冊",
+    "w": "新しい 最大と 今までの 最大の 差を 答えた"
+   }
+  ],
+  "e": "新しい 最大は 11冊、最小は 1冊。\n11 − 1 = 10\nこたえ 10冊",
+  "h": "最大が かわると、はんいも かわるよ。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 276 108\" width=\"276\" height=\"108\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"74\" x2=\"240\" y2=\"74\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"70\" x2=\"24\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"70\" x2=\"50\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"70\" x2=\"76\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"70\" x2=\"102\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"70\" x2=\"128\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"70\" x2=\"154\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"70\" x2=\"180\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"70\" x2=\"206\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"70\" x2=\"232\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><circle cx=\"50\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"34\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"232\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><text x=\"236\" y=\"104\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-02-L4-04",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 4,
+  "q": "ドットプロットは、5人の 点数です。いちばん 右の ●の 人は、じつは 10点でした。平均値は 何点 ふえますか。",
+  "c": [
+   {
+    "t": "2点",
+    "w": "1人 ぶんの ふえた 点数を そのまま 答えた"
+   },
+   {
+    "t": "0.2点",
+    "w": "5ではなく 10で わって しまった"
+   },
+   {
+    "t": "2.5点",
+    "w": "5 ÷ 2 と して しまった（わり算の 向きが ぎゃく）"
+   },
+   {
+    "t": "0.4点",
+    "k": 1
+   }
+  ],
+  "e": "合計が 10 − 8 = 2点 ふえる。\nそれを 5人で わると 2 ÷ 5 = 0.4\nこたえ 0.4点",
+  "h": "ふえた 点数は 合計に 入って、人数で わられるよ。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 224 92\" width=\"224\" height=\"92\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"58\" x2=\"188\" y2=\"58\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"54\" x2=\"24\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"50\" y1=\"54\" x2=\"50\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"76\" y1=\"54\" x2=\"76\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"102\" y1=\"54\" x2=\"102\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"128\" y1=\"54\" x2=\"128\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"154\" y1=\"54\" x2=\"154\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><line x1=\"180\" y1=\"54\" x2=\"180\" y2=\"62\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"74\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><circle cx=\"50\" cy=\"48\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"48\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"33\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"48\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"48\" r=\"6\" class=\"fg-dot\"/><text x=\"184\" y=\"88\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（点）</text></svg>"
+ },
+ {
+  "id": "data-02-L4-05",
+  "u": "E6-TK",
+  "s": "E6-TK-02",
+  "l": "data-02",
+  "d": 4,
+  "q": "ドットプロットは、10人が 先月 読んだ 本の 冊数です。最頻値・中央値・平均値を 小さい 順に ならべた ものは どれですか。",
+  "c": [
+   {
+    "t": "最頻値 → 中央値 → 平均値",
+    "k": 1
+   },
+   {
+    "t": "平均値 → 中央値 → 最頻値",
+    "w": "右がわの 15冊に 引っぱられて 平均値が 大きく なる ことを わすれた"
+   },
+   {
+    "t": "中央値 → 最頻値 → 平均値",
+    "w": "最頻値は 2冊で いちばん 小さい"
+   },
+   {
+    "t": "最頻値 → 平均値 → 中央値",
+    "w": "平均値は 15冊に 引っぱられて、中央値より 大きく なる"
+   }
+  ],
+  "e": "最頻値は 2冊。中央値は (3 + 4) ÷ 2 = 3.5冊。平均値は 48 ÷ 10 = 4.8冊。\nこたえ 最頻値 → 中央値 → 平均値",
+  "h": "3つの 代表値を 計算して くらべよう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 458 108\" width=\"458\" height=\"108\" role=\"img\" aria-label=\"ドットプロット\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"16\" y1=\"74\" x2=\"422\" y2=\"74\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"24\" y1=\"70\" x2=\"24\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"24\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"50\" y1=\"70\" x2=\"50\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"50\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"76\" y1=\"70\" x2=\"76\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"76\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"102\" y1=\"70\" x2=\"102\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"102\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"128\" y1=\"70\" x2=\"128\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"128\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"154\" y1=\"70\" x2=\"154\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"154\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"180\" y1=\"70\" x2=\"180\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"180\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"206\" y1=\"70\" x2=\"206\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"206\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"232\" y1=\"70\" x2=\"232\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"232\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"258\" y1=\"70\" x2=\"258\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"258\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><line x1=\"284\" y1=\"70\" x2=\"284\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"284\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"310\" y1=\"70\" x2=\"310\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"310\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">11</text><line x1=\"336\" y1=\"70\" x2=\"336\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"336\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"362\" y1=\"70\" x2=\"362\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"362\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">13</text><line x1=\"388\" y1=\"70\" x2=\"388\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"388\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"414\" y1=\"70\" x2=\"414\" y2=\"78\" class=\"fg-l\" stroke-width=\"1\"/><text x=\"414\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><circle cx=\"50\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"49\" r=\"6\" class=\"fg-dot\"/><circle cx=\"76\" cy=\"34\" r=\"6\" class=\"fg-dot\"/><circle cx=\"102\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"128\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"154\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"180\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"232\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><circle cx=\"414\" cy=\"64\" r=\"6\" class=\"fg-dot\"/><text x=\"418\" y=\"104\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（冊）</text></svg>"
+ },
+ {
+  "id": "data-03-L1-01",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 1,
+  "q": "15m 以上 20m 未満の 階級の はばは 何mですか。",
+  "c": [
+   {
+    "t": "15m",
+    "w": "階級の はじめの 数を 答えた"
+   },
+   {
+    "t": "20m",
+    "w": "階級の おわりの 数を 答えた"
+   },
+   {
+    "t": "35m",
+    "w": "はじめと おわりを たして しまった"
+   },
+   {
+    "t": "5m",
+    "k": 1
+   }
+  ],
+  "e": "20 − 15 = 5\nこたえ 5m",
+  "h": "階級の はば ＝ 大きい ほうの 数 − 小さい ほうの 数。"
+ },
+ {
+  "id": "data-03-L1-02",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 1,
+  "q": "ソフトボール投げで、ちょうど 20mの 記録の 人は、どの 階級に 入りますか。（階級は 5mずつ）",
+  "c": [
+   {
+    "t": "15m 以上 20m 未満",
+    "w": "「20m 未満」には 20mは 入らない"
+   },
+   {
+    "t": "20m 以上 25m 未満",
+    "k": 1
+   },
+   {
+    "t": "25m 以上 30m 未満",
+    "w": "20mより 大きい 数の 階級を えらんだ"
+   },
+   {
+    "t": "10m 以上 15m 未満",
+    "w": "20mより ずっと 小さい 階級を えらんだ"
+   }
+  ],
+  "e": "「20m 以上」には 20mが 入る。「20m 未満」には 20mは 入らない。\nこたえ 20m 以上 25m 未満",
+  "h": "「以上」は その 数を ふくみ、「未満」は ふくまないよ。"
+ },
+ {
+  "id": "data-03-L1-03",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 1,
+  "q": "9人の ソフトボール投げの 記録は 13m、22m、27m、20m、24m、31m、25m、21m、19mです。20m 以上 25m 未満の 人は 何人ですか。",
+  "c": [
+   {
+    "t": "5人",
+    "w": "25mも 入れて しまった"
+   },
+   {
+    "t": "3人",
+    "w": "20mを 入れわすれた"
+   },
+   {
+    "t": "9人",
+    "w": "9人 ぜんいんを 答えた"
+   },
+   {
+    "t": "4人",
+    "k": 1
+   }
+  ],
+  "e": "20m 以上 25m 未満は 22m、20m、24m、21mの 4人。\n25mは 入らない。\nこたえ 4人",
+  "h": "20mは 入り、25mは 入らないよ。"
+ },
+ {
+  "id": "data-03-L1-04",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 1,
+  "q": "度数分布表で、度数が 2人、5人、8人、6人、4人でした。記録を とった 人は ぜんぶで 何人ですか。",
+  "c": [
+   {
+    "t": "8人",
+    "w": "いちばん 多い 度数を 答えた"
+   },
+   {
+    "t": "25人",
+    "k": 1
+   },
+   {
+    "t": "5人",
+    "w": "階級の 数を 答えた"
+   },
+   {
+    "t": "26人",
+    "w": "たし算を まちがえた"
+   }
+  ],
+  "e": "2 + 5 + 8 + 6 + 4 = 25\nこたえ 25人",
+  "h": "度数を ぜんぶ たすと、ぜんぶの 人数に なるよ。"
+ },
+ {
+  "id": "data-03-L1-05",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 1,
+  "q": "25人の 記録を 度数分布表に しました。度数は 10m 以上 15m 未満が 3人、15m 以上 20m 未満が 6人、20m 以上 25m 未満が 9人、25m 以上 30m 未満が 5人、30m 以上 35m 未満が 2人です。度数が いちばん 多い 階級は どれですか。",
+  "c": [
+   {
+    "t": "20m 以上 25m 未満",
+    "k": 1
+   },
+   {
+    "t": "15m 以上 20m 未満",
+    "w": "2番目に 多い 階級を えらんだ"
+   },
+   {
+    "t": "30m 以上 35m 未満",
+    "w": "いちばん 右の 階級を えらんだ"
+   },
+   {
+    "t": "10m 以上 15m 未満",
+    "w": "いちばん 左の 階級を えらんだ"
+   }
+  ],
+  "e": "度数は 9人が いちばん 多い。\nこたえ 20m 以上 25m 未満",
+  "h": "度数の 数字が いちばん 大きい ところを さがそう。"
+ },
+ {
+  "id": "data-03-L2-01",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 2,
+  "q": "12人の ソフトボール投げの 記録は 14m、22m、27m、30m、25m、18m、35m、20m、24m、29m、31m、40mです。25m 以上 30m 未満の 人は 何人ですか。",
+  "c": [
+   {
+    "t": "4人",
+    "w": "30mも 入れて しまった"
+   },
+   {
+    "t": "2人",
+    "w": "25mを 入れわすれた"
+   },
+   {
+    "t": "3人",
+    "k": 1
+   },
+   {
+    "t": "6人",
+    "w": "20m 以上 30m 未満を かぞえた"
+   }
+  ],
+  "e": "25m 以上 30m 未満は 27m、25m、29mの 3人。\n30mは 入らない。\nこたえ 3人",
+  "h": "25mは 入り、30mは 入らないよ。"
+ },
+ {
+  "id": "data-03-L2-02",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 2,
+  "q": "度数分布表の 度数は、10m 以上 15m 未満が 1人、15m 以上 20m 未満が 4人、20m 以上 25m 未満が 7人、25m 以上 30m 未満が 6人、30m 以上 35m 未満が 4人、35m 以上 40m 未満が 2人、40m 以上 45m 未満が 1人です。30m 以上の 人は 何人ですか。",
+  "c": [
+   {
+    "t": "4人",
+    "w": "30m 以上 35m 未満の 階級だけを 答えた"
+   },
+   {
+    "t": "13人",
+    "w": "25m 以上の 人を かぞえた"
+   },
+   {
+    "t": "7人",
+    "k": 1
+   },
+   {
+    "t": "6人",
+    "w": "25m 以上 30m 未満の 階級を 答えた"
+   }
+  ],
+  "e": "30m 以上は 30m 以上 35m 未満、35m 以上 40m 未満、40m 以上 45m 未満の 3つ。\n4 + 2 + 1 = 7\nこたえ 7人",
+  "h": "30m 以上の 階級を ぜんぶ たそう。"
+ },
+ {
+  "id": "data-03-L2-03",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 2,
+  "q": "5mずつの 度数分布表で、15m 以上 20m 未満が 4人、20m 以上 25m 未満が 7人でした。この 2つを まとめて、15m 以上 25m 未満に すると、何人に なりますか。",
+  "c": [
+   {
+    "t": "11人",
+    "k": 1
+   },
+   {
+    "t": "7人",
+    "w": "20m 以上 25m 未満の 7人だけを 答えた"
+   },
+   {
+    "t": "4人",
+    "w": "15m 以上 20m 未満の 4人だけを 答えた"
+   },
+   {
+    "t": "28人",
+    "w": "かけ算を して しまった"
+   }
+  ],
+  "e": "4 + 7 = 11\nこたえ 11人",
+  "h": "となりあう 階級を まとめる ときは、度数を たすよ。"
+ },
+ {
+  "id": "data-03-L2-04",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 2,
+  "q": "10m 以上 45m 未満の 記録を、5mずつの 階級に わけます。階級は いくつ できますか。",
+  "c": [
+   {
+    "t": "8つ",
+    "w": "10から 45までの 数の かずを 数えた"
+   },
+   {
+    "t": "6つ",
+    "w": "1つ 少なく 数えた"
+   },
+   {
+    "t": "5つ",
+    "w": "階級の はばを 答えた"
+   },
+   {
+    "t": "7つ",
+    "k": 1
+   }
+  ],
+  "e": "45 − 10 = 35、35 ÷ 5 = 7\n10〜15、15〜20、20〜25、25〜30、30〜35、35〜40、40〜45の 7つ。\nこたえ 7つ",
+  "h": "10m 以上 15m 未満から じゅんに 書きだして、数えて みよう。"
+ },
+ {
+  "id": "data-03-L2-05",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 2,
+  "q": "階級を 10m 以上 20m 未満、20m 以上 30m 未満、30m 以上 40m 未満の ように、10mずつに わけました。27mの 記録は どの 階級に 入りますか。",
+  "c": [
+   {
+    "t": "30m 以上 40m 未満",
+    "w": "27mより 大きい 数の 階級を えらんだ"
+   },
+   {
+    "t": "10m 以上 20m 未満",
+    "w": "27mより 小さい 数の 階級を えらんだ"
+   },
+   {
+    "t": "20m 以上 30m 未満",
+    "k": 1
+   },
+   {
+    "t": "20m 以上 25m 未満",
+    "w": "5mずつの 階級で 考えて しまった（この 問題は 10mずつ）"
+   }
+  ],
+  "e": "27mは 20 以上 30 未満。\nこたえ 20m 以上 30m 未満",
+  "h": "27mが 入る 10mずつの はんいを さがそう。"
+ },
+ {
+  "id": "data-03-L3-01",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 3,
+  "q": "25人の ソフトボール投げの 記録を 度数分布表に しました。度数は 10m 以上 15m 未満が 2人、15m 以上 20m 未満が 5人、20m 以上 25m 未満が 8人、25m 以上 30m 未満が 6人、30m 以上 35m 未満が 3人、35m 以上 40m 未満が 1人です。25m 未満の 人は 何人ですか。",
+  "c": [
+   {
+    "t": "15人",
+    "k": 1
+   },
+   {
+    "t": "8人",
+    "w": "20m 以上 25m 未満の 階級だけを 答えた"
+   },
+   {
+    "t": "10人",
+    "w": "25m 以上の 人を かぞえた"
+   },
+   {
+    "t": "21人",
+    "w": "30m 未満の 人を かぞえた"
+   }
+  ],
+  "e": "25m 未満は、10〜15、15〜20、20〜25の 3つの 階級。\n2 + 5 + 8 = 15\nこたえ 15人",
+  "h": "25m 未満の 階級を ぜんぶ たそう。"
+ },
+ {
+  "id": "data-03-L3-02",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 3,
+  "q": "25人の 記録を 度数分布表に しました。度数は 10m 以上 15m 未満が 2人、15m 以上 20m 未満が 5人、20m 以上 25m 未満が □人、25m 以上 30m 未満が 6人、30m 以上 35m 未満が 3人、35m 以上 40m 未満が 1人です。□に はいる 数は いくつですか。",
+  "c": [
+   {
+    "t": "8人",
+    "k": 1
+   },
+   {
+    "t": "17人",
+    "w": "わかっている 度数の 合計を 答えた"
+   },
+   {
+    "t": "25人",
+    "w": "ぜんぶの 人数を そのまま 答えた"
+   },
+   {
+    "t": "9人",
+    "w": "ひき算を まちがえた"
+   }
+  ],
+  "e": "わかっている 度数の 合計：2 + 5 + 6 + 3 + 1 = 17\n25 − 17 = 8\nこたえ 8人",
+  "h": "度数の 合計は ぜんぶの 人数に なるよ。"
+ },
+ {
+  "id": "data-03-L3-03",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 3,
+  "q": "25人の 記録を 度数分布表に しました。度数は 5m 以上 10m 未満が 1人、10m 以上 15m 未満が 3人、15m 以上 20m 未満が 7人、20m 以上 25m 未満が 8人、25m 以上 30m 未満が 4人、30m 以上 35m 未満が 2人です。ただしい ものは どれですか。",
+  "c": [
+   {
+    "t": "いちばん 多い 階級は 15m 以上 20m 未満である",
+    "w": "2番目に 多い 階級を えらんだ"
+   },
+   {
+    "t": "20m 以上 25m 未満が いちばん 多く、8人である",
+    "k": 1
+   },
+   {
+    "t": "20m 以上の 人は 12人である",
+    "w": "25m 以上 30m 未満の 4人と 30m 以上の 2人だけで 6人。20m 以上は 8人を ふくめて 14人"
+   },
+   {
+    "t": "25m 未満の 人は 10人である",
+    "w": "20m 以上 25m 未満の 8人も 25m 未満。あわせて 19人"
+   }
+  ],
+  "e": "20m 以上 25m 未満が 8人で いちばん 多い。\n20m 以上は 8 + 4 + 2 = 14人、25m 未満は 1 + 3 + 7 + 8 = 19人。\nこたえ 20m 以上 25m 未満が いちばん 多く、8人である",
+  "h": "それぞれの 文を、表の 数で たしかめよう。"
+ },
+ {
+  "id": "data-03-L3-04",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 3,
+  "q": "ある 人の 記録は、30m 以上 35m 未満の 階級に 入ります。この 人の 記録と して ありうる のは どれですか。（整数の mで 答えます）",
+  "c": [
+   {
+    "t": "35m",
+    "w": "「35m 未満」には 35mは 入らない"
+   },
+   {
+    "t": "29m",
+    "w": "30m より 小さいので、30m 以上に ならない"
+   },
+   {
+    "t": "36m",
+    "w": "35mより 大きいので、階級を こえて いる"
+   },
+   {
+    "t": "30m",
+    "k": 1
+   }
+  ],
+  "e": "30m 以上 35m 未満は、30mは 入り、35mは 入らない。\nこたえ 30m",
+  "h": "「以上」は ふくみ、「未満」は ふくまないよ。"
+ },
+ {
+  "id": "data-03-L3-05",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 3,
+  "q": "5mずつの 度数分布表で、10m 以上 15m 未満が 3人、15m 以上 20m 未満が 7人、20m 以上 25m 未満が 8人、25m 以上 30m 未満が 4人、30m 以上 35m 未満が 2人です。10m 以上 25m 未満の 人は 何人ですか。",
+  "c": [
+   {
+    "t": "15人",
+    "w": "15m 以上 25m 未満だけを 答えた"
+   },
+   {
+    "t": "18人",
+    "k": 1
+   },
+   {
+    "t": "22人",
+    "w": "30m 未満の 人を 答えた"
+   },
+   {
+    "t": "8人",
+    "w": "20m 以上 25m 未満だけを 答えた"
+   }
+  ],
+  "e": "10m 以上 25m 未満は 3つの 階級。\n3 + 7 + 8 = 18\nこたえ 18人",
+  "h": "10から 25までに ある 階級を 数えて、度数を たそう。"
+ },
+ {
+  "id": "data-03-L4-01",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 4,
+  "q": "24人の 記録を 度数分布表に しました。度数は 5m 以上 10m 未満が 1人、10m 以上 15m 未満が 4人、15m 以上 20m 未満が □人、20m 以上 25m 未満が 7人、25m 以上 30m 未満が □人、30m 以上 35m 未満が 2人です。2つの □は 同じ 人数です。□に はいる 数は いくつですか。",
+  "c": [
+   {
+    "t": "5人",
+    "k": 1
+   },
+   {
+    "t": "10人",
+    "w": "2つの □の 合計を 答えた"
+   },
+   {
+    "t": "12人",
+    "w": "ぜんぶの 人数の 半分を 答えた"
+   },
+   {
+    "t": "6人",
+    "w": "2で わる ところで まちがえた"
+   }
+  ],
+  "e": "わかっている 度数の 合計：1 + 4 + 7 + 2 = 14\n2つの □の 合計：24 − 14 = 10\n10 ÷ 2 = 5\nこたえ 5人",
+  "h": "まず 2つの □を あわせた 人数を 出そう。"
+ },
+ {
+  "id": "data-03-L4-02",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 4,
+  "q": "25人の 記録を 度数分布表に しました。度数は 5m 以上 10m 未満が 1人、10m 以上 15m 未満が 3人、15m 以上 20m 未満が 7人、20m 以上 25m 未満が 8人、25m 以上 30m 未満が 4人、30m 以上 35m 未満が 2人です。記録の 小さい ほうから 数えて 10番目の 人は、どの 階級に 入りますか。",
+  "c": [
+   {
+    "t": "10m 以上 15m 未満",
+    "w": "10番目を 階級の 数と まちがえた"
+   },
+   {
+    "t": "20m 以上 25m 未満",
+    "w": "度数が いちばん 多い 階級を えらんだ"
+   },
+   {
+    "t": "15m 以上 20m 未満",
+    "k": 1
+   },
+   {
+    "t": "5m 以上 10m 未満",
+    "w": "度数が 1人の 階級を えらんだ"
+   }
+  ],
+  "e": "小さい ほうから 人数を たす：1人、4人、11人。\n10番目は 11人までの 階級に 入る。\nこたえ 15m 以上 20m 未満",
+  "h": "左の 階級から 人数を たして いって、10に とどく ところを さがそう。"
+ },
+ {
+  "id": "data-03-L4-03",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 4,
+  "q": "12人の 記録は 12m、16m、18m、22m、24m、27m、29m、26m、31m、33m、36m、44mです。10m 以上 20m 未満、20m 以上 30m 未満の ように、10mずつの 階級で 表を つくります。度数が いちばん 多い 階級は どれですか。",
+  "c": [
+   {
+    "t": "10m 以上 20m 未満",
+    "w": "10m 以上 20m 未満は 3人しか いない"
+   },
+   {
+    "t": "30m 以上 40m 未満",
+    "w": "30m 以上 40m 未満は 3人しか いない"
+   },
+   {
+    "t": "20m 以上 30m 未満",
+    "k": 1
+   },
+   {
+    "t": "40m 以上 50m 未満",
+    "w": "40m 以上 50m 未満は 1人しか いない"
+   }
+  ],
+  "e": "10〜20は 3人、20〜30は 5人、30〜40は 3人、40〜50は 1人。\nこたえ 20m 以上 30m 未満",
+  "h": "1つずつ 階級に 入れて、人数を 数えよう。"
+ },
+ {
+  "id": "data-03-L4-04",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 4,
+  "q": "20m 以上 25m 未満の 階級に 7人 います。記録は ぜんぶ 整数の mです。この 7人の 記録の 合計と して ありえない ものは どれですか。",
+  "c": [
+   {
+    "t": "140m",
+    "w": "7人 ぜんいんが 20mなら 140mに なる（ありうる）"
+   },
+   {
+    "t": "168m",
+    "w": "7人 ぜんいんが 24mなら 168mに なる（ありうる）"
+   },
+   {
+    "t": "150m",
+    "w": "20mから 24mの 人が まざって 150mに なる（ありうる）"
+   },
+   {
+    "t": "175m",
+    "k": 1
+   }
+  ],
+  "e": "1人は 20m から 24m だから、7人の 合計は 20 × 7 = 140m から 24 × 7 = 168m の あいだ。\n175mは 168mより 大きいので ありえない。\nこたえ 175m",
+  "h": "7人 ぜんいんが いちばん 小さい とき、いちばん 大きい ときの 合計を 考えよう。"
+ },
+ {
+  "id": "data-03-L4-05",
+  "u": "E6-TK",
+  "s": "E6-TK-03",
+  "l": "data-03",
+  "d": 4,
+  "q": "いちばん 小さい 記録は 13m、いちばん 大きい 記録は 41mでした。10m 以上 15m 未満から はじめて、5mずつの 階級を つくります。41mが 入る 階級までに 階級は いくつ できますか。",
+  "c": [
+   {
+    "t": "8つ",
+    "w": "45mまでを 数えて、階級を 1つ 多く 数えた"
+   },
+   {
+    "t": "7つ",
+    "k": 1
+   },
+   {
+    "t": "6つ",
+    "w": "35m 以上 40m 未満までしか 数えなかった"
+   },
+   {
+    "t": "5つ",
+    "w": "階級の はばを 答えた"
+   }
+  ],
+  "e": "10〜15、15〜20、20〜25、25〜30、30〜35、35〜40、40〜45の 7つ。\n41mは 40m 以上 45m 未満に 入る。\nこたえ 7つ",
+  "h": "41mが 入る 階級まで、1つずつ 書きだそう。"
+ },
+ {
+  "id": "data-04-L1-01",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 1,
+  "q": "ソフトボール投げの 記録を 柱状グラフに しました。20m 以上 25m 未満の 柱の 高さは 何人ですか。",
+  "c": [
+   {
+    "t": "8人",
+    "k": 1
+   },
+   {
+    "t": "5人",
+    "w": "となりの 柱の 高さを 答えた"
+   },
+   {
+    "t": "20人",
+    "w": "数直線の 20を 読んだ"
+   },
+   {
+    "t": "3人",
+    "w": "となりの 柱の 高さを 答えた"
+   }
+  ],
+  "e": "20m 以上 25m 未満の 柱は 8の 目もりまで ある。\nこたえ 8人",
+  "h": "左の たての 目もりを 読もう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"180.4\" x2=\"438\" y2=\"180.4\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"180.4\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"160.9\" x2=\"438\" y2=\"160.9\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"160.9\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"141.3\" x2=\"438\" y2=\"141.3\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"141.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"121.8\" x2=\"438\" y2=\"121.8\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"121.8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"102.2\" x2=\"438\" y2=\"102.2\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"102.2\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"82.7\" x2=\"438\" y2=\"82.7\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"82.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"63.1\" x2=\"438\" y2=\"63.1\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"63.1\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"43.6\" x2=\"438\" y2=\"43.6\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"43.6\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"160.9\" width=\"56\" height=\"39.1\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"141.3\" width=\"56\" height=\"58.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"43.6\" width=\"56\" height=\"156.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"102.2\" width=\"56\" height=\"97.8\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"121.8\" width=\"56\" height=\"78.2\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"160.9\" width=\"56\" height=\"39.1\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"180.4\" width=\"56\" height=\"19.6\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L1-02",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 1,
+  "q": "ソフトボール投げの 記録の 柱状グラフです。いちばん 柱が 高い 階級は どれですか。",
+  "c": [
+   {
+    "t": "20m 以上 25m 未満",
+    "k": 1
+   },
+   {
+    "t": "25m 以上 30m 未満",
+    "w": "2番目に 高い 柱を えらんだ"
+   },
+   {
+    "t": "10m 以上 15m 未満",
+    "w": "いちばん 左の 柱を えらんだ"
+   },
+   {
+    "t": "40m 以上 45m 未満",
+    "w": "いちばん 右の 柱を えらんだ"
+   }
+  ],
+  "e": "柱の 高さが 8人で いちばん 高い。\nこたえ 20m 以上 25m 未満",
+  "h": "柱が いちばん 高い ところを 見つけよう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"180.4\" x2=\"438\" y2=\"180.4\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"180.4\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"160.9\" x2=\"438\" y2=\"160.9\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"160.9\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"141.3\" x2=\"438\" y2=\"141.3\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"141.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"121.8\" x2=\"438\" y2=\"121.8\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"121.8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"102.2\" x2=\"438\" y2=\"102.2\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"102.2\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"82.7\" x2=\"438\" y2=\"82.7\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"82.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"63.1\" x2=\"438\" y2=\"63.1\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"63.1\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"43.6\" x2=\"438\" y2=\"43.6\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"43.6\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">9</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"160.9\" width=\"56\" height=\"39.1\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"141.3\" width=\"56\" height=\"58.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"43.6\" width=\"56\" height=\"156.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"102.2\" width=\"56\" height=\"97.8\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"121.8\" width=\"56\" height=\"78.2\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"160.9\" width=\"56\" height=\"39.1\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"180.4\" width=\"56\" height=\"19.6\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L1-03",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 1,
+  "q": "柱状グラフで、柱の 高さは 何を あらわしますか。",
+  "c": [
+   {
+    "t": "その 階級の はば",
+    "w": "柱の よこの 長さと まちがえた"
+   },
+   {
+    "t": "その 階級の まん中の 記録",
+    "w": "階級の 数値と ごちゃごちゃに した"
+   },
+   {
+    "t": "その 階級の 度数（人数）",
+    "k": 1
+   },
+   {
+    "t": "記録の 合計",
+    "w": "たし算した 数と まちがえた"
+   }
+  ],
+  "e": "柱の 高さは、その 階級の 度数（人数）を あらわす。\nこたえ その 階級の 度数（人数）",
+  "h": "表の「度数」の 列が 柱に なって いたね。"
+ },
+ {
+  "id": "data-04-L1-04",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 1,
+  "q": "ソフトボール投げの 記録の 柱状グラフです。柱の 高さを ぜんぶ たすと、何人に なりますか。",
+  "c": [
+   {
+    "t": "6人",
+    "w": "いちばん 高い 柱の 高さを 答えた"
+   },
+   {
+    "t": "7人",
+    "w": "柱の 本数を 答えた"
+   },
+   {
+    "t": "23人",
+    "w": "たし算を まちがえた"
+   },
+   {
+    "t": "24人",
+    "k": 1
+   }
+  ],
+  "e": "1 + 4 + 6 + 5 + 4 + 3 + 1 = 24\nこたえ 24人",
+  "h": "柱の 高さ ＝ 度数 だから、たすと 人数が わかるよ。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"174.9\" x2=\"438\" y2=\"174.9\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"174.9\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"149.7\" x2=\"438\" y2=\"149.7\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"149.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"124.6\" x2=\"438\" y2=\"124.6\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"124.6\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"99.4\" x2=\"438\" y2=\"99.4\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"99.4\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"74.3\" x2=\"438\" y2=\"74.3\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"74.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"49.1\" x2=\"438\" y2=\"49.1\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"49.1\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"174.9\" width=\"56\" height=\"25.1\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"99.4\" width=\"56\" height=\"100.6\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"49.1\" width=\"56\" height=\"150.9\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"74.3\" width=\"56\" height=\"125.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"99.4\" width=\"56\" height=\"100.6\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"124.6\" width=\"56\" height=\"75.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"174.9\" width=\"56\" height=\"25.1\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L1-05",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 1,
+  "q": "柱状グラフを かく とき、柱と 柱の あいだは どう しますか。",
+  "c": [
+   {
+    "t": "1めもり ぶん あける",
+    "w": "ぼうグラフの かき方と まちがえた"
+   },
+   {
+    "t": "階級ごとに あけ方を かえる",
+    "w": "決まりは ない と 思った"
+   },
+   {
+    "t": "柱の まん中に すきまを 入れる",
+    "w": "階級の さかいめが わからなく なって しまう"
+   },
+   {
+    "t": "あけないで、ぴったり くっつける",
+    "k": 1
+   }
+  ],
+  "e": "柱状グラフは、階級が つながって いるので、柱の あいだを あけない。\nこたえ あけないで、ぴったり くっつける",
+  "h": "階級は 切れめ なしに つづいて いたね。"
+ },
+ {
+  "id": "data-04-L2-01",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 2,
+  "q": "ソフトボール投げの 記録の 柱状グラフです。30m 以上の 人は 何人ですか。",
+  "c": [
+   {
+    "t": "5人",
+    "w": "30m 以上 35m 未満の 柱だけを 答えた"
+   },
+   {
+    "t": "8人",
+    "k": 1
+   },
+   {
+    "t": "15人",
+    "w": "25m 以上の 人を 答えた"
+   },
+   {
+    "t": "3人",
+    "w": "35m 以上の 人を 答えた"
+   }
+  ],
+  "e": "30m 以上は、5人、2人、1人の 3本の 柱。\n5 + 2 + 1 = 8\nこたえ 8人",
+  "h": "30m の ところから 右の 柱を ぜんぶ たそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"178\" x2=\"438\" y2=\"178\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"178\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"156\" x2=\"438\" y2=\"156\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"156\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"134\" x2=\"438\" y2=\"134\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"134\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"112\" x2=\"438\" y2=\"112\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"112\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"90\" x2=\"438\" y2=\"90\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"68\" x2=\"438\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"46\" x2=\"438\" y2=\"46\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"46\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"68\" width=\"56\" height=\"132\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"46\" width=\"56\" height=\"154\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"90\" width=\"56\" height=\"110\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L2-02",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 2,
+  "q": "ソフトボール投げの 記録の 柱状グラフです。いちばん 度数が 少ない 階級は どれですか。",
+  "c": [
+   {
+    "t": "40m 以上 45m 未満",
+    "w": "いちばん 右の 柱を えらんだ"
+   },
+   {
+    "t": "30m 以上 35m 未満",
+    "w": "となりの 柱を えらんだ"
+   },
+   {
+    "t": "25m 以上 30m 未満",
+    "w": "となりの 柱を えらんだ"
+   },
+   {
+    "t": "35m 以上 40m 未満",
+    "k": 1
+   }
+  ],
+  "e": "柱が いちばん 低いのは 35m 以上 40m 未満（1人）。\nこたえ 35m 以上 40m 未満",
+  "h": "柱が いちばん 低い ところを 見よう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"178\" x2=\"438\" y2=\"178\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"178\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"156\" x2=\"438\" y2=\"156\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"156\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"134\" x2=\"438\" y2=\"134\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"134\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"112\" x2=\"438\" y2=\"112\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"112\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"90\" x2=\"438\" y2=\"90\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"68\" x2=\"438\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"46\" x2=\"438\" y2=\"46\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"46\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"112\" width=\"56\" height=\"88\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"46\" width=\"56\" height=\"154\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"68\" width=\"56\" height=\"132\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L2-03",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 2,
+  "q": "5mずつの 柱状グラフです。20m 以上 25m 未満と 25m 以上 30m 未満を くっつけて、20m 以上 30m 未満の 1本の 柱に します。その 柱の 高さは 何人ですか。",
+  "c": [
+   {
+    "t": "7人",
+    "w": "20m 以上 25m 未満だけを 答えた"
+   },
+   {
+    "t": "13人",
+    "k": 1
+   },
+   {
+    "t": "6人",
+    "w": "25m 以上 30m 未満だけを 答えた"
+   },
+   {
+    "t": "18人",
+    "w": "3本を たして しまった"
+   }
+  ],
+  "e": "20m 以上 25m 未満は 7人、25m 以上 30m 未満は 6人。\n7 + 6 = 13\nこたえ 13人",
+  "h": "くっつける 柱の 高さを たすよ。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"178\" x2=\"438\" y2=\"178\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"178\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"156\" x2=\"438\" y2=\"156\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"156\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"134\" x2=\"438\" y2=\"134\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"134\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"112\" x2=\"438\" y2=\"112\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"112\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"90\" x2=\"438\" y2=\"90\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"68\" x2=\"438\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"46\" x2=\"438\" y2=\"46\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"46\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"90\" width=\"56\" height=\"110\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"46\" width=\"56\" height=\"154\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"68\" width=\"56\" height=\"132\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L2-04",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 2,
+  "q": "ソフトボール投げの 記録の 柱状グラフです。25m 未満の 人は 何人ですか。",
+  "c": [
+   {
+    "t": "6人",
+    "w": "20m 以上 25m 未満の 柱だけを 答えた"
+   },
+   {
+    "t": "14人",
+    "w": "25m 以上の 人を 答えた"
+   },
+   {
+    "t": "11人",
+    "k": 1
+   },
+   {
+    "t": "7人",
+    "w": "25m 以上 30m 未満の 柱を 答えた"
+   }
+  ],
+  "e": "25m 未満は、1人、4人、6人の 3本。\n1 + 4 + 6 = 11\nこたえ 11人",
+  "h": "25mの ところから 左の 柱を ぜんぶ たそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"178\" x2=\"438\" y2=\"178\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"178\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"156\" x2=\"438\" y2=\"156\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"156\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"134\" x2=\"438\" y2=\"134\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"134\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"112\" x2=\"438\" y2=\"112\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"112\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"90\" x2=\"438\" y2=\"90\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"68\" x2=\"438\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"46\" x2=\"438\" y2=\"46\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"46\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"112\" width=\"56\" height=\"88\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"68\" width=\"56\" height=\"132\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"46\" width=\"56\" height=\"154\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"112\" width=\"56\" height=\"88\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L2-05",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 2,
+  "q": "記録の 柱状グラフです。度数が 6人 以上の 階級は いくつ ありますか。",
+  "c": [
+   {
+    "t": "1つ",
+    "w": "6人の 柱を 入れわすれた"
+   },
+   {
+    "t": "4つ",
+    "w": "5人から 7人までと 考えて 多く 数えた"
+   },
+   {
+    "t": "3つ",
+    "k": 1
+   },
+   {
+    "t": "2つ",
+    "w": "6人の 柱を 1本 かぞえおとした"
+   }
+  ],
+  "e": "6人 以上の 柱は 6人、7人、6人の 3本。\nこたえ 3つ",
+  "h": "6人の 柱も 数に 入れよう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 422 240\" width=\"422\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"382\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"178\" x2=\"382\" y2=\"178\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"178\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"156\" x2=\"382\" y2=\"156\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"156\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"134\" x2=\"382\" y2=\"134\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"134\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"112\" x2=\"382\" y2=\"112\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"112\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"90\" x2=\"382\" y2=\"90\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"68\" x2=\"382\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"46\" x2=\"382\" y2=\"46\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"46\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"24\" x2=\"382\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"68\" width=\"56\" height=\"132\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"46\" width=\"56\" height=\"154\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"68\" width=\"56\" height=\"132\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><line x1=\"46\" y1=\"200\" x2=\"382\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"402\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L3-01",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 3,
+  "q": "25人の ソフトボール投げの 記録の 柱状グラフです。中央値が ふくまれる 階級は どれですか。",
+  "c": [
+   {
+    "t": "20m 以上 25m 未満",
+    "w": "左から 12人目までで 終わる 階級を えらんだ"
+   },
+   {
+    "t": "15m 以上 20m 未満",
+    "w": "まん中より 左の 階級を えらんだ"
+   },
+   {
+    "t": "30m 以上 35m 未満",
+    "w": "まん中より 右の 階級を えらんだ"
+   },
+   {
+    "t": "25m 以上 30m 未満",
+    "k": 1
+   }
+  ],
+  "e": "25人の 中央値は 13番目。\n左から たすと 2人、6人、12人、19人。13番目は 25m 以上 30m 未満。\nこたえ 25m 以上 30m 未満",
+  "h": "左の 柱から 度数を たして、13に とどく ところを さがそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"178\" x2=\"438\" y2=\"178\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"178\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"156\" x2=\"438\" y2=\"156\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"156\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"134\" x2=\"438\" y2=\"134\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"134\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"112\" x2=\"438\" y2=\"112\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"112\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"90\" x2=\"438\" y2=\"90\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"68\" x2=\"438\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"46\" x2=\"438\" y2=\"46\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"46\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"112\" width=\"56\" height=\"88\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"68\" width=\"56\" height=\"132\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"46\" width=\"56\" height=\"154\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L3-02",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 3,
+  "q": "25人の ソフトボール投げの 記録の 柱状グラフです。ただしい ものは どれですか。",
+  "c": [
+   {
+    "t": "30m 以上の 人は 10人である",
+    "w": "30m 以上 35m 未満の 4人と、35m 以上の 4人で 8人"
+   },
+   {
+    "t": "いちばん 多い 階級は 20m 以上 25m 未満で、7人である",
+    "k": 1
+   },
+   {
+    "t": "35m 以上の 人は 3人である",
+    "w": "35m 以上 40m 未満の 3人と、40m 以上 45m 未満の 1人で 4人"
+   },
+   {
+    "t": "25m 未満の 人は 12人である",
+    "w": "1人、3人、7人で 11人"
+   }
+  ],
+  "e": "20m 以上 25m 未満が 7人で いちばん 多い。\n30m 以上は 4 + 3 + 1 = 8人、35m 以上は 3 + 1 = 4人、25m 未満は 1 + 3 + 7 = 11人。\nこたえ いちばん 多い 階級は 20m 以上 25m 未満で、7人である",
+  "h": "それぞれの 文を、柱の 高さで たしかめよう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"178\" x2=\"438\" y2=\"178\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"178\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"156\" x2=\"438\" y2=\"156\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"156\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"134\" x2=\"438\" y2=\"134\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"134\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"112\" x2=\"438\" y2=\"112\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"112\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"90\" x2=\"438\" y2=\"90\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"68\" x2=\"438\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"46\" x2=\"438\" y2=\"46\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"46\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"46\" width=\"56\" height=\"154\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"68\" width=\"56\" height=\"132\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"112\" width=\"56\" height=\"88\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L3-03",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 3,
+  "q": "25人の ソフトボール投げの 記録の 柱状グラフです。度数が 同じ 階級の 組は どれですか。",
+  "c": [
+   {
+    "t": "10m 以上 15m 未満と 40m 以上 45m 未満",
+    "w": "1人と 2人で ちがう"
+   },
+   {
+    "t": "15m 以上 20m 未満と 35m 以上 40m 未満",
+    "k": 1
+   },
+   {
+    "t": "20m 以上 25m 未満と 30m 以上 35m 未満",
+    "w": "5人と 4人で ちがう"
+   },
+   {
+    "t": "20m 以上 25m 未満と 25m 以上 30m 未満",
+    "w": "5人と 7人で ちがう"
+   }
+  ],
+  "e": "15m 以上 20m 未満と 35m 以上 40m 未満は どちらも 3人。\nこたえ 15m 以上 20m 未満と 35m 以上 40m 未満",
+  "h": "柱の 高さが ぴったり 同じ ものを さがそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"178\" x2=\"438\" y2=\"178\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"178\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"156\" x2=\"438\" y2=\"156\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"156\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"134\" x2=\"438\" y2=\"134\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"134\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"112\" x2=\"438\" y2=\"112\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"112\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"90\" x2=\"438\" y2=\"90\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"68\" x2=\"438\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"46\" x2=\"438\" y2=\"46\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"46\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"90\" width=\"56\" height=\"110\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"46\" width=\"56\" height=\"154\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"112\" width=\"56\" height=\"88\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L3-04",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 3,
+  "q": "25人の ソフトボール投げの 記録の 柱状グラフです。遠くへ 投げた ほうから 数えて 8番目の 人は、どの 階級に 入りますか。",
+  "c": [
+   {
+    "t": "35m 以上 40m 未満",
+    "w": "5番目までに 入る 階級を えらんだ"
+   },
+   {
+    "t": "30m 以上 35m 未満",
+    "k": 1
+   },
+   {
+    "t": "25m 以上 30m 未満",
+    "w": "10番目から 先に 入る 階級を えらんだ"
+   },
+   {
+    "t": "40m 以上 45m 未満",
+    "w": "いちばん 遠くの 階級を えらんだ"
+   }
+  ],
+  "e": "右の 柱から たす：2人、5人、9人。\n8番目は 9人までの 階級に 入る。\nこたえ 30m 以上 35m 未満",
+  "h": "右の 柱から 人数を たして いこう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"178\" x2=\"438\" y2=\"178\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"178\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"156\" x2=\"438\" y2=\"156\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"156\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"134\" x2=\"438\" y2=\"134\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"134\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"112\" x2=\"438\" y2=\"112\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"112\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"90\" x2=\"438\" y2=\"90\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"68\" x2=\"438\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"46\" x2=\"438\" y2=\"46\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"46\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"90\" width=\"56\" height=\"110\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"46\" width=\"56\" height=\"154\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"112\" width=\"56\" height=\"88\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L3-05",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 3,
+  "q": "20人の ソフトボール投げの 記録の 柱状グラフです。中央値が ふくまれる 階級は どれですか。",
+  "c": [
+   {
+    "t": "20m 以上 25m 未満",
+    "w": "9人目までで 終わる 階級を えらんだ"
+   },
+   {
+    "t": "30m 以上 35m 未満",
+    "w": "まん中より 右の 階級を えらんだ"
+   },
+   {
+    "t": "25m 以上 30m 未満",
+    "k": 1
+   },
+   {
+    "t": "15m 以上 20m 未満",
+    "w": "まん中より 左の 階級を えらんだ"
+   }
+  ],
+  "e": "20人の 中央値は 10番目と 11番目の 平均。\n左から たすと 1人、4人、9人、15人。10番目も 11番目も 25m 以上 30m 未満。\nこたえ 25m 以上 30m 未満",
+  "h": "偶数人の ときは、10番目と 11番目を 見よう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 422 240\" width=\"422\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"382\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"174.9\" x2=\"382\" y2=\"174.9\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"174.9\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"149.7\" x2=\"382\" y2=\"149.7\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"149.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"124.6\" x2=\"382\" y2=\"124.6\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"124.6\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"99.4\" x2=\"382\" y2=\"99.4\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"99.4\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"74.3\" x2=\"382\" y2=\"74.3\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"74.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"49.1\" x2=\"382\" y2=\"49.1\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"49.1\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"24\" x2=\"382\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"174.9\" width=\"56\" height=\"25.1\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"124.6\" width=\"56\" height=\"75.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"74.3\" width=\"56\" height=\"125.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"49.1\" width=\"56\" height=\"150.9\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"124.6\" width=\"56\" height=\"75.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"149.7\" width=\"56\" height=\"50.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><line x1=\"46\" y1=\"200\" x2=\"382\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"402\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L4-01",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 4,
+  "q": "ソフトボール投げの 記録の 柱状グラフです。20m 以上 25m 未満の 柱が ぬけて います。ぜんぶで 28人 の とき、ぬけた 柱の 高さは 何人ですか。",
+  "c": [
+   {
+    "t": "22人",
+    "w": "のこりの 柱の 合計を 答えた"
+   },
+   {
+    "t": "28人",
+    "w": "ぜんぶの 人数を そのまま 答えた"
+   },
+   {
+    "t": "7人",
+    "w": "となりの 柱と 同じと 考えた"
+   },
+   {
+    "t": "6人",
+    "k": 1
+   }
+  ],
+  "e": "のこりの 柱の 合計：2 + 4 + 7 + 5 + 3 + 1 = 22\n28 − 22 = 6\nこたえ 6人",
+  "h": "ぜんぶの 人数から、見えている 柱を ひこう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"178\" x2=\"438\" y2=\"178\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"178\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"156\" x2=\"438\" y2=\"156\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"156\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"134\" x2=\"438\" y2=\"134\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"134\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"112\" x2=\"438\" y2=\"112\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"112\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"90\" x2=\"438\" y2=\"90\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"68\" x2=\"438\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"46\" x2=\"438\" y2=\"46\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"46\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"112\" width=\"56\" height=\"88\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"46\" width=\"56\" height=\"154\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"90\" width=\"56\" height=\"110\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L4-02",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 4,
+  "q": "5mずつの 柱状グラフを、10m 以上 20m 未満、20m 以上 30m 未満、30m 以上 40m 未満、…の ように 10mずつに まとめます。いちばん 高い 柱の 高さは 何人ですか。",
+  "c": [
+   {
+    "t": "13人",
+    "k": 1
+   },
+   {
+    "t": "7人",
+    "w": "5mずつの いちばん 高い 柱の 高さを 答えた"
+   },
+   {
+    "t": "11人",
+    "w": "15m 以上 25m 未満の 2本を たした"
+   },
+   {
+    "t": "16人",
+    "w": "3本を まとめて しまった"
+   }
+  ],
+  "e": "10〜20は 2 + 5 = 7人、20〜30は 6 + 7 = 13人、30〜40は 3 + 1 = 4人、40〜50は 1人。\nこたえ 13人",
+  "h": "10m 以上から 10mずつ、2本ずつ まとめよう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"178\" x2=\"438\" y2=\"178\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"178\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"156\" x2=\"438\" y2=\"156\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"156\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"134\" x2=\"438\" y2=\"134\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"134\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"112\" x2=\"438\" y2=\"112\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"112\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"90\" x2=\"438\" y2=\"90\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"68\" x2=\"438\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"46\" x2=\"438\" y2=\"46\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"46\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"90\" width=\"56\" height=\"110\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"68\" width=\"56\" height=\"132\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"46\" width=\"56\" height=\"154\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L4-03",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 4,
+  "q": "25人の ソフトボール投げの 記録の 柱状グラフです。記録は ぜんぶ 整数の mです。25人の 記録の 合計は、少なくとも 何mですか。",
+  "c": [
+   {
+    "t": "575m",
+    "k": 1
+   },
+   {
+    "t": "675m",
+    "w": "各階級の いちばん 大きい 整数で 計算した"
+   },
+   {
+    "t": "500m",
+    "w": "25人 ぜんいんが 20mだと 考えた"
+   },
+   {
+    "t": "637.5m",
+    "w": "各階級の まん中の 数で 計算した"
+   }
+  ],
+  "e": "合計が いちばん 小さく なるのは、どの 人も 階級の いちばん 小さい 数の とき。\n10 × 2 + 15 × 4 + 20 × 6 + 25 × 7 + 30 × 3 + 35 × 2 + 40 × 1 = 575\nこたえ 575m",
+  "h": "「以上」の 数が その 階級の いちばん 小さい 記録だよ。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"178\" x2=\"438\" y2=\"178\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"178\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"156\" x2=\"438\" y2=\"156\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"156\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"134\" x2=\"438\" y2=\"134\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"134\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"112\" x2=\"438\" y2=\"112\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"112\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"90\" x2=\"438\" y2=\"90\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"90\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"68\" x2=\"438\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"46\" x2=\"438\" y2=\"46\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"46\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"112\" width=\"56\" height=\"88\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"68\" width=\"56\" height=\"132\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"46\" width=\"56\" height=\"154\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"134\" width=\"56\" height=\"66\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"156\" width=\"56\" height=\"44\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"178\" width=\"56\" height=\"22\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L4-04",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 4,
+  "q": "24人の ソフトボール投げの 記録の 柱状グラフです。いちばん 高い 柱の 人数は、ぜんぶの 人数の 何分の 1ですか。",
+  "c": [
+   {
+    "t": "1/4",
+    "k": 1
+   },
+   {
+    "t": "1/6",
+    "w": "「6」を そのまま 分母に して しまった"
+   },
+   {
+    "t": "1/3",
+    "w": "8人と まちがえて 考えた"
+   },
+   {
+    "t": "1/2",
+    "w": "半分と おおざっぱに 答えた"
+   }
+  ],
+  "e": "24人 ぜんぶの うち、いちばん 高い 柱は 6人。\n6 ÷ 24 = 1/4\nこたえ 1/4",
+  "h": "24人を 6人ずつに わけると いくつに なるかな。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"174.9\" x2=\"438\" y2=\"174.9\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"174.9\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"149.7\" x2=\"438\" y2=\"149.7\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"149.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"124.6\" x2=\"438\" y2=\"124.6\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"124.6\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"99.4\" x2=\"438\" y2=\"99.4\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"99.4\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"74.3\" x2=\"438\" y2=\"74.3\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"74.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"49.1\" x2=\"438\" y2=\"49.1\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"49.1\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"174.9\" width=\"56\" height=\"25.1\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"124.6\" width=\"56\" height=\"75.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"74.3\" width=\"56\" height=\"125.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"49.1\" width=\"56\" height=\"150.9\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"99.4\" width=\"56\" height=\"100.6\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"124.6\" width=\"56\" height=\"75.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"149.7\" width=\"56\" height=\"50.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-04-L4-05",
+  "u": "E6-TK",
+  "s": "E6-TK-04",
+  "l": "data-04",
+  "d": 4,
+  "q": "5mずつの 柱状グラフを、10m 以上 25m 未満、25m 以上 40m 未満、40m 以上 55m 未満の ように 15mずつに まとめます。いちばん 高い 柱の 高さは 何人ですか。",
+  "c": [
+   {
+    "t": "9人",
+    "w": "10m 以上 25m 未満の 柱を 答えた"
+   },
+   {
+    "t": "6人",
+    "w": "5mずつの いちばん 高い 柱を 答えた"
+   },
+   {
+    "t": "13人",
+    "k": 1
+   },
+   {
+    "t": "10人",
+    "w": "2本しか まとめなかった"
+   }
+  ],
+  "e": "10〜25は 1 + 3 + 5 = 9人、25〜40は 6 + 4 + 3 = 13人、40〜55は 2人。\nこたえ 13人",
+  "h": "3本ずつ まとめて たそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 478 240\" width=\"478\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"174.9\" x2=\"438\" y2=\"174.9\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"174.9\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"149.7\" x2=\"438\" y2=\"149.7\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"149.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"124.6\" x2=\"438\" y2=\"124.6\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"124.6\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"99.4\" x2=\"438\" y2=\"99.4\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"99.4\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"74.3\" x2=\"438\" y2=\"74.3\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"74.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"46\" y1=\"49.1\" x2=\"438\" y2=\"49.1\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"49.1\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"46\" y1=\"24\" x2=\"438\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">7</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"174.9\" width=\"56\" height=\"25.1\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"124.6\" width=\"56\" height=\"75.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"74.3\" width=\"56\" height=\"125.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"49.1\" width=\"56\" height=\"150.9\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"99.4\" width=\"56\" height=\"100.6\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"326\" y=\"124.6\" width=\"56\" height=\"75.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"382\" y=\"149.7\" width=\"56\" height=\"50.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><text x=\"382\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><text x=\"438\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"46\" y1=\"200\" x2=\"438\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"458\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-05-L1-01",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 1,
+  "q": "5回の ゲームの 得点は 3点、3点、5点、8点、16点でした。平均値は 何点ですか。",
+  "c": [
+   {
+    "t": "5点",
+    "w": "まん中の 数を 答えた"
+   },
+   {
+    "t": "7点",
+    "k": 1
+   },
+   {
+    "t": "35点",
+    "w": "合計の まま 答えた"
+   },
+   {
+    "t": "3点",
+    "w": "2回 出てくる 数を 答えた"
+   }
+  ],
+  "e": "3 + 3 + 5 + 8 + 16 = 35\n35 ÷ 5 = 7\nこたえ 7点",
+  "h": "合計を 回数で わろう。"
+ },
+ {
+  "id": "data-05-L1-02",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 1,
+  "q": "7人の ボール投げの 記録は 14m、9m、22m、11m、17m、25m、19mです。中央値は 何mですか。",
+  "c": [
+   {
+    "t": "11m",
+    "w": "小さい 順に ならべずに、4番目を 答えた"
+   },
+   {
+    "t": "17m",
+    "k": 1
+   },
+   {
+    "t": "19m",
+    "w": "小さい 順の 5番目を 答えた"
+   },
+   {
+    "t": "25m",
+    "w": "いちばん 大きい 数を 答えた"
+   }
+  ],
+  "e": "小さい 順：9、11、14、17、19、22、25\n7こ なので、まん中は 4番目。\nこたえ 17m",
+  "h": "小さい 順に ならべかえて、4番目を 見よう。"
+ },
+ {
+  "id": "data-05-L1-03",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 1,
+  "q": "8人の 小テストの 点数は 4点、7点、4点、9点、7点、4点、8点、6点でした。最頻値は 何点ですか。",
+  "c": [
+   {
+    "t": "7点",
+    "w": "7点は 2人。もっと 多い 点数が ある"
+   },
+   {
+    "t": "9点",
+    "w": "いちばん 高い 点数を 答えた"
+   },
+   {
+    "t": "4点",
+    "k": 1
+   },
+   {
+    "t": "49点",
+    "w": "合計を 答えた"
+   }
+  ],
+  "e": "4点が 3人で いちばん 多い。\nこたえ 4点",
+  "h": "同じ 点数が いちばん 多い ものを さがそう。"
+ },
+ {
+  "id": "data-05-L1-04",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 1,
+  "q": "5回の ゲームの 得点は 8点、15点、11点、20点、9点でした。はんい（最大 − 最小）は 何点ですか。",
+  "c": [
+   {
+    "t": "20点",
+    "w": "最大の 点数を そのまま 答えた"
+   },
+   {
+    "t": "28点",
+    "w": "最大と 最小を たして しまった"
+   },
+   {
+    "t": "7点",
+    "w": "1回目と 2回目の 差を 答えた"
+   },
+   {
+    "t": "12点",
+    "k": 1
+   }
+  ],
+  "e": "最大は 20点、最小は 8点。\n20 − 8 = 12\nこたえ 12点",
+  "h": "最大 − 最小 で 求めるよ。"
+ },
+ {
+  "id": "data-05-L1-05",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 1,
+  "q": "A組 10人の ボール投げの 記録の 合計は 260mでした。A組の 平均値は 何mですか。",
+  "c": [
+   {
+    "t": "260m",
+    "w": "合計の まま 答えた"
+   },
+   {
+    "t": "10m",
+    "w": "人数を 答えた"
+   },
+   {
+    "t": "27m",
+    "w": "260 ÷ 10 の 計算を まちがえた"
+   },
+   {
+    "t": "26m",
+    "k": 1
+   }
+  ],
+  "e": "260 ÷ 10 = 26\nこたえ 26m",
+  "h": "合計を 人数で わろう。"
+ },
+ {
+  "id": "data-05-L2-01",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 2,
+  "q": "A組と B組の 10人ずつの 記録です。A組は 18m、20m、22m、23m、23m、24m、25m、26m、28m、31m。B組は 10m、14m、20m、22m、24m、25m、27m、30m、33m、35m。どちらも 平均値は 24mです。はんいが 大きい のは どちらで、はんいは 何mですか。",
+  "c": [
+   {
+    "t": "B組で 25m",
+    "k": 1
+   },
+   {
+    "t": "A組で 13m",
+    "w": "A組の はんいは 13mだが、B組の ほうが 大きい"
+   },
+   {
+    "t": "B組で 35m",
+    "w": "最大の 記録を はんいと まちがえた"
+   },
+   {
+    "t": "A組で 31m",
+    "w": "最大の 記録を はんいと まちがえた"
+   }
+  ],
+  "e": "A組：31 − 18 = 13m\nB組：35 − 10 = 25m\nこたえ B組で 25m",
+  "h": "組ごとに 最大 − 最小を 求めよう。"
+ },
+ {
+  "id": "data-05-L2-02",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 2,
+  "q": "B組の 10人の 記録は 10m、14m、20m、22m、24m、25m、27m、30m、33m、35mです。中央値は 何mですか。",
+  "c": [
+   {
+    "t": "24m",
+    "w": "5番目の 数だけを 答えた"
+   },
+   {
+    "t": "24.5m",
+    "k": 1
+   },
+   {
+    "t": "25m",
+    "w": "6番目の 数だけを 答えた"
+   },
+   {
+    "t": "49m",
+    "w": "まん中の 2つを たした だけで、2で わらなかった"
+   }
+  ],
+  "e": "10こ だから、まん中は 5番目の 24と 6番目の 25。\n(24 + 25) ÷ 2 = 24.5\nこたえ 24.5m",
+  "h": "まん中の 2つの 平均を 求めよう。"
+ },
+ {
+  "id": "data-05-L2-03",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 2,
+  "q": "A組 10人の ボール投げの 記録を 柱状グラフに しました。25m 以上の 人は 何人ですか。",
+  "c": [
+   {
+    "t": "2人",
+    "w": "25m 以上 30m 未満の 柱だけを 答えた"
+   },
+   {
+    "t": "1人",
+    "w": "30m 以上 35m 未満の 柱だけを 答えた"
+   },
+   {
+    "t": "3人",
+    "k": 1
+   },
+   {
+    "t": "7人",
+    "w": "25m 未満の 人を 答えた"
+   }
+  ],
+  "e": "25m 以上は、2人と 1人の 2本。\n2 + 1 = 3\nこたえ 3人",
+  "h": "25mの ところから 右の 柱を たそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 366 240\" width=\"366\" height=\"240\" role=\"img\" aria-label=\"柱状グラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"46\" y1=\"200\" x2=\"326\" y2=\"200\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"200\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"46\" y1=\"164.8\" x2=\"326\" y2=\"164.8\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"164.8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1</text><line x1=\"46\" y1=\"129.6\" x2=\"326\" y2=\"129.6\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"129.6\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"46\" y1=\"94.4\" x2=\"326\" y2=\"94.4\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"94.4\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3</text><line x1=\"46\" y1=\"59.2\" x2=\"326\" y2=\"59.2\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"59.2\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"46\" y1=\"24\" x2=\"326\" y2=\"24\" class=\"fg-l\" stroke-width=\"0.6\" stroke-opacity=\"0.45\"/><text x=\"32\" y=\"24\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><text x=\"32\" y=\"10\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><rect x=\"46\" y=\"164.8\" width=\"56\" height=\"35.2\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"102\" y=\"129.6\" width=\"56\" height=\"70.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"158\" y=\"59.2\" width=\"56\" height=\"140.8\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"214\" y=\"129.6\" width=\"56\" height=\"70.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><rect x=\"270\" y=\"164.8\" width=\"56\" height=\"35.2\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"46\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><text x=\"102\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><text x=\"158\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"214\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><text x=\"270\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"326\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><line x1=\"46\" y1=\"200\" x2=\"326\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><line x1=\"46\" y1=\"24\" x2=\"46\" y2=\"200\" class=\"fg-l\" stroke-width=\"1.6\"/><text x=\"346\" y=\"214\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（m）</text></svg>"
+ },
+ {
+  "id": "data-05-L2-04",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 2,
+  "q": "5人の 1か月の おこづかいは 200円、300円、300円、400円、1800円でした。平均値は 何円ですか。",
+  "c": [
+   {
+    "t": "600円",
+    "k": 1
+   },
+   {
+    "t": "300円",
+    "w": "まん中の 数を 答えた"
+   },
+   {
+    "t": "3000円",
+    "w": "合計の まま 答えた"
+   },
+   {
+    "t": "1800円",
+    "w": "いちばん 大きい 数を 答えた"
+   }
+  ],
+  "e": "200 + 300 + 300 + 400 + 1800 = 3000\n3000 ÷ 5 = 600\nこたえ 600円",
+  "h": "合計を 人数で わろう。"
+ },
+ {
+  "id": "data-05-L2-05",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 2,
+  "q": "A組の 10人の 記録は 18m、20m、22m、23m、23m、24m、25m、26m、28m、31mです。中央値は 何mですか。",
+  "c": [
+   {
+    "t": "23m",
+    "w": "5番目の 数だけを 答えた"
+   },
+   {
+    "t": "23.5m",
+    "k": 1
+   },
+   {
+    "t": "24m",
+    "w": "平均値を 答えた"
+   },
+   {
+    "t": "47m",
+    "w": "まん中の 2つを たした だけで、2で わらなかった"
+   }
+  ],
+  "e": "10こ だから、まん中は 5番目の 23と 6番目の 24。\n(23 + 24) ÷ 2 = 23.5\nこたえ 23.5m",
+  "h": "5番目と 6番目の 平均を 求めよう。"
+ },
+ {
+  "id": "data-05-L3-01",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 3,
+  "q": "5人の おこづかいは 200円、300円、300円、400円、1800円でした。1800円の 人を のぞくと、のこりの 4人の 平均値は 何円ですか。",
+  "c": [
+   {
+    "t": "600円",
+    "w": "のぞく まえの 平均値を 答えた"
+   },
+   {
+    "t": "1200円",
+    "w": "のこりの 合計を 答えた"
+   },
+   {
+    "t": "300円",
+    "k": 1
+   },
+   {
+    "t": "240円",
+    "w": "4人の 合計を 5で わって しまった"
+   }
+  ],
+  "e": "200 + 300 + 300 + 400 = 1200\n1200 ÷ 4 = 300\nこたえ 300円",
+  "h": "のぞいた あとは 4人だよ。"
+ },
+ {
+  "id": "data-05-L3-02",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 3,
+  "q": "5人の おこづかいは 200円、300円、300円、400円、1800円でした。1800円の 人を のぞくと、平均値と 中央値は どう かわりますか。",
+  "c": [
+   {
+    "t": "平均値は 大きく かわるが、中央値は かわらない",
+    "k": 1
+   },
+   {
+    "t": "平均値も 中央値も 大きく かわる",
+    "w": "中央値は 300円の まま"
+   },
+   {
+    "t": "平均値は かわらないが、中央値は 大きく かわる",
+    "w": "平均値は 600円から 300円に へる"
+   },
+   {
+    "t": "平均値も 中央値も かわらない",
+    "w": "1800円の 人が いると 平均値は 大きく なって いた"
+   }
+  ],
+  "e": "平均値：600円 → 300円\n中央値：300円 → 300円\nこたえ 平均値は 大きく かわるが、中央値は かわらない",
+  "h": "2つの 代表値を、のぞく まえと あとで 計算して くらべよう。"
+ },
+ {
+  "id": "data-05-L3-03",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 3,
+  "q": "5人の おこづかいは 200円、300円、300円、400円、1800円です。1800円の ような はなれた 数の えいきょうを うけにくい のは どれですか。",
+  "c": [
+   {
+    "t": "平均値",
+    "w": "合計に ぜんぶの 数が 入るので、はなれた 数に 引っぱられる"
+   },
+   {
+    "t": "合計",
+    "w": "1800円も たす ことに なる"
+   },
+   {
+    "t": "いちばん 大きい 数",
+    "w": "はなれた 数 そのもの"
+   },
+   {
+    "t": "中央値",
+    "k": 1
+   }
+  ],
+  "e": "中央値は まん中の 数だけで 決まるので、1800円の えいきょうを うけにくい。\nこたえ 中央値",
+  "h": "平均値は 全部の 数を たす ことを 思い出そう。"
+ },
+ {
+  "id": "data-05-L3-04",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 3,
+  "q": "ゲームを 10回 した 得点は 4点、9点、6点、8点、5点、11点、6点、12点、6点、13点です。中央値は 何点ですか。",
+  "c": [
+   {
+    "t": "6点",
+    "w": "最頻値を 答えた"
+   },
+   {
+    "t": "8点",
+    "w": "平均値を 答えた"
+   },
+   {
+    "t": "14点",
+    "w": "まん中の 2つを たした だけで、2で わらなかった"
+   },
+   {
+    "t": "7点",
+    "k": 1
+   }
+  ],
+  "e": "小さい 順：4、5、6、6、6、8、9、11、12、13\n5番目の 6と 6番目の 8の 平均。\n(6 + 8) ÷ 2 = 7\nこたえ 7点",
+  "h": "小さい 順に ならべて、5番目と 6番目を 見よう。"
+ },
+ {
+  "id": "data-05-L3-05",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 3,
+  "q": "A組と B組の 平均値は どちらも 24mです。A組の はんいは 13m、B組の はんいは 25mです。ちらばりに ついて、ただしい ものは どれですか。",
+  "c": [
+   {
+    "t": "はんいが 小さい B組の ほうが、ちらばりが 小さい",
+    "w": "小さい はんいは A組の 13m"
+   },
+   {
+    "t": "平均値が 同じ だから、ちらばりも 同じ",
+    "w": "平均値が 同じ でも、ちらばりは ちがう ことが ある"
+   },
+   {
+    "t": "中央値が 大きい B組の ほうが、ちらばりが 小さい",
+    "w": "中央値の 大きさと ちらばりは かんけいが ない"
+   },
+   {
+    "t": "はんいが 小さい A組の ほうが、ちらばりが 小さい",
+    "k": 1
+   }
+  ],
+  "e": "はんいは A組が 13m、B組が 25m。\nはんいが 小さい ほうが ちらばりが 小さい。\nこたえ はんいが 小さい A組の ほうが、ちらばりが 小さい",
+  "h": "はんいが 大きい ほど、ちらばりが 大きいと 言えるよ。"
+ },
+ {
+  "id": "data-05-L4-01",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 4,
+  "q": "5回の ゲームの 得点を 小さい 順に ならべると 4、6、□、11、14です。平均値が 9の とき、中央値は 何点ですか。",
+  "c": [
+   {
+    "t": "9点",
+    "w": "平均値と 同じと 考えた"
+   },
+   {
+    "t": "11点",
+    "w": "4番目の 数を 答えた"
+   },
+   {
+    "t": "10点",
+    "k": 1
+   },
+   {
+    "t": "6点",
+    "w": "2番目の 数を 答えた"
+   }
+  ],
+  "e": "5回の 合計：9 × 5 = 45\n□ ＝ 45 − (4 + 6 + 11 + 14) ＝ 45 − 35 ＝ 10\n小さい 順に ならべた まん中は □の 10。\nこたえ 10点",
+  "h": "まず 平均値から □を 求めよう。"
+ },
+ {
+  "id": "data-05-L4-02",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 4,
+  "q": "5人の おこづかいの 平均値は 600円でした。6人目が 加わると、6人の 平均値が 700円に なりました。6人目の おこづかいは 何円ですか。",
+  "c": [
+   {
+    "t": "700円",
+    "w": "新しい 平均値と 同じと 考えた"
+   },
+   {
+    "t": "100円",
+    "w": "平均値の ちがいを 答えた"
+   },
+   {
+    "t": "1200円",
+    "k": 1
+   },
+   {
+    "t": "1300円",
+    "w": "2つの 平均値を たして しまった"
+   }
+  ],
+  "e": "5人の 合計：600 × 5 = 3000\n6人の 合計：700 × 6 = 4200\n4200 − 3000 = 1200\nこたえ 1200円",
+  "h": "平均値 × 人数 で 合計に もどして 考えよう。"
+ },
+ {
+  "id": "data-05-L4-03",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 4,
+  "q": "A組 10人の 平均値は 22m、B組 15人の 平均値は 26mです。2つの 組を あわせた 25人の 平均値は 何mですか。",
+  "c": [
+   {
+    "t": "24m",
+    "w": "22と 26の 平均を とって しまった"
+   },
+   {
+    "t": "24.4m",
+    "k": 1
+   },
+   {
+    "t": "610m",
+    "w": "25人の 合計を 答えた"
+   },
+   {
+    "t": "26m",
+    "w": "人数が 多い ほうの 平均値を 答えた"
+   }
+  ],
+  "e": "A組の 合計：22 × 10 = 220\nB組の 合計：26 × 15 = 390\n(220 + 390) ÷ 25 = 24.4\nこたえ 24.4m",
+  "h": "それぞれの 組の 合計を 出して から、あわせよう。"
+ },
+ {
+  "id": "data-05-L4-04",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 4,
+  "q": "5人の 点数の 平均値は 70点でした。1人を のぞくと、のこりの 4人の 平均値は 65点に なりました。のぞいた 人の 点数は 何点ですか。",
+  "c": [
+   {
+    "t": "90点",
+    "k": 1
+   },
+   {
+    "t": "65点",
+    "w": "のこりの 平均値と 同じと 考えた"
+   },
+   {
+    "t": "70点",
+    "w": "はじめの 平均値と 同じと 考えた"
+   },
+   {
+    "t": "5点",
+    "w": "平均値の ちがいを 答えた"
+   }
+  ],
+  "e": "5人の 合計：70 × 5 = 350\n4人の 合計：65 × 4 = 260\n350 − 260 = 90\nこたえ 90点",
+  "h": "5人の 合計と 4人の 合計の 差を 考えよう。"
+ },
+ {
+  "id": "data-05-L4-05",
+  "u": "E6-TK",
+  "s": "E6-TK-05",
+  "l": "data-05",
+  "d": 4,
+  "q": "ゲームを 10回 した 得点は 4点、9点、6点、8点、5点、11点、6点、12点、6点、13点です。平均値と 中央値の ちがい（大きい ほう − 小さい ほう）は いくつですか。",
+  "c": [
+   {
+    "t": "1点",
+    "k": 1
+   },
+   {
+    "t": "2点",
+    "w": "平均値と 最頻値の ちがいを 答えた"
+   },
+   {
+    "t": "9点",
+    "w": "はんいを 答えた"
+   },
+   {
+    "t": "0点",
+    "w": "平均値と 中央値が 同じと 考えた"
+   }
+  ],
+  "e": "平均値：80 ÷ 10 = 8\n中央値：小さい 順の 5番目の 6と 6番目の 8の 平均で 7\n8 − 7 = 1\nこたえ 1点",
+  "h": "平均値と 中央値を 先に 求めよう。"
+ }
+]
