@@ -47,7 +47,7 @@
         add: [{ t: 'h', text: '(1)　帰納法：$n=1$ のとき $e^x>x$' },
           { t: 'm', size: 'sm', tex: "h(x)=e^x-x,\\quad h'(x)=e^x-1>0\\ (x>0),\\quad h(0)=1" },
           { t: 'p', size: 'sm', text: '$x\\ge0$ で増加、$h(0)=1>0$ → $x>0$ で $h(x)>0$\nよって　$e^x>x$' },
-          { t: 'fig', id: 'f1', col: 1, view: [-0.3, -0.8, 2.6, 8], w: 480, h: 500, items: [
+          { t: 'fig', id: 'f1', col: 1, view: [-0.3, -0.8, 2.6, 8], w: 440, h: 400, items: [
             { k: 'axes', tx: [1, 2], ty: [2, 4, 6] },
             { k: 'fn', f: 'exp(x)', a: -0.2, b: 2.1, c: 'y', label: 'e^x', lat: [1.85, 7.0] },
             { k: 'line', m: 1, n: 0, a: -0.2, b: 2.5, c: 'b', label: 'y=x', lat: [2.4, 2.0] }] }] },
@@ -60,6 +60,9 @@
         add: [{ t: 'm', tex: "h'(x)=e^x-\\frac{x^n}{n!}>0\\quad(x>0)", note: '帰納法の仮定' }] } },
       { say: '$h$ は $x\\ge0$ で増加し、$h(0)=1>0$。よって $x>0$ で $h(x)>0$、つまり $n+1$ のときも成り立ちます。これで (1) の完成です。',
         add: [{ t: 'ans', label: '(1)', text: '$x>0$ で　$e^x>\\dfrac{x^n}{n!}$　（すべての自然数 $n$）' }] },
+      { clear: true, say: '(1) の使い道です。(1) は $x>0$ なら何を入れてもよいので、$x=n$ を入れてみます。',
+        add: [{ t: 'h', text: '(1) を使う：x＝n を入れる' },
+          { t: 'm', size: 'sm', tex: 'e^x>\\frac{x^n}{n!}\\quad\\xrightarrow{\\ x=n\\ }\\quad e^n>\\frac{n^n}{n!}' }] },
       { ask: { type: 'choice', q: '(1) に $x=n$ を入れると、$n!$ について何が言える？',
         opts: ['$n!>\\dfrac{n^n}{e^n}$', '$n!<\\dfrac{n^n}{e^n}$', '$n!>n^n\\,e^n$', '$n!>\\dfrac{n^n}{e}$'], ok: 0,
         why: { 1: '$e^n>\\frac{n^n}{n!}$ の両辺に $\\frac{n!}{e^n}$ をかけても、不等号の向きは変わりません。', 2: '$e^n>\\frac{n^n}{n!}$ から $n!>\\frac{n^n}{e^n}$。$e^n$ は分子ではなく分母に来ます。', 3: '$e^n$ を $e$ と見まちがえています。$n$ 乗が残ります。' },
@@ -105,7 +108,7 @@
       { clear: true, say: '$\\frac1n$ 乗して $n$ で割ります。$\\{(2n+1)^{2n+1}\\}^{\\frac1n}=(2n+1)^2(2n+1)^{\\frac1n}$、$(n^n)^{\\frac1n}=n$、$(e^n)^{\\frac1n}=e$ です。',
         add: [{ t: 'h', text: '(3)　上からの評価' },
           { t: 'm', size: 'sm', tex: '\\begin{aligned} a_n&<\\frac1n\\cdot\\frac{(2n+1)^2(2n+1)^{\\frac1n}}{n\\,e}\\\\ &=\\frac1e\\left(2+\\frac1n\\right)^2(2n+1)^{\\frac1n} \\end{aligned}' }] },
-      { say: '下からの評価も同じ要領です。分子に (A)、分母に (B) を使います。',
+      { clear: true, say: '下からの評価も同じ要領です。分子に (A)、分母に (B) を使います。',
         add: [{ t: 'h', text: '(3)　下からの評価' },
           { t: 'm', size: 'sm', tex: '\\frac{(2n)!}{n!}>\\frac{(2n)^{2n}e^{-2n}}{(n+1)^{n+1}e^{-n}}=\\frac{(2n)^{2n}}{(n+1)^{n+1}\\,e^{n}}' },
           { t: 'm', size: 'sm', tex: '\\begin{aligned} a_n&>\\frac1n\\cdot\\frac{4n^2}{(n+1)^{1+\\frac1n}\\,e}\\\\ &=\\frac4e\\cdot\\frac{n}{n+1}\\cdot(n+1)^{-\\frac1n} \\end{aligned}' }] },
