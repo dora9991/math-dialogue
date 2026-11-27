@@ -26,7 +26,7 @@
     return { t: 'fig', id, col: 1, view: [-0.7, -1.3, 6.7, 1.3], w: W, h: Math.round(W * 2.6 / 7.4), items: it.concat(extra || []) };
   };
   const ar = (a, b, c, s) => {   // 点 a から点 b へ、少しずらした矢印
-    const A = V[a], B = V[b], d = B[0] > A[0] ? 1 : -1, e = 0.16, y = 0.28 * (s || 1);
+    const A = V[a], B = V[b], d = B[0] > A[0] ? 1 : -1, e = 0.16, y = s === -1 ? 0.6 : 0.3;
     return { k: 'vec', a: [A[0] + d * e, y], b: [B[0] - d * e, y], c, wd: 2.5 };
   };
   const POINTS = [
@@ -74,7 +74,7 @@
         add: [{ t: 'h', text: '(1)　2 秒後の移り方の表' },
           { t: 'm', size: 'sm', tex: '\\mathrm{B}\\to\\mathrm{B}:\\ \\frac12\\cdot1+\\frac12\\cdot\\frac12=\\frac34', note: 'A, C を経由' },
           { t: 'm', size: 'sm', tex: '\\mathrm{B}\\to\\mathrm{D}:\\ \\frac12\\cdot\\frac12=\\frac14,\\qquad \\mathrm{B}\\to\\mathrm{F}:\\ 0' },
-          graph('g1', [ar('B', 'A', 'p'), ar('A', 'B', 'y', -1), ar('B', 'C', 'p'), ar('C', 'D', 'p', 2), ar('C', 'B', 'y', -1)], { color: true })] },
+          graph('g1', [ar('B', 'A', 'p'), ar('A', 'B', 'y', -1), ar('B', 'C', 'p'), ar('C', 'B', 'y', -1)], { color: true })] },
       { ask: { type: 'choice', q: 'D から出発したとき、2 秒後に B にいる確率は？',
         opts: ['$\\dfrac12$', '$\\dfrac14$', '$\\dfrac18$', '$\\dfrac13$'], ok: 1,
         why: { 0: 'D → C → B の 2 回の移動です。$\\frac12$ を 2 回かけます。', 2: '2 秒は 2 回の移動です。$\\frac12$ を 3 回もかけていません。', 3: '$\\frac13$ は線が 3 本の点の確率。この図の D の線は 2 本です。' },

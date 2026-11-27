@@ -232,9 +232,9 @@
     var R = CH.box(D, { l: .03, r: .03, t: .03, b: .05 }), s = CH.fs(D), a = function (x, y) { return CH.smooth(x, y, t); };
     if (mode === 0) {
       var P = CH.rows(R, 2, .1), F = tri5(D, P[0], P5, { rA: true, a: 1 });
-      dim(F, 'B', 'A', -F.s * 1.1, '6cm', {}); dim(F, 'A', 'C', F.s * 1.1, '8cm', {}); dim(F, 'B', 'C', F.s * 1.4, '10cm', {});
-      say(D, P[0].cx, P[0].y0 - 2, '(1)〜(3) の △ABC　∠A＝90°', { size: s * .8, maxW: P[0].w });
-      var F2 = tri5(D, P[1], P5b, { a: 1 }); GE.arc(F2, 'ABC', { col: C.chalk, lab: '50°', r: F2.s * 2.2 }); say(D, P[1].cx, P[1].y0 - 2, '(4) の △ABC　AB＝AC', { size: s * .8, maxW: P[1].w });
+      dim(F, 'B', 'A', -F.s * 1.1, '6cm', {}); dim(F, 'A', 'C', -F.s * 1.1, '8cm', {}); dim(F, 'B', 'C', F.s * 1.4, '10cm', {});
+      say(D, P[0].x0, P[0].y0 + s * .2, '(1)〜(3) の △ABC　∠A＝90°', { size: s * .8, maxW: P[0].w, align: 'left' });
+      var F2 = tri5(D, P[1], P5b, { a: 1 }); GE.arc(F2, 'ABC', { col: C.chalk, lab: '50°', r: F2.s * 2.2 }); say(D, P[1].x0, P[1].y0 + s * .2, '(4) の △ABC　AB＝AC', { size: s * .8, maxW: P[1].w, align: 'left' });
       return;
     }
     if (mode === 1) {
@@ -255,7 +255,7 @@
     }
     var FR3 = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .64), F4 = tri5(D, FR3, P5b, { a: 1 });
     GE.arc(F4, 'ABC', { col: C.chalk, lab: '50°', r: F4.s * 2.2 }); GE.arc(F4, 'ACB', { col: C.chalk, lab: '50°', r: F4.s * 2.2 });
-    var b = a(.1, .35); GE.arc(F4, 'BAC', { col: C.pink, a: b, lab: '80°', r: F4.s * 1.5 }); GE.arc(F4, 'BAH', { col: C.green, a: b, lab: '40°', r: F4.s * 2.2 });
+    var b = a(.1, .35); GE.arc(F4, 'BAC', { col: C.pink, a: b, lab: '80°', r: F4.s * 3.4 }); GE.arc(F4, 'BAH', { col: C.green, a: b, lab: '40°', r: F4.s * 1.7 });
     var ty3 = R.y0 + R.h * .7;
     if (t > .3) say(D, R.cx, ty3 + s * .5, '△ABC の角は 50°・50°・80°　　△HBA の角は 50°・90°・40°', { col: C.chalk, a: a(.3, .5), maxW: R.w, num: true });
     if (t > .55) say(D, R.cx, ty3 + s * 2, '等しい角が 1組（∠B）しかない → 相似とは いえない', { col: C.yel, a: a(.55, .8), maxW: R.w, num: true });
