@@ -147,7 +147,7 @@
         good: '$x\\cdot0+(y+4)\\cdot1+(-3)(-1)=y+7$。',
         add: [{ t: 'm', size: 'sm', tex: '\\overrightarrow{\\mathrm{VQ}}\\cdot\\vec n=y+7' }] } },
       { say: '条件に入れて整理します。両辺を 2 倍して、$y$ の 2 次式をそろえると、$x^2$ と $(y-2)^2$ の式になります。',
-        add: [{ t: 'm', size: 'sm', tex: 'XX\\\\ 3x^2+(y-2)^2&=27\\end{aligned}' }] },
+        add: [{ t: 'm', size: 'sm', tex: '\\begin{aligned}2(y+7)^2&=3x^2+3(y+4)^2+27\\\\ 3x^2+y^2-4y&=23\\\\ 3x^2+(y-2)^2&=27\\end{aligned}' }] },
       { say: '両辺を 27 で割ると楕円の形。逆にこの式をみたす Q は、角が $30^\\circ$ か $150^\\circ$ になるので S 上にあります。図の黄色の曲線です。',
         add: [{ t: 'ans', label: '(2) 答', tex: '\\frac{x^2}{9}+\\frac{(y-2)^2}{27}=1' }],
         draw: [{ fig: 'g3', items: [{ k: 'poly', pts: loop(th => pjv(Eq(th))), c: 'y', wd: 3.5 }] }] },
