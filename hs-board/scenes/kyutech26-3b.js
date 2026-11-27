@@ -17,7 +17,7 @@
   const P = {}; Object.keys(V3).forEach(k => { P[k] = pj(V3[k]); });
   const tet = (id, o, size) => {
     o = o || {};
-    const W = size || 400, view = [-0.5, -1.0, 2.6, 2.8];
+    const W = size || 350, view = [-0.5, -1.0, 2.6, 2.8];
     const it = [
       { k: 'poly', pts: [P.A, P.B, P.C], close: false, fill: 'g', alpha: 0.12, noStroke: true },
       { k: 'seg', a: P.O, b: P.A, c: 'w', wd: 3 }, { k: 'seg', a: P.O, b: P.B, c: 'w', wd: 3 }, { k: 'seg', a: P.O, b: P.C, c: 'w', wd: 3 },
@@ -106,8 +106,7 @@
         good: '$2s+4t=4s+2t$ から $2t=2s$。OA と OB が同じ長さなので、$s=t$ は自然な結果です。',
         add: [{ t: 'm', size: 'sm', tex: 's=t' }] } },
       { say: 'もう 1 本、$\\vec h\\cdot(\\vec c-\\vec a)=0$ から $9u=4s+2t$。$s=t$ を入れると $9u=6s$、つまり $u=\\dfrac23s$。これを $s+t+u=1$ に入れます。',
-        add: [{ t: 'm', size: 'sm', tex: '9u=4s+2t=6s\\ \\Rightarrow\\ u=\\frac23s' },
-          { t: 'm', size: 'sm', tex: 's+s+\\frac23s=\\frac83s=1\\ \\Rightarrow\\ s=\\frac38' },
+        add: [{ t: 'm', size: 'sm', tex: '\\begin{aligned}9u&=4s+2t=6s\\ \\Rightarrow\\ u=\\frac23s\\\\ s+s+\\frac23s&=\\frac83s=1\\ \\Rightarrow\\ s=\\frac38\\end{aligned}' },
           { t: 'ans', label: '(2) 答', tex: 's=t=\\frac38,\\qquad u=\\frac14' }] },
       { ask: { type: 'think', q: '$\\vec h\\cdot\\vec a$ と $\\vec h\\cdot\\vec c$ に $s,\\ t,\\ u$ の値を入れて、答えが合っているか確かめよう。',
         hint: '$\\vec h\\cdot\\vec a=4s+2t$、$\\vec h\\cdot\\vec c=9u$。垂線なら 3 つの内積は等しいはず。',
