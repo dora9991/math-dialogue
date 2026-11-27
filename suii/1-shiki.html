@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>中1 数と式 類題5題</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 中1 数と式　学力推移調査型の類題（5題）。担当ID 1-shiki。
+   5つの型：きまりを見つけて文字式（正三角形をつなぐ）／文字式で説明（カレンダー）／方程式の文章題（過不足）／
+   計算のまちがいを見つけて説明（方程式）／正負の数の読み取り（基準との差の記録）。
+   場面も数値もすべて自作。答えはページの中で計算し直して確かめている（CH.check）。 */
+(function () {
+  var C = CH.C;
+  function sg(v) { return v > 0 ? '+' + v : CH.mnum(v); }
+
+  /* 類題1　正三角形をつなぐ（1辺 3cm） */
+  function per(n) { return 3 * (n + 2); }
+  CH.check(per(1) === 9 && per(4) === 18 && per(15) === 51 && (3 * 15 + 6) === 51 && per(5) - per(3) === 6 && per(8) - per(6) === 6, '類題1');
+  /* 類題2　カレンダー */
+  var DOW = ['日', '月', '火', '水', '木', '金', '土'];
+  function cross(c) { return [c - 7, c - 1, c, c + 1, c + 7]; }
+  CH.check(cross(16).filter(function (x) { return x !== 16; }).reduce(function (a, b) { return a + b; }, 0) === 64 && cross(24).reduce(function (a, b) { return a + b; }, 0) === 120 && cross(24).join() === '17,23,24,25,31' && 5 * 24 === 120, '類題2');
+  /* 類題3　色紙の過不足 */
+  CH.check(5 * 8 + 12 === 52 && 7 * 8 - 4 === 52 && (52 - 12) / 5 === 8 && (52 + 4) / 7 === 8, '類題3');
+  /* 類題4　方程式のまちがい */
+  CH.check(4 * (7 - 3) === 16 && 7 + 9 === 16 && 4 * 4 - 3 === 4 + 9 && 4 * (4 - 3) !== 4 + 9 && 4 * 7 - 12 === 16, '類題4');
+  /* 類題5　基準 150cm との差 */
+  var N5 = ['A', 'B', 'C', 'D', 'E', 'F'], V5 = [8, -5, 12, -3, 0, -9];
+  var S5 = CH.sum(V5), M5 = S5 / 6;
+  CH.check(150 + V5[3] === 147 && Math.max.apply(null, V5) - Math.min.apply(null, V5) === 21 && S5 === 3 && CH.near(M5, .5) && CH.near(150 + M5, 150.5) && V5.filter(function (v) { return v > 0; }).length === 2, '類題5');
+
+  /* ---------- 図の道具 ---------- */
+  /* 類題1：正三角形を n 枚つなげた帯。o：k（かぞえた辺の本数）、add（うしろ何枚を色ちがいに）、lab */
+  function strip(D, R, n, o) {
+    o = o || {}; var s = CH.fs(D, .9), u = Math.min(R.w / (n + 1), R.h / 1.732), h = 1.732 * u, W = u * (n + 1), x0 = R.cx - W / 2, yb = R.cy + h / 2, yt = R.cy - h / 2, P = [], i, j;
+    for (i = 0; i <= n + 1; i++) P.push([x0 + i * u, i % 2 === 0 ? yb : yt]);
+    for (j = 0; j < n; j++) CH.poly(D, [P[j], P[j + 1], P[j + 2]], { fill: o.add && j >= n - o.add ? 'rgba(255,186,120,.28)' : 'rgba(120,180,255,.2)', stroke: 'rgba(242,240,230,.6)', sw: 1.8 });
+    var E = [[0, 1], [n, n + 1]]; for (i = 0; i < n; i++) E.push([i, i + 2]);
+    E.sort(function (p, q) { return (P[p[0]][0] + P[p[1]][0]) - (P[q[0]][0] + P[q[1]][0]); });
+    E.forEach(function (e, m) {
+      if (!(o.k > m)) return;
+      var a = P[e[0]], b = P[e[1]], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, end = (e[1] - e[0]) === 1, dx = 0, dy = 0;
+      CH.line(D, a[0], a[1], b[0], b[1], { col: C.yel, w: 4.4 });
+      if (end) { dx = e[0] === 0 ? -s * 1.1 : s * 1.1; dy = 0; } else dy = (e[0] % 2 === 0 ? 1 : -1) * s * 1.05;
+      if (!o.nolab) CH.text(D, mx + dx, my + dy, String(m + 1), { col: C.yel, num: true, size: s, outline: 'rgba(20,30,24,.85)' });
+    });
+    if (o.lab) CH.text(D, x0 + u, yb + s * 1.1, '1辺 3cm', { col: 'rgba(242,240,230,.85)', size: s * .9 });
+    return { x0: x0, x1: x0 + W, yb: yb, yt: yt, u: u };
+  }
+  /* 類題2：カレンダー。o.lab：{日: '字'}、o.cols：{日: 色} */
+  function cal(D, R, o) {
+    o = o || {}; var cw = Math.min(R.w / 7, R.h / 6), rh = cw, W = cw * 7, x0 = R.cx - W / 2, y0 = R.cy - rh * 3, s = Math.min(CH.fs(D, .9), cw * .38);
+    DOW.forEach(function (d, c) { CH.text(D, x0 + (c + .5) * cw, y0 + rh / 2, d, { col: c === 0 ? C.pink : c === 6 ? C.blue : 'rgba(242,240,230,.8)', size: s }); });
+    for (var d = 1; d <= 31; d++) {
+      var r = Math.floor((d - 1) / 7), c = (d - 1) % 7, cx = x0 + (c + .5) * cw, cy = y0 + (r + 1.5) * rh, col = o.cols && o.cols[d], lab = o.lab && o.lab[d];
+      CH.fillRect(D, cx - cw / 2, cy - rh / 2, cx + cw / 2, cy + rh / 2, { fill: col ? hex(col, .3) : 'rgba(242,240,230,.05)', stroke: col || 'rgba(242,240,230,.3)', sw: col ? 2.2 : 1 });
+      CH.text(D, cx, cy + 1, lab || String(d), { size: lab && lab.length > 2 ? s * .85 : s, num: true, col: col ? C.chalk : 'rgba(242,240,230,.85)' });
+    }
+    return { x0: x0, x1: x0 + W, y0: y0, y1: y0 + rh * 6, cw: cw };
+  }
+  function hex(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+
+  /* 類題3：テープ図。k：うえ・下の帯の のび（0〜1）、m：人数（図の大きさ用）、num：数を書くか */
+  function tape3(D, m, num, k) {
+    var R = CH.box(D, { l: .08, r: .08, t: .2, b: .26 }), s = CH.fs(D, .9), tot = 5 * m + 16, w = R.w * (k == null ? 1 : k), h = Math.min(R.h * .22, 54), y1 = R.y0 + R.h * .12, y2 = R.y0 + R.h * .62, a = 5 * m + 12, b = 5 * m + 12;
+    var full = R.w; w = full;
+    CH.text(D, R.x0, y1 - s * 1.5, '1人に 5枚ずつ配る', { col: C.blue, align: 'left', size: s });
+    CH.tape(D, R.x0, y1, full * (a / (tot)) , h, [{ v: 5 * m, col: C.blue, txt: num ? '5×8＝40' : '5x' }, { v: 12, col: C.yel, txt: num ? '12' : '12' }], a);
+    CH.text(D, R.x0 + full * (5 * m + 6) / tot, y1 + h + s * 1.1, '12枚あまる', { col: C.yel, size: s * .9 });
+    CH.text(D, R.x0, y2 - s * 1.5, '1人に 7枚ずつ配る', { col: C.orange, align: 'left', size: s });
+    CH.tape(D, R.x0, y2, full * (a / tot), h, [{ v: a, col: C.orange, txt: num ? '色紙は 全部で 52枚' : '色紙の枚数' }], a);
+    CH.fillRect(D, R.x0 + full * a / tot, y2, R.x0 + full, y2 + h, { stroke: C.pink, dash: true, fill: 'rgba(255,140,170,.12)' });
+    CH.text(D, R.x0 + full * (a + 2) / tot, y2 + h / 2, '4', { col: C.pink, num: true, size: s });
+    CH.text(D, R.x0 + full * (a + 2) / tot, y2 + h + s * 1.1, '4枚たりない', { col: C.pink, size: s * .9 });
+    CH.line(D, R.x0 + full * a / tot, y1 - s * .4, R.x0 + full * a / tot, y2 + h + s * .3, { col: 'rgba(242,240,230,.55)', dash: true, w: 1.6 });
+    CH.line(D, R.x0 + 5 * m / tot * full, y1 + h, R.x0 + 5 * m / tot * full, y1 + h + 4, { col: C.chalk });
+    return { R: R, y1: y1, y2: y2, h: h };
+  }
+
+  /* 類題4：ゆみさんの解き方 */
+  var YU = ['4(x−3)＝x＋9', '4x−3＝x＋9', '4x−x＝9＋3', '3x＝12', 'x＝4'];
+  function yumi(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .06, r: .5, t: .2, b: .16 }), s = CH.fs(D, 1.25), lh = Math.min(R.h / 6, s * 2.2), y0 = R.y0 + lh * .6;
+    CH.text(D, R.x0, y0 - lh * .9, 'ゆみさんの解き方', { col: C.lav, align: 'left', size: CH.fs(D, .9) });
+    YU.forEach(function (e, i) {
+      var y = y0 + (i + .6) * lh, col = o.bad === i ? C.pink : o.good ? C.chalk : C.chalk;
+      if (o.bad === i) CH.fillRect(D, R.x0 - 8, y - lh * .45, R.x1, y + lh * .45, { fill: 'rgba(255,140,170,.18)', stroke: C.pink });
+      CH.text(D, R.x0 + s * .3, y, '①②③④⑤'.charAt(i), { col: 'rgba(242,240,230,.7)', align: 'left', size: s });
+      CH.text(D, R.x0 + s * 2, y, e, { col: col, align: 'left', size: s, num: true });
+    });
+    return { R: R, lh: lh, y0: y0 };
+  }
+
+  /* 類題5：基準との差の表と数直線。o：hlc（色をつける人の番号の配列）、k：(0〜1) のびる矢印など */
+  function rec5(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .04, r: .04, t: .04, b: .08 }), s = CH.fs(D, .9), t = o.t || 0;
+    var T = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .36);
+    var rows = [['基準との差（cm）'].concat(V5.map(sg))];
+    if (o.rec) rows.push(['記録（cm）', '', '', '', 147, '', '']);
+    CH.table(D, T, [''].concat(N5.map(function (x) { return x + 'さん'; })), rows, { fw: .2, top: true, hl: function (r, c) { return o.hl && o.hl.indexOf(c - 1) >= 0 && r >= 1 ? o.col || C.yel : null; } });
+    var NR = CH.rect(R.x0 + R.w * .03, R.y0 + R.h * .5, R.x1 - R.w * .03, R.y0 + R.h * .84), X = CH.numline(D, NR, -10, 14, 1, { lab: 2, fmt: function (v) { return v > 0 ? '+' + v : CH.mnum(v); }, unit: '（cm）' });
+    var pts = CH.dots(D, X, NR.y1, V5, { r: s * .5, col: function (i, v) { return o.hl && o.hl.indexOf(i) >= 0 ? (o.col || C.yel) : v > 0 ? C.blue : v < 0 ? C.pink : C.green; } });
+    pts.forEach(function (p, i) { CH.text(D, p[0], p[1] - s * 1.2, N5[i], { size: s * .85, col: 'rgba(242,240,230,.85)' }); });
+    CH.line(D, X(0), NR.y1 - s * 3.6, X(0), NR.y1, { col: 'rgba(242,240,230,.5)', dash: true, w: 1.6 });
+    CH.text(D, X(0), NR.y1 - s * 4.2, '基準 150cm', { size: s * .85, col: 'rgba(242,240,230,.8)' });
+    return { X: X, NR: NR, R: R, pts: pts, s: s };
+  }
+
+  /* ---------- 板書の字 ---------- */
+  K3.run({
+    no: '類題', title: '学力推移調査型の類題　中1 数と式（5題）', flat: true, hint: '',
+    links: [{ href: '../kokuban/index.html', label: '総目次' }],
+    steps: [
+      /* ---------------- 類題1 ---------------- */
+      { tag: '類題1', bh: '類題1　正三角形をつなぐ（きまりを見つける）', q: '1辺が 3cm の正三角形の紙を、図のように 辺と辺をぴったり重ねて、1列につなげていく。n枚つなげたときの、図形のまわりの長さを考える。図は 4枚つなげたものである。',
+        notes: ['(1) 4枚つなげたときの、まわりの長さは何cmか。', '(2) n枚つなげたときの、まわりの長さを、n を使った式で表しなさい。', '(3) まわりの長さが 51cm になるのは、何枚つなげたときか。', '(4) ひなさんは「2枚ふやすと、まわりの長さは 6cm 長くなる」と言った。正しいか。n を使った式を使って、わけを説明しなさい。'],
+        draw: function (D) { strip(D, CH.box(D, { l: .08, r: .08, t: .22, b: .22 }), 4, { lab: true }); } },
+      { tag: '類題1', q: '(1) 4枚つなげたときの、まわりの長さは？', a: '18cm', sub: '周りの辺の数は 6本、1本が 3cm　3×6＝18', dur: 3,
+        b: { t: '(1) 辺 6本 × 3cm ＝ <b>18cm</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0; strip(D, CH.box(D, { l: .08, r: .08, t: .22, b: .22 }), 4, { lab: true, k: Math.floor(t * 7.5) }); } },
+      { tag: '類題1', q: '(2) n枚つなげたときの、まわりの長さを n の式で', a: '3(n＋2) cm（3n＋6 cm）', sub: '1枚ふえるごとに 辺が 1本ふえる。1枚のとき 3本、2枚のとき 4本… n枚のとき（n＋2）本。まわりの長さ＝3×(n＋2)', dur: 4,
+        b: { t: '(2) 辺は（n＋2）本　3(n＋2)＝<b>3n＋6（cm）</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.rows(CH.box(D, { l: .08, r: .08, t: .14, b: .12 }), 3, .06), s = CH.fs(D, .95);
+          [1, 2, 4].forEach(function (n, i) {
+            strip(D, CH.rect(R[i].x0 + R[i].w * .28, R[i].y0, R[i].x1, R[i].y1), n, { k: n + 2, nolab: true });
+            CH.text(D, R[i].x0 + R[i].w * .02, R[i].cy, n + '枚　辺 ' + (n + 2) + '本', { align: 'left', col: C.yel, size: s, a: CH.smooth(i * .2, i * .2 + .2, t) });
+          });
+          if (t > .7) CH.text(D, R[2].cx + R[2].w * .14, R[2].y1 + s * .2, 'n枚 → 辺（n＋2）本 → 3(n＋2) cm', { col: C.green, a: CH.smooth(.7, .9, t), size: s * 1.1 });
+        } },
+      { tag: '類題1', q: '(3) まわりの長さが 51cm になるのは、何枚のとき？', a: '15枚', sub: '3n＋6＝51　3n＝45　n＝15（確かめ：3×(15＋2)＝51）', dur: 3.5,
+        b: { t: '(3) 3n＋6＝51　3n＝45　n＝<b>15（枚）</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .08, r: .08, t: .16, b: .16 }), s = CH.fs(D, 1.2);
+          strip(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .36), 5, {});
+          CH.text(D, R.cx, R.y0 + R.h * .5, '…（n枚）', { size: s * .9, col: 'rgba(242,240,230,.7)' });
+          var L = ['3n＋6 ＝ 51', '3n ＝ 45', 'n ＝ 15'];
+          L.forEach(function (e, i) { CH.text(D, R.cx, R.y0 + R.h * (.64 + i * .13), e, { size: s, num: true, col: i === 2 ? C.yel : C.chalk, a: CH.smooth(i * .3, i * .3 + .25, t) }); });
+        } },
+      { tag: '類題1', q: '(4) 「2枚ふやすと、まわりは 6cm 長くなる」は正しい？', a: '正しい', sub: 'n枚のとき 3n＋6。（n＋2）枚のとき 3(n＋2)＋6＝3n＋12。（3n＋12）−（3n＋6）＝6 で、n に関係なく 6cm ふえる', dur: 5,
+        b: { t: '(4) <b>正しい</b>　(3n＋12)−(3n＋6)＝6　n にかかわらず 6cm', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.rows(CH.box(D, { l: .06, r: .06, t: .14, b: .12 }), 2, .1), s = CH.fs(D, 1);
+          strip(D, CH.rect(R[0].x0 + R[0].w * .3, R[0].y0, R[0].x1, R[0].y1), 3, {});
+          CH.text(D, R[0].x0 + R[0].w * .02, R[0].cy, 'n枚（n＝3）', { align: 'left', size: s, col: C.blue });
+          CH.text(D, R[0].x0 + R[0].w * .02, R[0].cy + s * 1.5, '3n＋6（cm）', { align: 'left', size: s, col: C.blue, num: true });
+          strip(D, CH.rect(R[1].x0 + R[1].w * .3, R[1].y0, R[1].x1, R[1].y1), 5, { add: 2 });
+          CH.text(D, R[1].x0 + R[1].w * .02, R[1].cy, '（n＋2）枚', { align: 'left', size: s, col: C.orange, a: CH.smooth(.1, .3, t) });
+          CH.text(D, R[1].x0 + R[1].w * .02, R[1].cy + s * 1.5, '3(n＋2)＋6＝3n＋12', { align: 'left', size: s, col: C.orange, num: true, a: CH.smooth(.3, .5, t) });
+          if (t > .6) CH.text(D, R[1].cx, R[1].y1 + s * .6, '(3n＋12)−(3n＋6)＝6', { col: C.yel, size: s * 1.2, num: true, a: CH.smooth(.6, .85, t) });
+        } },
+      /* ---------------- 類題2 ---------------- */
+      { tag: '類題2', bh: '類題2　カレンダー（文字式で説明する）', q: '図は、ある月のカレンダーである。図のように、ある日の数と、その上・下・左・右の 日の数 4つを 十字形に囲む。',
+        notes: ['(1) まん中の数が 16 のとき、まわりの 4つの数の和を求めなさい。', '(2) まん中の数を n とするとき、その上の数と 左の数を、n を使った式で表しなさい。', '(3) まわりの 4つの数の和は、まん中の数の 4倍になる。そのわけを、n を使って説明しなさい。', '(4) 十字形の 5つの数の和が 120 になるとき、まん中の数を求めなさい。'],
+        draw: function (D) { var cs = {}; cross(16).forEach(function (d) { cs[d] = d === 16 ? C.yel : C.blue; }); cal(D, CH.box(D, { l: .2, r: .2, t: .1, b: .08 }), { cols: cs }); } },
+      { tag: '類題2', q: '(1) まん中が 16 のとき、まわりの 4つの数の和は？', a: '64', sub: '上 9、左 15、右 17、下 23　9＋15＋17＋23＝64', dur: 3,
+        b: { t: '(1) 9＋15＋17＋23＝<b>64</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, cs = {}; cross(16).forEach(function (d) { cs[d] = d === 16 ? C.yel : C.blue; });
+          var G = cal(D, CH.box(D, { l: .06, r: .5, t: .1, b: .08 }), { cols: cs }), s = CH.fs(D, 1.1);
+          CH.text(D, G.x1 + (D.W - G.x1) * .5, G.y0 + (G.y1 - G.y0) * .4, '9＋15＋17＋23', { size: s, num: true, col: C.blue, a: CH.smooth(0, .3, t) });
+          CH.text(D, G.x1 + (D.W - G.x1) * .5, G.y0 + (G.y1 - G.y0) * .52, '＝ 64', { size: s * 1.2, num: true, col: C.yel, a: CH.smooth(.4, .7, t) });
+        } },
+      { tag: '類題2', q: '(2) まん中の数を n とするとき、上の数と 左の数は？', a: '上 n−7、左 n−1', sub: 'カレンダーは 1行に 7日。上は 7小さく、左は 1小さい　（右 n＋1、下 n＋7）', dur: 3.5,
+        b: { t: '(2) 上 <b>n−7</b>、左 <b>n−1</b>（右 n＋1、下 n＋7）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, cs = {}, lb = {}; cross(16).forEach(function (d) { cs[d] = d === 16 ? C.yel : C.blue; });
+          lb[16] = 'n'; if (t > .2) { lb[9] = 'n−7'; lb[15] = 'n−1'; } if (t > .6) { lb[17] = 'n＋1'; lb[23] = 'n＋7'; }
+          cal(D, CH.box(D, { l: .2, r: .2, t: .1, b: .08 }), { cols: cs, lab: lb });
+        } },
+      { tag: '類題2', q: '(3) 4つの数の和が まん中の数の 4倍になるわけを、n を使って説明', a: '4つの数の和＝(n−7)＋(n−1)＋(n＋1)＋(n＋7)＝4n。4n は n の 4倍なので、まん中の数の 4倍になる。', sub: '−7 と ＋7、−1 と ＋1 が たしあって 0 になるので、n が 4つ分だけ のこる', dur: 5,
+        b: { t: '(3) (n−7)＋(n−1)＋(n＋1)＋(n＋7)＝<b>4n</b>　→ n の 4倍', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, cs = {}, lb = {}; cross(16).forEach(function (d) { cs[d] = d === 16 ? C.yel : C.blue; });
+          lb[16] = 'n'; lb[9] = 'n−7'; lb[15] = 'n−1'; lb[17] = 'n＋1'; lb[23] = 'n＋7';
+          var G = cal(D, CH.box(D, { l: .04, r: .52, t: .1, b: .08 }), { cols: cs, lab: lb }), s = CH.fs(D, 1.05), x = G.x1 + (D.W - G.x1) * .5, y = G.y0 + (G.y1 - G.y0) * .3;
+          CH.text(D, x, y, '(n−7)＋(n−1)', { size: s, num: true, col: C.blue, a: CH.smooth(0, .2, t) });
+          CH.text(D, x, y + s * 1.6, '＋(n＋1)＋(n＋7)', { size: s, num: true, col: C.blue, a: CH.smooth(.1, .3, t) });
+          CH.text(D, x, y + s * 3.4, '＝ n＋n＋n＋n', { size: s, num: true, col: C.chalk, a: CH.smooth(.4, .6, t) });
+          CH.text(D, x, y + s * 5, '＝ 4n', { size: s * 1.3, num: true, col: C.yel, a: CH.smooth(.65, .85, t) });
+        } },
+      { tag: '類題2', q: '(4) 5つの数の和が 120 のとき、まん中の数は？', a: '24', sub: '5つの和は n＋4n＝5n。5n＝120 より n＝24（17・23・24・25・31 の和は 120）', dur: 3.5,
+        b: { t: '(4) 5n＝120　n＝<b>24</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, cs = {}, lb = {}; cross(24).forEach(function (d) { cs[d] = d === 24 ? C.yel : C.blue; });
+          if (t > .4) lb[24] = '24';
+          var G = cal(D, CH.box(D, { l: .06, r: .5, t: .1, b: .08 }), { cols: cs, lab: lb }), s = CH.fs(D, 1.1), x = G.x1 + (D.W - G.x1) * .5, y = G.y0 + (G.y1 - G.y0) * .36;
+          CH.text(D, x, y, '5つの和 ＝ n＋4n ＝ 5n', { size: s, num: true, col: C.blue, a: CH.smooth(0, .2, t) });
+          CH.text(D, x, y + s * 1.8, '5n ＝ 120', { size: s, num: true, col: C.chalk, a: CH.smooth(.2, .4, t) });
+          CH.text(D, x, y + s * 3.6, 'n ＝ 24', { size: s * 1.3, num: true, col: C.yel, a: CH.smooth(.4, .6, t) });
+        } },
+      /* ---------------- 類題3 ---------------- */
+      { tag: '類題3', bh: '類題3　色紙をくばる（方程式の文章題）', q: '何人かの生徒に 色紙を くばる。1人に 5枚ずつ くばると 12枚あまり、1人に 7枚ずつ くばると 4枚たりなくなる。生徒の人数を x人とする。',
+        notes: ['(1) 1人に 5枚ずつ くばるときの、色紙の枚数を、x を使った式で表しなさい。', '(2) 方程式をつくり、生徒の人数を求めなさい。', '(3) 色紙は全部で何枚か。', '(4) ゆうとさんは、色紙の枚数を y枚として、方程式 (y−12)÷5＝(y＋4)÷7 をつくった。この方程式で 生徒の人数が表せるわけを、説明しなさい。'],
+        draw: function (D) { tape3(D, 6, false); } },
+      { tag: '類題3', q: '(1) 5枚ずつ くばるときの 色紙の枚数は、x を使って？', a: '5x＋12（枚）', sub: '5枚ずつ x人に くばって 12枚あまる　5×x＋12', dur: 2.5,
+        b: { t: '(1) 5x＋12（枚）', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0; tape3(D, 6, false); CH.text(D, D.W * .5, (D.info.top || 0) + D.H * .12, '5x＋12', { col: C.yel, size: CH.fs(D, 1.4), num: true, a: CH.smooth(0, .4, t) }); } },
+      { tag: '類題3', q: '(2) 方程式をつくり、人数を求めなさい', a: '8人', sub: '7枚ずつだと 4枚たりないので、色紙は 7x−4（枚）。5x＋12＝7x−4　−2x＝−16　x＝8', dur: 4,
+        b: { t: '(2) 5x＋12＝7x−4　−2x＝−16　x＝<b>8（人）</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0; tape3(D, 6, false); var s = CH.fs(D, 1.2), y = (D.info.top || 0) + D.H * .1;
+          CH.text(D, D.W * .5, y, '5x＋12 ＝ 7x−4', { col: C.chalk, size: s, num: true, a: CH.smooth(0, .3, t) });
+          CH.text(D, D.W * .5, y + s * 1.6, 'x ＝ 8', { col: C.yel, size: s * 1.2, num: true, a: CH.smooth(.5, .8, t) });
+        } },
+      { tag: '類題3', q: '(3) 色紙は全部で 何枚？', a: '52枚', sub: '5×8＋12＝52（7×8−4＝52 でも同じ。問題に あっている）', dur: 3,
+        b: { t: '(3) 5×8＋12＝<b>52（枚）</b>　7×8−4＝52 で一致', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0; tape3(D, 8, true); } },
+      { tag: '類題3', q: '(4) (y−12)÷5＝(y＋4)÷7 で 人数が表せるわけは？', a: '色紙を y枚とすると、5枚ずつで 12枚あまるときの人数は (y−12)÷5、7枚ずつで 4枚たりないときの人数は (y＋4)÷7 で、どちらも 同じ人数を表しているから、等号で結べる。', sub: 'y−12 は くばった枚数、y＋4 は 全員に くばるのに必要な枚数。それぞれを 5・7 でわると 人数。y＝52 で 40÷5＝8、56÷7＝8', dur: 6,
+        b: { t: '(4) (y−12)÷5 と (y＋4)÷7 は どちらも <b>人数</b>を表す → 等しい。y＝52 で どちらも 8', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Tp = tape3(D, 8, true), R = Tp.R, s = CH.fs(D, .95), x5 = R.x0 + R.w * 40 / 56, a = CH.smooth(0, .3, t), b2 = CH.smooth(.4, .7, t);
+          CH.text(D, R.x1, Tp.y1 - s * 1.5, '(y−12)÷5 ＝ 人数', { col: C.blue, size: s, a: a, align: 'right' });
+          CH.text(D, R.x0 + R.w * 28 / 56, Tp.y2 + Tp.h + s * 3, '(y＋4)÷7 ＝ 人数', { col: C.orange, size: s, a: b2 });
+        } },
+      /* ---------------- 類題4 ---------------- */
+      { tag: '類題4', bh: '類題4　方程式の解き方（まちがいを見つける）', q: 'ゆみさんは、方程式 4(x−3)＝x＋9 を、次のように解いた。',
+        notes: ['(1) この方程式の 正しい解を求めなさい。', '(2) ゆみさんの解き方は、①〜⑤の どの行から まちがっているか。', '(3) ゆみさんの まちがいを、どう直せばよいか。まちがいの原因を 説明しなさい。', '(4) (1) で求めた解が、方程式の解として あっているか 確かめなさい。'],
+        draw: function (D) { yumi(D, {}); } },
+      { tag: '類題4', q: '(1) 正しい解は？', a: 'x＝7', sub: '4(x−3)＝x＋9　4x−12＝x＋9　4x−x＝9＋12　3x＝21　x＝7', dur: 3.5,
+        b: { t: '(1) 4x−12＝x＋9　3x＝21　x＝<b>7</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Y = yumi(D, {}), s = CH.fs(D, 1.2), R = CH.box(D, { l: .56, r: .04, t: .2, b: .16 }), L = ['4(x−3)＝x＋9', '4x−12＝x＋9', '4x−x＝9＋12', '3x＝21', 'x＝7'];
+          CH.text(D, R.x0, Y.y0 - Y.lh * .9, '正しい解き方', { col: C.green, align: 'left', size: CH.fs(D, .9) });
+          L.forEach(function (e, i) { CH.text(D, R.x0, Y.y0 + (i + .6) * Y.lh, e, { align: 'left', size: s, num: true, col: i === 4 ? C.yel : C.green, a: CH.smooth(i * .17, i * .17 + .17, t) }); });
+        } },
+      { tag: '類題4', q: '(2) ①〜⑤の どの行から まちがっている？', a: '②', sub: '①から②に なるとき、かっこの はずし方が まちがっている', dur: 2.5,
+        b: { t: '(2) <b>②</b> の行から', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0; yumi(D, { bad: t > .2 ? 1 : -1 }); } },
+      { tag: '類題4', q: '(3) まちがいの原因を 説明しなさい', a: 'かっこをはずすとき、4 を x にだけかけて、−3 にかけていない。4(x−3) は 4x−12 になるのに、4x−3 としている。', sub: '分配法則：4(x−3)＝4×x＋4×(−3)＝4x−12。かっこの中の すべての項に 4 をかける', dur: 5,
+        b: { t: '(3) 4 を −3 にも かける。4(x−3)＝<b>4x−12</b>（4x−3 は まちがい）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Y = yumi(D, { bad: 1 }), s = CH.fs(D, 1.15), R = CH.box(D, { l: .56, r: .04, t: .2, b: .16 }), x = R.x0, y = Y.y0 + Y.lh * 1;
+          CH.text(D, x, y, '4(x−3)', { align: 'left', size: s, num: true, col: C.chalk });
+          CH.text(D, x, y + s * 1.7, '＝4×x ＋ 4×(−3)', { align: 'left', size: s, num: true, col: C.orange, a: CH.smooth(0, .3, t) });
+          CH.text(D, x, y + s * 3.4, '＝4x−12', { align: 'left', size: s, num: true, col: C.green, a: CH.smooth(.35, .65, t) });
+          CH.text(D, x, y + s * 5.2, '「4x−3」は −3 に 4 を', { align: 'left', size: s * .85, col: C.pink, a: CH.smooth(.7, .9, t) });
+          CH.text(D, x, y + s * 6.4, 'かけ忘れている', { align: 'left', size: s * .85, col: C.pink, a: CH.smooth(.7, .9, t) });
+        } },
+      { tag: '類題4', q: '(4) x＝7 が 解として あっているか 確かめなさい', a: '左辺 4(7−3)＝16、右辺 7＋9＝16 で 等しいので あっている', sub: 'x に 7 を代入して 両辺を くらべる', dur: 3.5,
+        b: { t: '(4) 左辺 4(7−3)＝16、右辺 7＋9＝16 → <b>あっている</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .1, r: .1, t: .18, b: .16 }), s = CH.fs(D, 1.25), cw = R.w * .4;
+          CH.text(D, R.cx, R.y0, '4(x−3) ＝ x＋9  に x＝7 を入れる', { size: s, num: true, col: C.chalk });
+          CH.card(D, R.cx - cw * .62, R.cy, cw, s * 3, '4×(7−3)＝4×4＝16', { col: C.blue, size: s, a: CH.smooth(.15, .45, t) });
+          CH.card(D, R.cx + cw * .62, R.cy, cw, s * 3, '7＋9＝16', { col: C.orange, size: s, a: CH.smooth(.3, .6, t) });
+          CH.text(D, R.cx, R.cy, '＝', { size: s * 1.5, col: C.yel, a: CH.smooth(.65, .85, t) });
+          CH.text(D, R.cx, R.y1 - s, '左辺 ＝ 右辺', { size: s * 1.1, col: C.yel, a: CH.smooth(.7, .9, t) });
+        } },
+      /* ---------------- 類題5 ---------------- */
+      { tag: '類題5', bh: '類題5　ジャンプの記録（正負の数の読み取り）', q: 'A〜F の 6人が 立ちはばとびを した。150cm を基準にして、それより 長い記録を正の数、短い記録を負の数で、基準との差を 表にまとめた。',
+        notes: ['(1) Dさんの記録は 何cm か。', '(2) いちばん長い記録と いちばん短い記録の 差は 何cm か。', '(3) 6人の記録の平均は 何cm か。', '(4) ゆきさんは「基準との差の平均が 正の数だから、6人のうち 半分より多くの人が 150cmより 長く とんだ」と言った。正しいか。表をもとに、わけを説明しなさい。'],
+        draw: function (D) { rec5(D, {}); } },
+      { tag: '類題5', q: '(1) Dさんの記録は？', a: '147cm', sub: 'Dさんの差は −3cm。150＋(−3)＝147', dur: 2.5,
+        b: { t: '(1) 150＋(−3)＝<b>147（cm）</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0; rec5(D, { hl: [3], col: C.yel, rec: t > .3 }); } },
+      { tag: '類題5', q: '(2) いちばん長い記録と短い記録の差は？', a: '21cm', sub: 'いちばん長いのは Cさん(＋12)、短いのは Fさん(−9)。12−(−9)＝21', dur: 3,
+        b: { t: '(2) 12−(−9)＝<b>21（cm）</b>（Cさんと Fさん）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, G = rec5(D, { hl: [2, 5], col: C.orange }), y = G.NR.y1 - G.s * 8.4, a = CH.smooth(.1, .5, t);
+          CH.arrow(D, G.X(-9), y, G.X(12), y, { col: C.orange, a: a, w: 2.4 }); CH.arrow(D, G.X(12), y, G.X(-9), y, { col: C.orange, a: a, w: 2.4 });
+          CH.text(D, G.X(1.5), y - G.s * 1.2, '12−(−9) ＝ 21cm', { col: C.orange, a: CH.smooth(.4, .7, t), size: G.s * 1.1, num: true });
+        } },
+      { tag: '類題5', q: '(3) 6人の記録の平均は？', a: '150.5cm', sub: '差の平均＝(8−5＋12−3＋0−9)÷6＝3÷6＝0.5　150＋0.5＝150.5', dur: 4,
+        b: { t: '(3) 差の平均 3÷6＝0.5　150＋0.5＝<b>150.5（cm）</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, G = rec5(D, {}), a = CH.smooth(.1, .4, t);
+          CH.line(D, G.X(.5), G.NR.y1, G.X(.5), G.NR.y1 - G.s * 7, { col: C.yel, dash: true, w: 2.4, a: a });
+          CH.text(D, G.X(.5) + G.s * .6, G.NR.y1 - G.s * 7.5, '差の平均 ＋0.5', { col: C.yel, a: a, size: G.s, align: 'left' });
+          CH.text(D, G.NR.cx, G.NR.y1 - G.s * 9.6, '(8−5＋12−3＋0−9)÷6 ＝ 3÷6 ＝ 0.5', { col: C.chalk, a: CH.smooth(.4, .7, t), size: G.s, num: true });
+        } },
+      { tag: '類題5', q: '(4) 「差の平均が正だから、半分より多い人が 150cm より長い」は正しい？', a: '正しくない', sub: '基準より長いのは Aさん(＋8)と Cさん(＋12)の 2人だけで、6人の半分(3人)より少ない。Cさんの＋12 のような大きな値が、平均を 正の数に している', dur: 5,
+        b: { t: '(4) <b>正しくない</b>　150cm より長いのは A・C の 2人だけ（6人の半分より少ない）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, G = rec5(D, { hl: t > .2 ? [0, 2] : [], col: C.blue }), a = CH.smooth(.2, .5, t);
+          CH.text(D, G.X(5), G.NR.y1 - G.s * 4.2, '150cm より長い人', { col: C.blue, size: G.s * .95, a: a });
+          CH.text(D, G.X(5), G.NR.y1 - G.s * 5.6, 'A・C の 2人だけ', { col: C.blue, size: G.s * .95, a: a });
+          CH.text(D, G.X(-4), G.NR.y1 - G.s * 5.6, '短い人 3人（B・D・F）、同じ 1人（E）', { col: C.pink, size: G.s * .8, a: CH.smooth(.5, .8, t) });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

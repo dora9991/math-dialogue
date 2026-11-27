@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>類題 中3 標本調査 5題</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 学力推移調査型の類題　中3 標本調査とデータの活用（5題）。
+   5つの型：全数調査と標本調査の見分け／無作為抽出の方法の適否／印をつけて戻す方法での個数の推定／
+   標本の大きさと標本平均のばらつき（箱ひげ図）／標本のヒストグラムから母集団を推定し、言えることの正誤を判断。
+   場面と数値はすべて自作。答えはページの中で計算し直して確かめている（CH.check）。 */
+(function () {
+  var C = CH.C;
+  var LET = ['ア', 'イ', 'ウ', 'エ'];
+
+  /* 類題1　全数調査と標本調査 */
+  var I1 = ['学校で行う、全校生徒の 視力検査', '工場でつくった 缶詰の、中身の 品質検査', '空港で、飛行機に乗る 全員の 手荷物検査', '湖の水の、よごれぐあいの 調査'];
+  var S1 = [false, true, false, true];
+  CH.check(S1.filter(function (x) { return x; }).length === 2 && 200 < 2400, '類題1');
+  /* 類題2　無作為抽出 */
+  var I2 = ['1年生の 名簿から、くじで 50人を選ぶ。', '全校生徒の 名簿に 1〜600 の番号をつけ、乱数さいで 出た番号の生徒 50人を選ぶ。', '朝、校門の前で、先に登校してきた 50人に聞く。', '運動部の生徒の中から、50人を選ぶ。'];
+  CH.check(600 * 18 === 10800 && 10800 / 60 === 180, '類題2');
+  /* 類題3　池の魚（印をつけて戻す） */
+  var M3 = 40, N3 = 60, K3a = 8, K3b = 12, E3a = M3 * N3 / K3a, E3b = M3 * N3 / K3b, E3c = M3 * (N3 * 2) / (K3a + K3b);
+  CH.check(E3a === 300 && E3b === 200 && E3c === 240 && CH.near(K3a / N3, 2 / 15), '類題3');
+  var MK_A = [3, 11, 17, 24, 30, 38, 45, 52], MK_B = [1, 6, 10, 15, 21, 27, 33, 36, 42, 47, 53, 58];
+  CH.check(MK_A.length === K3a && MK_B.length === K3b, '類題3 図');
+  var rf = CH.rng(11), POND = [];
+  for (var i3 = 0; i3 < 110; i3++) { var rr = Math.sqrt(rf()) * .88, aa = rf() * 6.2832; POND.push([rr * Math.cos(aa), rr * Math.sin(aa), i3 < 40]); }
+  /* 類題4　標本の大きさと標本平均のばらつき（箱ひげ図） */
+  var B10 = [24, 28, 31, 34, 38], B40 = [28, 30, 31, 32, 34];
+  CH.check(B10[4] - B10[0] === 14 && B10[3] - B10[1] === 6 && B40[3] - B40[1] === 2 && B40[4] - B40[0] === 6, '類題4');
+  /* 類題5　標本のヒストグラムから母集団を推定 */
+  var E5 = [0, 10, 20, 30, 40, 50], H5 = [6, 17, 16, 8, 3], CU5 = CH.cum(H5), P5 = 500;
+  var r20 = (H5[2] + H5[3] + H5[4]) / 50;
+  CH.check(CH.sum(H5) === 50 && CH.near(r20, .54) && Math.round(P5 * r20) === 270 && CU5[1] < 25 && CU5[2] >= 26, '類題5');
+
+  /* ---- 道具 ---- */
+  function cards(D, items, o) {
+    o = o || {};
+    var R = CH.box(D, { l: .06, r: .06, t: .06, b: .08 }), s = CH.fs(D), n = items.length, h = Math.min(R.h / n, s * 3.6), y0 = R.y0 + (R.h - h * n) / 2, tw = o.tag ? R.w * .2 : 0;
+    items.forEach(function (txt, i) {
+      var cy = y0 + h * (i + .5), col = o.hl ? o.hl(i) : null, al = o.alpha ? o.alpha(i) : 1;
+      CH.fillRect(D, R.x0, cy - h * .45, R.x1, cy + h * .45, { fill: col ? 'rgba(255,255,255,.07)' : 'rgba(242,240,230,.05)', stroke: col || 'rgba(242,240,230,.4)', sw: col ? 2.4 : 1.4, a: al });
+      CH.circle(D, R.x0 + h * .5, cy, h * .3, { stroke: col || C.chalk, sw: 2, a: al });
+      CH.text(D, R.x0 + h * .5, cy + 1, LET[i], { col: col || C.chalk, a: al, size: s });
+      var lines = CH.wrap(D, txt, R.w - h * 1.1 - tw, s * .95), lh = s * 1.25, ty = cy - lh * (lines.length - 1) / 2;
+      lines.forEach(function (ln, j) { CH.text(D, R.x0 + h * 1.0, ty + j * lh, ln, { align: 'left', size: s * .95, col: col || C.chalk, a: al }); });
+      var tg = o.tag ? o.tag(i) : null; if (tg) CH.text(D, R.x1 - s * .5, cy, tg[0], { align: 'right', col: tg[1], size: s, a: al * (tg[2] == null ? 1 : tg[2]) });
+    });
+    return { R: R, h: h, y0: y0 };
+  }
+  function ratio(D, x, y, w, parts) { /* 帯：parts [{v,col,txt}] */ CH.tape(D, x, y, w, CH.fs(D) * 1.8, parts, CH.sum(parts.map(function (p) { return p.v; }))); }
+  function hist5(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .1, r: .06, t: .12, b: .16 });
+    var Ax = CH.axes(D, R, { x: [0, 50], y: [0, 20], xt: E5, yt: [0, 4, 8, 12, 16, 20], xl: '（分）', yl: '（人）' });
+    CH.bars(D, Ax, E5, H5, { labels: true, hl: o.hl, alpha: o.alpha }); return Ax;
+  }
+  function boxp(D, X, st, y, h, col, fill, a, lab, lx) {
+    var s = CH.fs(D);
+    CH.line(D, X(st[0]), y, X(st[1]), y, { col: col, w: 2.4, a: a }); CH.line(D, X(st[3]), y, X(st[4]), y, { col: col, w: 2.4, a: a });
+    CH.line(D, X(st[0]), y - h * .3, X(st[0]), y + h * .3, { col: col, w: 2.4, a: a }); CH.line(D, X(st[4]), y - h * .3, X(st[4]), y + h * .3, { col: col, w: 2.4, a: a });
+    CH.fillRect(D, X(st[1]), y - h / 2, X(st[3]), y + h / 2, { fill: fill, stroke: col, sw: 2.4, a: a });
+    CH.line(D, X(st[2]), y - h / 2, X(st[2]), y + h / 2, { col: col, w: 3.4, a: a });
+    CH.text(D, lx, y - h * .95, lab, { col: col, align: 'left', a: a, size: s * .95 });
+  }
+  function box4(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .08, r: .08, t: .1, b: .14 }), s = CH.fs(D), t = o.t || 0, hh = Math.min(R.h * .15, s * 2.6);
+    var yb = R.y1 - s * 3.2, X = CH.numline(D, CH.rect(R.x0, yb, R.x1, yb), 20, 40, 1, { lab: 2, unit: '（m）' });
+    var y1 = R.y0 + R.h * .24, y2 = R.y0 + R.h * .6;
+    CH.line(D, X(31), y1 - hh * 1.5, X(31), yb, { col: C.green, dash: true, w: 2, a: .8 }); CH.text(D, X(31), y1 - hh * 1.8, '母集団の平均 31m', { col: C.green, size: s * .9 });
+    boxp(D, X, B10, y1, hh, C.blue, 'rgba(154,216,255,.28)', o.a1 == null ? 1 : o.a1, '標本の大きさ 10', R.x0);
+    boxp(D, X, B40, y2, hh, C.orange, 'rgba(255,192,120,.28)', o.a2 == null ? 1 : o.a2, '標本の大きさ 40', R.x0);
+    return { X: X, y1: y1, y2: y2, hh: hh, s: s };
+  }
+  function panel(D, R, marks, col, a, lab) {
+    var set = {}; marks.forEach(function (m) { set[m] = 1; });
+    CH.fillRect(D, R.x0, R.y0, R.x1, R.y1, { stroke: 'rgba(242,240,230,.5)', sw: 1.6, a: a });
+    CH.grid(D, CH.rect(R.x0 + R.w * .04, R.y0 + R.h * .04, R.x1 - R.w * .04, R.y1 - R.h * .04), 60, { cols: 10, on: function (i) { return set[i] ? col : null; }, a: a, k: .34 });
+    CH.text(D, R.cx, R.y0 - CH.fs(D) * .9, lab, { a: a, size: CH.fs(D) * .9 });
+  }
+  function pond(D, R, a) {
+    var cx = R.cx, cy = R.cy, rx = R.w / 2, ry = R.h / 2, P = [], s = CH.fs(D);
+    for (var k = 0; k < 40; k++) { var th = k / 40 * 6.2832; P.push([cx + rx * Math.cos(th), cy + ry * Math.sin(th)]); }
+    CH.poly(D, P, { fill: 'rgba(100,170,255,.12)', stroke: C.blue, sw: 2.2, a: a });
+    POND.forEach(function (p) { CH.circle(D, cx + p[0] * rx * .92, cy + p[1] * ry * .92, s * .2, { fill: p[2] ? C.yel : 'rgba(242,240,230,.5)', a: a }); });
+  }
+  function fish3(D, k, t) {
+    var R = CH.box(D, { l: .04, r: .04, t: .1, b: .12 }), s = CH.fs(D), two = k >= 3;
+    if (!two) {
+      var pr = CH.rect(R.x0, R.y0 + R.h * .12, R.x0 + R.w * .44, R.y0 + R.h * .78); pond(D, pr, 1);
+      CH.text(D, pr.cx, pr.y0 - s * 1.1, '池（印をつけた 40匹を もどした）', { size: s * .9 }); CH.circle(D, pr.x0 + s * .6, pr.y1 + s * 1.4, s * .25, { fill: C.yel }); CH.text(D, pr.x0 + s * 1.2, pr.y1 + s * 1.4, '印つきの魚', { align: 'left', size: s * .85, col: C.yel });
+      var qr = CH.rect(R.x1 - R.w * .5, R.y0 + R.h * .14, R.x1, R.y0 + R.h * .78); panel(D, qr, MK_A, C.yel, 1, 'つかまえた 60匹');
+      CH.arrow(D, pr.x1 + s * .5, pr.cy, qr.x0 - s * .5, qr.cy, { col: 'rgba(242,240,230,.7)', w: 2.4 });
+      if (k === 0) CH.text(D, qr.cx, qr.y1 + s * 1.4, '印のついた魚は 8匹', { col: C.yel, a: CH.smooth(.2, .5, t), size: s });
+      if (k === 1 && t > .3) CH.text(D, R.cx, R.y1 + s * .2, '40 : □ ＝ 8 : 60', { col: C.yel, a: CH.smooth(.3, .6, t), size: s * 1.2 });
+      if (k === 2 && t > 0) { CH.text(D, R.cx, R.y1 - s * 1.4, '8 ÷ 60 ＝ 2/15', { col: C.yel, a: CH.smooth(.1, .5, t), size: s * 1.2 }); }
+    } else {
+      var half = R.w * .46, pa = CH.rect(R.x0, R.y0 + R.h * .1, R.x0 + half, R.y0 + R.h * .66), pb = CH.rect(R.x1 - half, R.y0 + R.h * .1, R.x1, R.y0 + R.h * .66);
+      panel(D, pa, MK_A, C.yel, 1, '1回目 60匹　印 8匹'); panel(D, pb, MK_B, C.yel, 1, '2回目 60匹　印 12匹');
+      if (k === 3) { var a = CH.smooth(0, .4, t); CH.text(D, pa.cx, pa.y1 + s * 1.6, '40 : □ ＝ 8 : 60 → 300匹', { col: C.pink, a: a, size: s }); CH.text(D, pb.cx, pb.y1 + s * 1.6, '40 : □ ＝ 12 : 60 → 200匹', { col: C.pink, a: a, size: s }); CH.text(D, R.cx, pa.y1 + s * 3.6, '取り出すたびに 標本は ちがう → 推定の数も ちがう', { col: C.yel, a: CH.smooth(.5, .8, t), size: s * .95 }); }
+      if (k === 4) { var a4 = CH.smooth(0, .4, t); CH.line(D, pa.x0, pa.y1 + s * 1.2, pb.x1, pa.y1 + s * 1.2, { col: C.green, w: 2.4, a: a4 }); CH.text(D, R.cx, pa.y1 + s * 2.2, 'あわせて 120匹　印 20匹', { col: C.green, a: a4, size: s }); CH.text(D, R.cx, pa.y1 + s * 3.8, '40 : □ ＝ 20 : 120 → 240匹', { col: C.yel, a: CH.smooth(.4, .8, t), size: s * 1.1 }); }
+    }
+  }
+
+  K3.run({
+    no: '類題', title: '学力推移調査型の類題　中3 標本調査とデータの活用（5題）', flat: true, hint: '',
+    links: [{ href: '../kokuban/index.html', label: '目次' }],
+    steps: [
+      /* ---------------- 類題1 ---------------- */
+      { tag: '類題1', bh: '類題1　全数調査と標本調査', q: '次のア〜エの調査について、あとの問いに答えなさい。',
+        notes: ['(1) 標本調査を行うのが ふさわしいものを、ア〜エからすべて選びなさい。', '(2) イの調査で、全数調査ではなく標本調査を行う理由を説明しなさい。', '(3) ある市の 中学3年生 2400人の中から 無作為に 200人を選び、1日の スマートフォンの使用時間を調べた。母集団は何か。また、標本の大きさはいくつか。', '(4) ウの調査を、標本調査ではなく全数調査で行う理由を説明しなさい。'],
+        draw: function (D) { cards(D, I1); } },
+      { tag: '類題1', q: '(1) 標本調査がふさわしいのは？', a: 'イ・エ', sub: 'イは 調べると 商品にならない。エは 湖の水を すべて調べることは できない。ア・ウは 全員を調べる（全数調査）', dur: 3,
+        b: { t: '(1) 標本調査 → <b>イ・エ</b>　（ア・ウは 全数調査）', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0; cards(D, I1, { tag: function (i) { return [S1[i] ? '標本調査' : '全数調査', S1[i] ? C.yel : 'rgba(242,240,230,.8)', CH.smooth(i * .15, i * .15 + .25, t)]; }, hl: function (i) { return t > .1 && S1[i] ? C.yel : null; } }); } },
+      { tag: '類題1', q: '(2) イで、標本調査を行う理由は？', a: '缶詰を すべて開けて調べると、売る缶詰が なくなってしまうから。', sub: '調べると 商品として 使えなくなる検査は、一部だけを取り出して調べる', dur: 3,
+        b: { t: '(2) すべて調べると <b>売る缶詰が なくなる</b> から、一部を調べる', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, o = cards(D, I1, { alpha: function (i) { return i === 1 ? 1 : .25; }, hl: function (i) { return i === 1 ? C.yel : null; } }); CH.text(D, o.R.cx, o.R.y1 - CH.fs(D) * .2, '開けて 中身を調べると → 売れなくなる', { col: C.pink, a: CH.smooth(.2, .6, t) }); } },
+      { tag: '類題1', q: '(3) 母集団は？　標本の大きさは？', a: '母集団…その市の 中学3年生 2400人全体　標本の大きさ…200', sub: '調べたい集団全体が母集団。取り出した 一部の人数が 標本の大きさ（200）。2400 は 母集団の大きさ', dur: 3,
+        b: { t: '(3) 母集団 ＝ 市の中学3年生 <b>2400人全体</b>　標本の大きさ ＝ <b>200</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .1, r: .1, t: .1, b: .1 }), s = CH.fs(D), rr = Math.min(R.w * .5, R.h) * .5, r = CH.rng(3), a = CH.smooth(0, .3, t), a2 = CH.smooth(.35, .65, t);
+          CH.circle(D, R.cx, R.cy, rr, { stroke: C.blue, sw: 2.6, fill: 'rgba(154,216,255,.07)' });
+          for (var i = 0; i < 260; i++) { var q = Math.sqrt(r()) * .94, th = r() * 6.2832, sel = i < 28; CH.circle(D, R.cx + q * rr * Math.cos(th), R.cy + q * rr * Math.sin(th), s * .2, { fill: sel && t > .35 ? C.yel : 'rgba(242,240,230,.4)' }); }
+          CH.text(D, R.cx - rr - s * .6, R.cy - rr * .5, '母集団', { align: 'right', col: C.blue, a: a, size: s * 1.1 }); CH.text(D, R.cx - rr - s * .6, R.cy - rr * .5 + s * 1.5, '中学3年生 2400人', { align: 'right', col: C.blue, a: a, size: s * .9 });
+          CH.text(D, R.cx + rr + s * .6, R.cy + rr * .3, '標本', { align: 'left', col: C.yel, a: a2, size: s * 1.1 }); CH.text(D, R.cx + rr + s * .6, R.cy + rr * .3 + s * 1.5, '200人（標本の大きさ）', { align: 'left', col: C.yel, a: a2, size: s * .9 });
+        } },
+      { tag: '類題1', q: '(4) ウの調査を 全数調査で行う理由は？', a: '1人でも 見のがすと 危険な物が 持ちこまれるおそれがあり、全員を調べる必要があるから。', sub: 'わずかなもれも ゆるされない調査は 全数調査。標本調査では 調べなかった人の中に 危険な物をもつ人が いるかもしれない', dur: 3.5,
+        b: { t: '(4) 1人の見のがしも ゆるされない → <b>全員を調べる</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, o = cards(D, I1, { alpha: function (i) { return i === 2 ? 1 : .25; }, hl: function (i) { return i === 2 ? C.yel : null; } }); CH.text(D, o.R.cx, o.R.y1 - CH.fs(D) * .2, '調べなかった人に 危険な物が あるかもしれない', { col: C.pink, a: CH.smooth(.2, .6, t) }); } },
+
+      /* ---------------- 類題2 ---------------- */
+      { tag: '類題2', bh: '類題2　無作為に選ぶ方法', q: '生徒 600人の中学校で、全校の 通学時間の 平均を、50人の標本から推定したい。標本の選び方を、ア〜エのように考えた。',
+        notes: ['(1) 標本の選び方として 適切なものを、ア〜エから1つ選びなさい。', '(2) ウが 適切でない理由を説明しなさい。', '(3) 適切な方法で 50人を選んで調べると、通学時間の 平均は 18分だった。全校 600人の 通学時間の合計は、およそ何時間と考えられるか。'],
+        draw: function (D) { cards(D, I2); } },
+      { tag: '類題2', q: '(1) 適切な選び方は？', a: 'イ', sub: '全員に 番号をつけ、乱数さいなどで 偶然にまかせて選べば、どの生徒も 同じ確率で選ばれる（無作為抽出）', dur: 3,
+        b: { t: '(1) <b>イ</b>　番号＋乱数さい → どの生徒も 同じ確率', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0; cards(D, I2, { tag: function (i) { return [i === 1 ? '適切' : 'かたよる', i === 1 ? C.yel : 'rgba(242,240,230,.7)', CH.smooth(i * .12, i * .12 + .25, t)]; }, hl: function (i) { return t > .1 && i === 1 ? C.yel : null; }, alpha: function (i) { return t > .3 && i !== 1 ? .45 : 1; } }); } },
+      { tag: '類題2', q: '(2) ウが 適切でない理由は？', a: '先に登校する人は、家が学校に近い人が多いなど、通学時間が短い人に かたよるおそれがあるから。', sub: '一部の人しか 選ばれない方法では、全校の ようすを 正しく表さない。ほかの時刻に登校する人は 選ばれない', dur: 3.5,
+        b: { t: '(2) 先に着く人は 通学時間が 短い人に <b>かたる</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, o = cards(D, I2, { alpha: function (i) { return i === 2 ? 1 : .25; }, hl: function (i) { return i === 2 ? C.pink : null; } }); CH.text(D, o.R.cx, o.R.y1 - CH.fs(D) * .2, '先に着く人 → 近くに住む人が 多い → 時間が短い', { col: C.pink, a: CH.smooth(.2, .6, t) }); } },
+      { tag: '類題2', q: '(3) 平均 18分 のとき、全校 600人の 合計は 何時間？', a: 'およそ 180時間', sub: '18 × 600 ＝ 10800（分）、10800 ÷ 60 ＝ 180（時間）', dur: 3,
+        b: { t: '(3) 18 × 600 ＝ 10800分 ＝ <b>180時間</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .08, r: .08, t: .14, b: .14 }), s = CH.fs(D), w = R.w, h = s * 1.8, a1 = CH.smooth(0, .3, t), a2 = CH.smooth(.35, .65, t), a3 = CH.smooth(.7, .95, t);
+          CH.text(D, R.cx, R.y0, '標本 50人　平均 18分', { col: C.blue, size: s });
+          CH.tape(D, R.x0, R.y0 + s * 1.4, w * 50 / 600, h, [{ v: 1, col: C.blue, txt: '' }], 1); CH.text(D, R.x0 + w * 50 / 600 + s * .4, R.y0 + s * 1.4 + h / 2, '50人', { align: 'left', size: s * .85, a: a1 });
+          CH.text(D, R.cx, R.y0 + s * 5, '全校 600人', { col: C.yel, size: s, a: a2 }); CH.tape(D, R.x0, R.y0 + s * 6.4, w, h, [{ v: 1, col: C.yel, txt: '18分 × 600人', a: .7 }], 1, { a: a2 });
+          CH.text(D, R.cx, R.y0 + s * 10.4, '10800分 ÷ 60 ＝ 180時間', { col: C.yel, size: s * 1.2, a: a3 });
+        } },
+
+      /* ---------------- 類題3 ---------------- */
+      { tag: '類題3', bh: '類題3　池の魚の数（印をつけて もどす）', q: '池にいる魚の数を調べるため、魚を 40匹つかまえて、全部に印をつけて 池にもどした。よくまざってから 60匹つかまえると、印のついた魚が 8匹いた。',
+        notes: ['(1) つかまえた 60匹の中での、印のついた魚の 割合を、分数で表しなさい。', '(2) 池の魚の数は、およそ何匹と推定できるか。', '(3) 後日、つかまえた魚をすべて もどし、同じ方法で もう一度 60匹つかまえると、印のついた魚は 12匹だった。この結果から 推定すると、(2)とちがう数になる。そうなる理由を説明しなさい。', '(4) 1回目と 2回目をあわせた 120匹の結果から、池の魚の数を推定しなさい。'],
+        draw: function (D) { fish3(D, -1, 0); } },
+      { tag: '類題3', q: '(1) 印のついた魚の割合は？', a: '2/15', sub: '8 ÷ 60 ＝ 8/60 ＝ 2/15（約分する）', dur: 2,
+        b: { t: '(1) 8 ÷ 60 ＝ <b>[2/15]</b>', col: C.yel },
+        draw: function (D) { fish3(D, 2, D.ph ? D.t : 0); } },
+      { tag: '類題3', q: '(2) 池の魚は およそ何匹？', a: 'およそ 300匹', sub: '池全体での 印の割合も 標本と同じと考えて、池の魚を □匹とすると 40 : □ ＝ 8 : 60　□＝40×60÷8＝300', dur: 3,
+        b: { t: '(2) 40 : □ ＝ 8 : 60　□ ＝ 40 × 60 ÷ 8 ＝ <b>300匹</b>', col: C.yel },
+        draw: function (D) { fish3(D, 1, D.ph ? D.t : 0); } },
+      { tag: '類題3', q: '(3) 2回目の 12匹から 推定すると 200匹。(2)とちがう理由は？', a: '標本は 取り出すたびに ちがうので、標本の中の印の数も ちがい、推定される数も ちがってくるから。', sub: '標本調査の結果は 標本によって変わるので、推定は「およそ」の値。(2)は 300匹、2回目は 40 : □ ＝ 12 : 60 より 200匹', dur: 4,
+        b: { t: '(3) 標本は 取るたびに <b>ちがう</b> → 推定も ちがう（300匹と 200匹）', col: C.yel },
+        draw: function (D) { fish3(D, 3, D.ph ? D.t : 0); } },
+      { tag: '類題3', q: '(4) 120匹の結果から 推定すると？', a: 'およそ 240匹', sub: '印のついた魚は 8＋12＝20匹。40 : □ ＝ 20 : 120　□ ＝ 40 × 120 ÷ 20 ＝ 240', dur: 3,
+        b: { t: '(4) 40 : □ ＝ 20 : 120　□ ＝ <b>240匹</b>（標本を大きくした）', col: C.yel },
+        draw: function (D) { fish3(D, 4, D.ph ? D.t : 0); } },
+
+      /* ---------------- 類題4 ---------------- */
+      { tag: '類題4', bh: '類題4　標本の大きさと標本平均のばらつき', q: 'ある中学校の 3年生全員の ボール投げの 記録の平均は 31m である。ここから 標本を無作為に取り出して標本平均を求めることを、標本の大きさ 10と 40のそれぞれで 20回ずつ くり返し、結果を箱ひげ図に表した。',
+        notes: ['箱ひげ図（最小値・第1四分位数・中央値・第3四分位数・最大値）　標本の大きさ 10：24・28・31・34・38　標本の大きさ 40：28・30・31・32・34', '(1) 標本の大きさ 10の 標本平均の 範囲と 四分位範囲を求めなさい。', '(2) 標本の大きさ 40の 四分位範囲を求めなさい。', '(3) 母集団の平均に近い値が得られやすいのは、標本の大きさ 10と 40のどちらか。箱ひげ図の箱の長さに ふれて説明しなさい。', '(4) 「標本の大きさを 40にすれば、標本平均は かならず 31m になる」は正しいか。わけも書きなさい。'],
+        draw: function (D) { box4(D); } },
+      { tag: '類題4', q: '(1) 標本の大きさ 10の 範囲と 四分位範囲は？', a: '範囲 14m、四分位範囲 6m', sub: '範囲 ＝ 38 − 24 ＝ 14、四分位範囲 ＝ 34 − 28 ＝ 6', dur: 3,
+        b: { t: '(1) 範囲 38−24＝<b>14m</b>　四分位範囲 34−28＝<b>6m</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, o = box4(D, { a2: .3 }), s = o.s, a = CH.smooth(0, .3, t), b = CH.smooth(.4, .7, t), y = o.y1 + o.hh * .9;
+          CH.arrow(D, o.X(24), y, o.X(38), y, { col: C.pink, a: a, w: 2.2 }); CH.arrow(D, o.X(38), y, o.X(24), y, { col: C.pink, a: a, w: 2.2 }); CH.text(D, o.X(31), y + s * 1.1, '範囲 14', { col: C.pink, a: a, size: s * .9 });
+          CH.arrow(D, o.X(28), y + s * 2.4, o.X(34), y + s * 2.4, { col: C.yel, a: b, w: 2.2 }); CH.arrow(D, o.X(34), y + s * 2.4, o.X(28), y + s * 2.4, { col: C.yel, a: b, w: 2.2 }); CH.text(D, o.X(31), y + s * 3.5, '四分位範囲 6', { col: C.yel, a: b, size: s * .9 });
+        } },
+      { tag: '類題4', q: '(2) 標本の大きさ 40の 四分位範囲は？', a: '2m', sub: '32 − 30 ＝ 2', dur: 2,
+        b: { t: '(2) 32 − 30 ＝ <b>2m</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, o = box4(D, { a1: .3 }), s = o.s, a = CH.smooth(0, .4, t), y = o.y2 + o.hh * .9;
+          CH.arrow(D, o.X(30), y, o.X(32), y, { col: C.yel, a: a, w: 2.2 }); CH.arrow(D, o.X(32), y, o.X(30), y, { col: C.yel, a: a, w: 2.2 }); CH.text(D, o.X(31), y + s * 1.1, '四分位範囲 2', { col: C.yel, a: a, size: s * .9 });
+        } },
+      { tag: '類題4', q: '(3) 母集団の平均に近い値が得やすいのは？', a: '標本の大きさ 40。箱の長さが 短く、標本平均のちらばりが 小さいから。', sub: '箱の長さ（四分位範囲）は 10では 6、40では 2。標本平均の ちらばりが小さい 40のほうが、31m の近くの値が 得られやすい', dur: 4,
+        b: { t: '(3) <b>標本の大きさ 40</b>　箱が 短い（2 ＜ 6）→ ちらばりが小さい', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, o = box4(D), s = o.s, a = CH.smooth(0, .4, t);
+          CH.line(D, o.X(28), o.y1 + o.hh * .8, o.X(28), o.y2 - o.hh * .8, { col: C.chalk, dash: true, a: a * .6 }); CH.line(D, o.X(34), o.y1 + o.hh * .8, o.X(34), o.y2 - o.hh * .8, { col: C.chalk, dash: true, a: a * .6 });
+          CH.text(D, o.X(31), (o.y1 + o.y2) / 2, '箱が 短い ほど ばらつきが 小さい', { col: C.yel, a: CH.smooth(.3, .7, t), size: s });
+        } },
+      { tag: '類題4', q: '(4) 「大きさ 40なら かならず 31m」は正しい？', a: '正しくない。標本の大きさを 40にしても、標本平均は 31mから 少しはずれることがある。', sub: '40の箱ひげ図でも 最小値 28、最大値 34 で、31m でない値が出ている。大きくするとばらつきは小さくなるが、かならず一致するとは かぎらない', dur: 4,
+        b: { t: '(4) <b>正しくない</b>　40でも 28m〜34m と ばらつく（31 とは かぎらない）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, o = box4(D, { a1: .3 }), s = o.s, a = CH.smooth(0, .4, t), y = o.y2 + o.hh * .9;
+          CH.line(D, o.X(28), o.y2 - o.hh, o.X(28), o.y2 + o.hh, { col: C.pink, w: 3, a: a }); CH.line(D, o.X(34), o.y2 - o.hh, o.X(34), o.y2 + o.hh, { col: C.pink, w: 3, a: a });
+          CH.text(D, o.X(28), y + s * 1.1, '最小 28', { col: C.pink, a: a, size: s * .9 }); CH.text(D, o.X(34), y + s * 1.1, '最大 34', { col: C.pink, a: a, size: s * .9 });
+          CH.text(D, o.X(31), y + s * 2.6, '31m ちょうどの 回ばかりでは ない', { col: C.yel, a: CH.smooth(.4, .8, t), size: s });
+        } },
+
+      /* ---------------- 類題5 ---------------- */
+      { tag: '類題5', bh: '類題5　標本の結果から言えること', q: '生徒 500人の中学校で、無作為に 50人を選び、1日の 読書時間を調べた。ヒストグラムは、その結果である。たとえば 10〜20 の階級は、10分以上 20分未満を表す。',
+        notes: ['(1) 読書時間が 20分以上の 生徒の 相対度数を求めなさい。', '(2) 全校で 読書時間が 20分以上の生徒は、およそ何人と考えられるか。', '(3) 標本の中央値は、どの階級に入っているか。', '(4) ゆうたさんは「(2)の結果から、全校で 20分以上読書する生徒は、ちょうど その人数だ」と言った。正しいか。わけも書きなさい。'],
+        draw: function (D) { hist5(D); } },
+      { tag: '類題5', q: '(1) 20分以上の 相対度数は？', a: '0.54', sub: '16＋8＋3＝27人、27 ÷ 50 ＝ 0.54', dur: 2.5,
+        b: { t: '(1) 16＋8＋3＝27人　27 ÷ 50 ＝ <b>0.54</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Ax = hist5(D, { hl: function (i) { return t > 0 && i >= 2 ? C.orange : null; }, alpha: function (i) { return t > 0 && i < 2 ? .3 : 1; } }); if (t > .3) CH.text(D, Ax.X(36), Ax.Y(17), '27人 ÷ 50人 ＝ 0.54', { col: C.orange, a: CH.smooth(.3, .6, t), size: Ax.s * 1.2 }); } },
+      { tag: '類題5', q: '(2) 全校で 20分以上は およそ何人？', a: 'およそ 270人', sub: '標本の割合 0.54 が 全校でも 同じと考えて、500 × 0.54 ＝ 270', dur: 2.5,
+        b: { t: '(2) 500 × 0.54 ＝ <b>270人</b>（およそ）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .08, r: .08, t: .2, b: .2 }), s = CH.fs(D), w = R.w, h = s * 2;
+          CH.text(D, R.x0, R.y0 - s * 1.2, '標本 50人', { align: 'left', size: s * .9, col: C.blue }); ratio(D, R.x0, R.y0, w, [{ v: 23, col: C.blue, txt: '20分未満 23人', a: .4 }, { v: 27, col: C.orange, txt: '20分以上 27人' }]);
+          var k = CH.smooth(.2, .6, t); CH.text(D, R.x0, R.y0 + s * 4.2, '全校 500人', { align: 'left', size: s * .9, col: C.yel, a: k });
+          CH.tape(D, R.x0, R.y0 + s * 5.4, w, h, [{ v: 46, col: C.blue, txt: '', a: .4 }, { v: 54, col: C.orange, txt: '20分以上 およそ 270人' }], 100, { a: k });
+          CH.text(D, R.cx, R.y1 + s * 1.5, '0.54 を 全校に あてはめる', { col: C.yel, a: CH.smooth(.6, .9, t) });
+        } },
+      { tag: '類題5', q: '(3) 標本の中央値が 入る階級は？', a: '20分以上 30分未満', sub: '50人の中央値は 25番目と 26番目の平均。小さいほうから 数えると 6人、23人、39人。25番目も 26番目も 20〜30 の階級', dur: 3.5,
+        b: { t: '(3) 累積 6・23・39 → 25・26番目は <b>20〜30分</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Ax = hist5(D, { hl: function (i) { return t > .5 && i === 2 ? C.pink : null; } }), s = Ax.s;
+          CU5.forEach(function (c, i) { CH.text(D, Ax.X((E5[i] + E5[i + 1]) / 2), Ax.Y(H5[i]) + s * 1.1, c + '人', { col: C.green, a: CH.smooth(i * .1, i * .1 + .2, t), size: s * .9, num: true, outline: 'rgba(20,30,24,.85)' }); });
+          CH.text(D, Ax.X(35), Ax.Y(19), '小さいほうからの 人数', { col: C.green, a: CH.smooth(0, .15, t), size: s });
+          if (t > .5) CH.text(D, Ax.X(35), Ax.Y(17), '25・26番目 → 20〜30分', { col: C.pink, a: CH.smooth(.5, .75, t), size: s });
+        } },
+      { tag: '類題5', q: '(4) 「全校で 20分以上は ちょうど 270人」は正しい？', a: '正しくない。270人は 標本から推定した およその数だから。', sub: '標本調査の結果は、取り出す標本によって 変わる。270人は 推定した値で、実際の人数と 一致するとは かぎらない', dur: 3.5,
+        b: { t: '(4) <b>正しくない</b>　270人は 標本からの <b>推定</b>（およその数）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .08, r: .08, t: .14, b: .14 }), s = CH.fs(D), X = CH.numline(D, CH.rect(R.x0, R.cy + s * 3, R.x1, R.cy + s * 3), 200, 340, 10, { lab: 20, unit: '（人）' });
+          var est = [248, 262, 270, 281, 296, 264, 274, 255, 288, 270, 279, 291];
+          CH.dots(D, X, R.cy + s * 3, est, { r: s * .45, col: function (i, v) { return v === 270 ? C.yel : C.blue; }, alpha: function (i) { return CH.smooth(i * .04, i * .04 + .1, t); } });
+          CH.text(D, R.cx, R.y0 + s, '別の 50人を選ぶたびの 推定', { size: s, col: 'rgba(242,240,230,.85)', a: CH.smooth(0, .3, t) });
+          CH.text(D, R.cx, R.y0 + s * 2.6, '推定の人数は 標本ごとに ちがう', { col: C.yel, size: s, a: CH.smooth(.55, .85, t) });
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

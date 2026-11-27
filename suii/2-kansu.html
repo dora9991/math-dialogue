@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>一次関数 類題5題</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 中2 一次関数　学力推移調査型の類題（5題）。
+   5つの型（2つの料金プランの比較と交点の意味／長方形の辺上を動く点と面積の変域／実験データを一次関数とみなして予測／
+   出発の時刻がちがう2人の道のりと出会い／2直線の交点と連立方程式）を、場面と数値をすべて自作して作った。
+   答えはページの中で計算し直して確かめている（CH.check）。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)';
+
+  /* 類題1　データ通信プラン　P y＝200x＋1000、Q y＝100x＋1600、交点 (6, 2200) */
+  var P1 = function (x) { return 200 * x + 1000; }, Q1 = function (x) { return 100 * x + 1600; };
+  CH.check((2200 - 1600) / 6 === 100 && Q1(0) === 1600 && Q1(6) === 2200 && P1(6) === 2200 && 200 * 6 + 1000 === 100 * 6 + 1600 && P1(2) < Q1(2) && P1(8) === 2600 && Q1(8) === 2400 && P1(8) - Q1(8) === 200, '類題1');
+  /* 類題2　長方形 AB＝6、BC＝10、P は毎秒 2cm で B→C→D、△ABP の面積 */
+  var AB2 = 6, BC2 = 10, V2 = 2, T1 = BC2 / V2, T2 = (BC2 + AB2) / V2;
+  function area2(x) { return x <= T1 ? .5 * AB2 * V2 * x : .5 * AB2 * BC2; }
+  CH.check(T1 === 5 && T2 === 8 && area2(3) === 18 && 6 * 4.5 === 27 && area2(5) === 30 && area2(8) === 30 && area2(4.5) === 27 && .5 * AB2 * BC2 === 30, '類題2');
+  /* 類題3　水温　表は y＝7x＋18 に近い。(0, 18) と (5, 53) を通る直線 */
+  var X3 = [0, 1, 2, 3, 4, 5], Y3 = [18, 25, 31, 40, 46, 53], L3 = function (x) { return 7 * x + 18; };
+  CH.check((Y3[5] - Y3[0]) / 5 === 7 && L3(0) === Y3[0] && L3(5) === Y3[5] && L3(10) === 88 && L3(15) === 123 && Math.abs(L3(2) - Y3[2]) <= 1 && Math.abs(L3(3) - Y3[3]) <= 1 && Math.ceil((100 - 18) / 7) === 12, '類題3');
+  /* 類題4　兄 y＝80x、弟 y＝−60x＋2100（x≧5）、出会い 15分後・1200m */
+  var A4 = function (x) { return 80 * x; }, B4 = function (x) { return -60 * x + 2100; };
+  CH.check(B4(5) === 1800 && B4(20) === 900 && (900 - 1800) / (20 - 5) === -60 && 80 * 15 === B4(15) && A4(15) === 1200 && A4(15) + 60 * (15 - 5) === 1800 && 1800 / 80 === 22.5, '類題4');
+  /* 類題5　ℓ y＝−2x＋8（(1, 6)・(3, 2) を通る）、m x−y＝1（y＝x−1）、交点 (3, 2)、三角形 (1, 0)(4, 0)(3, 2) */
+  var L5 = function (x) { return -2 * x + 8; }, M5 = function (x) { return x - 1; };
+  CH.check(L5(1) === 6 && L5(3) === 2 && (2 - 6) / (3 - 1) === -2 && M5(3) === 2 && 3 - 2 === 1 && L5(3) === M5(3) && L5(4) === 0 && M5(1) === 0 && .5 * (4 - 1) * 2 === 3, '類題5');
+
+  function full(D) { return CH.box(D, { l: .02, r: .02, t: .02, b: .02 }); }
+  function lab(D, Pl, x, y, t, o) { o = o || {}; CH.text(D, Pl.X(x), Pl.Y(y), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
+  function glow(D, Pl, p, col, a) { CH.circle(D, Pl.X(p[0]), Pl.Y(p[1]), CH.fs(D, .3) * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
+  /* 第1象限のグラフ。o：x・y（範囲）、sx・sy（グリッド）、lx・ly（目もりの字）、ux・uy（単位） */
+  function graph(D, R, o) {
+    var s = CH.fs(D, .72), Rp = CH.rect(R.x0 + s * 3.6, R.y0 + s * 2, R.x1 - s * 2.8, R.y1 - s * 1.8);
+    var Pl = CH.plane(D, Rp, { x: o.x, y: o.y, fit: false, stepX: o.sx, stepY: o.sy, nums: false }), x, y;
+    CH.text(D, Pl.X(0) - s * .7, Pl.Y(0) + s * .9, 'O', { size: s, num: true });
+    for (x = o.lx; x <= o.x[1] + 1e-9; x += o.lx) { CH.line(D, Pl.X(x), Pl.Y(0) - 4, Pl.X(x), Pl.Y(0) + 4, { w: 1.4 }); CH.text(D, Pl.X(x), Pl.Y(0) + s, String(x), { size: s, num: true }); }
+    for (y = o.ly; y <= o.y[1] + 1e-9; y += o.ly) { CH.line(D, Pl.X(0) - 4, Pl.Y(y), Pl.X(0) + 4, Pl.Y(y), { w: 1.4 }); CH.text(D, Pl.X(0) - s * .6, Pl.Y(y), String(y), { size: s, num: true, align: 'right' }); }
+    if (o.ux) CH.text(D, Pl.R.x1 + s * 1.2, Pl.Y(0) + s * 2.1, o.ux, { size: s, col: 'rgba(242,240,230,.75)', align: 'right' });
+    if (o.uy) CH.text(D, Pl.X(0) + s * 1.6, Pl.R.y0 - s * .8, o.uy, { size: s, col: 'rgba(242,240,230,.75)', align: 'left' });
+    return Pl;
+  }
+  /* 横長なら左右、縦長なら上下に分ける */
+  function fit2(D, k, kn) {
+    var R = full(D);
+    if (D.W > D.H * .9) { var x = R.x0 + R.w * k; return [CH.rect(R.x0, R.y0, x, R.y1), CH.rect(x + R.w * .01, R.y0, R.x1, R.y1)]; }
+    var y = R.y0 + R.h * kn; return [CH.rect(R.x0, R.y0, R.x1, y), CH.rect(R.x0, y + 4, R.x1, R.y1)];
+  }
+  function dotv(D, Pl, x, y, col, a, r) { CH.pt(D, Pl, x, y, { col: col, a: a, r: r }); }
+  function guide(D, Pl, x, y, col, a) { CH.pseg(D, Pl, [x, 0], [x, y], { col: col, dash: true, a: a }); CH.pseg(D, Pl, [0, y], [x, y], { col: col, dash: true, a: a }); }
+
+  /* ================= 類題1 ================= */
+  var G1 = { x: [0, 10], y: [0, 3200], sx: 1, sy: 200, lx: 1, ly: 400, ux: '（GB）', uy: '（円）' };
+  function plan1(D, o) {
+    o = o || {}; var Pl = graph(D, full(D), G1);
+    CH.fn(D, Pl, P1, { col: C.yel, w: 3, a: o.dim ? .5 : 1 }); CH.fn(D, Pl, Q1, { col: C.blue, w: 3, a: o.dim ? .5 : 1 });
+    lab(D, Pl, 8.6, 3050 + 120, 'P', { col: C.yel, size: CH.fs(D, 1.05) }); lab(D, Pl, 9.3, 2600 + 300, 'Q', { col: C.blue, size: CH.fs(D, 1.05) });
+    if (!o.nopts) { CH.pt(D, Pl, 0, 1600, { col: C.blue, lab: '(0, 1600)', dir: 'ne' }); CH.pt(D, Pl, 6, 2200, { col: C.blue, r: CH.fs(D, .24) }); }
+    return Pl;
+  }
+  /* ================= 類題2 ================= */
+  function pos2(x) { var d = Math.min(V2 * x, BC2 + AB2); return d <= BC2 ? [d, 0] : [BC2, d - BC2]; }  /* B を原点、右へ BC、上へ AB */
+  function fig2(D, R, x, o) {
+    o = o || {}; var s = CH.fs(D, .85), u = Math.min(R.w * .66 / BC2, R.h * .62 / AB2), l = R.cx - BC2 * u / 2, tp = R.cy - AB2 * u / 2 - s * .4;
+    var Xp = function (v) { return l + v * u; }, Yp = function (v) { return tp + (AB2 - v) * u; }, p = pos2(x);
+    var A = [0, AB2], B = [0, 0], Cc = [BC2, 0], Dd = [BC2, AB2];
+    CH.poly(D, [[Xp(0), Yp(AB2)], [Xp(0), Yp(0)], [Xp(p[0]), Yp(p[1])]], { fill: 'rgba(255,226,122,' + (o.tri == null ? .3 : o.tri) + ')' });
+    CH.poly(D, [[Xp(0), Yp(AB2)], [Xp(0), Yp(0)], [Xp(BC2), Yp(0)], [Xp(BC2), Yp(AB2)]], { stroke: C.chalk, sw: 2.4 });
+    CH.line(D, Xp(0), Yp(AB2), Xp(p[0]), Yp(p[1]), { col: C.yel, w: 2.4 });
+    [['A', A, -1, -1], ['B', B, -1, 1], ['C', Cc, 1, 1], ['D', Dd, 1, -1]].forEach(function (z) { CH.text(D, Xp(z[1][0]) + z[2] * s * .9, Yp(z[1][1]) + z[3] * s * .9, z[0], { size: s * 1.1, num: true }); });
+    CH.text(D, Xp(0) - s * 2.1, Yp(AB2 / 2), '6cm', { size: s * .9, num: true, col: C.green });
+    CH.text(D, Xp(BC2 / 2), Yp(0) + s * 1.9, '10cm', { size: s * .9, num: true, col: C.green });
+    CH.circle(D, Xp(p[0]), Yp(p[1]), s * .45, { fill: C.orange, stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
+    CH.text(D, Xp(p[0]) + (p[0] >= BC2 ? s * 1.1 : 0), Yp(p[1]) + (p[0] >= BC2 ? 0 : -s * 1.3), 'P', { size: s * 1.1, num: true, col: C.orange });
+    if (o.h) { CH.line(D, Xp(0), Yp(p[1]), Xp(p[0]), Yp(p[1]), { col: C.pink, dash: true, w: 2.4, a: o.h }); CH.text(D, Xp(p[0] / 2), Yp(p[1]) - s * .9, '高さ ' + (p[0] === 0 ? '' : '10cm'), { col: C.pink, size: s * .9, a: o.h, outline: OUT }); }
+    return { Xp: Xp, Yp: Yp };
+  }
+  var G2 = { x: [0, 8], y: [0, 36], sx: 1, sy: 6, lx: 1, ly: 6, ux: '（秒）', uy: '（cm²）' };
+  function two2(D, o) {
+    o = o || {}; var Rs = fit2(D, .46, .46), Pl = graph(D, Rs[1], G2), x = o.x == null ? 0 : o.x;
+    fig2(D, Rs[0], x, { h: o.h, tri: o.tri });
+    return Pl;
+  }
+  /* ================= 類題3 ================= */
+  var G3 = { x: [0, 16], y: [0, 130], sx: 1, sy: 10, lx: 2, ly: 20, ux: '（分）', uy: '（℃）' };
+  function water(D, o) {
+    o = o || {}; var R = full(D), s = CH.fs(D), rh = Math.min(s * 1.9, R.h * .1), w = Math.min(R.w, s * 22);
+    CH.table(D, CH.rect(R.cx - w / 2, R.y0 + 2, R.cx + w / 2, R.y0 + 2 + rh * 3), ['x（分）'].concat(X3), [['y（℃）'].concat(Y3)], { fw: .22, top: true, rh: rh, hl: o.hl });
+    var Pl = graph(D, CH.rect(R.x0, R.y0 + rh * 2 + s * 1.5, R.x1, R.y1), G3);
+    X3.forEach(function (x, i) { CH.pt(D, Pl, x, Y3[i], { col: C.yel, r: CH.fs(D, .26) }); });
+    return Pl;
+  }
+  /* ================= 類題4 ================= */
+  var G4 = { x: [0, 25], y: [0, 1800], sx: 5, sy: 300, lx: 5, ly: 300, ux: '（分）', uy: '（m）' };
+  function walk4(D, o) {
+    o = o || {}; var Pl = graph(D, full(D), G4), a = o.t == null ? 1 : o.t;
+    CH.fn(D, Pl, A4, { col: C.yel, w: 3, x1: 22.5, a: o.dim ? .5 : 1 }); CH.fn(D, Pl, B4, { col: C.blue, w: 3, x0: 5, x1: 25, a: o.dim ? .5 : 1 });
+    lab(D, Pl, 15.5, 1000, '兄', { col: C.yel, size: CH.fs(D, 1.05) }); lab(D, Pl, 20.6, 1280, '弟', { col: C.blue, size: CH.fs(D, 1.05) });
+    CH.pt(D, Pl, 5, 1800, { col: C.blue, lab: '(5, 1800)', dir: 'se' }); CH.pt(D, Pl, 20, 900, { col: C.blue, lab: '(20, 900)', dir: 'ne' });
+    return Pl;
+  }
+  /* ================= 類題5 ================= */
+  function plane5(D, o) {
+    o = o || {}; var R = full(D), s = CH.fs(D, .72), Pl = CH.plane(D, CH.rect(R.x0 + s * 2, R.y0 + s * 2, R.x1 - s * 2.6, R.y1 - s * 1.2), { x: [-1, 7], y: [-2, 9], step: 1, size: s });
+    CH.lin(D, Pl, -2, 8, { col: C.yel, w: 3 }); CH.lin(D, Pl, 1, -1, { col: C.blue, w: 3 });
+    lab(D, Pl, .25, 8.2, 'ℓ', { col: C.yel, size: CH.fs(D, 1.1) }); lab(D, Pl, 6.1, 5.3, 'm', { col: C.blue, size: CH.fs(D, 1.1) });
+    if (!o.nopts) { CH.pt(D, Pl, 1, 6, { col: C.yel, lab: '(1, 6)', dir: 'ne' }); CH.pt(D, Pl, 3, 2, { col: C.yel, r: CH.fs(D, .24) }); lab(D, Pl, 3.2, 1.45, '(3, 2)', { col: C.yel, size: CH.fs(D, .85) }); }
+    return Pl;
+  }
+
+  K3.run({
+    no: '類題', title: '学力推移調査型の類題　中2 一次関数（5題）', flat: true, hint: '',
+    links: [{ href: '../ichiji/index.html', label: '一次関数の黒板' }],
+    steps: [
+      /* ---------------- 類題1 ---------------- */
+      { tag: '類題1', bh: '類題1　データ通信プラン（2つの料金）', q: 'ある通信会社には、1か月に使うデータ量を x GB、料金を y円 としたとき、P・Q 2つのプランがある。P は、基本料金 1000円 に 1GB あたり 200円 を加えた料金である。グラフの直線 P・Q は、2つのプランの料金を表している。Q は 2点 (0, 1600)、(6, 2200) を通る。',
+        notes: ['(1) Q の料金を表す式を求めなさい。', '(2) P と Q のグラフの交点の座標を求めなさい。', '(3) (2) の交点は、何を表しているか。説明しなさい。', '(4) 1か月に 8GB 使うとき、P と Q のどちらが何円安いか。'],
+        draw: function (D) { plan1(D); } },
+      { tag: '類題1', q: '(1) Q の料金を表す式は？', a: 'y＝100x＋1600', sub: '切片は 1600、傾きは (2200−1600)÷(6−0)＝100', dur: 3,
+        b: { t: '(1) 傾き (2200−1600)÷6＝100、切片 1600 → <b>y＝100x＋1600</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = plan1(D); if (t > 0) CH.slopeTri(D, Pl, 100, 1600, 0, 6, { col: C.pink, a: CH.smooth(0, .4, t), lx: '＋6', ly: '＋600' }); if (t > .5) lab(D, Pl, 1, 2750, 'y＝100x＋1600', { col: C.blue, a: CH.smooth(.5, .7, t), size: CH.fs(D, 1) }); } },
+      { tag: '類題1', q: '(2) P と Q のグラフの交点の座標は？', a: '(6, 2200)', sub: 'P y＝200x＋1000 と Q y＝100x＋1600 を連立方程式として解く。200x＋1000＝100x＋1600 → 100x＝600 → x＝6、y＝200×6＋1000＝2200', dur: 4,
+        b: { t: '(2) 200x＋1000＝100x＋1600 → x＝6、y＝2200 → <b>(6, 2200)</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = plan1(D, { dim: true }); if (t > 0) { var a = CH.smooth(0, .4, t); guide(D, Pl, 6, 2200, C.orange, a); dotv(D, Pl, 6, 2200, C.orange, a, CH.fs(D, .38)); glow(D, Pl, [6, 2200], C.orange, a); } if (t > .45) lab(D, Pl, 6.3, 1750, '交点 (6, 2200)', { col: C.orange, a: CH.smooth(.45, .65, t), size: CH.fs(D, .95) }); } },
+      { tag: '類題1', q: '(3) 交点は、何を表している？', a: '6GB 使うと、P も Q も料金が 2200円で同じになることを表している。', sub: '交点は P の上にも Q の上にもある点。x＝6 のとき、どちらの料金も y＝2200 になる。（6GB より少ないと P が安く、6GB より多いと Q が安い）', dur: 5,
+        b: { t: '(3) 6GB のとき、P も Q も <b>2200円で同じ</b>（6GB より少ない → P が安い、多い → Q が安い）', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = plan1(D, { dim: true }), a = CH.smooth(0, .3, t); guide(D, Pl, 6, 2200, C.orange, a); dotv(D, Pl, 6, 2200, C.orange, a, CH.fs(D, .38)); glow(D, Pl, [6, 2200], C.orange, a);
+          if (t > .3) { var a2 = CH.smooth(.3, .5, t); lab(D, Pl, 3, 400, 'P が安い', { col: C.yel, a: a2, align: 'center', size: CH.fs(D, .95) }); CH.pseg(D, Pl, [6, 0], [6, 300], { col: C.orange, a: a2 }); lab(D, Pl, 8.3, 400, 'Q が安い', { col: C.blue, a: a2, align: 'center', size: CH.fs(D, .95) }); }
+          if (t > .55) lab(D, Pl, 6.3, 1750, '6GB で 2200円（同じ）', { col: C.orange, a: CH.smooth(.55, .75, t), size: CH.fs(D, .9) }); } },
+      { tag: '類題1', q: '(4) 8GB 使うとき、安いのは P と Q のどちら？ いくら安い？', a: 'Q のほうが 200円安い', sub: 'x＝8 のとき、P は 200×8＋1000＝2600円、Q は 100×8＋1600＝2400円。2600−2400＝200', dur: 4,
+        b: { t: '(4) P 2600円、Q 2400円 → <b>Q が 200円安い</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = plan1(D, { dim: true }), a = CH.smooth(0, .4, t); CH.pseg(D, Pl, [8, 0], [8, 2600], { col: 'rgba(242,240,230,.7)', dash: true, a: a }); dotv(D, Pl, 8, 2600, C.yel, a, CH.fs(D, .34)); dotv(D, Pl, 8, 2400, C.blue, a, CH.fs(D, .34));
+          if (t > .4) { var a2 = CH.smooth(.4, .6, t); lab(D, Pl, 7.7, 2780, '2600円', { col: C.yel, a: a2, align: 'right', size: CH.fs(D, .9) }); lab(D, Pl, 8.2, 2200, '2400円', { col: C.blue, a: a2, size: CH.fs(D, .9) }); }
+          if (t > .65) lab(D, Pl, 8.2, 2500, '差 200円', { col: C.pink, a: CH.smooth(.65, .85, t), size: CH.fs(D, .9) }); } },
+
+      /* ---------------- 類題2 ---------------- */
+      { tag: '類題2', bh: '類題2　長方形の辺の上を動く点', q: '長方形 ABCD で、AB＝6cm、BC＝10cm である。点 P は、B を出発して、辺 BC、CD の上を C を通って D まで、毎秒 2cm の速さで動く。P が B を出発してから x秒後の △ABP の面積を y cm² とする。',
+        notes: ['(1) x＝3 のときの y の値を求めなさい。', '(2) P が辺 BC 上、辺 CD 上にあるとき、y を x の式で表しなさい。x の変域もかきなさい。', '(3) y＝27 になるのは、P が B を出発して何秒後か。', '(4) P が辺 CD 上にあるとき、△ABP の面積が変わらないわけを説明しなさい。'],
+        draw: function (D) { two2(D); } },
+      { tag: '類題2', q: '(1) x＝3 のとき、y の値は？', a: '18', sub: '3秒間に P は 2×3＝6cm 動くので BP＝6cm。△ABP＝6×6÷2＝18（cm²）', dur: 3,
+        b: { t: '(1) BP＝2×3＝6cm → 6×6÷2＝<b>18cm²</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, k = CH.smooth(0, .6, t), Pl = two2(D, { x: 3 * k, h: .0 }); if (t > .6) { var a = CH.smooth(.6, .85, t); guide(D, Pl, 3, 18, C.orange, a); dotv(D, Pl, 3, 18, C.orange, a, CH.fs(D, .36)); lab(D, Pl, 3.3, 15.5, '(3, 18)', { col: C.orange, a: a, size: CH.fs(D, .9) }); } } },
+      { tag: '類題2', q: '(2) y を x の式で表すと？（変域も）', a: 'BC 上（0≦x≦5）のとき y＝6x、CD 上（5≦x≦8）のとき y＝30', sub: 'BC 上：BP＝2x より y＝6×2x÷2＝6x。P が C に着くのは 10÷2＝5秒後。CD 上：底辺 AB＝6、高さ BC＝10 のまま、y＝6×10÷2＝30。D に着くのは (10＋6)÷2＝8秒後', dur: 6,
+        b: [{ t: '(2) 0≦x≦5：<b>y＝6x</b>', col: C.yel }, { t: '　　5≦x≦8：<b>y＝30</b>', col: C.yel }],
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = two2(D, { x: 8 * CH.smooth(0, .7, t) }), x = 8 * CH.smooth(0, .7, t);
+          CH.lin(D, Pl, 6, 0, { col: C.yel, w: 3.2, x0: 0, x1: Math.min(x, 5) }); if (x > 5) CH.lin(D, Pl, 0, 30, { col: C.blue, w: 3.2, x0: 5, x1: x });
+          if (t > .72) { var a = CH.smooth(.72, .9, t); lab(D, Pl, .4, 21, 'y＝6x', { col: C.yel, a: a, size: CH.fs(D, 1) }); lab(D, Pl, 5.6, 33.2, 'y＝30', { col: C.blue, a: a, size: CH.fs(D, 1) }); dotv(D, Pl, 5, 30, C.chalk, a, CH.fs(D, .3)); CH.pseg(D, Pl, [5, 0], [5, 30], { col: 'rgba(242,240,230,.6)', dash: true, a: a }); } } },
+      { tag: '類題2', q: '(3) y＝27 になるのは、何秒後？', a: '4.5秒後', sub: '0≦x≦5 のとき y＝6x だから、6x＝27 → x＝4.5（5秒以内なのでよい）。5≦x≦8 のときは y＝30 で 27 にならない', dur: 4,
+        b: { t: '(3) 6x＝27 → x＝<b>4.5</b>（0≦x≦5 にふくまれる）', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = two2(D, { x: 4.5 * CH.smooth(0, .6, t) }); CH.lin(D, Pl, 6, 0, { col: C.yel, w: 3.2, x0: 0, x1: 5, a: .5 }); CH.lin(D, Pl, 0, 30, { col: C.blue, w: 3.2, x0: 5, x1: 8, a: .5 });
+          if (t > .55) { var a = CH.smooth(.55, .85, t); guide(D, Pl, 4.5, 27, C.orange, a); dotv(D, Pl, 4.5, 27, C.orange, a, CH.fs(D, .36)); glow(D, Pl, [4.5, 27], C.orange, a); lab(D, Pl, 4.8, 24, '(4.5, 27)', { col: C.orange, a: a, size: CH.fs(D, .9) }); } } },
+      { tag: '類題2', q: '(4) P が辺 CD 上のとき、面積が変わらないわけは？', a: 'AB を底辺とみると、底辺は 6cm、高さは P から AB までの長さで BC＝10cm のまま変わらないから。', sub: 'P が CD 上にあるとき、P から直線 AB までの長さは、いつも BC と同じ 10cm。底辺 AB と高さがどちらも変わらないので、面積は 6×10÷2＝30 で一定になる', dur: 6,
+        b: { t: '(4) 底辺 AB＝6cm、高さ＝BC＝10cm のまま → 面積は <b>30cm²</b> で一定', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, x = 5 + 3 * CH.smooth(0, .6, t), Pl = two2(D, { x: x, h: t > .1 ? CH.smooth(.1, .3, t) : 0, tri: .4 }); CH.lin(D, Pl, 6, 0, { col: C.yel, w: 3.2, x0: 0, x1: 5, a: .5 }); CH.lin(D, Pl, 0, 30, { col: C.blue, w: 3.2, x0: 5, x1: x }); } },
+
+      /* ---------------- 類題3 ---------------- */
+      { tag: '類題3', bh: '類題3　水をあたためる実験（一次関数とみなす）', q: 'ビーカーに入れた水を、ガスバーナーであたため、あたため始めてから x分後の水温を y℃として、1分ごとに調べた。表は その結果で、グラフは 表の値を点で表したものである。点は、ほぼ一直線上にならんでいる。',
+        notes: ['(1) x が 1 増えるとき、y はおよそ何℃ずつ増えているか。', '(2) y は x の一次関数とみなして、(0, 18)、(5, 53) を通る直線の式を求めなさい。', '(3) (2) の式を使って、10分後の水温を予測しなさい。', '(4) ゆうきさんは (2) の式から「15分後には 123℃になる」と予測した。この予測は正しいといえるか。わけも書きなさい。'],
+        draw: function (D) { water(D); } },
+      { tag: '類題3', q: '(1) x が 1 増えると、y はおよそ何℃増える？', a: 'およそ 7℃', sub: '0分から 5分までに 53−18＝35℃ 上がっている。35÷5＝7（℃）', dur: 3,
+        b: { t: '(1) (53−18)÷5＝<b>7℃</b> ずつ', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = water(D, { hl: function (r, c) { return t > 0 && r === 2 && (c === 1 || c === 6) ? C.pink : null; } }); if (t > 0) { var a = CH.smooth(0, .5, t); CH.pseg(D, Pl, [0, 18], [5, 18], { col: C.pink, dash: true, a: a }); CH.pseg(D, Pl, [5, 18], [5, 53], { col: C.pink, dash: true, a: a }); lab(D, Pl, 2.2, 8, '＋5分', { col: C.pink, a: a, align: 'center', size: CH.fs(D, .9) }); lab(D, Pl, 5.4, 36, '＋35℃', { col: C.pink, a: a, size: CH.fs(D, .9) }); } if (t > .6) lab(D, Pl, 6.5, 70, '35÷5＝7（℃／分）', { col: C.pink, a: CH.smooth(.6, .85, t), size: CH.fs(D, .95) }); } },
+      { tag: '類題3', q: '(2) (0, 18)、(5, 53) を通る直線の式は？', a: 'y＝7x＋18', sub: '傾きは (1) より 7。x＝0 のとき y＝18 なので切片は 18。y＝7x＋18', dur: 3,
+        b: { t: '(2) 傾き 7、切片 18 → <b>y＝7x＋18</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = water(D); CH.lin(D, Pl, 7, 18, { col: C.pink, w: 3, x0: 0, x1: 5, t: CH.smooth(0, .6, t) }); if (t > .6) lab(D, Pl, 6, 48, 'y＝7x＋18', { col: C.pink, a: CH.smooth(.6, .8, t), size: CH.fs(D, 1.05) }); } },
+      { tag: '類題3', q: '(3) 10分後の水温は？', a: '88℃', sub: 'x＝10 を y＝7x＋18 に代入。y＝7×10＋18＝88', dur: 3,
+        b: { t: '(3) y＝7×10＋18＝<b>88℃</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = water(D); CH.lin(D, Pl, 7, 18, { col: C.pink, w: 3, x0: 0, x1: 5 }); CH.lin(D, Pl, 7, 18, { col: C.pink, w: 3, dash: true, x0: 5, x1: 10, t: CH.smooth(0, .6, t) }); if (t > .6) { var a = CH.smooth(.6, .85, t); guide(D, Pl, 10, 88, C.orange, a); dotv(D, Pl, 10, 88, C.orange, a, CH.fs(D, .36)); lab(D, Pl, 10.4, 82, '(10, 88)', { col: C.orange, a: a, size: CH.fs(D, .9) }); } } },
+      { tag: '類題3', q: '(4) 「15分後には 123℃」は正しいといえる？', a: '正しいとはいえない。', sub: 'y＝7x＋18 で x＝15 とすると 123 になるが、水は 100℃で沸とうし、それ以上は温度が上がらない。式が使えるのは 100℃に達する前（約 12分）まで。実験した範囲からはなれた予測は、あてはまらないことがある', dur: 6,
+        b: { t: '(4) <b>正しいとはいえない</b>　水は 100℃で沸とう → それ以上は上がらない', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = water(D); CH.lin(D, Pl, 7, 18, { col: C.pink, w: 3, x0: 0, x1: 5 }); CH.lin(D, Pl, 7, 18, { col: C.pink, w: 3, dash: true, x0: 5, x1: 15, a: .5 });
+          if (t > .1) { var a = CH.smooth(.1, .4, t); CH.pseg(D, Pl, [0, 100], [16, 100], { col: C.green, dash: true, a: a }); lab(D, Pl, .3, 107, '100℃ で沸とう', { col: C.green, a: a, size: CH.fs(D, .9) }); }
+          if (t > .45) { var a2 = CH.smooth(.45, .7, t); CH.pt(D, Pl, 15, 123, { col: C.orange, open: true, a: a2 }); lab(D, Pl, 14.7, 112, '(15, 123)', { col: C.orange, a: a2, align: 'right', size: CH.fs(D, .85) }); CH.pseg(D, Pl, [11.7, 100], [16, 100], { col: C.orange, w: 5, a: a2 * .0 }); }
+          if (t > .7) lab(D, Pl, 8, 60, '100℃をこえる予測は あてはまらない', { col: C.orange, a: CH.smooth(.7, .9, t), size: CH.fs(D, .85) }); } },
+
+      /* ---------------- 類題4 ---------------- */
+      { tag: '類題4', bh: '類題4　兄と弟が出会うまで', q: '家から駅までの道のりは 1800m である。兄は 9時に家を出て、駅へ向かって分速 80m で歩いた。弟は、兄が家を出たあと、駅を出て、同じ道を家へ向かって分速 60m で歩いた。兄が家を出てから x分後の、家からの道のりを y m とする。グラフは、2人の道のりを表している。弟のグラフは 2点 (5, 1800)、(20, 900) を通る。',
+        notes: ['(1) 弟が駅を出たのは、9時何分か。', '(2) 弟のグラフの式を求めなさい。', '(3) 2人が出会うのは、9時何分か。また、家から何m の地点か。', '(4) 出会うまでに 2人が歩いた道のりの和が 1800m になることを、式を使って説明しなさい。'],
+        draw: function (D) { walk4(D); } },
+      { tag: '類題4', q: '(1) 弟が駅を出たのは、9時何分？', a: '9時5分', sub: '弟のグラフは x＝5 で、家から 1800m（駅）の位置からはじまっている', dur: 2,
+        b: { t: '(1) 弟のグラフは x＝5 から → <b>9時5分</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = walk4(D, { dim: true }), a = CH.smooth(0, .5, t); guide(D, Pl, 5, 1800, C.orange, a); glow(D, Pl, [5, 1800], C.orange, a); lab(D, Pl, 5.3, 1550, 'x＝5（9時5分）', { col: C.orange, a: CH.smooth(.3, .6, t), size: CH.fs(D, .9) }); } },
+      { tag: '類題4', q: '(2) 弟のグラフの式は？', a: 'y＝−60x＋2100', sub: '傾きは (900−1800)÷(20−5)＝−60。y＝−60x＋b に (5, 1800) を代入して 1800＝−300＋b、b＝2100', dur: 4,
+        b: { t: '(2) 傾き (900−1800)÷15＝−60 → 1800＝−60×5＋b → <b>y＝−60x＋2100</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = walk4(D); CH.slopeTri(D, Pl, -60, 2100, 5, 15, { col: C.pink, a: CH.smooth(0, .4, t), lx: '＋15', ly: '−900' }); if (t > .5) lab(D, Pl, 8, 1100, 'y＝−60x＋2100', { col: C.blue, a: CH.smooth(.5, .7, t), size: CH.fs(D, 1) }); } },
+      { tag: '類題4', q: '(3) 出会うのは 9時何分？ 家から何m？', a: '9時15分、家から 1200m の地点', sub: '兄のグラフは原点を通り、傾き 80 なので y＝80x。80x＝−60x＋2100 → 140x＝2100 → x＝15、y＝80×15＝1200', dur: 5,
+        b: { t: '(3) y＝80x と y＝−60x＋2100 → x＝15、y＝1200 → <b>9時15分、1200m</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = walk4(D, { dim: true }), a = CH.smooth(0, .4, t); guide(D, Pl, 15, 1200, C.orange, a); dotv(D, Pl, 15, 1200, C.orange, a, CH.fs(D, .38)); glow(D, Pl, [15, 1200], C.orange, a); if (t > .45) { var a2 = CH.smooth(.45, .7, t); lab(D, Pl, 15.4, 850, '(15, 1200)', { col: C.orange, a: a2, size: CH.fs(D, .95) }); lab(D, Pl, 1, 1500, '兄 y＝80x', { col: C.yel, a: a2, size: CH.fs(D, .9) }); } } },
+      { tag: '類題4', q: '(4) 出会うまでに 2人が歩いた道のりの和が 1800m になることを、式で説明しよう', a: '兄は 80×15＝1200m、弟は 60×(15−5)＝600m 歩いた。1200＋600＝1800 で、家から駅までの道のりと同じになる。', sub: '2人は向かい合って歩くので、出会うまでに歩いた道のりの和は、家から駅までの道のり 1800m になる。弟が歩いた時間は、5分から 15分までの 10分間', dur: 7,
+        b: { t: '(4) 兄 80×15＝1200　弟 60×(15−5)＝600 → 1200＋600＝<b>1800</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = walk4(D, { dim: true }); dotv(D, Pl, 15, 1200, C.orange, 1, CH.fs(D, .34));
+          var a = CH.smooth(0, .4, t); CH.pseg(D, Pl, [15, 0], [15, 1200], { col: C.yel, w: 5, a: a }); lab(D, Pl, 15.4, 520, '兄 1200m', { col: C.yel, a: a, size: CH.fs(D, .9) });
+          if (t > .4) { var a2 = CH.smooth(.4, .7, t); CH.pseg(D, Pl, [15, 1200], [15, 1800], { col: C.blue, w: 5, a: a2 }); lab(D, Pl, 15.4, 1560, '弟 600m', { col: C.blue, a: a2, size: CH.fs(D, .9) }); }
+          if (t > .7) lab(D, Pl, 1, 1000, '1200＋600＝1800', { col: C.green, a: CH.smooth(.7, .9, t), size: CH.fs(D, .95) }); } },
+
+      /* ---------------- 類題5 ---------------- */
+      { tag: '類題5', bh: '類題5　2直線の交点と連立方程式', q: '右の図で、直線 ℓ は 2点 (1, 6)、(3, 2) を通る。直線 m は、方程式 x−y＝1 のグラフである。座標の 1目もりは 1cm とする。',
+        notes: ['(1) 直線 ℓ の式を求めなさい。', '(2) ℓ と m の交点 A の座標を求めなさい。', '(3) ℓ・m と x軸で囲まれた三角形の面積を求めなさい。', '(4) 交点 A の座標が、2つの式を組にした連立方程式の解になるわけを説明しなさい。'],
+        draw: function (D) { plane5(D); } },
+      { tag: '類題5', q: '(1) 直線 ℓ の式は？', a: 'y＝−2x＋8', sub: '傾きは (2−6)÷(3−1)＝−2。y＝−2x＋b に (1, 6) を代入して 6＝−2＋b、b＝8', dur: 4,
+        b: { t: '(1) 傾き (2−6)÷(3−1)＝−2、6＝−2×1＋b → <b>y＝−2x＋8</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = plane5(D); CH.slopeTri(D, Pl, -2, 8, 1, 2, { col: C.pink, a: CH.smooth(0, .4, t), lx: '＋2', ly: '−4' }); if (t > .5) lab(D, Pl, 3.8, 6.8, 'y＝−2x＋8', { col: C.yel, a: CH.smooth(.5, .7, t), size: CH.fs(D, 1) }); } },
+      { tag: '類題5', q: '(2) ℓ と m の交点 A の座標は？', a: 'A (3, 2)', sub: 'm は y＝x−1。ℓ と m の式を連立方程式にして、−2x＋8＝x−1 → 3x＝9 → x＝3、y＝3−1＝2', dur: 4,
+        b: { t: '(2) y＝−2x＋8、x−y＝1 → x＝3、y＝2 → <b>A (3, 2)</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = plane5(D, { nopts: true }), a = CH.smooth(0, .4, t); guide(D, Pl, 3, 2, C.orange, a); dotv(D, Pl, 3, 2, C.orange, a, CH.fs(D, .38)); glow(D, Pl, [3, 2], C.orange, a); if (t > .45) lab(D, Pl, 3.3, 2.8, 'A (3, 2)', { col: C.orange, a: CH.smooth(.45, .7, t), size: CH.fs(D, 1) }); } },
+      { tag: '類題5', q: '(3) ℓ・m と x軸で囲まれた三角形の面積は？', a: '3cm²', sub: 'ℓ は y＝0 のとき x＝4、m は y＝0 のとき x＝1。x軸上の辺の長さは 4−1＝3cm、高さは A の y座標 2cm。3×2÷2＝3', dur: 5,
+        b: { t: '(3) 底辺 4−1＝3、高さ 2 → 3×2÷2＝<b>3cm²</b>', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = plane5(D, { nopts: true }), a = CH.smooth(0, .5, t); CH.poly(D, [[Pl.X(1), Pl.Y(0)], [Pl.X(4), Pl.Y(0)], [Pl.X(3), Pl.Y(2)]], { fill: 'rgba(255,186,120,' + .35 * a + ')', stroke: C.orange, sw: 2.4 }); dotv(D, Pl, 1, 0, C.orange, a); dotv(D, Pl, 4, 0, C.orange, a); dotv(D, Pl, 3, 2, C.orange, a);
+          if (t > .5) { var a2 = CH.smooth(.5, .8, t), s = CH.fs(D, .9); lab(D, Pl, 2.5, -.9, '底辺 3cm', { col: C.orange, a: a2, align: 'center', size: s }); lab(D, Pl, 3.15, 1, '高さ 2cm', { col: C.orange, a: a2, size: s }); } } },
+      { tag: '類題5', q: '(4) 交点の座標が、連立方程式の解になるのはなぜ？', a: '交点は ℓ の上にも m の上にもあるので、その座標は ℓ の式も m の式も成り立たせる。だから、2つの式を組にした連立方程式の解になる。', sub: '直線上の点の座標 (x, y) は、その直線の式を成り立たせる。交点 A は 2直線の両方の上にあるから、A の座標は 2つの式を同時に成り立たせる。ℓ：−2×3＋8＝2、m：3−2＝1 でたしかめられる', dur: 7,
+        b: { t: '(4) 交点は <b>ℓ の上にも m の上にもある</b> → 座標は <b>2つの式を同時に成り立たせる</b> → 連立方程式の解', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, Pl = plane5(D, { nopts: true }), a = CH.smooth(0, .3, t); dotv(D, Pl, 3, 2, C.orange, a, CH.fs(D, .38)); glow(D, Pl, [3, 2], C.orange, a); lab(D, Pl, 3.3, 2.8, 'A (3, 2)', { col: C.orange, a: a, size: CH.fs(D, .95) });
+          if (t > .35) { var a2 = CH.smooth(.35, .6, t); lab(D, Pl, -.8, 4.2, 'ℓ 上：2＝−2×3＋8', { col: C.yel, a: a2, size: CH.fs(D, .85) }); }
+          if (t > .6) { var a3 = CH.smooth(.6, .85, t); lab(D, Pl, 3.9, 1.2, 'm 上：3−2＝1', { col: C.blue, a: a3, size: CH.fs(D, .85) }); } } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

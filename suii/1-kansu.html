@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>比例と反比例 類題5題</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 中1 比例と反比例　学力推移調査型の類題（5題）。
+   型：反比例のグラフ・表・式（座標）／比例か反比例かの見分けと説明／動く点と面積（比例）／歯車（日常の反比例）／2本のグラフの読み取りと判断。
+   場面と数値はすべて自作。答えはページの中で計算し直して確かめている（CH.check）。 */
+(function () {
+  var C = CH.C, M = CH.mnum, OUT = 'rgba(20,40,30,.9)';
+  /* ---- 道具（比例と反比例の黒板 第9〜16時で共通。どのページにも同じものを入れてある） ---- */
+  var FONT = '"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  function near(a, b) { return Math.abs(a - b) < 1e-9; }
+  function ext(a, b) { for (var k in b) if (b[k] !== undefined) a[k] = b[k]; return a; }
+  function ha(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  /* 問い・答え・板書（HTML）の字：[6/x] を たての分数に（CH.fr） */
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = CH.fr(s[k]); }); if (s.notes) s.notes = s.notes.map(function (t) { return CH.fr(t); }); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = CH.fr(b.t); }); }); return st; }
+  /* 図の中（canvas）の字：[6/x] は たての分数。TW で幅、TX でかく（返すのは幅） */
+  function parse(s) { var out = [], re = /\[([^\/\]]+)\/([^\]]+)\]/g, m, i = 0; s = String(s); while ((m = re.exec(s))) { if (m.index > i) out.push({ t: s.slice(i, m.index) }); out.push({ n: m[1], d: m[2] }); i = re.lastIndex; } if (i < s.length) out.push({ t: s.slice(i) }); return out; }
+  function mw(D, t, size) { var g = D.ctx; g.save(); g.font = '600 ' + size + 'px ' + FONT; var w = g.measureText(t).width; g.restore(); return w; }
+  function segW(D, p, size) { var fz = size * .72; return p.t != null ? mw(D, p.t, size) : Math.max(mw(D, p.n, fz), mw(D, p.d, fz)) + fz * .4; }
+  function TW(D, s, size) { return parse(s).reduce(function (w, p) { return w + segW(D, p, size); }, 0); }
+  function TX(D, x, y, s, o) {
+    o = o || {}; var size = o.size || CH.fs(D), fz = size * .72, w = TW(D, s, size), x0 = o.align === 'left' ? x : o.align === 'right' ? x - w : x - w / 2, oo = { col: o.col, a: o.a, outline: o.outline };
+    parse(s).forEach(function (p) {
+      var pw = segW(D, p, size);
+      if (p.t != null) CH.text(D, x0, y, p.t, ext({ size: size, align: 'left' }, oo));
+      else {
+        var cx = x0 + pw / 2; CH.text(D, cx, y - fz * .64, p.n, ext({ size: fz }, oo)); CH.text(D, cx, y + fz * .7, p.d, ext({ size: fz }, oo));
+        CH.line(D, x0 + fz * .14, y + fz * .03, x0 + pw - fz * .14, y + fz * .03, { col: o.col || C.chalk, w: Math.max(1.3, size * .07), a: o.a });
+      }
+      x0 += pw;
+    });
+    return w;
+  }
+  /* 幅 maxW に入る字の大きさ */
+  function fitT(D, s, maxW, size) { var w = TW(D, s, size); return w > maxW && w > 0 ? size * maxW / w : size; }
+  /* 四角 R の上から、1行ずつ（l.t 字、l.col 色、l.a 濃さ）。字は R に入る大きさにそろえる。返すのは字の大きさ */
+  function lines(D, R, L, o) {
+    o = o || {}; var s = Math.min(o.size || CH.fs(D, .95), R.h / (L.length * 1.75 + .3));
+    L.forEach(function (l) { if (l.t) s = Math.min(s, fitT(D, l.t, R.w, s)); });
+    L.forEach(function (l, i) { if (l.a === 0 || !l.t) return; TX(D, R.x0, R.y0 + s * (1.1 + i * 1.75), l.t, { col: l.col || C.chalk, size: s, align: 'left', a: l.a }); });
+    return s;
+  }
+  function full(D) { return CH.box(D, { l: 0, r: 0, t: 0, b: 0 }); }
+  /* 図と字の2つの四角。横長の画面なら左右（k は左の割合）、縦長なら上下（kn は上の割合） */
+  function two(D, k, kn) {
+    var R = full(D);
+    if (D.W > D.H * .9) { var x = R.x0 + R.w * k; return [CH.rect(R.x0, R.y0, x, R.y1), CH.rect(x + R.w * .03, R.y0 + R.h * .02, R.x1 - R.w * .02, R.y1)]; }
+    var y = R.y0 + R.h * (kn || k); return [CH.rect(R.x0, R.y0, R.x1, y), CH.rect(R.x0 + 8, y + 4, R.x1 - 8, R.y1)];
+  }
+  /* 座標平面：四角 R の中に、目もりの字のすきま（o.m：l・r・t・b を字の大きさの何倍か）をとって。そのほかの o は CH.plane と同じ */
+  function PL(D, R, o) { var s = CH.fs(D, .72), m = ext({ l: 2.1, r: 2.4, t: 1.8, b: 1.2 }, o.m || {}); return CH.plane(D, CH.rect(R.x0 + s * m.l, R.y0 + s * m.t, R.x1 - s * m.r, R.y1 - s * m.b), o); }
+  /* 平面の上の字（ふちどり。分数も） */
+  function lab(D, Pl, x, y, t, o) { o = o || {}; TX(D, Pl.X(x) + (o.dx || 0), Pl.Y(y) + (o.dy || 0), t, { col: o.col || C.chalk, size: o.size || CH.fs(D, .85), align: o.align || 'left', a: o.a, outline: OUT }); }
+  /* 点のまわりの、光る輪 */
+  function glow(D, Pl, p, col, a) { var r = CH.fs(D, .3); CH.circle(D, Pl.X(p[0]), Pl.Y(p[1]), r * (2.1 + .4 * Math.sin(D.now * 5)), { stroke: col, sw: 2.6, a: (a == null ? 1 : a) * .7 }); }
+  /* 反比例 y＝a/x のグラフ（双曲線）を、平面の中だけにかく。x＝0 の近くは、平面のふち（y の最大・最小）で切る。
+     o：side（1 なら x＞0 の曲線だけ、−1 なら x＜0 だけ）、x0・x1（x の変域）、t（0〜1 で とちゅうまで）、col、w、dash、a、glow */
+  function hyp(D, Pl, a, o) {
+    o = o || {}; var g = D.ctx, n = o.n || 160, t = o.t == null ? 1 : CH.clamp(o.t, 0, 1);
+    if (!a || t <= 0) return;
+    g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.yel; g.lineWidth = o.w || 3; g.lineCap = 'round'; g.lineJoin = 'round';
+    if (o.dash) g.setLineDash(o.dash === true ? [8, 7] : o.dash);
+    if (o.glow) { g.shadowColor = ha(o.col || C.yel, .55); g.shadowBlur = 8; }
+    [1, -1].forEach(function (sg) {
+      if (o.side && o.side !== sg) return;
+      var yl = a * sg > 0 ? Pl.yr[1] : Pl.yr[0], xn = yl ? Math.abs(a / yl) : Infinity;   /* xn：曲線が平面のふちにとどくところの |x| */
+      var lo = sg > 0 ? xn : Pl.xr[0], hi = sg > 0 ? Pl.xr[1] : -xn;
+      if (o.x0 != null) lo = Math.max(lo, o.x0); if (o.x1 != null) hi = Math.min(hi, o.x1);
+      if (!(hi > lo) || !isFinite(lo) || !isFinite(hi) || (sg > 0 ? lo <= 0 : hi >= 0)) return;
+      var p = sg > 0 ? lo : -hi, q = sg > 0 ? hi : -lo;   /* |x| を p から q へ（原点に近いほうから。点は |x| の等比で とる） */
+      g.beginPath();
+      for (var i = 0; i <= n * t; i++) { var x = sg * p * Math.pow(q / p, i / n), y = a / x; if (i) g.lineTo(Pl.X(x), Pl.Y(y)); else g.moveTo(Pl.X(x), Pl.Y(y)); }
+      g.stroke();
+    });
+    g.restore();
+  }
+  /* 式の字：y＝[6/x]、y＝−[6/x] */
+  function eqInv(a) { return 'y＝' + (a < 0 ? '−' : '') + '[' + Math.abs(a) + '/x]'; }
+  /* 表（字は分数も）。rows[0] が見出しの行、各行の [0] が見出しの列。
+     o：fw（見出しの列の幅の割合）、rh（行の高さの上限）、size、top（上につめる）、hl(r, c)→色、show(r, c)→濃さ、col(r, c)→字の色、a。cell(r, c) を返す */
+  function TB(D, R, rows, o) {
+    o = o || {}; var nR = rows.length, nC = rows[0].length, fw = o.fw == null ? .26 : o.fw, w0 = R.w * fw, cw = (R.w - w0) / Math.max(1, nC - 1);
+    var rh = Math.min(R.h / nR, o.rh || CH.fs(D) * 2.3), H = rh * nR, y0 = o.top ? R.y0 : R.cy - H / 2, s0 = o.size || Math.min(CH.fs(D, .85), rh * .42), g = D.ctx, r, c;
+    function cell(r, c) { var x0 = c === 0 ? R.x0 : R.x0 + w0 + (c - 1) * cw, x1 = c === 0 ? R.x0 + w0 : x0 + cw; return CH.rect(x0, y0 + r * rh, x1, y0 + (r + 1) * rh); }
+    for (r = 0; r < nR; r++) for (c = 0; c < nC; c++) {
+      var q = cell(r, c), hl = o.hl ? o.hl(r, c) : null;
+      if (r === 0 || c === 0) CH.fillRect(D, q.x0, q.y0, q.x1, q.y1, { fill: 'rgba(242,240,230,.06)', a: o.a });
+      if (hl) CH.fillRect(D, q.x0, q.y0, q.x1, q.y1, { fill: ha(hl, .28), a: o.a });
+    }
+    g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = 'rgba(242,240,230,.45)'; g.lineWidth = 1.2; g.beginPath();
+    for (r = 0; r <= nR; r++) { g.moveTo(R.x0, y0 + r * rh); g.lineTo(R.x1, y0 + r * rh); }
+    for (c = 0; c <= nC; c++) { var x = c === 0 ? R.x0 : R.x0 + w0 + (c - 1) * cw; g.moveTo(x, y0); g.lineTo(x, y0 + H); }
+    g.stroke(); g.restore();
+    rows.forEach(function (row, r) {
+      row.forEach(function (txt, c) {
+        var q = cell(r, c), sh = o.show ? o.show(r, c) : 1; if (sh <= 0 || txt == null || txt === '') return;
+        var hl = o.hl ? o.hl(r, c) : null, col = (o.col && o.col(r, c)) || hl || (r === 0 || c === 0 ? 'rgba(242,240,230,.85)' : C.chalk);
+        TX(D, q.cx, q.cy + 1, String(txt), { size: fitT(D, String(txt), q.w * .9, s0), col: col, a: (o.a == null ? 1 : o.a) * sh });
+      });
+    });
+    return { cell: cell, rh: rh, y0: y0, y1: y0 + H };
+  }
+
+  /* ---- 数と答えの確かめ ---- */
+  /* 類題1　反比例 y＝6/x（点 A(2, 3)） */
+  var A1 = 6, T1X = [-6, -3, -2, 1, 3], T1Y = T1X.map(function (x) { return A1 / x; });
+  var LAT = [1, 2, 3, 6, 12].filter(function (x) { return A1 % x === 0; }).map(function (x) { return [x, A1 / x]; });
+  CH.check(2 * 3 === A1 && T1Y.join() === '-1,-2,-3,6,2' && LAT.join('|') === '1,6|2,3|3,2|6,1' && (-4) * (-2) !== A1 && A1 / -4 === -1.5, '類題1');
+  /* 類題2　ア〜エ */
+  var X2 = [2, 3, 4, 6], S2 = [
+    { n: 'ア', ttl: 'りんごの 個数 x と 代金 y', ys: X2.map(function (x) { return 80 * x; }), col: C.yel },
+    { n: 'イ', ttl: '面積 24cm² の長方形の たて x・横 y', ys: X2.map(function (x) { return 24 / x; }), col: C.blue },
+    { n: 'ウ', ttl: '正三角形の 1辺 x・まわり y', ys: X2.map(function (x) { return 3 * x; }), col: C.yel },
+    { n: 'エ', ttl: 'まわり 20cm の長方形の たて x・横 y', ys: X2.map(function (x) { return 10 - x; }), col: C.pink }];
+  CH.check(kind(X2, S2[0].ys) === 0 && kind(X2, S2[1].ys) === 1 && kind(X2, S2[2].ys) === 0 && kind(X2, S2[3].ys) === 2 && S2[1].ys.join() === '12,8,6,4' && 24 / 8 === 3 && S2[3].ys.join() === '8,7,6,4', '類題2');
+  function kind(xs, ys) { var a = xs.map(function (x, i) { return ys[i] / x; }), b = xs.map(function (x, i) { return x * ys[i]; }); return a.every(function (v) { return near(v, a[0]); }) ? 0 : b.every(function (v) { return near(v, b[0]); }) ? 1 : 2; }
+  /* 類題3　長方形 ABCD（AB＝6、BC＝10）、P は B から 毎秒 2cm */
+  var AB = 6, BC = 10, V3 = 2, XM = BC / V3;
+  function area3(x) { return AB * V3 * x / 2; }
+  CH.check(XM === 5 && area3(2) === 12 && area3(XM) === 30 && area3(1) === 6 && 40 / 6 > XM && V3 * 2 === 4, '類題3');
+  /* 類題4　歯車（A：歯数 24・毎分 30回転） */
+  var NA = 24, RA = 30, K4 = NA * RA;
+  CH.check(K4 === 720 && K4 / 36 === 20 && K4 / 45 === 16 && K4 / 24 === 30 && K4 / 48 === 15 && K4 / 12 === 60 && K4 / 18 === 40, '類題4');
+  /* 類題5　ホース A（y＝5x）・B（y＝3x）、水そう 60L */
+  var KA = 20 / 4, KB = 15 / 5, CAP = 60;
+  CH.check(KA === 5 && KB === 3 && CAP / KB - CAP / KA === 8 && KA * 10 - KB * 10 === 20 && KA * 10 === 50 && KB * 10 === 30, '類題5');
+
+  var OUTL = OUT;
+  function L2(D, k, kn) { return two(D, k || .56, kn || .6); }
+  function fade(t, a, b) { return CH.smooth(a, b, t); }
+
+  /* ---------- 類題1：反比例のグラフ・表・式 ---------- */
+  function p1(D, k, t) {
+    var r = L2(D, .56, .6), Pl = PL(D, r[0], { x: [-7, 7], y: [-7, 7] }), s = CH.fs(D, .85), R = r[1];
+    hyp(D, Pl, A1, { col: C.yel, w: 3 });
+    CH.pt(D, Pl, 2, 3, { col: C.pink, lab: 'A(2, 3)', dir: 'ne', size: s });
+    var tb = CH.rect(R.x0, R.y0 + R.h * .04, R.x1, R.y0 + R.h * .3), zn = CH.rect(R.x0, R.y0 + R.h * .4, R.x1, R.y1);
+    var ya = k >= 1 ? '−1' : 'ア', yi = k >= 1 ? '6' : 'イ';
+    TB(D, tb, [['x', '−6', '−3', '−2', '1', '3'], ['y', ya, '−2', '−3', yi, '2']], { top: true, fw: .14, size: s * .95,
+      hl: function (rr, c) { return rr === 1 && (c === 1 || c === 4) ? (k >= 1 ? C.yel : C.pink) : null; },
+      show: function (rr, c) { return k === 1 && rr === 1 && (c === 1 || c === 4) ? fade(t, 0, .25) : 1; } });
+    if (k === 0) {
+      CH.pt(D, Pl, 3, 2, { col: C.green, r: CH.fs(D, .22), a: fade(t, .7, .85) });
+      lines(D, zn, [{ t: 'y＝[a/x] に x＝2、y＝3 を代入', a: fade(t, 0, .2) }, { t: '3＝[a/2]　a＝3×2＝6', a: fade(t, .25, .45) }, { t: 'xy＝6 だから', a: fade(t, .5, .65) }, { t: 'y＝[6/x]', col: C.yel, a: fade(t, .7, .9) }]);
+    }
+    if (k === 1) {
+      var a1 = fade(t, .3, .5);
+      CH.pt(D, Pl, -6, -1, { col: C.yel, lab: 'ア(−6, −1)', dir: 'ne', a: a1, size: s * .9 }); CH.pt(D, Pl, 1, 6, { col: C.yel, lab: 'イ(1, 6)', dir: 'ne', a: a1, size: s * .9 });
+      lines(D, zn, [{ t: 'ア　x＝−6 のとき', a: fade(t, 0, .2) }, { t: '　y＝6÷(−6)＝−1', col: C.yel, a: fade(t, .1, .3) }, { t: 'イ　x＝1 のとき', a: fade(t, .4, .6) }, { t: '　y＝6÷1＝6', col: C.yel, a: fade(t, .5, .7) }]);
+    }
+    if (k === 2) {
+      LAT.forEach(function (p, i) { var a = fade(t, i * .12, i * .12 + .15); CH.pt(D, Pl, p[0], p[1], { col: C.green, r: CH.fs(D, .3), a: a, lab: '(' + p[0] + ', ' + p[1] + ')', dir: i === 0 ? 'ne' : 'ne', size: s * .85 }); });
+      lines(D, zn, [{ t: 'xy＝6 になる、正の整数 x、y の組', a: fade(t, 0, .15) }, { t: '1×6　2×3　3×2　6×1', a: fade(t, .2, .4) }, { t: '→ 4個', col: C.green, a: fade(t, .65, .85) }]);
+    }
+    if (k === 3) {
+      var a3 = fade(t, .15, .35), a4 = fade(t, .5, .7);
+      CH.pt(D, Pl, -4, -2, { col: C.pink, open: true, lab: 'B(−4, −2)', dir: 'sw', a: a3, size: s * .9 });
+      CH.pt(D, Pl, -4, -1.5, { col: C.green, a: a4, r: CH.fs(D, .24) });
+      CH.line(D, Pl.X(-4), Pl.Y(-2), Pl.X(-4), Pl.Y(-1.5), { col: C.green, w: 2.4, a: a4 });
+      lines(D, zn, [{ t: 'x＝−4 のとき y＝6÷(−4)＝−1.5', a: fade(t, 0, .25) }, { t: 'y座標が −2 ではない', col: C.pink, a: fade(t, .4, .6) }, { t: 'または (−4)×(−2)＝8 で 6 ではない', a: fade(t, .65, .85) }]);
+    }
+  }
+
+  /* ---------- 類題2：比例・反比例の見分け ---------- */
+  function p2(D, k, t) {
+    var r = L2(D, .64, .68), s = CH.fs(D, .8), cs = CH.cols(r[0], 2, .05), cells = [];
+    cs.forEach(function (c) { CH.rows(c, 2, .08).forEach(function (q) { cells.push(q); }); });
+    S2.forEach(function (S, i) {
+      var q = cells[i], dim = (k === 1 && i !== 1) || (k === 2 && i !== 3) ? .3 : 1, hl = (k === 1 && i === 1) || (k === 2 && i === 3);
+      var rows = [['x'].concat(X2.map(String)), ['y'].concat(S.ys.map(String))];
+      if (k >= 0) {
+        if (i === 1) rows.push(['x×y'].concat(S.ys.map(function (y, j) { return String(X2[j] * y); })));
+        else if (i === 3) { rows.push(['y÷x'].concat(S.ys.map(function (y, j) { return qf(y, X2[j]); }))); rows.push(['x×y'].concat(S.ys.map(function (y, j) { return String(X2[j] * y); }))); }
+        else rows.push(['y÷x'].concat(S.ys.map(function (y, j) { return String(y / X2[j]); })));
+      }
+      CH.text(D, q.x0 + 2, q.y0 + s * .6, S.n + '　' + S.ttl, { align: 'left', size: fitT(D, S.n + '　' + S.ttl, q.w, s), col: hl ? S.col : C.chalk, a: dim });
+      var tr = CH.rect(q.x0, q.y0 + s * 1.4, q.x1, q.y1);
+      TB(D, tr, rows, { top: true, fw: .2, size: s * .95, rh: s * 2.3, a: dim,
+        hl: function (rr, c) { if (k < 0 || c === 0) return null; if (i === 0 || i === 2) return rr === 2 ? C.yel : null; if (i === 1) return rr === 2 ? C.blue : null; return null; },
+        show: function (rr, c) { return rr === 2 || rr === 3 ? fade(t, rr * .08, rr * .08 + .3) : 1; } });
+    });
+    var R = r[1];
+    if (k < 0) lines(D, R, [{ t: '見分けるポイント' }, { t: 'y÷x がいつも同じ → 比例', col: C.yel }, { t: 'x×y がいつも同じ → 反比例', col: C.blue }]);
+    if (k === 0) lines(D, R, [{ t: 'ア・ウ … y÷x が一定', col: C.yel, a: fade(t, .3, .5) }, { t: '　→ 比例', col: C.yel, a: fade(t, .35, .55) }, { t: 'イ … x×y＝24 で一定', col: C.blue, a: fade(t, .5, .7) }, { t: '　→ 反比例', col: C.blue, a: fade(t, .55, .75) }, { t: 'エ … どちらも一定でない', col: C.pink, a: fade(t, .7, .9) }]);
+    if (k === 1) lines(D, R, [{ t: 'x×y＝24 より', a: fade(t, 0, .2) }, { t: 'y＝[24/x]', col: C.blue, a: fade(t, .2, .4) }, { t: 'x＝8 のとき', a: fade(t, .5, .65) }, { t: 'y＝24÷8＝3', col: C.yel, a: fade(t, .65, .85) }]);
+    if (k === 2) lines(D, R, [{ t: 'x が 2 → 4（2倍）', a: fade(t, 0, .2) }, { t: 'y は 8 → 6', a: fade(t, .2, .4) }, { t: '2倍でも [1/2]倍でもない', col: C.pink, a: fade(t, .45, .65) }, { t: 'y÷x も x×y も一定でない', col: C.pink, a: fade(t, .7, .9) }]);
+  }
+  function qf(y, x) { var g = gcd(y, x), n = y / g, d = x / g; if (d === 1) return String(n); return near(Math.round(y / x * 100) / 100, y / x) ? String(y / x) : '[' + n + '/' + d + ']'; }
+  function gcd(a, b) { return b ? gcd(b, a % b) : Math.abs(a); }
+
+  /* ---------- 類題3：動く点と面積 ---------- */
+  function p3(D, k, t) {
+    var r = L2(D, .5, .5), F = r[0], s = CH.fs(D, .85), u = Math.min(F.w * .74 / BC, F.h * .62 / AB), x0 = F.x0 + (F.w - BC * u) / 2 + s, y0 = F.y0 + F.h * .16 + s;
+    var xs = k === -1 ? 1.5 : k === 0 ? 2 * fade(t, .05, .5) : k === 1 ? XM * fade(t, .05, .7) : k === 2 ? XM : XM, bp = V3 * xs;
+    if (k === 0) xs = 2 * fade(t, .05, .5);
+    bp = V3 * xs;
+    var Pa = [x0, y0], Pb = [x0, y0 + AB * u], Pc = [x0 + BC * u, y0 + AB * u], Pd = [x0 + BC * u, y0], Pp = [x0 + bp * u, y0 + AB * u];
+    CH.poly(D, [Pa, Pb, Pp], { fill: 'rgba(255,226,122,.22)' });
+    CH.poly(D, [Pa, Pb, Pc, Pd], { stroke: C.chalk, sw: 2.4 });
+    CH.line(D, Pa[0], Pa[1], Pp[0], Pp[1], { col: C.yel, w: 2.4 });
+    CH.circle(D, Pp[0], Pp[1], CH.fs(D, .26), { fill: C.yel, stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
+    [['A', Pa, -1, -1], ['B', Pb, -1, 1], ['C', Pc, 1, 1], ['D', Pd, 1, -1]].forEach(function (v) { CH.text(D, v[1][0] + v[2] * s * .9, v[1][1] + v[3] * s * .9, v[0], { size: s, col: C.chalk }); });
+    CH.text(D, Pp[0], Pp[1] + s * 1.2, 'P', { size: s, col: C.yel });
+    CH.text(D, x0 - s * 1.6, (Pa[1] + Pb[1]) / 2, '6cm', { size: s * .9, col: C.green });
+    CH.text(D, (Pb[0] + Pc[0]) / 2, Pb[1] + s * 2.3, '10cm', { size: s * .9, col: C.green });
+    if (k === -1) CH.arrow(D, Pp[0] + s * 1.2, Pp[1] - s * 1.1, Pp[0] + s * 4, Pp[1] - s * 1.1, { col: C.yel, w: 2.4 }), CH.text(D, Pp[0] + s * 2.6, Pp[1] - s * 2.2, '毎秒 2cm', { size: s * .85, col: C.yel });
+    if (k === 0) { var a = fade(t, .55, .75); CH.text(D, (Pb[0] + Pp[0]) / 2, Pb[1] - s * 1.2, 'BP', { size: s * .9, col: C.yel, a: a }); }
+    var R = r[1];
+    if (k <= 1) {
+      var Z = CH.rect(R.x0, R.y0 + R.h * .1, R.x1, R.y1);
+      if (k === -1) lines(D, Z, [{ t: 'P は B を出発して、辺 BC 上を C まで' }, { t: '動く（毎秒 2cm）' }, { t: 'x 秒後の △ABP の面積が y cm²' }]);
+      if (k === 0) lines(D, Z, [{ t: 'x＝2 のとき', a: fade(t, 0, .15) }, { t: 'BP＝2×2＝4（cm）', col: C.yel, a: fade(t, .3, .5) }, { t: '△ABP＝[1/2]×4×6', a: fade(t, .6, .75) }, { t: '＝12（cm²）', col: C.yel, a: fade(t, .75, .9) }]);
+      if (k === 1) lines(D, Z, [{ t: 'x 秒後の BP＝2x（cm）', a: fade(t, 0, .15) }, { t: '△ABP＝[1/2]×BP×AB', a: fade(t, .2, .4) }, { t: '＝[1/2]×2x×6', a: fade(t, .45, .6) }, { t: 'y＝6x', col: C.yel, a: fade(t, .7, .9) }]);
+    } else {
+      var G = CH.rect(R.x0, R.y0, R.x1, R.y1 - R.h * .26), Pl = PL(D, G, { x: [0, 6], y: [0, 36], stepX: 1, stepY: 6, labX: 1, labY: 6, fit: false, xn: 'x(秒)', yn: 'y(cm²)', m: { r: 3.6 } });
+      var tt = k === 2 ? fade(t, 0, .6) : 1;
+      CH.lin(D, Pl, 6, 0, { x0: 0, x1: XM * tt, col: C.yel, w: 3, ends: tt >= 1 ? ['in', 'in'] : null });
+      if (k === 2) { var a2 = fade(t, .6, .8); CH.pt(D, Pl, 5, 30, { col: C.yel, lab: '(5, 30)', dir: 'nw', a: a2 }); CH.pseg(D, Pl, [5, 0], [5, 30], { col: C.green, dash: true, a: a2 }); CH.pseg(D, Pl, [0, 30], [5, 30], { col: C.green, dash: true, a: a2 }); }
+      if (k === 3) {
+        var a3 = fade(t, .1, .4), a4 = fade(t, .5, .8);
+        CH.fn(D, Pl, function () { return 36; }, { x0: 0, x1: 6, col: 'rgba(0,0,0,0)', w: 1 });
+        CH.text(D, Pl.X(0.1), Pl.Y(36) + s * .4, 'y＝40 は グラフの はんいの外', { size: s * .8, col: C.pink, align: 'left', a: a3 });
+        CH.pseg(D, Pl, [5, 30], [5, 36], { col: C.pink, dash: true, a: a4 });
+        CH.text(D, Pl.X(5), Pl.Y(33) , '最大 30', { size: s * .8, col: C.pink, a: a4, align: 'right', dx: -4 });
+      }
+      var Z2 = CH.rect(R.x0, R.y1 - R.h * .25, R.x1, R.y1);
+      if (k === 2) lines(D, Z2, [{ t: 'P が C に着くまで　0≦x≦5', col: C.yel, a: fade(t, .65, .85) }, { t: 'y の変域　0≦y≦30', col: C.yel, a: fade(t, .8, .95) }]);
+      if (k === 3) lines(D, Z2, [{ t: 'y＝6x に y＝40 を代入 → x＝[20/3]', a: fade(t, .1, .35) }, { t: '[20/3] は 5 より大きい', col: C.pink, a: fade(t, .5, .75) }, { t: 'x の変域の外 → ない', col: C.pink, a: fade(t, .75, .95) }]);
+    }
+  }
+
+  /* ---------- 類題4：歯車 ---------- */
+  function gearPoly(D, cx, cy, n, k, phi, col, a) {
+    var r = n * k, h = k * 1.5, sA = 2 * Math.PI / n, P = [];
+    for (var i = 0; i < n; i++) { var th = phi + i * sA; [[0, r - h * .5], [.14, r + h * .5], [.38, r + h * .5], [.52, r - h * .5]].forEach(function (q) { var an = th + q[0] * sA; P.push([cx + q[1] * Math.cos(an), cy + q[1] * Math.sin(an)]); }); }
+    CH.poly(D, P, { fill: ha(col, .22), stroke: col, sw: 2.2, a: a });
+    CH.circle(D, cx, cy, k * 2, { stroke: col, sw: 2, a: a });
+    CH.line(D, cx, cy, cx + (r - h) * Math.cos(phi + .26 * sA), cy + (r - h) * Math.sin(phi + .26 * sA), { col: col, w: 2, a: a });
+  }
+  function gears(D, R, nb, ra, rb, qa, qb, o) {
+    o = o || {}; var s = CH.fs(D, .85), k = Math.min(R.w * .86 / (2 * (NA + nb) + 4), R.h * .74 / (2 * Math.max(NA, nb) + 4)), d = (NA + nb) * k, cx = R.cx - d / 2 + (nb - NA) * k / 2, cy = R.cy + s * .6;
+    var del = (D.now || 0) * .55, sa = 2 * Math.PI / NA, sb = 2 * Math.PI / nb, x1 = cx + d - 0 * k;
+    var ax = R.cx - d / 2 - (nb - NA) * k / 2 * 0, bx;
+    ax = R.cx - d / 2; bx = ax + d;
+    gearPoly(D, ax, cy, NA, k, -.26 * sa + del, C.blue, o.a); gearPoly(D, bx, cy, nb, k, Math.PI + .24 * sb - del * NA / nb, C.orange, o.a);
+    CH.text(D, ax, cy - NA * k - s * 1.5, 'A　歯数 ' + NA, { col: C.blue, size: s, a: o.a }); CH.text(D, ax, cy - NA * k - s * 2.8, '毎分 ' + ra + ' 回転', { col: C.blue, size: s, a: o.a });
+    CH.text(D, bx, cy + nb * k + s * 1.6, 'B　歯数 ' + qb, { col: C.orange, size: s, a: o.a }); CH.text(D, bx, cy + nb * k + s * 2.9, '毎分 ' + rb + ' 回転', { col: C.orange, size: s, a: o.a });
+  }
+  function p4(D, k, t) {
+    var R = full(D), s = CH.fs(D, .8), top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (k === 1 || k === 3 ? .5 : .66)), bot = CH.rect(R.x0 + R.w * .04, R.y0 + R.h * (k === 1 || k === 3 ? .56 : .7), R.x1 - R.w * .04, R.y1);
+    var nb = k === 2 ? 16 : k === 3 ? 48 : 36;
+    gears(D, top, nb, 30, k === 0 ? '？' : k === 2 ? 45 : k === 3 ? 15 : 'y', 24, nb);
+    if (k === 0) lines(D, bot, [{ t: '歯数×回転数が等しい　24×30＝36×y', a: fade(t, 0, .25) }, { t: '720＝36y　y＝720÷36＝20', a: fade(t, .3, .6) }, { t: '毎分 20回転', col: C.yel, a: fade(t, .65, .9) }]);
+    if (k === 1) {
+      var xs = [12, 18, 24, 36, 48];
+      TB(D, bot, [['x（歯数）'].concat(xs.map(String)), ['y（回転数）'].concat(xs.map(function (x) { return String(K4 / x); })), ['x×y'].concat(xs.map(function (x) { return String(K4); }))], { top: true, fw: .22, size: s, rh: s * 2.3, hl: function (rr, c) { return rr === 2 && c > 0 ? C.yel : null; }, show: function (rr, c) { return rr === 2 ? fade(t, .2 + c * .08, .4 + c * .08) : 1; } });
+      CH.text(D, bot.cx, bot.y1 - s * 1.2, 'xy＝720　→　y＝720÷x ＝ [720/x]'.replace(/\[720\/x\]/, '720÷x'), { size: s * 1.05, col: C.yel, a: fade(t, .75, .95) });
+    }
+    if (k === 2) lines(D, bot, [{ t: '720＝x×45', a: fade(t, 0, .3) }, { t: 'x＝720÷45＝16', col: C.yel, a: fade(t, .4, .7) }, { t: '歯数 16', col: C.yel, a: fade(t, .75, .95) }]);
+    if (k === 3) {
+      var Pl = PL(D, CH.rect(bot.x0, bot.y0 - R.h * .02, bot.x0 + bot.w * .5, bot.y1), { x: [0, 60], y: [0, 72], stepX: 12, stepY: 12, labX: 12, labY: 12, fit: false, xn: 'x', yn: 'y', m: { r: 2 } }), tt = fade(t, 0, .5);
+      hyp(D, Pl, 720, { col: C.yel, w: 3, x0: 10, x1: 10 + 50 * tt, side: 1 });
+      var a = fade(t, .55, .8);
+      CH.pt(D, Pl, 24, 30, { col: C.blue, lab: '(24, 30)', dir: 'ne', a: a, size: s * .8 }); CH.pt(D, Pl, 48, 15, { col: C.orange, lab: '(48, 15)', dir: 'ne', a: a, size: s * .8 });
+      lines(D, CH.rect(bot.x0 + bot.w * .54, bot.y0, bot.x1, bot.y1), [{ t: 'x×y＝720 で一定', a: fade(t, .3, .5) }, { t: 'x が 2倍 → y は [1/2]倍', col: C.pink, a: fade(t, .55, .75) }, { t: '歯数をふやすと', a: fade(t, .7, .85) }, { t: '回転数は へる', col: C.yel, a: fade(t, .8, .95) }]);
+    }
+  }
+
+  /* ---------- 類題5：2つのグラフ ---------- */
+  function p5(D, k, t) {
+    var r = L2(D, .6, .66), s = CH.fs(D, .85), Pl = PL(D, r[0], { x: [0, 20], y: [0, 60], stepX: 4, stepY: 10, labX: 4, labY: 10, fit: false, xn: 'x(分)', yn: 'y(L)', m: { r: 3.2 } }), R = r[1];
+    CH.fn(D, Pl, function () { return 60; }, { x0: 0, x1: 20, col: 'rgba(242,240,230,.5)', dash: true, w: 1.6 });
+    CH.text(D, Pl.X(20) - 4, Pl.Y(60) - s * .8, '満水 60L', { size: s * .8, align: 'right', col: 'rgba(242,240,230,.85)' });
+    CH.lin(D, Pl, 5, 0, { x0: 0, x1: 12, col: C.pink, w: 3 }); CH.lin(D, Pl, 3, 0, { x0: 0, x1: 20, col: C.blue, w: 3 });
+    CH.text(D, Pl.X(6.2), Pl.Y(37), 'A', { col: C.pink, size: s * 1.1, outline: OUT }); CH.text(D, Pl.X(14.5), Pl.Y(35), 'B', { col: C.blue, size: s * 1.1, outline: OUT });
+    CH.pt(D, Pl, 4, 20, { col: C.pink, lab: 'P(4, 20)', dir: 'nw', size: s * .85 }); CH.pt(D, Pl, 5, 15, { col: C.blue, lab: 'Q(5, 15)', dir: 'se', size: s * .85 });
+    if (k === 0) { CH.pseg(D, Pl, [0, 20], [4, 20], { col: C.pink, dash: true, a: fade(t, .2, .4) }); CH.pseg(D, Pl, [4, 0], [4, 20], { col: C.pink, dash: true, a: fade(t, .2, .4) });
+      lines(D, r[1], [{ t: 'A は原点を通る直線 y＝ax', a: fade(t, 0, .2) }, { t: 'P(4, 20) を代入　20＝a×4', a: fade(t, .25, .45) }, { t: 'a＝5　y＝5x', col: C.pink, a: fade(t, .55, .8) }]); }
+    if (k === 1) { CH.pseg(D, Pl, [5, 0], [5, 15], { col: C.blue, dash: true, a: fade(t, .2, .4) }); CH.pseg(D, Pl, [0, 15], [5, 15], { col: C.blue, dash: true, a: fade(t, .2, .4) });
+      lines(D, r[1], [{ t: 'Q(5, 15)　x＝1 のとき y は', a: fade(t, 0, .2) }, { t: '15÷5＝3', a: fade(t, .3, .5) }, { t: '1分間に 3L', col: C.blue, a: fade(t, .55, .8) }, { t: '（B は y＝3x）', a: fade(t, .7, .9) }]); }
+    if (k === 2) {
+      var a = fade(t, .15, .5), b = fade(t, .5, .8);
+      CH.pt(D, Pl, 12, 60, { col: C.pink, lab: '(12, 60)', dir: 'sw', a: a, size: s * .8 }); CH.pt(D, Pl, 20, 60, { col: C.blue, lab: '(20, 60)', dir: 'sw', a: a, size: s * .8 });
+      CH.arrow(D, Pl.X(12), Pl.Y(60) + s * 2.2, Pl.X(20), Pl.Y(60) + s * 2.2, { col: C.yel, w: 2.6, a: b }); CH.text(D, Pl.X(16), Pl.Y(60) + s * 3.3, '8分', { col: C.yel, a: b, size: s });
+      lines(D, r[1], [{ t: 'A　60÷5＝12（分）', col: C.pink, a: fade(t, .1, .3) }, { t: 'B　60÷3＝20（分）', col: C.blue, a: fade(t, .3, .5) }, { t: '20−12＝8', a: fade(t, .55, .75) }, { t: 'A が 8分 短い', col: C.yel, a: fade(t, .75, .95) }]);
+    }
+    if (k === 3) {
+      var a1 = fade(t, .1, .4), a2 = fade(t, .45, .75);
+      CH.pseg(D, Pl, [10, 0], [10, 50], { col: C.chalk, dash: true, a: a1 });
+      CH.pt(D, Pl, 10, 50, { col: C.pink, lab: '50', dir: 'w', a: a1, size: s * .85 }); CH.pt(D, Pl, 10, 30, { col: C.blue, lab: '30', dir: 'e', a: a1, size: s * .85 });
+      CH.pseg(D, Pl, [10, 30], [10, 50], { col: C.yel, w: 4, a: a2 }); CH.text(D, Pl.X(10) + s * .8, Pl.Y(40), '差 20L', { col: C.yel, a: a2, size: s * .9, align: 'left' });
+      lines(D, r[1], [{ t: 'x＝10 のところを縦に見る', a: fade(t, 0, .2) }, { t: 'A は 50L、B は 30L', a: fade(t, .25, .45) }, { t: '50−30＝20（L）', a: fade(t, .5, .7) }, { t: '正しい', col: C.yel, a: fade(t, .75, .95) }]);
+    }
+  }
+
+  K3.run({
+    no: '類題', title: '学力推移調査型の類題　中1 比例と反比例（5題）', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }],
+    steps: fixSteps([
+      /* ---------------- 類題1 ---------------- */
+      { tag: '類題1', bh: '類題1　反比例のグラフと表（座標）', q: 'y が x に反比例する関数のグラフが、点 A(2, 3) を通る。下の表は、x と y の関係の一部である。',
+        notes: ['(1) y を x の式で表しなさい。', '(2) 表の ア・イ にあてはまる数を求めなさい。', '(3) グラフ上の点のうち、x座標・y座標がともに正の整数である点の座標を、すべて求めなさい。', '(4) ゆきさんは「点 B(−4, −2) も、このグラフ上にある」と言った。正しいか。わけも書きなさい。'],
+        draw: function (D) { p1(D, -1, 0); } },
+      { tag: '類題1', q: '(1) y を x の式で表すと？', a: 'y＝[6/x]', sub: 'y＝[a/x] に x＝2、y＝3 を代入して a＝2×3＝6', dur: 3, b: { t: '(1) a＝2×3＝6　<b>y＝[6/x]</b>', col: C.yel }, draw: function (D) { p1(D, 0, D.ph ? D.t : 0); } },
+      { tag: '類題1', q: '(2) 表の ア・イ は？', a: 'ア −1、イ 6', sub: 'ア y＝6÷(−6)＝−1　イ y＝6÷1＝6', dur: 3, b: { t: '(2) ア <b>−1</b>、イ <b>6</b>', col: C.yel }, draw: function (D) { p1(D, 1, D.ph ? D.t : 0); } },
+      { tag: '類題1', q: '(3) x座標・y座標がともに正の整数の点は？', a: '(1, 6)、(2, 3)、(3, 2)、(6, 1)', sub: 'xy＝6 となる正の整数の組を、x が 1、2、3、6 のときにさがす。x＝4、5 のとき y は整数にならない', dur: 3.5, b: { t: '(3) <b>(1, 6)・(2, 3)・(3, 2)・(6, 1)</b>', col: C.yel }, draw: function (D) { p1(D, 2, D.ph ? D.t : 0); } },
+      { tag: '類題1', q: '(4) 「点 B(−4, −2) もグラフ上にある」は正しい？', a: '正しくない', sub: 'x＝−4 のとき y＝6÷(−4)＝−1.5 で、−2 ではない（(−4)×(−2)＝8 で、積が 6 にならない、でもよい）', dur: 4, b: { t: '(4) <b>正しくない</b>　x＝−4 のとき y＝−1.5（−2 ではない）', col: C.yel }, draw: function (D) { p1(D, 3, D.ph ? D.t : 0); } },
+      /* ---------------- 類題2 ---------------- */
+      { tag: '類題2', bh: '類題2　比例か反比例か（見分ける）', q: 'x と y の関係が、次のア〜エのようになっている。それぞれの x の値に対応する y の値を、表にまとめた。<br>ア　1個 80円のりんごを x個買ったときの代金 y円<br>イ　面積が 24cm² の長方形の、たての長さ x cm と、横の長さ y cm<br>ウ　1辺の長さが x cm の正三角形の、まわりの長さ y cm<br>エ　まわりの長さが 20cm の長方形の、たての長さ x cm と、横の長さ y cm',
+        notes: ['(1) y が x に比例するものを、ア〜エからすべて選びなさい。', '(2) y が x に反比例するものを、ア〜エから選びなさい。', '(3) イについて、y を x の式で表しなさい。また、x＝8 のときの y の値を求めなさい。', '(4) エは、比例でも反比例でもない。その理由を、表の値を使って説明しなさい。'],
+        draw: function (D) { p2(D, -1, 0); } },
+      { tag: '類題2', q: '(1) 比例するものは？　(2) 反比例するものは？', a: '(1) ア・ウ　(2) イ', sub: 'ア・ウは y÷x がいつも同じ（80、3）→ 比例。イは x×y がいつも 24 → 反比例。エは y÷x も x×y も一定でない', dur: 4, b: { t: '(1) 比例 <b>ア・ウ</b>　(2) 反比例 <b>イ</b>', col: C.yel }, draw: function (D) { p2(D, 0, D.ph ? D.t : 0); } },
+      { tag: '類題2', q: '(3) イの式は？　x＝8 のときの y は？', a: 'y＝[24/x]、y＝3', sub: 'xy＝24 だから y＝[24/x]。x＝8 を代入して y＝24÷8＝3', dur: 3, b: { t: '(3) <b>y＝[24/x]</b>　x＝8 のとき <b>y＝3</b>', col: C.yel }, draw: function (D) { p2(D, 1, D.ph ? D.t : 0); } },
+      { tag: '類題2', q: '(4) エが 比例でも反比例でもない理由は？', a: 'x が 2倍になっても、y は 2倍にも [1/2]倍にもならないから', sub: '表で x が 2 から 4 に 2倍になるとき、y は 8 から 6 になる。2倍ではないので比例でなく、[1/2]倍（4）でもないので反比例でもない（y＝10−x の形）', dur: 5, b: { t: '(4) x が 2 → 4（2倍）で y は 8 → 6　<b>2倍でも [1/2]倍でもない</b>', col: C.yel }, draw: function (D) { p2(D, 2, D.ph ? D.t : 0); } },
+      /* ---------------- 類題3 ---------------- */
+      { tag: '類題3', bh: '類題3　動く点と三角形の面積（比例）', q: '長方形 ABCD で、AB＝6cm、BC＝10cm である。点 P は、頂点 B を出発して、辺 BC 上を頂点 C まで、毎秒 2cm の速さで動く。P が B を出発してから x 秒後の △ABP の面積を y cm² とする。',
+        notes: ['(1) x＝2 のとき、BP の長さと、△ABP の面積を求めなさい。', '(2) y を x の式で表しなさい。', '(3) x の変域と y の変域を、不等号を使って表しなさい。', '(4) ひなたさんは「△ABP の面積が 40cm² になるときがある」と言った。正しいか。わけも書きなさい。'],
+        draw: function (D) { p3(D, -1, 0); } },
+      { tag: '類題3', q: '(1) x＝2 のときの BP と、△ABP の面積は？', a: 'BP＝4cm、面積 12cm²', sub: 'BP＝2×2＝4（cm）、△ABP＝[1/2]×4×6＝12（cm²）', dur: 3, b: { t: '(1) BP＝<b>4cm</b>、△ABP＝[1/2]×4×6＝<b>12cm²</b>', col: C.yel }, draw: function (D) { p3(D, 0, D.ph ? D.t : 0); } },
+      { tag: '類題3', q: '(2) y を x の式で表すと？', a: 'y＝6x', sub: 'x 秒後の BP は 2x cm。△ABP＝[1/2]×2x×6＝6x', dur: 3.5, b: { t: '(2) BP＝2x　y＝[1/2]×2x×6＝<b>6x</b>', col: C.yel }, draw: function (D) { p3(D, 1, D.ph ? D.t : 0); } },
+      { tag: '類題3', q: '(3) x の変域と y の変域は？', a: '0≦x≦5、0≦y≦30', sub: 'P が C に着くのは 10÷2＝5 秒後。x＝5 のとき y＝6×5＝30', dur: 3.5, b: { t: '(3) <b>0≦x≦5</b>　<b>0≦y≦30</b>', col: C.yel }, draw: function (D) { p3(D, 2, D.ph ? D.t : 0); } },
+      { tag: '類題3', q: '(4) 「△ABP の面積が 40cm² になるときがある」は正しい？', a: '正しくない', sub: 'y＝6x に y＝40 を代入すると x＝[20/3]。これは x の変域 0≦x≦5 に入らない（面積の最大は 30cm²）', dur: 4.5, b: { t: '(4) <b>正しくない</b>　y＝40 のとき x＝[20/3]＞5（最大は 30cm²）', col: C.yel }, draw: function (D) { p3(D, 3, D.ph ? D.t : 0); } },
+      /* ---------------- 類題4 ---------------- */
+      { tag: '類題4', bh: '類題4　歯車の回転数（反比例）', q: '2つの歯車 A・B がかみ合って回っている。歯車 A は歯数が 24 で、毎分 30回転する。歯車 B の歯数を x、毎分の回転数を y とする。かみ合っている歯車では、歯数と回転数の積が等しくなる。',
+        notes: ['(1) B の歯数が 36 のとき、B は毎分何回転するか。', '(2) y を x の式で表しなさい。', '(3) B を毎分 45回転させるには、歯数をいくつにすればよいか。', '(4) ほのかさんは「B の歯数をふやすと、B の回転数もふえる」と言った。正しいか。わけも書きなさい。'],
+        draw: function (D) { p4(D, -1, 0); } },
+      { tag: '類題4', q: '(1) B の歯数が 36 のとき、毎分何回転？', a: '毎分 20回転', sub: '24×30＝36×y　720＝36y　y＝720÷36＝20', dur: 3.5, b: { t: '(1) 24×30＝36×y → y＝<b>20</b>（毎分 20回転）', col: C.yel }, draw: function (D) { p4(D, 0, D.ph ? D.t : 0); } },
+      { tag: '類題4', q: '(2) y を x の式で表すと？', a: 'y＝[720/x]', sub: 'xy＝24×30＝720 で一定。x×y が一定だから反比例で、y＝[720/x]', dur: 3.5, b: { t: '(2) xy＝720　<b>y＝[720/x]</b>', col: C.yel }, draw: function (D) { p4(D, 1, D.ph ? D.t : 0); } },
+      { tag: '類題4', q: '(3) B を毎分 45回転させる歯数は？', a: '16', sub: 'y＝[720/x] に y＝45 を代入して 45＝[720/x]　x＝720÷45＝16', dur: 3, b: { t: '(3) 45＝[720/x] → x＝<b>16</b>', col: C.yel }, draw: function (D) { p4(D, 2, D.ph ? D.t : 0); } },
+      { tag: '類題4', q: '(4) 「歯数をふやすと、回転数もふえる」は正しい？', a: '正しくない', sub: 'xy＝720 で一定だから、x がふえると y はへる（反比例）。たとえば x＝24 のとき y＝30、x＝48 のとき y＝15。歯数が 2倍になると回転数は [1/2]倍になる', dur: 5, b: { t: '(4) <b>正しくない</b>　xy＝720 で一定。x がふえると y は<b>へる</b>（24→48 で 30→15）', col: C.yel }, draw: function (D) { p4(D, 3, D.ph ? D.t : 0); } },
+      /* ---------------- 類題5 ---------------- */
+      { tag: '類題5', bh: '類題5　2本のホースの水の量（グラフの読み取り）', q: '空の水そう（容量 60L）に、ホース A、ホース B で別々に水を入れた。グラフは、水を入れ始めてからの時間 x 分と、水そうにたまった水の量 y L の関係を表している。どちらのホースも、一定の割合で水が出る。点 P(4, 20) は A のグラフ上の点、点 Q(5, 15) は B のグラフ上の点である。',
+        notes: ['(1) A のグラフの式を求めなさい。', '(2) B は、1分間に何Lの水を出すか。', '(3) 水そうが 60L になるまでにかかる時間は、A のほうが B より何分短いか。', '(4) ゆうとさんは「10分間に入る水の量は、A のほうが B より 20L 多い」と言った。正しいか。グラフを使って説明しなさい。'],
+        draw: function (D) { p5(D, -1, 0); } },
+      { tag: '類題5', q: '(1) A のグラフの式は？', a: 'y＝5x', sub: 'A は原点を通る直線だから y＝ax。P(4, 20) を代入して 20＝4a　a＝5', dur: 3, b: { t: '(1) 20＝a×4 → a＝5　<b>y＝5x</b>', col: C.yel }, draw: function (D) { p5(D, 0, D.ph ? D.t : 0); } },
+      { tag: '類題5', q: '(2) B は 1分間に何L？', a: '3L', sub: 'Q(5, 15) より、B は y＝3x。x＝1 のときの y が 1分間に出る水の量', dur: 3, b: { t: '(2) 15÷5＝<b>3L</b>（B は y＝3x）', col: C.yel }, draw: function (D) { p5(D, 1, D.ph ? D.t : 0); } },
+      { tag: '類題5', q: '(3) 60L になるまでの時間は、A のほうが何分短い？', a: '8分', sub: 'A は y＝5x に y＝60 を代入して x＝12、B は y＝3x に y＝60 を代入して x＝20。20−12＝8', dur: 4, b: { t: '(3) A 12分、B 20分 → <b>8分</b> 短い', col: C.yel }, draw: function (D) { p5(D, 2, D.ph ? D.t : 0); } },
+      { tag: '類題5', q: '(4) 「10分間では A のほうが 20L 多い」は正しい？', a: '正しい', sub: 'グラフで x＝10 のところを縦に見ると、A は y＝50、B は y＝30。50−30＝20（L）だから正しい（式でも 5×10＝50、3×10＝30）', dur: 4.5, b: { t: '(4) <b>正しい</b>　x＝10 で A は 50L、B は 30L → 差 20L', col: C.yel }, draw: function (D) { p5(D, 3, D.ph ? D.t : 0); } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>
