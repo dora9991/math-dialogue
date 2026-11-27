@@ -4,7 +4,7 @@
    というねらいと形式だけを合わせた自作問題）。
    類題①（B が OA に平行な直線上）とは別に、B(1, t, 1) は y 軸に平行な直線上を動く。X のとりうる範囲に上限があり、最大が実現するための k の条件が出る。
    O(0,0,0)、A(k,0,0)、B(1,t,1)、k>1、D=(k−1)²+t²+1。
-   (1) OH=OA+s·AB、OH·AB=0 → s=k(k−1)/D → H(k(t²+1)/D, kt(k−1)/D, k(k−1)/D)（k=3, t=3 で (15/7, 9/7, 3/7)）
+   (1) OH=OA+s·AB、OH·AB=0 → s=k(k−1)/D → H(k(t²+1)/D, kt(k−1)/D, k(k−1)/D)（k=3, t=2 で (5/3, 4/3, 2/3)）
    (2) BO·BA=t²−k+2≦0 → −√(k−2) ≦ t ≦ √(k−2)、存在条件 k≧2（k=2 は t=0 で H=B）
    (3) AH=k(k−1)/√D、OH²=k²(t²+1)/D（OH²+AH²=k²）→ S=(1/2)OH·AH=k²(k−1)√(t²+1)/(2D)（k=3, t=0 で 9/5）
    (4) X=AH² とおくと S²=X(k²−X)/4≦k⁴/16。X=k²/2 ⇔ t²=k²−2k ≧ 0 ⇔ k≧2 → k≧2 で max S=k²/4。k²/4<7 ⇔ k²<28 → k=5（k=6 は 9）
@@ -17,15 +17,15 @@
     '角の大きさは内積の符号で：$\\angle\\mathrm{OBA}\\ge90^\\circ\\iff\\overrightarrow{\\mathrm{BO}}\\cdot\\overrightarrow{\\mathrm{BA}}\\le0$。そのような $t$ がある条件は $t^2\\le k-2$ から',
     '斜辺が一定の直角三角形は $S^2=\\frac14X(k^2-X)$ と **2 次式** にして最大。$X$ が **その値までとどくか**（$k\\ge2$）を必ず確かめる'
   ];
-  // 見取図（x 軸を右、z 軸を上、y 軸を左上の奥へ）。図は k=3、t=3：A(3,0,0)、B(1,3,1)、H(15/7,9/7,3/7)
-  const pj = (x, y, z) => [x - 0.5 * y, z + 0.3 * y];
-  const O3 = pj(0, 0, 0), A3 = pj(3, 0, 0), B3 = pj(1, 3, 1), H3 = pj(15 / 7, 9 / 7, 3 / 7);
+  // 見取図（x 軸を右、z 軸を上、y 軸を左上の奥へ）。図は k=3、t=2：A(3,0,0)、B(1,2,1)、H(5/3,4/3,2/3)
+  const pj = (x, y, z) => [x - 0.4 * y, z + 0.45 * y];
+  const O3 = pj(0, 0, 0), A3 = pj(3, 0, 0), B3 = pj(1, 2, 1), H3 = pj(5 / 3, 4 / 3, 2 / 3);
   const AB = (s) => [A3[0] + s * (B3[0] - A3[0]), A3[1] + s * (B3[1] - A3[1])];
-  const space = (id, extra, h) => ({ t: 'fig', id, col: 1, view: [-2.6, -0.5, 4.0, 2.6], w: Math.round((h || 280) * 6.6 / 3.1), h: h || 280, items: [
-    { k: 'vec', a: O3, b: pj(3.6, 0, 0), c: 'd', wd: 2 }, { k: 'vec', a: O3, b: pj(0, 4.3, 0), c: 'd', wd: 2 }, { k: 'vec', a: O3, b: pj(0, 0, 2.3), c: 'd', wd: 2 },
-    { k: 'label', at: pj(3.6, 0, 0), text: 'x', dx: 4, dy: 18, c: 'd', size: 22 }, { k: 'label', at: pj(0, 4.3, 0), text: 'y', dx: -12, dy: 12, c: 'd', size: 22 }, { k: 'label', at: pj(0, 0, 2.3), text: 'z', dx: 14, c: 'd', size: 22 },
+  const space = (id, extra, h) => ({ t: 'fig', id, col: 1, view: [-2.2, -0.5, 4.0, 3.0], w: Math.round((h || 300) * 6.2 / 3.5), h: h || 300, items: [
+    { k: 'vec', a: O3, b: pj(3.6, 0, 0), c: 'd', wd: 2 }, { k: 'vec', a: O3, b: pj(0, 3.8, 0), c: 'd', wd: 2 }, { k: 'vec', a: O3, b: pj(0, 0, 2.5), c: 'd', wd: 2 },
+    { k: 'label', at: pj(3.6, 0, 0), text: 'x', dx: 4, dy: 18, c: 'd', size: 22 }, { k: 'label', at: pj(0, 3.8, 0), text: 'y', dx: -12, dy: 12, c: 'd', size: 22 }, { k: 'label', at: pj(0, 0, 2.5), text: 'z', dx: 14, c: 'd', size: 22 },
     { k: 'label', at: O3, text: 'O', dx: -6, dy: 20, size: 22 },
-    { k: 'seg', a: pj(1, -1, 1), b: pj(1, 4.2, 1), c: 'b', wd: 2.5, dash: true }, { k: 'label', at: pj(1, 4.2, 1), text: 'm', dx: 14, c: 'b', size: 22 },
+    { k: 'seg', a: pj(1, -1, 1), b: pj(1, 3.8, 1), c: 'b', wd: 2.5, dash: true }, { k: 'label', at: pj(1, 3.8, 1), text: 'm', dx: 14, c: 'b', size: 22 },
     { k: 'seg', a: AB(-0.1), b: AB(1.15), c: 'w', wd: 2.5 },
     { k: 'seg', a: O3, b: H3, c: 'p', wd: 2.5 }, { k: 'right', o: H3, a: O3, b: A3, c: 'p', s: 12 },
     { k: 'pt', at: A3, name: 'A', dir: 's', c: 'y' }, { k: 'pt', at: B3, name: 'B', dir: 'n', c: 'b' }, { k: 'pt', at: H3, name: 'H', dir: 'e', c: 'p' }].concat(extra || []) });
@@ -56,7 +56,7 @@
         add: [{ t: 'prob' }] },
 
       // ---------- 読みかえ ----------
-      { clear: true, part: '読みかえ', say: 'B は $x,\\ z$ 座標が 1 で、$y$ 座標 $t$ だけが動く点。つまり $y$ 軸に平行な直線 $m$ の上を動きます。右の図は $k=3,\\ t=3$ の場合です。',
+      { clear: true, part: '読みかえ', say: 'B は $x,\\ z$ 座標が 1 で、$y$ 座標 $t$ だけが動く点。つまり $y$ 軸に平行な直線 $m$ の上を動きます。右の図は $k=3,\\ t=2$ の場合です。',
         add: [{ t: 'h', text: '問題の読みかえ' },
           { t: 'box', c: 'b', size: 'sm', label: '方針', text: '(1)　H は直線 AB 上 → 実数 $s$ で表し、OH ⊥ AB\n(2)　角が $90^\\circ$ 以上 ⇔ 内積 $\\le0$\n(3)　三角形 OAH は H が直角\n(4)　$S^2$ を 2 次式とみて最大' },
           space('s1')] },
@@ -73,7 +73,7 @@
         why: { 0: '$k(1-k)+sD=0$ を $s$ について解くと、移項で符号が変わります。', 1: '$\\overrightarrow{\\mathrm{OA}}\\cdot\\overrightarrow{\\mathrm{AB}}=k(1-k)$ の $(1-k)$ を落としています。', 3: '$\\overrightarrow{\\mathrm{OA}}=(k,\\ 0,\\ 0)$ の $k$ をかけ忘れています。' },
         good: '$sD=-k(1-k)=k(k-1)$ より $s=\\dfrac{k(k-1)}{D}$。',
         add: [{ t: 'm', col: 1, tex: 's=\\frac{k(k-1)}{D}' }] } },
-      { say: '$s$ を $\\overrightarrow{\\mathrm{OH}}$ に代入します。$x$ 成分は $k-\\dfrac{k(k-1)^2}{D}=\\dfrac{k(t^2+1)}{D}$ とまとまります。$k=3,\\ t=3$ なら $D=14$ で $\\mathrm{H}\\left(\\frac{15}{7},\\frac97,\\frac37\\right)$ です。',
+      { say: '$s$ を $\\overrightarrow{\\mathrm{OH}}$ に代入します。$x$ 成分は $k-\\dfrac{k(k-1)^2}{D}=\\dfrac{k(t^2+1)}{D}$ とまとまります。$k=3,\\ t=2$ なら $D=9$ で $\\mathrm{H}\\left(\\frac53,\\frac43,\\frac23\\right)$ です。',
         add: [{ t: 'ans', label: '(1) 答', tex: '\\mathrm{H}\\left(\\frac{k(t^2+1)}{D},\\ \\frac{kt(k-1)}{D},\\ \\frac{k(k-1)}{D}\\right)' },
           { t: 'p', size: 'sm', text: 'ただし $D=(k-1)^2+t^2+1$' }] },
 
@@ -88,7 +88,7 @@
         why: { 0: 'それは問題の仮定（$k>1$）に近い条件です。$k-2$ が負だと $t^2\\le k-2$ になる $t$ がありません。', 2: '$k=2$ のとき $t^2\\le0$ で $t=0$ がとれます。等号をふくめます。', 3: '$t=\\pm1$ がとれる条件と混ざっています。$t^2\\le k-2$ は $k-2\\ge0$ でよいです。' },
         good: '右辺 $k-2$ が 0 以上なら、$t^2\\le k-2$ をみたす $t$ があります。$k=2$ のときは $t=0$ だけ。',
         add: [{ t: 'm', col: 1, tex: 'k\\ge2' }] } },
-      { say: 'そのときの $t$ の範囲は $-\\sqrt{k-2}\\le t\\le\\sqrt{k-2}$。$k=3$ なら $|t|\\le1$ で、図の B が $t=3$ の位置にあるときは鈍角にはなりません。',
+      { say: 'そのときの $t$ の範囲は $-\\sqrt{k-2}\\le t\\le\\sqrt{k-2}$。$k=3$ なら $|t|\\le1$ で、図の B が $t=2$ の位置にあるときは鈍角にはなりません。',
         add: [{ t: 'ans', label: '(2) 答', text: '$k\\ge2$\n$-\\sqrt{k-2}\\le t\\le\\sqrt{k-2}$' }] },
       { ask: { type: 'think', q: '$k=2$ のとき、$\\angle\\mathrm{OBA}\\ge90^\\circ$ となる $t$ を求め、そのときの H がどこか調べよう。',
         hint: '$t^2\\le0$ より $t=0$。B と A, O の位置関係を見る。',
