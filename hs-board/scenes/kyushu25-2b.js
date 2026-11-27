@@ -107,7 +107,7 @@
         opts: ['$\\dfrac92\\log2$', '$\\dfrac12\\log\\dfrac{243}{512}$', '$\\log\\dfrac{512}{243}$', '$\\dfrac12\\log\\dfrac{512}{243}$'], ok: 3,
         why: { 0: '下端 $t=0$ の値 $\\frac52\\log3$ を引き忘れています。', 1: '部分分数の符号が逆になっています。被積分関数は正なので、値が負なのはおかしい。', 2: '係数 $\\frac12$ を落としています。$\\frac92\\log2-\\frac52\\log3$ は $\\frac12$ でくくれます。' },
         good: '$\\left(-\\frac12\\log2+\\frac52\\log4\\right)-\\frac52\\log3=\\frac92\\log2-\\frac52\\log3=\\frac12\\log\\frac{512}{243}$。',
-        add: [{ t: 'm', tex: '=\\left(-\\frac12\\log2+\\frac52\\log4\\right)-\\left(0+\\frac52\\log3\\right)=\\frac92\\log2-\\frac52\\log3' },
+        add: [{ t: 'm', tex: '=\\left(-\\frac12\\log2+\\frac52\\log4\\right)-\\frac52\\log3' },
           { t: 'ans', label: '(2) 答', tex: '\\frac12\\log\\frac{512}{243}\\quad\\left(=\\frac92\\log2-\\frac52\\log3\\right)' }] } },
       { say: '見直し：$\\frac12\\log\\frac{512}{243}\\approx0.373$。被積分関数は $\\frac13$ から $\\frac34$ の間で、幅は $\\frac{\\pi}{4}\\approx0.785$。面積は 0.26〜0.59 の間のはずで、合っています。',
         add: [{ t: 'box', col: 1, c: 'g', size: 'sm', label: '見直し', text: '$\\frac13\\cdot\\frac{\\pi}{4}\\approx0.26<S<\\frac34\\cdot\\frac{\\pi}{4}\\approx0.59$\n$S=\\frac12\\log\\frac{512}{243}\\approx0.373$　✓' }] },
