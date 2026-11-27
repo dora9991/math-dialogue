@@ -110,8 +110,8 @@
           { t: 'ans', label: '(2) 答', tex: 's=t=\\frac38,\\qquad u=\\frac14' }] },
       { ask: { type: 'think', q: '$\\vec h\\cdot\\vec a$ と $\\vec h\\cdot\\vec c$ に $s,\\ t,\\ u$ の値を入れて、答えが合っているか確かめよう。',
         hint: '$\\vec h\\cdot\\vec a=4s+2t$、$\\vec h\\cdot\\vec c=9u$。垂線なら 3 つの内積は等しいはず。',
-        ans: '$4\\cdot\\dfrac38+2\\cdot\\dfrac38=\\dfrac94$、$9\\cdot\\dfrac14=\\dfrac94$。$\\vec h\\cdot\\vec b=2\\cdot\\dfrac38+4\\cdot\\dfrac38=\\dfrac94$ も同じ',
-        after: '3 つの内積がすべて $\\dfrac94$。この共通の値は、あとの (4) で $|\\overrightarrow{\\mathrm{OH}}|^2$ になります。' } },
+        ans: '$\\vec h\\cdot\\vec a=\\dfrac32+\\dfrac34=\\dfrac94$、$\\vec h\\cdot\\vec c=9\\cdot\\dfrac14=\\dfrac94$。$\\vec h\\cdot\\vec b$ も $\\dfrac94$',
+        after: '3 つの内積がすべて $\\dfrac94$。この値は (4) で $|\\overrightarrow{\\mathrm{OH}}|^2$ になります。' } },
 
       // ---------- (3) ----------
       { clear: true, part: '(3)', say: '(3) です。D は直線 AH 上で、同時に辺 BC 上の点。$\\vec b$ と $\\vec c$ の項を 1 つにまとめて、「A と BC 上の点の内分」の形に直します。',

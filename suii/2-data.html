@@ -215,8 +215,9 @@
     grid4(D, R.x0 + R.w * .27, top2, cs2, on ? 'sum' : '', hs, 1, '目の和が 5 の倍数', C.orange); grid4(D, R.x0 + R.w * .73, top2, cs2, on ? 'diff' : '', hd, 1, '目の差が 2', C.green);
     var y = top2 + cs2 * 7 + s * 1.4;
     CH.text(D, R.x0 + R.w * .27, y, '和が 5（4通り）＋ 和が 10（3通り）＝ 7通り', { col: C.orange, a: a1, size: s * .88 }); CH.text(D, R.x0 + R.w * .73, y, '8通り', { col: C.green, a: a1, size: s * .95 });
-    CH.text(D, R.cx, y + s * 1.8, '「和が 5」と「和が 10」は 出やすさが ちがう（4通りと 3通り）。種類の数ではなく、通りの数でくらべる', { col: C.pink, a: a2, size: s * .88 });
-    CH.text(D, R.cx, y + s * 3.5, '7/36 ＜ 8/36 → 差が 2 のほうが 起こりやすい', { col: C.yel, a: a3, size: s * 1.05 });
+    CH.text(D, R.cx, y + s * 1.8, '和が 5（4通り）と 和が 10（3通り）は 出やすさが ちがう', { col: C.pink, a: a2, size: s * .9 });
+    CH.text(D, R.cx, y + s * 3.4, '種類の数ではなく、通りの数で くらべる', { col: C.pink, a: a2, size: s * .9 });
+    CH.text(D, R.cx, y + s * 5.2, '7/36 ＜ 8/36 → 差が 2 のほうが 起こりやすい', { col: C.yel, a: a3, size: s * 1.05 });
   }
 
   /* ---------------- 類題5：くじ ---------------- */
@@ -260,7 +261,7 @@
     }
     /* k === 4 */
     var cs2 = Math.min(R.h * .6 / 9.2, R.w * .4 / 9.2); cs = cs2;
-    G(R.x0 + R.w * .27, top, function (r, c) { return r < 3 ? C.blue : null; }, 'A が当たり（上の 3行）　21通り', C.blue, 1); G(R.x0 + R.w * .74, top, function (r, c) { return c < 3 ? C.orange : null; }, 'B が当たり（左の 3列）　21通り', C.orange, 1);
+    G(R.x0 + R.w * .27, top, function (r, c) { return r < 3 ? C.blue : null; }, 'A が当たり　21通り', C.blue, 1); G(R.x0 + R.w * .74, top, function (r, c) { return c < 3 ? C.orange : null; }, 'B が当たり　21通り', C.orange, 1);
     var y = top + cs * 9.3 + s * .6, a1 = CH.smooth(0, .4, t), a2 = CH.smooth(.4, .9, t);
     CH.text(D, R.cx, y, 'A も B も 21/56 ＝ 3/8 で 同じ', { col: C.yel, a: a1, size: s * 1.05 }); CH.text(D, R.cx, y + s * 1.7, '先にひいても あとでひいても、当たりやすさは かわらない', { col: C.green, a: a2, size: s * .95 });
   }
