@@ -41,7 +41,7 @@
       // ---------- 方針 ----------
       { clear: true, part: '方針', say: '空間の三角形は、A を始点にした2つのベクトルで調べます。まず $\\overrightarrow{\\mathrm{AB}}$ を「終点 B − 始点 A」で出します。',
         add: [{ t: 'h', text: '方針：A を始点にした2つのベクトル' },
-          { t: 'm', tex: '\\overrightarrow{\\mathrm{AB}}=(1-(t^2-1),\\ -2t-(-t),\\ 0-(t^2-1))=(2-t^2,\\ -t,\\ 1-t^2)' }] },
+          { t: 'm', size: 'sm', tex: '\\begin{aligned}\\overrightarrow{\\mathrm{AB}}&=(1-(t^2-1),\\ -2t-(-t),\\ 0-(t^2-1))\\\\ &=(2-t^2,\\ -t,\\ 1-t^2)\\end{aligned}' }] },
       { ask: { type: 'choice', q: '$\\overrightarrow{\\mathrm{AC}}$ の成分は？',
         opts: ['$(t^2-2,\\ t,\\ -t^2)$', '$(2-t^2,\\ -t,\\ -t^2)$', '$(2-t^2,\\ t,\\ -1-t^2)$', '$(2-t^2,\\ t,\\ -t^2)$'], ok: 3,
         why: { 0: '「A − C」になっています。$\\overrightarrow{\\mathrm{AC}}$ は「終点 C − 始点 A」です。', 1: '$y$ 成分は $0-(-t)=t$。マイナスを引くので $+t$ です。', 2: '$z$ 成分は $-1-(t^2-1)$。かっこの中の $-1$ も引くので $-t^2$ です。' },
