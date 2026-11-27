@@ -11,9 +11,9 @@ if (!ids.length) {   // 指定なし：目次の一覧のうち、台本ファ�
   const w = {}; new Function('window', fs.readFileSync(path.join(ROOT, 'js/lessons.js'), 'utf8'))(w);
   ids = w.HB_LESSONS.map(l => l.id).filter(id => fs.existsSync(path.join(ROOT, 'scenes', id + '.js')));
 }
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const CHROME = process.env.CHROME || ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/opt/pw-browsers/chromium', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(p => fs.existsSync(p));   // Mac・Linux（クラウドの作業環境）
 const prof = fs.mkdtempSync(path.join(process.env.TMPDIR || os.tmpdir(), 'hbc-')), port = 9300 + Math.floor(Math.random() * 400);
-const proc = spawn(CHROME, ['--headless=new', '--mute-audio', '--hide-scrollbars', '--no-first-run', '--allow-file-access-from-files', `--user-data-dir=${prof}`, `--remote-debugging-port=${port}`, '--window-size=1600,900', 'about:blank'], { stdio: 'ignore', detached: true });
+const proc = spawn(CHROME, [...(process.platform === 'linux' ? ['--no-sandbox'] : []), '--headless=new', '--mute-audio', '--hide-scrollbars', '--no-first-run', '--allow-file-access-from-files', `--user-data-dir=${prof}`, `--remote-debugging-port=${port}`, '--window-size=1600,900', 'about:blank'], { stdio: process.env.HBC_DEBUG ? 'inherit' : 'ignore', detached: true });
 let list = null; for (let i = 0; i < 80 && !list; i++) { await new Promise(r => setTimeout(r, 250)); try { list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json(); } catch (e) { /* 起動待ち */ } }
 const ws = new WebSocket(list.find(t => t.type === 'page').webSocketDebuggerUrl); await new Promise(r => ws.onopen = r);
 let seq = 0; const wait = new Map(), logs = [];
