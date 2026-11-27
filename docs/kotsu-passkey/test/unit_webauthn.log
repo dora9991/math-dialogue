@@ -1,0 +1,10 @@
+PASS  alg -7：正しい 署名は 通る（チャレンジ・回数を 返す）  {"challenge":"abcDEF123","count":7}
+PASS  alg -7：チャレンジを 書きかえると 通らない
+PASS  alg -257：正しい 署名は 通る（チャレンジ・回数を 返す）  {"challenge":"abcDEF123","count":7}
+PASS  alg -257：チャレンジを 書きかえると 通らない
+PASS  ちがう オリジンは 通らない
+PASS  rpId が ちがうと 通らない
+PASS  本人確認（UV）なしは 通らない
+PASS  ほかの 人の かぎでは 通らない
+PASS  DER→r||s：先頭の 0 を はずし、短い 値は 0 で うめる
+FAILS 0
