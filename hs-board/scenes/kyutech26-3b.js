@@ -13,11 +13,11 @@
   // 見取図：X が手前（左下）、Y が右、Z が上
   const V3 = { O: [0, 0, 0], A: [0, 2, 0], B: [S3, 1, 0], C: [0, 0, 3] };
   V3.H = [3 * S3 / 8, 9 / 8, 3 / 4]; V3.D = [3 * S3 / 5, 3 / 5, 6 / 5];
-  const pj = v => [v[1] - 0.6 * v[0], 0.8 * v[2] - 0.4 * v[0]];
+  const pj = v => [v[1] - 0.9 * v[0], 0.8 * v[2] - 0.35 * v[0]];
   const P = {}; Object.keys(V3).forEach(k => { P[k] = pj(V3[k]); });
   const tet = (id, o, size) => {
     o = o || {};
-    const W = size || 350, view = [-0.5, -1.0, 2.6, 2.8];
+    const W = size || 350, view = [-1.0, -1.0, 2.5, 2.8];
     const it = [
       { k: 'poly', pts: [P.A, P.B, P.C], close: false, fill: 'g', alpha: 0.12, noStroke: true },
       { k: 'seg', a: P.O, b: P.A, c: 'w', wd: 3 }, { k: 'seg', a: P.O, b: P.B, c: 'w', wd: 3 }, { k: 'seg', a: P.O, b: P.C, c: 'w', wd: 3 },
