@@ -115,9 +115,6 @@
     var by = cy + DL / 2 * u + s * 1.1;
     say(D, cxM, by, 'M　直径 20cm', { size: s, maxW: FR.w * .42 }); say(D, cxL, by, 'L　直径 30cm', { size: s, maxW: FR.w * .42 });
     say(D, cxM, by + s * 1.4, '1200円', { size: s, col: C.yel, num: true }); say(D, cxL, by + s * 1.4, '2400円', { size: s, col: C.yel, num: true });
-    if (mode >= 1 && t > 0) {
-      var a = CH.smooth(0, .25, t); CH.arrow(D, cxM + DM / 2 * u * .2, cy - DM / 2 * u * .55, cxL - DL / 2 * u * .2, cy - DL / 2 * u * .8, { col: C.pink, a: a, w: 2.4 });
-    }
   }
   function cans(D, FR, t, mode) { /* mode 0 問題 1 体積比 2 容量 */
     var u = Math.min(FR.h * .55 / HB, FR.w * .2 / 4.2), by = FR.cy + HB * u * .5, cxS = FR.x0 + FR.w * .3, cxB = FR.x0 + FR.w * .72, s = CH.fs(D, .85);
