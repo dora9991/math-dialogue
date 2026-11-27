@@ -207,7 +207,7 @@
           var t = D.ph ? D.t : 0, A = two3(D, { hlb: function (i) { return t > .3 && (i >= 2 && i <= 4 || i >= 6 && i <= 9) ? C.pink : null; }, ala: function () { return t > 0 && t < .3 ? .6 : .35; } });
           if (t > 0) CH.text(D, A[0].X(60), A[0].Y(17.2), '山は 1つに見える', { col: C.blue, a: CH.smooth(0, .25, t), size: A[0].s * 1.1, outline: YB });
           if (t > .3) { var a = CH.smooth(.3, .6, t); CH.text(D, A[1].X(32), A[1].Y(7) - A[1].s * 3.3, '山①', { col: C.pink, a: a, size: A[1].s * 1.2, outline: YB }); CH.text(D, A[1].X(85), A[1].Y(8) - A[1].s * 3.3, '山②', { col: C.pink, a: a, size: A[1].s * 1.2, outline: YB }); }
-          if (t > .65) CH.text(D, A[1].X(60), A[1].Y(10) + A[1].s * .2, '山が 2つ → 2グループ', { col: C.pink, a: CH.smooth(.65, .9, t), size: A[1].s * 1.1, outline: YB });
+          if (t > .65) CH.text(D, A[0].X(60), A[0].Y(7), '10分の幅では', { col: C.pink, a: CH.smooth(.65, .9, t), size: A[0].s * 1.05, outline: YB }), CH.text(D, A[0].X(60), A[0].Y(7) + A[0].s * 1.7, '山が 2つ → 2グループ', { col: C.pink, a: CH.smooth(.65, .9, t), size: A[0].s * 1.05, outline: YB });
         } },
       /* ---------------- 類題4 ---------------- */
       { tag: '類題4', bh: '類題4　腹筋の回数（度数分布表から平均値）', q: '20人が 1分間に行った腹筋の回数を調べた。　12・15・18・21・23・24・26・27・28・31・33・34・35・37・38・41・44・46・52・56（回）　このデータを、次の度数分布表にまとめた。',
@@ -236,7 +236,6 @@
         draw: function (D) {
           var L = lay4(D), t = D.ph ? D.t : 0, G = dline4(D, L.Rb), s = G.s, k = CH.ease(CH.smooth(.15, .7, t)); tab4(D, L.Rt, 2);
           CH.dots(D, G.X, G.yl, D4.map(function (v) { return CH.lerp(v, cv4(v), k); }), { r: s * .34, col: function (i, v) { return k > .99 ? C.pink : C.blue; } });
-          V4.forEach(function (v) { CH.line(D, G.X(v), G.yl, G.X(v), G.yl + 0, { col: C.pink }); });
           if (t > .7) { var a = CH.smooth(.7, .9, t); CH.text(D, G.X(35), G.yl - L.Rb.h * .5, '階級の中の値が ぜんぶ 階級値（15・25・35・45・55）に そろう', { col: C.pink, a: a, size: s, outline: YB }); }
         } },
       /* ---------------- 類題5 ---------------- */
@@ -273,7 +272,7 @@
           CH.poly(D, [[G.X(6), G.yl + 3], [G.X(6) - 10, G.yl + 18], [G.X(6) + 10, G.yl + 18]], { fill: C.yel });
           CH.line(D, G.X(6), G.yl, G.X(6), top, { col: C.yel, dash: true, w: 2.4 });
           if (t > .15) { var a = CH.smooth(.15, .4, t); CH.text(D, G.X(3.2), top - G.s * .4, '低い 6人', { col: C.blue, a: a }); CH.text(D, G.X(8.8), top - G.s * .4, '高い 5人', { col: C.pink, a: a }); }
-          if (t > .5) { var b = CH.smooth(.5, .8, t); CH.text(D, G.X(3.2), top + G.s * 1.2, '差の合計 4＋3＋2＋1＋1＋1 ＝ 12', { col: C.blue, a: b, size: G.s * .95, outline: YB }); CH.text(D, G.X(8.6), top + G.s * 1.2, '差の合計 1＋2＋2＋3＋4 ＝ 12', { col: C.pink, a: b, size: G.s * .95, outline: YB }); }
+          if (t > .5) { var b = CH.smooth(.5, .8, t); CH.text(D, G.X(3), top + G.s * 1.2, '差の合計', { col: C.blue, a: b, size: G.s * .95, outline: YB }); CH.text(D, G.X(3), top + G.s * 2.8, '4＋3＋2＋1＋1＋1 ＝ 12', { col: C.blue, a: b, size: G.s * .95, outline: YB }); CH.text(D, G.X(8.4), top + G.s * 1.2, '差の合計', { col: C.pink, a: b, size: G.s * .95, outline: YB }); CH.text(D, G.X(8.4), top + G.s * 2.8, '1＋2＋2＋3＋4 ＝ 12', { col: C.pink, a: b, size: G.s * .95, outline: YB }); }
         } }
     ]
   });

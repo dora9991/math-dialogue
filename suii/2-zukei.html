@@ -44,13 +44,13 @@
   }
 
   /* ================= 類題2　二等辺三角形と合同の証明 ================= */
-  var T2 = { A: [0, 6], B: [-3.5, 0], C: [3.5, 0] }; T2.D = GE.lerpP(T2.B, T2.A, .45); T2.E = GE.lerpP(T2.C, T2.A, .45);
+  var T2 = { A: [0, 6], B: [-3.5, 0], C: [3.5, 0] }; T2.D = GE.lerpP(T2.B, T2.A, .36); T2.E = GE.lerpP(T2.C, T2.A, .36);
   CH.check(GE.verify(T2, 'AB＝AC') && GE.verify(T2, 'BD＝CE') && GE.verify(T2, '∠DBC＝∠ECB') && GE.verify(T2, '△DBC≡△ECB') && GE.verify(T2, 'BE＝CD') && GE.verify(T2, 'AD＝AE') && GE.verify(T2, 'AD＝AB−BD'), '類題2');
   function tri2(D, o) {
     o = o || {}; var F = mk(D, T2, { pad: .14, box: { l: .08, r: .08, t: .08, b: .14 } });
     if (o.p1) { GE.poly(F, 'DBC', { col: C.blue, fa: .25, stroke: false, a: o.p1 }); GE.poly(F, 'ECB', { col: C.orange, fa: .25, stroke: false, a: o.p1 }); }
     GE.poly(F, 'ABC', { fill: false, col: C.chalk }); GE.seg(F, 'BE'); GE.seg(F, 'CD');
-    GE.tick(F, 'AB', 1); GE.tick(F, 'AC', 1);
+    GE.tick(F, 'AB', 1); GE.tick(F, 'AC', 1); GE.tick(F, 'BD', 2); GE.tick(F, 'CE', 2);
     GE.dot(F, 'D'); GE.dot(F, 'E');
     GE.labels(F, ['A', 'B', 'C', 'D', 'E'], { dir: { A: 'n', B: 'sw', C: 'se', D: 'w', E: 'e' } });
     return F;
@@ -61,7 +61,7 @@
   var T3 = { A: [0, 0], B: [6, 0], D: Dv }; T3.C = GE.add(T3.B, Dv); T3.E = GE.lerpP(T3.A, T3.C, .3); T3.F = GE.lerpP(T3.A, T3.C, .7);
   CH.check(GE.verify(T3, 'AB＝6') && GE.verify(T3, 'AD＝4') && GE.verify(T3, '∠DAB＝70°') && GE.verify(T3, '∠BCD＝70°') && GE.verify(T3, 'AB∥DC') && GE.verify(T3, 'AD∥BC') && GE.verify(T3, 'AE＝CF') && GE.verify(T3, 'AB＝CD') && GE.verify(T3, '∠BAE＝∠DCF') && GE.verify(T3, '∠ABE＝∠CDF') && GE.verify(T3, '△ABE≡△CDF') && GE.verify(T3, 'BE＝DF') && !GE.near(GE.ang(T3, 'ABE'), GE.ang(T3, 'ABC')), '類題3');
   function par3(D, o) {
-    o = o || {}; var F = mk(D, T3, { pad: .14, box: { l: .06, r: .06, t: .08, b: .14 } }), a = o.tri == null ? 0 : o.tri;
+    o = o || {}; var F = mk(D, T3, { pad: .14, box: { l: .06, r: .06, t: .2, b: .08 } }), a = o.tri == null ? 0 : o.tri;
     if (a > 0) { GE.poly(F, 'ABE', { col: C.blue, fa: .28, stroke: false, a: a }); GE.poly(F, 'CDF', { col: C.orange, fa: .28, stroke: false, a: a }); }
     GE.poly(F, 'ABCD', { fill: false, col: C.chalk }); GE.seg(F, 'AC'); GE.seg(F, 'BE'); GE.seg(F, 'DF');
     GE.dot(F, 'E'); GE.dot(F, 'F');
@@ -71,7 +71,7 @@
 
   /* ================= 類題4　四角形が平行四辺形になる条件 ================= */
   var Q4 = { A: [0, 0], B: [7, .6], C: [6, 4], D: [1.2, 3.4] }; Q4.O = GE.meet(Q4.A, Q4.C, Q4.B, Q4.D);
-  var Tz = { A: [0, 0], B: [8, 0], C: [6, 3.5], D: [2, 3.5] };
+  var Tz = { A: [0, 0], B: [10, 0], C: [7, 4], D: [3, 4] };
   var Pg = { A: [0, 0], B: [7, 0], C: [9, 3.6], D: [2, 3.6] }; Pg.O = GE.meet(Pg.A, Pg.C, Pg.B, Pg.D);
   CH.check(GE.verify(Tz, 'AB∥DC') && GE.verify(Tz, 'AD＝BC') && !GE.near(GE.len(Tz, 'AB'), GE.len(Tz, 'DC')) && !GE.isPar(Tz, 'AD', 'BC') && GE.verify(Tz, '∠DAB＝∠CBA') && GE.verify(Tz, '∠BCD＝∠CDA') &&
     GE.verify(Pg, 'AO＝CO') && GE.verify(Pg, 'BO＝DO') && GE.verify(Pg, '△ABO≡△CDO') && GE.verify(Pg, '∠AOB＝∠COD') && GE.verify(Pg, '∠OAB＝∠OCD') && GE.verify(Pg, 'AB∥DC') && GE.verify(Pg, 'AB＝DC') && GE.verify(Pg, 'AD∥BC') &&
@@ -91,7 +91,7 @@
     for (i = 0; i <= 6; i++) { p = F.X([0, i]); q = F.X([12, i]); CH.line(D, p[0], p[1], q[0], q[1], { col: C.chalk, w: 1, a: .13 }); }
     GE.polyP(F, [L5.W1, L5.W4, L5.P, L5.Q, L5.R], { col: C.blue, fa: .16, sw: 2 });
     GE.polyP(F, [L5.P, L5.W3, L5.W2, L5.R, L5.Q], { col: C.orange, fa: .13, sw: 2 });
-    var a = F.X([2, 3]), b = F.X([10, 3]); CH.text(D, a[0], a[1], '土地 A', { col: C.blue, size: F.s * 1.3 }); CH.text(D, b[0], b[1], '土地 B', { col: C.orange, size: F.s * 1.3 });
+    var a = F.X([1.7, 3]), b = F.X([10, 3]); CH.text(D, a[0], a[1], '土地 A', { col: C.blue, size: F.s * 1.3 }); CH.text(D, b[0], b[1], '土地 B', { col: C.orange, size: F.s * 1.3 });
     GE.seg(F, 'PQ', { col: C.chalk, w: 4 }); GE.seg(F, 'QR', { col: C.chalk, w: 4 });
     GE.dot(F, 'P'); GE.dot(F, 'Q'); GE.dot(F, 'R');
     GE.labels(F, ['P'], { dir: { P: 'n' } }); GE.labels(F, ['Q'], { dir: { Q: 'e' } }); GE.labels(F, ['R'], { dir: { R: 's' } });
@@ -141,10 +141,10 @@
       { tag: '類題3', q: '(1) ∠BCD は何度？', a: '70°', sub: '平行四辺形の対角は等しい。∠BCD＝∠DAB＝70°', dur: 2,
         b: { t: '(1) 平行四辺形の対角は等しい → ∠BCD＝<b>70°</b>', col: C.yel },
         draw: function (D) { var t = ph(D), F = par3(D); if (t > 0) { var a = CH.smooth(0, .3, t); GE.arc(F, 'DAB', { col: C.yel, fill: .4, r: F.s * 1.4, a: a, lab: '70°', tick: 1 }); } if (t > .4) GE.arc(F, 'BCD', { col: C.yel, fill: .4, r: F.s * 1.4, a: CH.smooth(.4, .7, t), lab: '？', tick: 1 }); } },
-      { tag: '類題3', q: '(2) Aさんの証明のまちがいを説明しなさい。', a: '③の ∠ABE＝∠CDF は、△ABE≡△CDF がいえたあとでないとわからない。対角の性質で等しいのは ∠ABC＝∠CDA で、∠ABE は ∠ABC の一部。また ∠ABE は AB と AE の間の角ではないので、合同条件に使えない。', sub: '平行四辺形の対角が等しいとは、∠B＝∠D（角ぜんたい）のこと。BE で分けた一部の角 ∠ABE、∠CDF が等しいとは、そこからはいえない', dur: 5,
+      { tag: '類題3', q: '(2) Aさんの証明のまちがいを説明しなさい。', a: '③は △ABE≡△CDF がいえたあとでないとわからない。∠ABE は対角 ∠ABC の一部で、AB と AE の間の角でもないので、合同条件に使えない。', sub: '平行四辺形の対角が等しいとは、∠B＝∠D（角ぜんたい）のこと。BE で分けた一部の角 ∠ABE、∠CDF が等しいとは、そこからはいえない', dur: 5,
         b: { t: '(2) ∠ABE は ∠B の一部で、対角の性質は使えない。また AB・AE の間の角でもない', col: C.yel },
-        draw: function (D) { var t = ph(D), F = par3(D); if (t > 0) { var a = CH.smooth(0, .25, t); GE.arc(F, 'ABC', { col: C.green, r: F.s * 2.2, a: a, lab: '∠B 全体' }); GE.arc(F, 'ABE', { col: C.pink, fill: .5, r: F.s * 1.3, a: a }); say(D, F.X([3, -1.4])[0], F.X([3, -1.4])[1], 'ピンク ∠ABE は ∠B の一部', { col: C.pink, a: a, size: F.s * .9 }); } if (t > .5) { var b = CH.smooth(.5, .8, t); GE.arc(F, 'BAE', { col: C.yel, fill: .4, r: F.s * 1.6, a: b }); GE.seg(F, 'AB', { col: C.yel, w: 4, a: b }); GE.seg(F, 'AE', { col: C.yel, w: 4, a: b }); say(D, F.X([3, -2.2])[0], F.X([3, -2.2])[1], 'AB・AE の間の角は ∠BAE', { col: C.yel, a: b, size: F.s * .9 }); } } },
-      { tag: '類題3', q: '(3) ∠BAE＝∠DCF となる理由を説明しなさい。', a: 'AB∥DC で、AC を横切る直線だから、錯角は等しい。よって ∠BAE＝∠DCF。これと AB＝CD、AE＝CF から、2組の辺とその間の角がそれぞれ等しく △ABE≡△CDF となり、BE＝DF がいえる。', sub: '平行四辺形の対辺は平行（AB∥DC）。∠BAE（＝∠BAC）と ∠DCF（＝∠DCA）は、AC をはさむ錯角', dur: 4.5,
+        draw: function (D) { var t = ph(D), F = par3(D); if (t > 0) { var a = CH.smooth(0, .25, t); GE.arc(F, 'ABC', { col: C.green, r: F.s * 2.2, a: a, lab: '∠B 全体' }); GE.arc(F, 'ABE', { col: C.pink, fill: .5, r: F.s * 1.3, a: a }); say(D, F.R.cx, F.R.y0 - F.s * 1.9, 'ピンク ∠ABE は ∠B の一部', { col: C.pink, a: a, size: F.s * .9 }); } if (t > .5) { var b = CH.smooth(.5, .8, t); GE.arc(F, 'BAE', { col: C.yel, fill: .4, r: F.s * 1.6, a: b }); GE.seg(F, 'AB', { col: C.yel, w: 4, a: b }); GE.seg(F, 'AE', { col: C.yel, w: 4, a: b }); say(D, F.R.cx, F.R.y0 - F.s * .4, 'AB・AE の間の角は ∠BAE', { col: C.yel, a: b, size: F.s * .9 }); } } },
+      { tag: '類題3', q: '(3) ∠BAE＝∠DCF となる理由を説明しなさい。', a: 'AB∥DC の錯角だから ∠BAE＝∠DCF。AB＝CD、AE＝CF とあわせて、2組の辺とその間の角が等しく △ABE≡△CDF。よって BE＝DF。', sub: '平行四辺形の対辺は平行（AB∥DC）。∠BAE（＝∠BAC）と ∠DCF（＝∠DCA）は、AC をはさむ錯角', dur: 4.5,
         b: { t: '(3) AB∥DC の錯角 → ∠BAE＝∠DCF → 2辺とその間の角が等しい → △ABE≡△CDF → <b>BE＝DF</b>', col: C.yel },
         draw: function (D) { var t = ph(D), F = par3(D, { tri: CH.smooth(.5, .8, t) }); if (t > 0) { var a = CH.smooth(0, .3, t); GE.par(F, 'AB', 1, { col: C.chalk, a: a }); GE.par(F, 'DC', 1, { col: C.chalk, a: a }); GE.arc(F, 'BAE', { col: C.yel, fill: .45, r: F.s * 1.7, a: a, tick: 1 }); GE.arc(F, 'DCF', { col: C.yel, fill: .45, r: F.s * 1.7, a: a, tick: 1 }); } if (t > .5) { var b = CH.smooth(.5, .8, t); GE.tick(F, 'AB', 1, { col: C.green, a: b }); GE.tick(F, 'CD', 1, { col: C.green, a: b }); GE.tick(F, 'AE', 2, { col: C.pink, a: b }); GE.tick(F, 'CF', 2, { col: C.pink, a: b }); } } },
 
@@ -158,15 +158,15 @@
           var t = ph(D), R = CH.box(D, { l: .08, r: .08, t: .12, b: .16 }), s = CH.fs(D), rows = [['ア', 'AB∥DC、AD＝BC', '×'], ['イ', 'AB∥DC、AB＝DC', '○'], ['ウ', 'AO＝CO、BO＝DO', '○'], ['エ', '∠A＝∠B、∠C＝∠D', '×']];
           rows.forEach(function (r, i) { var y = R.y0 + R.h * (.14 + i * .22), ok = r[2] === '○', a = CH.smooth(i * .15, i * .15 + .25, t); say(D, R.x0 + R.w * .08, y, r[0], { col: C.chalk, size: s * 1.3, align: 'left' }); say(D, R.x0 + R.w * .2, y, r[1], { col: C.chalk, size: s * 1.2, align: 'left', maxW: R.w * .55 }); if (t > 0) say(D, R.x0 + R.w * .9, y, r[2], { col: ok ? C.green : C.pink, size: s * 1.8, a: a }); });
         } },
-      { tag: '類題4', q: '(2)「アも平行四辺形になる」は正しい？', a: '正しくない', sub: '反例：AB∥DC、AD＝BC でも、等脚台形（AB＝8、DC＝4）は平行四辺形ではない。AD∥BC でなく、AB≠DC', dur: 4,
+      { tag: '類題4', q: '(2)「アも平行四辺形になる」は正しい？', a: '正しくない', sub: '反例：AB∥DC、AD＝BC でも、等脚台形（AB＝10、DC＝4、AD＝BC＝5）は平行四辺形ではない。AD∥BC でなく、AB≠DC', dur: 4,
         b: { t: '(2) <b>正しくない</b>　反例：AD＝BC の等脚台形（AD∥BC でない）', col: C.yel },
-        draw: function (D) { var t = ph(D), F = poly4(D, Tz); GE.poly(F, 'ABCD', { col: C.blue, fa: .15 }); GE.par(F, 'AB', 1); GE.par(F, 'DC', 1); GE.tick(F, 'AD', 1, { col: C.yel, w: 3 }); GE.tick(F, 'BC', 1, { col: C.yel, w: 3 }); GE.labels(F, ['A', 'B', 'C', 'D'], { dir: { A: 'sw', B: 'se', C: 'ne', D: 'nw' } }); if (t > .2) { var a = CH.smooth(.2, .5, t); say(D, F.X([4, -1.2])[0], F.X([4, -1.2])[1], 'AB＝8、DC＝4、AD＝BC＝√(4+12.25)', { col: C.chalk, a: a, size: F.s * .85 }); } if (t > .5) { var b = CH.smooth(.5, .8, t); GE.seg(F, 'AD', { col: C.pink, w: 4, a: b }); GE.seg(F, 'BC', { col: C.pink, w: 4, a: b }); say(D, F.X([4, -2.2])[0], F.X([4, -2.2])[1], 'AD と BC は平行でない → 平行四辺形ではない', { col: C.pink, a: b, size: F.s * .9 }); } } },
-      { tag: '類題4', q: '(3) ウのとき平行四辺形になる理由を説明しなさい。', a: '△ABO と △CDO で、AO＝CO、BO＝DO、対頂角で ∠AOB＝∠COD だから、2組の辺とその間の角が等しく △ABO≡△CDO。よって ∠OAB＝∠OCD で錯角が等しいから AB∥DC、また AB＝CD。1組の対辺が平行で等しいので、平行四辺形である。', sub: '合同から AB＝CD と ∠OAB＝∠OCD（錯角）。錯角が等しい → AB∥DC。「1組の対辺が平行でその長さが等しい」は平行四辺形になる条件', dur: 5,
+        draw: function (D) { var t = ph(D), F = poly4(D, Tz); GE.poly(F, 'ABCD', { col: C.blue, fa: .15 }); GE.par(F, 'AB', 1); GE.par(F, 'DC', 1); GE.tick(F, 'AD', 1, { col: C.yel, w: 3 }); GE.tick(F, 'BC', 1, { col: C.yel, w: 3 }); GE.labels(F, ['A', 'B', 'C', 'D'], { dir: { A: 'sw', B: 'se', C: 'ne', D: 'nw' } }); if (t > .2) { var a = CH.smooth(.2, .5, t); say(D, F.X([4, -1.2])[0], F.X([4, -1.2])[1], 'AB＝10、DC＝4、AD＝BC＝5', { col: C.chalk, a: a, size: F.s * .85 }); } if (t > .5) { var b = CH.smooth(.5, .8, t); GE.seg(F, 'AD', { col: C.pink, w: 4, a: b }); GE.seg(F, 'BC', { col: C.pink, w: 4, a: b }); say(D, F.X([4, -2.2])[0], F.X([4, -2.2])[1], 'AD と BC は平行でない → 平行四辺形ではない', { col: C.pink, a: b, size: F.s * .9 }); } } },
+      { tag: '類題4', q: '(3) ウのとき平行四辺形になる理由を説明しなさい。', a: '△ABO≡△CDO（AO＝CO、BO＝DO、対頂角）。よって ∠OAB＝∠OCD で錯角が等しいから AB∥DC。また AB＝CD。1組の対辺が平行で等しいので平行四辺形。', sub: '合同から AB＝CD と ∠OAB＝∠OCD（錯角）。錯角が等しい → AB∥DC。「1組の対辺が平行でその長さが等しい」は平行四辺形になる条件', dur: 5,
         b: { t: '(3) △ABO≡△CDO → ∠OAB＝∠OCD（錯角）で AB∥DC、AB＝DC → <b>平行四辺形</b>', col: C.yel },
         draw: function (D) {
           var t = ph(D), F = poly4(D, Pg); GE.poly(F, 'ABO', { col: C.blue, fa: .25, stroke: false, a: CH.smooth(0, .2, t) }); GE.poly(F, 'CDO', { col: C.orange, fa: .25, stroke: false, a: CH.smooth(0, .2, t) });
           GE.poly(F, 'ABCD', { fill: false, col: C.chalk }); GE.seg(F, 'AC'); GE.seg(F, 'BD'); GE.dot(F, 'O');
-          GE.labels(F, ['A', 'B', 'C', 'D'], { dir: { A: 'sw', B: 'se', C: 'ne', D: 'nw' } }); GE.labels(F, ['O'], { dir: { O: 'n' } });
+          GE.labels(F, ['A', 'B', 'C', 'D'], { dir: { A: 'sw', B: 'se', C: 'ne', D: 'nw' } }); GE.labels(F, ['O'], { dir: { O: 'w' } });
           if (t > 0) { var a = CH.smooth(0, .25, t); GE.tick(F, 'AO', 1, { col: C.yel, a: a }); GE.tick(F, 'CO', 1, { col: C.yel, a: a }); GE.tick(F, 'BO', 2, { col: C.yel, a: a }); GE.tick(F, 'DO', 2, { col: C.yel, a: a }); }
           if (t > .3) { var b = CH.smooth(.3, .5, t); GE.arc(F, 'AOB', { col: C.green, fill: .4, r: F.s * 1.3, a: b, tick: 1 }); GE.arc(F, 'COD', { col: C.green, fill: .4, r: F.s * 1.3, a: b, tick: 1 }); }
           if (t > .55) { var c = CH.smooth(.55, .75, t); GE.arc(F, 'OAB', { col: C.pink, fill: .45, r: F.s * 1.9, a: c, tick: 1 }); GE.arc(F, 'OCD', { col: C.pink, fill: .45, r: F.s * 1.9, a: c, tick: 1 }); }

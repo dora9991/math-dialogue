@@ -1,7 +1,7 @@
 // 使い方: node suii/tools/check_board.cjs <ページの html（リポジトリの 中）...> [--shots <フォルダ>]
 //  黒板の ページを ヘッドレスで 開き、最後の ステップまで「つぎへ」で 進める。
 //  ・ページの エラー・コンソールの エラー（「答えがちがう：…」＝ CH.check の 不一致 を ふくむ）を 出す
-//  ・--shots を つけると、ステップごとの 写真（1280×720）を とる（目で 確かめる 用）
+//  ・--shots を つけると、「つぎへ」ごとの 写真（1280×720。問題の 画面も 答えの 画面も）を とる（目で 確かめる 用）
 const { chromium } = require('playwright');
 const path = require('path'); const fs = require('fs'); const http = require('http');
 const args = process.argv.slice(2); const si = args.indexOf('--shots'); const shots = si >= 0 ? args[si + 1] : null;
@@ -26,10 +26,12 @@ const srv = http.createServer((q, r) => {
     const total = +(await p.textContent('#pt').catch(() => '0')); let n = 0, guard = 0;
     if (shots) fs.mkdirSync(shots, { recursive: true });
     const base = path.basename(rel, '.html');
+    let press = 0;
     while (guard++ < total * 3 + 5) {
       await p.waitForTimeout(250);
       const cur = +(await p.textContent('#pn'));
-      if (shots && cur !== n) { n = cur; await p.waitForTimeout(900); await p.screenshot({ path: path.join(shots, `${base}-${String(cur).padStart(2, '0')}.png`) }); }
+      // 「つぎへ」を おすたびに 1枚（問題の 画面と、答えを 出した 画面の 両方）。名前は <ページ>-<ステップ>-<何回目>
+      if (shots) { press++; await p.waitForTimeout(900); await p.screenshot({ path: path.join(shots, `${base}-${String(cur).padStart(2, '0')}-${String(press).padStart(2, '0')}.png`) }); }
       const dis = await p.$eval('#next', (e) => e.disabled).catch(() => true);
       if (dis) break;
       await p.keyboard.press('ArrowRight');

@@ -53,7 +53,7 @@
       if (end) { dx = e[0] === 0 ? -s * 1.1 : s * 1.1; dy = 0; } else dy = (e[0] % 2 === 0 ? 1 : -1) * s * 1.05;
       if (!o.nolab) CH.text(D, mx + dx, my + dy, String(m + 1), { col: C.yel, num: true, size: s, outline: 'rgba(20,30,24,.85)' });
     });
-    if (o.lab) CH.text(D, x0 + u, yb + s * 1.1, '1辺 3cm', { col: 'rgba(242,240,230,.85)', size: s * .9 });
+    if (o.lab) CH.text(D, x0 + W / 2, yb + s * 2.7, '（1辺 3cm）', { col: 'rgba(242,240,230,.85)', size: s * .9 });
     return { x0: x0, x1: x0 + W, yb: yb, yt: yt, u: u };
   }
   /* 類題2：カレンダー。o.lab：{日: '字'}、o.cols：{日: 色} */
@@ -111,7 +111,7 @@
     var pts = CH.dots(D, X, NR.y1, V5, { r: s * .5, col: function (i, v) { return o.hl && o.hl.indexOf(i) >= 0 ? (o.col || C.yel) : v > 0 ? C.blue : v < 0 ? C.pink : C.green; } });
     pts.forEach(function (p, i) { CH.text(D, p[0], p[1] - s * 1.2, N5[i], { size: s * .85, col: 'rgba(242,240,230,.85)' }); });
     CH.line(D, X(0), NR.y1 - s * 3.6, X(0), NR.y1, { col: 'rgba(242,240,230,.5)', dash: true, w: 1.6 });
-    CH.text(D, X(0), NR.y1 - s * 4.2, '基準 150cm', { size: s * .85, col: 'rgba(242,240,230,.8)' });
+    CH.text(D, X(0) - s * .4, NR.y1 - s * 3.9, '基準 150cm', { size: s * .85, col: 'rgba(242,240,230,.8)', align: 'right' });
     return { X: X, NR: NR, R: R, pts: pts, s: s };
   }
 
@@ -130,12 +130,12 @@
       { tag: '類題1', q: '(2) n枚つなげたときの、まわりの長さを n の式で', a: '3(n＋2) cm（3n＋6 cm）', sub: '1枚ふえるごとに 辺が 1本ふえる。1枚のとき 3本、2枚のとき 4本… n枚のとき（n＋2）本。まわりの長さ＝3×(n＋2)', dur: 4,
         b: { t: '(2) 辺は（n＋2）本　3(n＋2)＝<b>3n＋6（cm）</b>', col: C.yel },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, R = CH.rows(CH.box(D, { l: .08, r: .08, t: .14, b: .12 }), 3, .06), s = CH.fs(D, .95);
+          var t = D.ph ? D.t : 0, R = CH.rows(CH.box(D, { l: .08, r: .08, t: .2, b: .08 }), 3, .06), s = CH.fs(D, .95);
           [1, 2, 4].forEach(function (n, i) {
             strip(D, CH.rect(R[i].x0 + R[i].w * .28, R[i].y0, R[i].x1, R[i].y1), n, { k: n + 2, nolab: true });
             CH.text(D, R[i].x0 + R[i].w * .02, R[i].cy, n + '枚　辺 ' + (n + 2) + '本', { align: 'left', col: C.yel, size: s, a: CH.smooth(i * .2, i * .2 + .2, t) });
           });
-          if (t > .7) CH.text(D, R[2].cx + R[2].w * .14, R[2].y1 + s * .2, 'n枚 → 辺（n＋2）本 → 3(n＋2) cm', { col: C.green, a: CH.smooth(.7, .9, t), size: s * 1.1 });
+          if (t > .7) CH.text(D, R[0].cx, R[0].y0 - s * 1.3, 'n枚 → 辺（n＋2）本 → 3(n＋2) cm', { col: C.green, a: CH.smooth(.7, .9, t), size: s * 1.1 });
         } },
       { tag: '類題1', q: '(3) まわりの長さが 51cm になるのは、何枚のとき？', a: '15枚', sub: '3n＋6＝51　3n＝45　n＝15（確かめ：3×(15＋2)＝51）', dur: 3.5,
         b: { t: '(3) 3n＋6＝51　3n＝45　n＝<b>15（枚）</b>', col: C.yel },
@@ -150,10 +150,10 @@
         b: { t: '(4) <b>正しい</b>　(3n＋12)−(3n＋6)＝6　n にかかわらず 6cm', col: C.yel },
         draw: function (D) {
           var t = D.ph ? D.t : 0, R = CH.rows(CH.box(D, { l: .06, r: .06, t: .14, b: .12 }), 2, .1), s = CH.fs(D, 1);
-          strip(D, CH.rect(R[0].x0 + R[0].w * .3, R[0].y0, R[0].x1, R[0].y1), 3, {});
+          strip(D, CH.rect(R[0].x0 + R[0].w * .36, R[0].y0, R[0].x1, R[0].y1), 3, {});
           CH.text(D, R[0].x0 + R[0].w * .02, R[0].cy, 'n枚（n＝3）', { align: 'left', size: s, col: C.blue });
           CH.text(D, R[0].x0 + R[0].w * .02, R[0].cy + s * 1.5, '3n＋6（cm）', { align: 'left', size: s, col: C.blue, num: true });
-          strip(D, CH.rect(R[1].x0 + R[1].w * .3, R[1].y0, R[1].x1, R[1].y1), 5, { add: 2 });
+          strip(D, CH.rect(R[1].x0 + R[1].w * .36, R[1].y0, R[1].x1, R[1].y1), 5, { add: 2 });
           CH.text(D, R[1].x0 + R[1].w * .02, R[1].cy, '（n＋2）枚', { align: 'left', size: s, col: C.orange, a: CH.smooth(.1, .3, t) });
           CH.text(D, R[1].x0 + R[1].w * .02, R[1].cy + s * 1.5, '3(n＋2)＋6＝3n＋12', { align: 'left', size: s, col: C.orange, num: true, a: CH.smooth(.3, .5, t) });
           if (t > .6) CH.text(D, R[1].cx, R[1].y1 + s * .6, '(3n＋12)−(3n＋6)＝6', { col: C.yel, size: s * 1.2, num: true, a: CH.smooth(.6, .85, t) });
@@ -282,9 +282,9 @@
         b: { t: '(4) <b>正しくない</b>　150cm より長いのは A・C の 2人だけ（6人の半分より少ない）', col: C.yel },
         draw: function (D) {
           var t = D.ph ? D.t : 0, G = rec5(D, { hl: t > .2 ? [0, 2] : [], col: C.blue }), a = CH.smooth(.2, .5, t);
-          CH.text(D, G.X(5), G.NR.y1 - G.s * 4.2, '150cm より長い人', { col: C.blue, size: G.s * .95, a: a });
-          CH.text(D, G.X(5), G.NR.y1 - G.s * 5.6, 'A・C の 2人だけ', { col: C.blue, size: G.s * .95, a: a });
-          CH.text(D, G.X(-4), G.NR.y1 - G.s * 5.6, '短い人 3人（B・D・F）、同じ 1人（E）', { col: C.pink, size: G.s * .8, a: CH.smooth(.5, .8, t) });
+          CH.text(D, G.X(5), G.NR.y1 - G.s * 6.2, '150cm より長い人', { col: C.blue, size: G.s * .95, a: a });
+          CH.text(D, G.X(5), G.NR.y1 - G.s * 7.6, 'A・C の 2人だけ', { col: C.blue, size: G.s * .95, a: a });
+          CH.text(D, G.X(-4), G.NR.y1 - G.s * 6.2, '短い人 3人（B・D・F）、同じ 1人（E）', { col: C.pink, size: G.s * .8, a: CH.smooth(.5, .8, t) });
         } }
     ]
   });

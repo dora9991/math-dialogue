@@ -76,7 +76,7 @@
   function box4(D, o) {
     o = o || {}; var R = CH.box(D, { l: .08, r: .08, t: .1, b: .14 }), s = CH.fs(D), t = o.t || 0, hh = Math.min(R.h * .15, s * 2.6);
     var yb = R.y1 - s * 3.2, X = CH.numline(D, CH.rect(R.x0, yb, R.x1, yb), 20, 40, 1, { lab: 2, unit: '（m）' });
-    var y1 = R.y0 + R.h * .24, y2 = R.y0 + R.h * .6;
+    var y1 = R.y0 + R.h * .2, y2 = R.y0 + R.h * .5;
     CH.line(D, X(31), y1 - hh * 1.5, X(31), yb, { col: C.green, dash: true, w: 2, a: .8 }); CH.text(D, X(31), y1 - hh * 1.8, '母集団の平均 31m', { col: C.green, size: s * .9 });
     boxp(D, X, B10, y1, hh, C.blue, 'rgba(154,216,255,.28)', o.a1 == null ? 1 : o.a1, '標本の大きさ 10', R.x0);
     boxp(D, X, B40, y2, hh, C.orange, 'rgba(255,192,120,.28)', o.a2 == null ? 1 : o.a2, '標本の大きさ 40', R.x0);
@@ -183,9 +183,9 @@
       { tag: '類題4', q: '(1) 標本の大きさ 10の 範囲と 四分位範囲は？', a: '範囲 14m、四分位範囲 6m', sub: '範囲 ＝ 38 − 24 ＝ 14、四分位範囲 ＝ 34 − 28 ＝ 6', dur: 3,
         b: { t: '(1) 範囲 38−24＝<b>14m</b>　四分位範囲 34−28＝<b>6m</b>', col: C.yel },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, o = box4(D, { a2: .3 }), s = o.s, a = CH.smooth(0, .3, t), b = CH.smooth(.4, .7, t), y = o.y1 + o.hh * .9;
-          CH.arrow(D, o.X(24), y, o.X(38), y, { col: C.pink, a: a, w: 2.2 }); CH.arrow(D, o.X(38), y, o.X(24), y, { col: C.pink, a: a, w: 2.2 }); CH.text(D, o.X(31), y + s * 1.1, '範囲 14', { col: C.pink, a: a, size: s * .9 });
-          CH.arrow(D, o.X(28), y + s * 2.4, o.X(34), y + s * 2.4, { col: C.yel, a: b, w: 2.2 }); CH.arrow(D, o.X(34), y + s * 2.4, o.X(28), y + s * 2.4, { col: C.yel, a: b, w: 2.2 }); CH.text(D, o.X(31), y + s * 3.5, '四分位範囲 6', { col: C.yel, a: b, size: s * .9 });
+          var t = D.ph ? D.t : 0, o = box4(D, { a2: .3 }), s = o.s, a = CH.smooth(0, .3, t), b = CH.smooth(.4, .7, t), y = o.y1 + o.hh * .75;
+          CH.arrow(D, o.X(24), y, o.X(38), y, { col: C.pink, a: a, w: 2.2 }); CH.arrow(D, o.X(38), y, o.X(24), y, { col: C.pink, a: a, w: 2.2 }); CH.text(D, o.X(38) + 10, y, '範囲 14', { col: C.pink, a: a, size: s * .9, align: 'left' });
+          CH.arrow(D, o.X(28), y + s * 1.7, o.X(34), y + s * 1.7, { col: C.yel, a: b, w: 2.2 }); CH.arrow(D, o.X(34), y + s * 1.7, o.X(28), y + s * 1.7, { col: C.yel, a: b, w: 2.2 }); CH.text(D, o.X(34) + 10, y + s * 1.7, '四分位範囲 6', { col: C.yel, a: b, size: s * .9, align: 'left' });
         } },
       { tag: '類題4', q: '(2) 標本の大きさ 40の 四分位範囲は？', a: '2m', sub: '32 − 30 ＝ 2', dur: 2,
         b: { t: '(2) 32 − 30 ＝ <b>2m</b>', col: C.yel },
@@ -206,7 +206,7 @@
           var t = D.ph ? D.t : 0, o = box4(D, { a1: .3 }), s = o.s, a = CH.smooth(0, .4, t), y = o.y2 + o.hh * .9;
           CH.line(D, o.X(28), o.y2 - o.hh, o.X(28), o.y2 + o.hh, { col: C.pink, w: 3, a: a }); CH.line(D, o.X(34), o.y2 - o.hh, o.X(34), o.y2 + o.hh, { col: C.pink, w: 3, a: a });
           CH.text(D, o.X(28), y + s * 1.1, '最小 28', { col: C.pink, a: a, size: s * .9 }); CH.text(D, o.X(34), y + s * 1.1, '最大 34', { col: C.pink, a: a, size: s * .9 });
-          CH.text(D, o.X(31), y + s * 2.6, '31m ちょうどの 回ばかりでは ない', { col: C.yel, a: CH.smooth(.4, .8, t), size: s });
+          CH.text(D, o.X(31), y + s * 2.5, '31m ちょうどの 回ばかりでは ない', { col: C.yel, a: CH.smooth(.4, .8, t), size: s });
         } },
 
       /* ---------------- 類題5 ---------------- */

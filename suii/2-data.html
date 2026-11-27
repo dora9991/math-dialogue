@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>学力推移調査型の類題 中2 箱ひげ図と確率</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 中2 データの活用　学力推移調査型の類題（5題）。
+   5つの型：①箱ひげ図とヒストグラムの対応／②複数の箱ひげ図から言えることの正誤と理由／③四分位範囲で散らばりを比べて判断／
+   ④さいころ2個の和・差の確率と「どちらが起こりやすいか」の説明／⑤くじを先に引く・あとで引くは公平か。
+   場面と数値はすべて自作。四分位数は教科書の求め方（データを半分に分け、奇数個のときは中央値をふくめずに、前半・後半の中央値）。
+   答えはページの中で計算し直して確かめている（CH.check）。 */
+(function () {
+  var C = CH.C, QC = [C.pink, C.yel, C.green], OL = 'rgba(20,30,24,.85)';
+  /* ---- 四分位数（教科書の求め方） ---- */
+  function md(a) { var m = a.length; return m % 2 ? a[(m - 1) / 2] : (a[m / 2 - 1] + a[m / 2]) / 2; }
+  function Q5(d) { var s = d.slice().sort(function (a, b) { return a - b; }), n = s.length, h = Math.floor(n / 2); return [s[0], md(s.slice(0, h)), md(s), md(s.slice(n - h)), s[n - 1]]; }
+  function eq(a, b) { return a.join() === b.join(); }
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+
+  /* 類題1　みかん 24個の重さ（農園 ア・イ・ウ） */
+  var EG = [70, 80, 90, 100, 110, 120, 130];
+  var DA = [78, 92, 94, 96, 97, 98, 98, 100, 101, 102, 103, 104, 104, 106, 107, 108, 109, 111, 113, 114, 115, 116, 117, 125];
+  var DI = [72, 74, 76, 78, 82, 86, 88, 92, 95, 97, 101, 104, 106, 108, 112, 115, 118, 119, 121, 122, 123, 125, 126, 128];
+  var DU = [84, 95, 101, 104, 107, 108, 108, 110, 111, 112, 113, 114, 114, 116, 117, 118, 119, 121, 121, 123, 124, 125, 126, 129];
+  var FA = Q5(DA), FI = Q5(DI), FU = Q5(DU), HA = CH.bin(DA, EG), HI = CH.bin(DI, EG), HU = CH.bin(DU, EG);
+  CH.check(DA.length === 24 && DI.length === 24 && DU.length === 24 && eq(HA, [1, 0, 6, 10, 6, 1]) && eq(HI, [4, 3, 3, 4, 4, 6]) && eq(HU, [0, 1, 1, 5, 10, 7]), '類題1（度数）');
+  CH.check(eq(FA, [78, 98, 104, 112, 125]) && eq(FI, [72, 87, 105, 120, 128]) && eq(FU, [84, 108, 114, 121, 129]) && FA[3] - FA[1] === 14 && FI[3] - FI[1] === 33 && FU[3] - FU[1] === 13, '類題1（5つの値）');
+  CH.check(FA[2] >= 100 && FA[2] < 110 && FI[2] >= 100 && FI[2] < 110 && FU[2] >= 110 && FU[2] < 120, '類題1（中央値の階級）');
+
+  /* 類題2　国語のテスト A組・B組 40人（箱ひげ図だけが与えられる。ありうるデータで確かめる） */
+  var F2A = [28, 48, 62, 74, 96], F2B = [40, 55, 62, 72, 88];
+  var D2A = [28, 33, 36, 40, 42, 44, 45, 46, 47, 48, 48, 50, 52, 54, 56, 58, 60, 61, 62, 62, 62, 63, 65, 66, 68, 70, 71, 72, 73, 74, 74, 76, 78, 80, 82, 85, 88, 90, 93, 96];
+  var D2B = [40, 43, 46, 48, 50, 51, 52, 53, 54, 54, 56, 58, 59, 60, 61, 61, 62, 62, 62, 62, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 73, 73, 74, 75, 76, 78, 80, 83, 85, 88];
+  function ge(d, v) { return d.filter(function (x) { return x >= v; }).length; }
+  CH.check(eq(Q5(D2A), F2A) && eq(Q5(D2B), F2B) && D2A.length === 40 && D2B.length === 40, '類題2（ありうるデータ）');
+  CH.check(F2A[4] - F2A[0] === 68 && F2A[3] - F2A[1] === 26 && F2B[4] - F2B[0] === 48 && F2B[3] - F2B[1] === 17, '類題2（範囲・四分位範囲）');
+  /* 40人の第3四分位数 72 は 30番目・31番目の平均 → 31番目 ≧ 72 → 72点以上は 10人以上。第1四分位数 48 は 10番目・11番目の平均 → 10番目 ≦ 48 → 50点未満は 10人以上 */
+  var sA = D2A.slice().sort(function (a, b) { return a - b; }), sB = D2B.slice().sort(function (a, b) { return a - b; });
+  CH.check((sB[29] + sB[30]) / 2 === 72 && sB[30] >= 72 && ge(D2B, 72) >= 10 && (sA[9] + sA[10]) / 2 === 48 && sA[9] <= 48 && D2A.length - ge(D2A, 50) >= 10, '類題2（正誤の理由）');
+
+  /* 類題3　立ち幅とびの 11回の記録（cm） */
+  var A3 = [229, 211, 244, 198, 224, 238, 207, 251, 214, 233, 220], B3 = [226, 190, 230, 222, 262, 224, 218, 232, 220, 228, 223];
+  var SA3 = A3.slice().sort(function (a, b) { return a - b; }), SB3 = B3.slice().sort(function (a, b) { return a - b; }), FA3 = Q5(A3), FB3 = Q5(B3);
+  CH.check(A3.length === 11 && B3.length === 11 && eq(FA3, [198, 211, 224, 238, 251]) && eq(FB3, [190, 220, 224, 230, 262]) && FA3[3] - FA3[1] === 27 && FB3[3] - FB3[1] === 10 && FA3[4] - FA3[0] === 53 && FB3[4] - FB3[0] === 72 && SA3[2] === 211 && SA3[8] === 238, '類題3');
+
+  /* 類題4　大小2つのさいころ */
+  var ALL4 = []; for (var a4 = 1; a4 <= 6; a4++) for (var b4 = 1; b4 <= 6; b4++) ALL4.push([a4, b4]);
+  var S5 = ALL4.filter(function (p) { return (p[0] + p[1]) % 5 === 0; }), S5a = ALL4.filter(function (p) { return p[0] + p[1] === 5; }), S5b = ALL4.filter(function (p) { return p[0] + p[1] === 10; }), D2 = ALL4.filter(function (p) { return Math.abs(p[0] - p[1]) === 2; });
+  CH.check(ALL4.length === 36 && S5a.length === 4 && S5b.length === 3 && S5.length === 7 && D2.length === 8, '類題4');
+
+  /* 類題5　くじ（8本のうち 当たり 3本、A・B の順に ひく、もどさない） */
+  var P5 = []; for (var x5 = 0; x5 < 8; x5++) for (var y5 = 0; y5 < 8; y5++) if (x5 !== y5) P5.push([x5, y5]);
+  var A5 = P5.filter(function (p) { return p[0] < 3; }).length, B5 = P5.filter(function (p) { return p[1] < 3; }).length, AB5 = P5.filter(function (p) { return p[0] < 3 && p[1] < 3; }).length;
+  CH.check(P5.length === 56 && A5 === 21 && B5 === 21 && AB5 === 6 && 21 / 56 === 3 / 8 && 6 / 56 === 3 / 28, '類題5');
+
+  /* ---------------- 図の道具 ---------------- */
+  function boxplot(D, X, cy, bh, f, o) {
+    o = o || {}; var col = o.col || C.chalk, a = o.a == null ? 1 : o.a, w = o.w || 2.4, x = f.map(X), e = bh * .3;
+    CH.line(D, x[0], cy, x[1], cy, { col: col, w: w, a: a }); CH.line(D, x[3], cy, x[4], cy, { col: col, w: w, a: a });
+    CH.line(D, x[0], cy - e, x[0], cy + e, { col: col, w: w, a: a }); CH.line(D, x[4], cy - e, x[4], cy + e, { col: col, w: w, a: a });
+    CH.fillRect(D, x[1], cy - bh / 2, x[3], cy + bh / 2, { fill: hexA(col, .18), stroke: col, sw: w, a: a }); CH.line(D, x[2], cy - bh / 2, x[2], cy + bh / 2, { col: col, w: w + 1, a: a });
+  }
+  function nums(D, X, cy, bh, f, o) {
+    o = o || {}; var sz = o.size || CH.fs(D, .7);
+    f.forEach(function (v, i) { CH.text(D, X(v), cy + bh / 2 + sz * 1.05, String(v), { size: sz, num: true, col: o.cols ? o.cols[i] : (o.col || 'rgba(242,240,230,.85)'), a: o.a, outline: OL }); });
+  }
+  function brace(D, x0, x1, y, txt, col, a, o) {
+    o = o || {}; var s = CH.fs(D), d = o.down ? -1 : 1, lo = { col: col, w: 2.2, a: a };
+    CH.line(D, x0, y, x1, y, lo); CH.line(D, x0, y, x0, y + 7 * d, lo); CH.line(D, x1, y, x1, y + 7 * d, lo);
+    if (txt) { var tx = o.align === 'left' ? x0 : o.align === 'right' ? x1 : (x0 + x1) / 2; CH.text(D, tx, y - s * .72 * d, txt, { col: col, a: a, size: o.size || s * .85, align: o.align, outline: OL }); }
+  }
+  function hist(D, R, edges, vals, o) {
+    o = o || {}; var Ax = CH.axes(D, R, { x: [edges[0], edges[edges.length - 1]], y: [0, o.ymax || 12], xt: o.xt, yt: o.yt, size: o.size, xl: o.xl, a: o.a });
+    CH.bars(D, Ax, edges, vals, { col: o.col || C.blue, labels: true, hl: o.hl, alpha: o.alpha, a: o.a }); return Ax;
+  }
+  var DICE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+  /* ---------------- 類題1：みかんの重さ（ヒストグラムと箱ひげ図） ---------------- */
+  var HC = [C.blue, C.orange, C.green], HN = ['ア', 'イ', 'ウ'], HV = [HA, HI, HU];
+  var BX1 = [{ f: FI, n: '①', j: 1 }, { f: FU, n: '②', j: 2 }, { f: FA, n: '③', j: 0 }];
+  function m1(D, o) {
+    var k = o.k || 0, t = o.t || 0, on = t > 0, s = CH.fs(D), ts = Math.max(12, s * .68), R = CH.box(D, { l: .05, r: .05, t: .06, b: .04 });
+    if (k === 1) { /* (1) 箱ひげ図③ だけを大きく */
+      var nl = CH.rect(R.x0 + s * .5, R.y0 + R.h * .12, R.x1, R.y0 + R.h * .62), X = CH.numline(D, nl, 70, 130, 5, { lab: 10, unit: '（g）' }), bh = Math.min(s * 3.2, nl.h * .3), cy = nl.y1 - s * 4.2 - bh / 2, f = FA;
+      boxplot(D, X, cy, bh, f, { col: C.blue }); CH.text(D, nl.x0 + s * .2, nl.y0 + s * .2, '箱ひげ図 ③', { col: C.blue, align: 'left' });
+      nums(D, X, cy, bh, f, { cols: [C.chalk, QC[0], QC[1], QC[2], C.chalk], size: s * .95 });
+      var a1 = CH.smooth(0, .4, t); brace(D, X(f[1]), X(f[3]), cy - bh / 2 - s * .5, '四分位範囲　112 − 98 ＝ 14（g）', C.yel, a1, { size: s });
+      return;
+    }
+    var hb = R.y0 + R.h * .35, cols = CH.cols(CH.rect(R.x0 + s * 1.3, R.y0 + s * 2.8, R.x1, hb), 3, .1);
+    var low = CH.rect(R.x0 + s * 3.6, hb + s * 3, R.x1, R.y1 - s * 1.3), rows = CH.rows(CH.rect(low.x0, low.y0, low.x1, low.y1 - s * 2.4), 3, .1);
+    var Xl = CH.numline(D, low, 70, 130, 5, { lab: 10, unit: '（g）', size: ts });
+    cols.forEach(function (c, j) {
+      var Ax = hist(D, c, EG, HV[j], { ymax: 12, xt: [70, 90, 110, 130], yt: [0, 4, 8, 12], size: ts, col: HC[j], hl: function (i) { return k === 3 && on && i === 3 && j < 2 ? C.yel : null; }, alpha: function (i) { return k === 3 && on && j < 2 && i !== 3 ? .45 : 1; } });
+      CH.text(D, c.cx, c.y0 - s * 1.5, HN[j], { col: HC[j], size: s * 1.05 });
+      if (k === 3 && j < 2) CH.text(D, c.cx, c.y0 - s * .55, '中央値　100〜110g', { col: C.yel, size: ts, a: CH.smooth(0, .3, t) });
+    });
+    BX1.forEach(function (b, i) {
+      var q = rows[i], bh = Math.min(s * 1.1, q.h * .4), cy = q.y0 + q.h * (k === 0 ? .36 : .5), col = k >= 2 && on ? (k === 3 && b.j === 2 ? 'rgba(242,240,230,.4)' : HC[b.j]) : C.chalk;
+      CH.text(D, low.x0 - s * .5, cy, b.n + (k >= 2 && on ? '＝' + HN[b.j] : ''), { size: s * .95, align: 'right', col: k >= 2 && on ? col : 'rgba(242,240,230,.85)' });
+      boxplot(D, Xl, cy, bh, b.f, { col: col, a: k === 3 && on && b.j === 2 ? .5 : 1 });
+      if (k === 0) nums(D, Xl, cy, bh, b.f, { size: ts });
+      if (k === 3 && b.j < 2) { var ga = CH.smooth(.2, .6, t); brace(D, Xl(b.f[1]), Xl(b.f[3]), cy - bh / 2 - s * .25, '箱の長さ ' + (b.f[3] - b.f[1]) + 'g', C.yel, ga, { size: ts }); }
+    });
+  }
+
+  /* ---------------- 類題2：国語のテスト（2つの箱ひげ図から言えること） ---------------- */
+  function m2(D, o) {
+    var k = o.k || 0, t = o.t || 0, s = CH.fs(D), ts = Math.max(12, s * .7), R = CH.box(D, { l: .05, r: .05, t: .06, b: .04 });
+    var nl = CH.rect(R.x0 + s * 3.2, R.y0, R.x1, R.y0 + R.h * .52), X = CH.numline(D, nl, 20, 100, 5, { lab: 10, unit: '（点）', size: ts }), bh = Math.min(s * 1.3, nl.h * .15);
+    var cA = nl.y0 + nl.h * .17, cB = nl.y0 + nl.h * .6, hlA = k === 3 || k === 1 || k === 4, hlB = k === 2 || k === 1 || k === 4;
+    [[F2A, cA, C.blue, 'A組'], [F2B, cB, C.orange, 'B組']].forEach(function (g, j) {
+      var on = k === 0 || k === 1 || k === 4 || (k === 2 && j === 1) || (k === 3 && j === 0);
+      CH.text(D, nl.x0 - s * .4, g[1], g[3], { align: 'right', col: g[2], a: on ? 1 : .45 });
+      boxplot(D, X, g[1], bh, g[0], { col: g[2], a: on ? 1 : .4 }); nums(D, X, g[1], bh, g[0], { size: ts, a: on ? 1 : .45 });
+    });
+    if (k === 1) {
+      var a1 = CH.smooth(0, .4, t), a2 = CH.smooth(.4, .8, t);
+      brace(D, X(F2A[1]), X(F2A[3]), cA - bh / 2 - s * .25, '四分位範囲 26', C.yel, a1, { size: ts }); brace(D, X(F2B[1]), X(F2B[3]), cB - bh / 2 - s * .25, '四分位範囲 17', C.yel, a1, { size: ts });
+      var y = nl.y1 + s * 3.4;
+      CH.text(D, R.cx, y, 'A組　範囲 96 − 28 ＝ 68　　四分位範囲 74 − 48 ＝ 26', { col: C.blue, a: a2 });
+      CH.text(D, R.cx, y + s * 1.7, 'B組　範囲 88 − 40 ＝ 48　　四分位範囲 72 − 55 ＝ 17', { col: C.orange, a: a2 });
+    }
+    if (k === 2 || k === 3) {
+      var isB = k === 2, tw = R.w * .92, tx = R.x0 + R.w * .04, ty = nl.y1 + s * 4.2, th = s * 1.7, g = isB ? [30, 10, C.orange, 'B組 40人を 小さい順に ならべる', '30番目と31番目の平均 ＝ 第3四分位数 72点', '31番目は 72点以上 → 31〜40番目の 10人は みな 72点以上', '31〜40番目　10人'] : [10, 30, C.blue, 'A組 40人を 小さい順に ならべる', '10番目と11番目の平均 ＝ 第1四分位数 48点', '10番目は 48点以下 → 1〜10番目の 10人は みな 50点未満', '1〜10番目　10人'];
+      var ka = CH.smooth(0, .35, t), kb = CH.smooth(.35, .7, t), kc = CH.smooth(.7, 1, t);
+      CH.text(D, R.cx, ty - s * 1.5, g[3], { col: g[2], a: ka });
+      CH.tape(D, tx, ty, tw, th, isB ? [{ v: 30, col: 'rgba(242,240,230,.6)', txt: '1〜30番目' }, { v: 10, col: C.yel, txt: g[6] }] : [{ v: 10, col: C.yel, txt: g[6] }, { v: 30, col: 'rgba(242,240,230,.6)', txt: '11〜40番目' }], 40, { a: ka });
+      var bx = tx + tw * (isB ? 30 : 10) / 40; CH.line(D, bx, ty - s * .3, bx, ty + th + s * .3, { col: C.pink, w: 3, a: kb });
+      CH.text(D, bx, ty + th + s * 1.1, g[4], { col: C.pink, a: kb, size: ts * 1.05 }); CH.text(D, R.cx, ty + th + s * 2.5, g[5], { col: C.yel, a: kc });
+    }
+    if (k === 4) {
+      var a3 = CH.smooth(0, .4, t); var y0 = cA + bh / 2 + ts * 2.1, y1 = cB - bh / 2 - 2; CH.line(D, X(62), y0, X(62), y1, { col: C.yel, dash: true, w: 2.4, a: a3 }); CH.text(D, X(62) + s * .5, (y0 + y1) / 2, '中央値は どちらも 62点', { col: C.yel, align: 'left', a: a3, outline: OL });
+      var a4 = CH.smooth(.4, .8, t), y4 = nl.y1 + s * 3.6;
+      CH.text(D, R.cx, y4, '箱ひげ図には 平均値は あらわれない', { col: C.pink, a: a4 }); CH.text(D, R.cx, y4 + s * 1.7, '最小値・四分位数・中央値・最大値 しか わからない', { col: 'rgba(242,240,230,.85)', a: a4, size: ts * 1.1 });
+    }
+  }
+
+  /* ---------------- 類題3：立ち幅とび（四分位範囲で散らばりを比べる） ---------------- */
+  var CN = ['小さい順'].concat([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+  function m3(D, o) {
+    var k = o.k || 0, t = o.t || 0, s = CH.fs(D), ts = Math.max(12, s * .7), R = CH.box(D, { l: .03, r: .03, t: .05, b: .04 });
+    if (k === 0) {
+      CH.table(D, CH.rect(R.x0, R.y0, R.x1, R.y1), ['記録（cm）', '1回目', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11回目'], [['Aさん'].concat(A3), ['Bさん'].concat(B3)], { fw: .16, size: s * .9, rh: s * 2.8 }); return;
+    }
+    if (k <= 2) {
+      var two = k === 2, rowsT = two ? [['Aさん'].concat(SA3), ['Bさん'].concat(SB3)] : [['Aさん'].concat(SA3)];
+      var T = CH.table(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (two ? .36 : .25)), CN.map(function (v, i) { return i === 0 ? '小さい順' : v + '番目'.slice(0, 0); }), rowsT, { fw: .14, size: s * .85, top: true, rh: s * 2.4, hl: function (r, c) { return t > 0 && r >= 1 && c === 3 ? QC[0] : t > 0 && r >= 1 && c === 6 ? QC[1] : t > 0 && r >= 1 && c === 9 ? QC[2] : null; } });
+      var ta = CH.smooth(0, .3, t);
+      [[3, '第1四分位数'], [6, '中央値'], [9, '第3四分位数']].forEach(function (g, i) { var q = T.cell(0, g[0]); CH.text(D, q.cx, T.y1 + s * .9, g[1], { size: ts * .95, col: QC[i], a: ta }); });
+      var z = CH.rect(R.x0 + s * 3.4, T.y1 + s * 2.4, R.x1 - s * .6, R.y1 - s * 1.6), X = CH.numline(D, z, 180, 270, 5, { lab: 10, unit: '（cm）', size: ts }), bh = Math.min(s * 1.4, z.h * .16);
+      var cA = z.y0 + z.h * (two ? .2 : .35), cB = z.y0 + z.h * .62, kb = CH.smooth(.25, .65, t);
+      CH.text(D, z.x0 - s * .4, cA, 'Aさん', { align: 'right', col: C.blue }); boxplot(D, X, cA, bh, FA3, { col: C.blue, a: kb }); nums(D, X, cA, bh, FA3, { size: ts, a: kb });
+      if (two) {
+        CH.text(D, z.x0 - s * .4, cB, 'Bさん', { align: 'right', col: C.orange }); boxplot(D, X, cB, bh, FB3, { col: C.orange, a: kb }); nums(D, X, cB, bh, FB3, { size: ts, a: kb });
+        var kc = CH.smooth(.6, 1, t); brace(D, X(FA3[1]), X(FA3[3]), cA - bh / 2 - s * .2, '四分位範囲 27', C.yel, kc, { size: ts }); brace(D, X(FB3[1]), X(FB3[3]), cB - bh / 2 - s * .2, '四分位範囲 10', C.yel, kc, { size: ts });
+      }
+      return;
+    }
+    /* k === 3：範囲と四分位範囲 */
+    var z2 = CH.rect(R.x0 + s * 3.4, R.y0 + R.h * .1, R.x1 - s * .6, R.y0 + R.h * .62), X2 = CH.numline(D, z2, 180, 270, 5, { lab: 10, unit: '（cm）', size: ts }), bh2 = Math.min(s * 1.8, z2.h * .17);
+    var cA2 = z2.y0 + z2.h * .22, cB2 = z2.y0 + z2.h * .66, a1 = CH.smooth(0, .3, t), a2 = CH.smooth(.3, .6, t), a3 = CH.smooth(.6, .9, t);
+    [[FA3, cA2, C.blue, 'Aさん'], [FB3, cB2, C.orange, 'Bさん']].forEach(function (g) {
+      CH.text(D, z2.x0 - s * .4, g[1], g[3], { align: 'right', col: g[2] }); boxplot(D, X2, g[1], bh2, g[0], { col: g[2] });
+      brace(D, X2(g[0][0]), X2(g[0][4]), g[1] - bh2 / 2 - s * 1.5, '範囲 ' + (g[0][4] - g[0][0]) + 'cm', C.pink, a1, { size: ts });
+      brace(D, X2(g[0][1]), X2(g[0][3]), g[1] - bh2 / 2 - s * .3, '四分位範囲 ' + (g[0][3] - g[0][1]) + 'cm', C.yel, a2, { size: ts });
+    });
+    CH.circle(D, X2(190), cB2, s * .9, { stroke: C.pink, sw: 2.4, a: a3 }); CH.circle(D, X2(262), cB2, s * .9, { stroke: C.pink, sw: 2.4, a: a3 });
+    var y = z2.y1 + s * 3.8;
+    CH.text(D, R.cx, y, '範囲は 最小値と最大値だけで決まる → 190 や 262 のような かけはなれた記録に 影響される', { col: C.pink, a: a3, size: ts * 1.05 });
+    CH.text(D, R.cx, y + s * 1.7, '四分位範囲は まん中あたり 約半分の記録の ちらばり → B のほうが 小さい', { col: C.yel, a: CH.smooth(.8, 1, t), size: ts * 1.05 });
+  }
+
+  /* ---------------- 類題4：さいころ2個 ---------------- */
+  /* 6×6 の表。mode：'' / 'sum' / 'diff'。hl(a, b)→色。 */
+  function grid4(D, cx, top, cs, mode, hl, a, cap, capCol) {
+    var s = CH.fs(D), x0 = cx - cs * 3, ts = Math.max(12, Math.min(cs * .5, s * .9));
+    CH.text(D, cx, top - cs * .2, cap || '', { col: capCol || C.chalk, a: a, size: s * .95 });
+    CH.text(D, x0 - cs * .75, top + cs * .5, '大 ＼ 小', { size: ts * .85, col: 'rgba(242,240,230,.7)', a: a, align: 'right' });
+    for (var i = 1; i <= 6; i++) {
+      CH.text(D, x0 + (i - .5) * cs, top + cs * .5, String(i), { size: ts, num: true, col: 'rgba(242,240,230,.8)', a: a }); CH.text(D, x0 - cs * .4, top + cs * (i + .5), String(i), { size: ts, num: true, col: 'rgba(242,240,230,.8)', a: a, align: 'right' });
+    }
+    for (var r = 1; r <= 6; r++) for (var c = 1; c <= 6; c++) {
+      var xx = x0 + (c - 1) * cs, yy = top + cs * r, col = hl ? hl(r, c) : null;
+      CH.fillRect(D, xx, yy, xx + cs, yy + cs, { fill: col ? hexA(col, .35) : 'rgba(242,240,230,.05)', stroke: 'rgba(242,240,230,.35)', sw: 1.2, a: a });
+      if (mode) CH.text(D, xx + cs / 2, yy + cs / 2 + 1, String(mode === 'sum' ? r + c : Math.abs(r - c)), { size: ts, num: true, col: col || 'rgba(242,240,230,.6)', a: a });
+      else CH.circle(D, xx + cs / 2, yy + cs / 2, cs * .09, { fill: 'rgba(242,240,230,.35)', a: a });
+    }
+  }
+  function m4(D, o) {
+    var k = o.k || 0, t = o.t || 0, s = CH.fs(D), R = CH.box(D, { l: .04, r: .04, t: .05, b: .04 }), a = k >= 1 ? 1 : 1;
+    var cs = Math.min(R.h * .74 / 7.2, R.w * .42 / 7);
+    var on = t > 0, hs = function (r, c) { var v = r + c; return !on ? null : v === 5 ? C.orange : v === 10 ? C.pink : null; }, hd = function (r, c) { return on && Math.abs(r - c) === 2 ? C.green : null; };
+    if (k <= 3) {
+      var cx = R.cx - (k === 0 ? 0 : R.w * .17), top = R.y0 + s * 1.6, mode = on && k === 2 ? 'sum' : on && k === 3 ? 'diff' : '', hl = k === 2 ? hs : k === 3 ? hd : null;
+      grid4(D, cx, top, cs, mode, hl, 1, on && k === 2 ? '目の和' : on && k === 3 ? '目の差（大きい目 − 小さい目）' : '大きいさいころ・小さいさいころ');
+      var tx = cx + cs * 3 + s * 1.6, ty = top + cs * 1.2, ta = CH.smooth(.2, .6, t);
+      if (k === 1) CH.text(D, tx, ty, '6 × 6 ＝ 36 通り', { col: C.yel, align: 'left', a: ta, size: s * 1.1 });
+      if (k === 2) { CH.text(D, tx, ty, '和が 5 … 4通り', { col: C.orange, align: 'left', a: ta }); CH.text(D, tx, ty + s * 1.8, '和が 10 … 3通り', { col: C.pink, align: 'left', a: ta }); CH.text(D, tx, ty + s * 3.6, 'あわせて 7通り → 7/36', { col: C.yel, align: 'left', a: CH.smooth(.5, .9, t), size: s * 1.05 }); }
+      if (k === 3) { CH.text(D, tx, ty, '差が 2 … 8通り', { col: C.green, align: 'left', a: ta }); CH.text(D, tx, ty + s * 1.8, '(1,3)(2,4)(3,5)(4,6)', { col: C.green, align: 'left', a: ta, size: s * .85 }); CH.text(D, tx, ty + s * 3.2, 'と、大小を入れかえた 4通り', { col: C.green, align: 'left', a: ta, size: s * .85 }); CH.text(D, tx, ty + s * 5, '8/36 ＝ 2/9', { col: C.yel, align: 'left', a: CH.smooth(.5, .9, t), size: s * 1.05 }); }
+      if (k === 1) CH.text(D, tx, ty + s * 2.2, '大きいさいころの出方 6通り', { col: C.chalk, align: 'left', a: ta, size: s * .85 }), CH.text(D, tx, ty + s * 3.6, '× 小さいさいころの出方 6通り', { col: C.chalk, align: 'left', a: ta, size: s * .85 });
+      return;
+    }
+    var cs2 = Math.min(R.h * .58 / 7.2, R.w * .4 / 7), top2 = R.y0 + s * 1.4, a1 = CH.smooth(0, .3, t), a2 = CH.smooth(.3, .6, t), a3 = CH.smooth(.6, 1, t);
+    grid4(D, R.x0 + R.w * .27, top2, cs2, on ? 'sum' : '', hs, 1, '目の和が 5 の倍数', C.orange); grid4(D, R.x0 + R.w * .73, top2, cs2, on ? 'diff' : '', hd, 1, '目の差が 2', C.green);
+    var y = top2 + cs2 * 7 + s * 1.4;
+    CH.text(D, R.x0 + R.w * .27, y, '和が 5（4通り）＋ 和が 10（3通り）＝ 7通り', { col: C.orange, a: a1, size: s * .88 }); CH.text(D, R.x0 + R.w * .73, y, '8通り', { col: C.green, a: a1, size: s * .95 });
+    CH.text(D, R.cx, y + s * 1.8, '「和が 5」と「和が 10」は 出やすさが ちがう（4通りと 3通り）。種類の数ではなく、通りの数でくらべる', { col: C.pink, a: a2, size: s * .88 });
+    CH.text(D, R.cx, y + s * 3.5, '7/36 ＜ 8/36 → 差が 2 のほうが 起こりやすい', { col: C.yel, a: a3, size: s * 1.05 });
+  }
+
+  /* ---------------- 類題5：くじ ---------------- */
+  var LN = ['当1', '当2', '当3', 'は1', 'は2', 'は3', 'は4', 'は5'];
+  function m5(D, o) {
+    var k = o.k || 0, t = o.t || 0, on = t > 0, s = CH.fs(D), R = CH.box(D, { l: .04, r: .04, t: .05, b: .04 });
+    if (k <= 1) {
+      var n = 8, cw = Math.min(R.w / 9.5, s * 3.2), ch = cw * 1.9, x0 = R.cx - cw * 4 * 1.12 + cw * .56, y = R.y0 + R.h * .2;
+      for (var i = 0; i < n; i++) {
+        var hit = i < 3, sel = k === 1 && on && hit; CH.card(D, x0 + i * cw * 1.12, y, cw * .8, ch, LN[i], { col: hit ? C.yel : 'rgba(242,240,230,.7)', fill: hit ? 'rgba(255,226,122,.' + (sel ? 4 : 2) + '5)' : 'rgba(242,240,230,.08)', size: cw * .34, sw: sel ? 3 : 1.6 });
+      }
+      CH.text(D, R.cx, y + ch * .85, '8本のうち 当たり 3本（当1・当2・当3）、はずれ 5本', { col: C.chalk, size: s });
+      CH.text(D, R.cx, y + ch * 1.5, 'A、B の順に 1本ずつ ひく（ひいたくじは もどさない）', { col: 'rgba(242,240,230,.85)', size: s * .92 });
+      if (k === 1) { var ta = CH.smooth(.1, .5, t); CH.text(D, R.cx, y + ch * 1.5 + s * 3, 'A のひき方 8通り　そのうち 当たり 3通り', { col: C.yel, a: ta, size: s }); CH.text(D, R.cx, y + ch * 1.5 + s * 5.2, '3/8', { col: C.yel, a: CH.smooth(.5, .9, t), size: s * 1.3 }); }
+      return;
+    }
+    var cs = Math.min(R.h * .78 / 9.3, R.w * .52 / 9.3), two = k === 4;
+    function G(cx, top, hl, cap, capCol, a) {
+      var ts = Math.max(11, cs * .36), gx = cx - cs * 4.5;
+      CH.text(D, cx + cs * .5, top - s * .3, cap, { col: capCol, size: s * .95, a: a });
+      CH.text(D, gx - cs * .55, top + cs * .5, 'A ＼ B', { size: ts * .9, col: 'rgba(242,240,230,.7)', align: 'right', a: a });
+      for (var i = 0; i < 8; i++) {
+        CH.text(D, gx + cs + (i + .5) * cs, top + cs * .5, LN[i], { size: ts, col: i < 3 ? C.yel : 'rgba(242,240,230,.75)', a: a }); CH.text(D, gx + cs * .5, top + cs * (i + 1.5), LN[i], { size: ts, col: i < 3 ? C.yel : 'rgba(242,240,230,.75)', a: a });
+      }
+      for (var r = 0; r < 8; r++) for (var c = 0; c < 8; c++) {
+        var xx = gx + cs + c * cs, yy = top + cs * (r + 1), col = r === c || !on ? null : hl(r, c);
+        CH.fillRect(D, xx, yy, xx + cs, yy + cs, { fill: col ? hexA(col, .4) : (r === c ? 'rgba(242,240,230,.14)' : 'rgba(242,240,230,.04)'), stroke: 'rgba(242,240,230,.3)', sw: 1, a: a });
+        if (r === c) CH.text(D, xx + cs / 2, yy + cs / 2, '×', { size: ts, col: 'rgba(242,240,230,.4)', a: a });
+      }
+    }
+    var top = R.y0 + s * 1.6;
+    if (k === 2) {
+      G(R.cx - R.w * .18, top, function (r, c) { return r < 3 && c < 3 ? C.yel : null; }, '(A, B) のひき方　全部で 8 × 7 ＝ 56 通り', C.chalk, 1);
+      var ta = CH.smooth(.2, .6, t), tx = R.cx - R.w * .18 + cs * 5.2; CH.text(D, tx, top + cs * 2.4, '2人とも当たり', { col: C.yel, align: 'left', a: ta }); CH.text(D, tx, top + cs * 3.6, '3 × 2 ＝ 6通り', { col: C.yel, align: 'left', a: ta }); CH.text(D, tx, top + cs * 5, '6/56 ＝ 3/28', { col: C.yel, align: 'left', a: CH.smooth(.5, .9, t), size: s * 1.1 });
+      return;
+    }
+    if (k === 3) {
+      G(R.cx - R.w * .18, top, function (r, c) { return c < 3 ? C.orange : null; }, 'B が当たり（左の 3列）', C.orange, 1);
+      var tb = CH.smooth(.2, .6, t), tx2 = R.cx - R.w * .18 + cs * 5.2; CH.text(D, tx2, top + cs * 2.4, 'B が当たり', { col: C.orange, align: 'left', a: tb }); CH.text(D, tx2, top + cs * 3.6, '7 × 3 ＝ 21通り', { col: C.orange, align: 'left', a: tb }); CH.text(D, tx2, top + cs * 5, '21/56 ＝ 3/8', { col: C.yel, align: 'left', a: CH.smooth(.5, .9, t), size: s * 1.1 });
+      return;
+    }
+    /* k === 4 */
+    var cs2 = Math.min(R.h * .6 / 9.2, R.w * .4 / 9.2); cs = cs2;
+    G(R.x0 + R.w * .27, top, function (r, c) { return r < 3 ? C.blue : null; }, 'A が当たり（上の 3行）　21通り', C.blue, 1); G(R.x0 + R.w * .74, top, function (r, c) { return c < 3 ? C.orange : null; }, 'B が当たり（左の 3列）　21通り', C.orange, 1);
+    var y = top + cs * 9.3 + s * .6, a1 = CH.smooth(0, .4, t), a2 = CH.smooth(.4, .9, t);
+    CH.text(D, R.cx, y, 'A も B も 21/56 ＝ 3/8 で 同じ', { col: C.yel, a: a1, size: s * 1.05 }); CH.text(D, R.cx, y + s * 1.7, '先にひいても あとでひいても、当たりやすさは かわらない', { col: C.green, a: a2, size: s * .95 });
+  }
+
+  /* 問い・答え・板書（HTML）の 3/8 などを、たての分数に */
+  function fx(t) { return CH.fr(String(t).replace(/(\d+)\/(\d+)/g, '[$1/$2]')); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = fx(s[k]); }); if (s.notes) s.notes = s.notes.map(fx); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = fx(b.t); }); }); return st; }
+
+  K3.run({
+    no: '類題', title: '学力推移調査型の類題　中2 箱ひげ図と確率（5題）', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }],
+    steps: fixSteps([
+      /* ---------------- 類題1 ---------------- */
+      { tag: '類題1', bh: '類題1　みかんの重さ（ヒストグラムと箱ひげ図）', q: '3つの農園ア・イ・ウで、みかんを 24個ずつ選び、重さを調べた。下の3つのヒストグラム（階級は 70g以上 80g未満 のように 10gずつ）と、①〜③の箱ひげ図は、どれも この3つの農園のデータを表している。',
+        notes: ['(1) 箱ひげ図③の四分位範囲を求めなさい。', '(2) ア・イ・ウ のヒストグラムは、それぞれ ①〜③ のどれか。', '(3) ア も イ も、中央値は 100g以上 110g未満の階級に入る。それでも、イ が ①〜③ のどれかを決められるわけを、箱の長さに注目して説明しなさい。'],
+        draw: function (D) { m1(D, { k: 0 }); } },
+      { tag: '類題1', q: '(1) 箱ひげ図③の四分位範囲は？', a: '14g', sub: '③ は 第1四分位数 98g、第3四分位数 112g　112 − 98 ＝ 14', dur: 3,
+        b: { t: '(1) 四分位範囲 ＝ 112 − 98 ＝ <b>14g</b>', col: C.yel },
+        draw: function (D) { m1(D, { k: 1, t: D.ph ? D.t : 0 }); } },
+      { tag: '類題1', q: '(2) ア・イ・ウ は、①〜③ の どれ？', a: 'ア … ③、イ … ①、ウ … ②', sub: 'ウ は 重いほうに山がかたよっているので、中央値も大きい ②。ア は 100g台に集まっているので 箱が短い ③、イ は 広くちらばっているので 箱が長い ①', dur: 4,
+        b: { t: '(2) <b>ア … ③　イ … ①　ウ … ②</b>', col: C.yel },
+        draw: function (D) { m1(D, { k: 2, t: D.ph ? D.t : 0 }); } },
+      { tag: '類題1', q: '(3) ア も イ も 中央値は 100〜110g。イ が ① だと決められるわけは？', a: 'イは重さが広くちらばっていて、真ん中の半分のデータがはばひろいので、箱の長さが長い ① になる。ア は 100g台に集まっていて箱が短い ③ だから。', sub: '中央値が同じでも、箱（四分位範囲）の長さはちがう。イ の箱は 87g〜120g（33g）、ア の箱は 98g〜112g（14g）', dur: 5,
+        b: { t: '(3) 中央値が同じでも、<b>箱の長さ</b>（散らばり）がちがう → 長い ① が イ', col: C.yel },
+        draw: function (D) { m1(D, { k: 3, t: D.ph ? D.t : 0 }); } },
+      /* ---------------- 類題2 ---------------- */
+      { tag: '類題2', bh: '類題2　国語のテスト（箱ひげ図から言えること）', q: '1年 A組と B組（どちらも 40人）が、同じ国語のテスト（100点満点）を受けた。下の箱ひげ図は、2つの組の得点の分布を表している。',
+        notes: ['(1) A組・B組それぞれの、範囲と四分位範囲を求めなさい。', '(2) 「B組には、72点以上の人が 10人以上いる」は正しいか。わけも書きなさい。', '(3) 「A組で 50点未満の人は、5人以下である」は正しいか。わけも書きなさい。', '(4) 「どちらの組も中央値が 62点だから、平均点も同じである」は正しいといえるか。わけも書きなさい。'],
+        draw: function (D) { m2(D, { k: 0 }); } },
+      { tag: '類題2', q: '(1) A組・B組の範囲と四分位範囲は？', a: 'A組 範囲 68点・四分位範囲 26点、B組 範囲 48点・四分位範囲 17点', sub: 'A組 96 − 28 ＝ 68、74 − 48 ＝ 26　B組 88 − 40 ＝ 48、72 − 55 ＝ 17', dur: 3.5,
+        b: { t: '(1) A組 範囲 <b>68</b>・四分位範囲 <b>26</b>　B組 範囲 <b>48</b>・四分位範囲 <b>17</b>', col: C.yel },
+        draw: function (D) { m2(D, { k: 1, t: D.ph ? D.t : 0 }); } },
+      { tag: '類題2', q: '(2) 「B組には 72点以上の人が 10人以上いる」は正しい？', a: '正しい。40人を小さい順に ならべると、第3四分位数 72点は 30番目と31番目の平均なので、31番目は 72点以上。31番目〜40番目の 10人は みな 72点以上だから。', sub: '30番目 ≦ 31番目 で、2つの平均が 72 なら、31番目は 72以上', dur: 5,
+        b: { t: '(2) <b>正しい</b>　31〜40番目の 10人は 72点以上（第3四分位数 72 ＝ 30・31番目の平均）', col: C.yel },
+        draw: function (D) { m2(D, { k: 2, t: D.ph ? D.t : 0 }); } },
+      { tag: '類題2', q: '(3) 「A組で 50点未満の人は 5人以下」は正しい？', a: '正しくない。第1四分位数 48点は 10番目と11番目の平均なので、10番目は 48点以下。1番目〜10番目の 10人は みな 50点未満だから、50点未満の人は 10人以上いる。', sub: '1番目〜10番目は 10番目以下の値なので、みな 48点以下', dur: 5,
+        b: { t: '(3) <b>正しくない</b>　1〜10番目の 10人は 48点以下 → 50点未満は 10人以上', col: C.yel },
+        draw: function (D) { m2(D, { k: 3, t: D.ph ? D.t : 0 }); } },
+      { tag: '類題2', q: '(4) 「中央値が どちらも 62点だから、平均点も同じ」といえる？', a: 'いえない。箱ひげ図には 平均値が あらわれていないので、平均点が同じかどうかは わからないから。', sub: '箱ひげ図から わかるのは 最小値・四分位数・中央値・最大値。平均値は、もとのデータの合計が ないと求められない', dur: 4,
+        b: { t: '(4) <b>いえない</b>　箱ひげ図から 平均値は 読み取れない', col: C.yel },
+        draw: function (D) { m2(D, { k: 4, t: D.ph ? D.t : 0 }); } },
+      /* ---------------- 類題3 ---------------- */
+      { tag: '類題3', bh: '類題3　立ち幅とびの代表えらび（四分位範囲）', q: 'クラス対抗の立ち幅とびに、Aさんか Bさんの どちらかが出る。2人は 11回ずつ とび、記録は次の表のとおりであった。',
+        notes: ['(1) Aさんの記録の 第1四分位数・中央値・第3四分位数を求めなさい。', '(2) Aさん・Bさんの 範囲と四分位範囲を、それぞれ求めなさい。', '(3) ゆうなさんは「範囲は Aさんのほうが小さいから、Aさんのほうが記録が安定している」と考えた。この考えは正しいか。四分位範囲を使って、わけを説明しなさい。'],
+        draw: function (D) { m3(D, { k: 0 }); } },
+      { tag: '類題3', q: '(1) Aさんの 第1四分位数・中央値・第3四分位数は？', a: '第1四分位数 211cm、中央値 224cm、第3四分位数 238cm', sub: '小さい順 198・207・211・214・220・224・229・233・238・244・251。中央値は 6番目の 224。11個（奇数）なので、中央値をふくめずに、前半の5個 → 3番目 211、後半の5個 → 9番目 238', dur: 5,
+        b: { t: '(1) 第1四分位数 <b>211</b>・中央値 <b>224</b>・第3四分位数 <b>238</b>（cm）', col: C.yel },
+        draw: function (D) { m3(D, { k: 1, t: D.ph ? D.t : 0 }); } },
+      { tag: '類題3', q: '(2) A・B の範囲と四分位範囲は？', a: 'Aさん 範囲 53cm・四分位範囲 27cm、Bさん 範囲 72cm・四分位範囲 10cm', sub: 'A 251 − 198 ＝ 53、238 − 211 ＝ 27　B（小さい順 190・218・220・222・223・224・226・228・230・232・262）262 − 190 ＝ 72、230 − 220 ＝ 10', dur: 5,
+        b: { t: '(2) A 範囲 <b>53</b>・四分位範囲 <b>27</b>　B 範囲 <b>72</b>・四分位範囲 <b>10</b>', col: C.yel },
+        draw: function (D) { m3(D, { k: 2, t: D.ph ? D.t : 0 }); } },
+      { tag: '類題3', q: '(3) 「範囲が小さい Aさんのほうが安定している」は正しい？', a: '正しくない。範囲は 190cm や 262cm のような かけはなれた記録に 影響される。四分位範囲は Aさん 27cm、Bさん 10cm で、Bさんのほうが小さいので、Bさんのほうが安定している。', sub: '外れ値のような極端な値に 左右されにくいのは 四分位範囲。中央値は どちらも 224cm で同じ', dur: 6,
+        b: { t: '(3) <b>正しくない</b>　四分位範囲 A 27 ＞ B 10 → <b>Bさん</b>のほうが安定（範囲は かけはなれた値に影響される）', col: C.yel },
+        draw: function (D) { m3(D, { k: 3, t: D.ph ? D.t : 0 }); } },
+      /* ---------------- 類題4 ---------------- */
+      { tag: '類題4', bh: '類題4　さいころ2個のゲーム（和と差）', q: '大小2つのさいころを同時に1回投げる。ゆうとさんは「出た目の和が 5 の倍数になる」、ひなさんは「出た目の差（大きい目 − 小さい目）が 2 になる」ときに勝ち、とするゲームをした。どの目の出方も、同様に確からしいものとする。',
+        notes: ['(1) 目の出方は、全部で何通りあるか。', '(2) ゆうとさんが勝つ確率を求めなさい。', '(3) ひなさんが勝つ確率を求めなさい。', '(4) えいたさんは「和が 5 の倍数になるのは 和が 5 と 10 の2種類、差が 2 になるのは 1種類だから、ゆうとさんのほうが勝ちやすい」と考えた。この考えは正しいか。わけも書きなさい。'],
+        draw: function (D) { m4(D, { k: 0 }); } },
+      { tag: '類題4', q: '(1) 目の出方は 全部で 何通り？', a: '36通り', sub: '6 × 6 ＝ 36', dur: 2,
+        b: { t: '(1) 6 × 6 ＝ <b>36通り</b>', col: C.yel },
+        draw: function (D) { m4(D, { k: 1, t: D.ph ? D.t : 0 }); } },
+      { tag: '類題4', q: '(2) 和が 5 の倍数になる確率は？', a: '7/36', sub: '和が 5：(1,4)(2,3)(3,2)(4,1) の 4通り、和が 10：(4,6)(5,5)(6,4) の 3通り、あわせて 7通り　7÷36', dur: 4,
+        b: { t: '(2) 4＋3＝7通り　<b>7/36</b>', col: C.yel },
+        draw: function (D) { m4(D, { k: 2, t: D.ph ? D.t : 0 }); } },
+      { tag: '類題4', q: '(3) 差が 2 になる確率は？', a: '2/9（8/36）', sub: '(1,3)(2,4)(3,5)(4,6) と、大小を入れかえた (3,1)(4,2)(5,3)(6,4) の 8通り　8/36 ＝ 2/9', dur: 4,
+        b: { t: '(3) 8通り　8/36 ＝ <b>2/9</b>', col: C.yel },
+        draw: function (D) { m4(D, { k: 3, t: D.ph ? D.t : 0 }); } },
+      { tag: '類題4', q: '(4) 「和が 5・10 の2種類、差が 2 は1種類 だからゆうとさんが有利」は正しい？', a: '正しくない。和が 5 になるのは 4通り、10 になるのは 3通りで、2種類の和の出方は同じ数ではない。起こり方の通りの数でくらべると、和が 5 の倍数は 7通り、差が 2 は 8通りで、ひなさんのほうが勝ちやすい。', sub: '7/36 ＜ 8/36。確率は、種類の数ではなく、起こりうる場合の数（通り）の割合で考える', dur: 6,
+        b: { t: '(4) <b>正しくない</b>　7通り ＜ 8通り → <b>ひなさん</b>のほうが勝ちやすい（7/36 ＜ 8/36）', col: C.yel },
+        draw: function (D) { m4(D, { k: 4, t: D.ph ? D.t : 0 }); } },
+      /* ---------------- 類題5 ---------------- */
+      { tag: '類題5', bh: '類題5　くじ引き（先にひく・あとでひく）', q: '8本のくじの中に、当たりが 3本入っている。A、B の2人が、この順に 1本ずつくじをひく。ひいたくじは もとにもどさない。どのくじも、ひかれることは同様に確からしいものとする。',
+        notes: ['(1) A が当たる確率を求めなさい。', '(2) A も B も当たる確率を求めなさい。', '(3) B が当たる確率を求めなさい。', '(4) えりさんは「先にひく A のほうが、当たりやすい」と言った。この考えは正しいか。わけも書きなさい。'],
+        draw: function (D) { m5(D, { k: 0 }); } },
+      { tag: '類題5', q: '(1) A が当たる確率は？', a: '3/8', sub: 'A のひき方は 8通り、そのうち当たりは 3通り', dur: 2,
+        b: { t: '(1) <b>3/8</b>', col: C.yel },
+        draw: function (D) { m5(D, { k: 1, t: D.ph ? D.t : 0 }); } },
+      { tag: '類題5', q: '(2) A も B も当たる確率は？', a: '3/28（6/56）', sub: '(A, B) のひき方は 8 × 7 ＝ 56通り。A が当たり 3通り、そのそれぞれに B が当たり 2通り → 3 × 2 ＝ 6通り　6/56 ＝ 3/28', dur: 4,
+        b: { t: '(2) 3×2＝6通り　6/56 ＝ <b>3/28</b>', col: C.yel },
+        draw: function (D) { m5(D, { k: 2, t: D.ph ? D.t : 0 }); } },
+      { tag: '類題5', q: '(3) B が当たる確率は？', a: '3/8（21/56）', sub: 'B が当たりになるひき方は、B が当たり 3通り、そのそれぞれに A が 7通り → 7 × 3 ＝ 21通り。21/56 ＝ 3/8', dur: 4,
+        b: { t: '(3) 7×3＝21通り　21/56 ＝ <b>3/8</b>', col: C.yel },
+        draw: function (D) { m5(D, { k: 3, t: D.ph ? D.t : 0 }); } },
+      { tag: '類題5', q: '(4) 「先にひく A のほうが当たりやすい」は正しい？', a: '正しくない。A が当たる確率は 3/8、B が当たる確率も 3/8 で同じだから、ひく順番で当たりやすさは かわらない。', sub: '(1)・(3) より、どちらも 3/8。当たる 21通りずつで、56通りの中の割合は同じ', dur: 4,
+        b: { t: '(4) <b>正しくない</b>　A も B も <b>3/8</b>（順番は 関係ない）', col: C.yel },
+        draw: function (D) { m5(D, { k: 4, t: D.ph ? D.t : 0 }); } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

@@ -158,11 +158,11 @@
     }
     if (k === 1) {
       var a1 = fade(t, .3, .5);
-      CH.pt(D, Pl, -6, -1, { col: C.yel, lab: 'ア(−6, −1)', dir: 'ne', a: a1, size: s * .9 }); CH.pt(D, Pl, 1, 6, { col: C.yel, lab: 'イ(1, 6)', dir: 'ne', a: a1, size: s * .9 });
+      CH.pt(D, Pl, -6, -1, { col: C.yel, lab: 'ア(−6, −1)', dir: 's', a: a1, size: s * .9 }); CH.pt(D, Pl, 1, 6, { col: C.yel, lab: 'イ(1, 6)', dir: 'ne', a: a1, size: s * .9 });
       lines(D, zn, [{ t: 'ア　x＝−6 のとき', a: fade(t, 0, .2) }, { t: '　y＝6÷(−6)＝−1', col: C.yel, a: fade(t, .1, .3) }, { t: 'イ　x＝1 のとき', a: fade(t, .4, .6) }, { t: '　y＝6÷1＝6', col: C.yel, a: fade(t, .5, .7) }]);
     }
     if (k === 2) {
-      LAT.forEach(function (p, i) { var a = fade(t, i * .12, i * .12 + .15); CH.pt(D, Pl, p[0], p[1], { col: C.green, r: CH.fs(D, .3), a: a, lab: '(' + p[0] + ', ' + p[1] + ')', dir: i === 0 ? 'ne' : 'ne', size: s * .85 }); });
+      LAT.forEach(function (p, i) { var a = fade(t, i * .12, i * .12 + .15); CH.pt(D, Pl, p[0], p[1], { col: C.green, r: CH.fs(D, .3), a: a, lab: i === 1 ? null : '(' + p[0] + ', ' + p[1] + ')', dir: 'ne', size: s * .85 }); });
       lines(D, zn, [{ t: 'xy＝6 になる、正の整数 x、y の組', a: fade(t, 0, .15) }, { t: '1×6　2×3　3×2　6×1', a: fade(t, .2, .4) }, { t: '→ 4個', col: C.green, a: fade(t, .65, .85) }]);
     }
     if (k === 3) {
@@ -225,16 +225,15 @@
       if (k === 0) lines(D, Z, [{ t: 'x＝2 のとき', a: fade(t, 0, .15) }, { t: 'BP＝2×2＝4（cm）', col: C.yel, a: fade(t, .3, .5) }, { t: '△ABP＝[1/2]×4×6', a: fade(t, .6, .75) }, { t: '＝12（cm²）', col: C.yel, a: fade(t, .75, .9) }]);
       if (k === 1) lines(D, Z, [{ t: 'x 秒後の BP＝2x（cm）', a: fade(t, 0, .15) }, { t: '△ABP＝[1/2]×BP×AB', a: fade(t, .2, .4) }, { t: '＝[1/2]×2x×6', a: fade(t, .45, .6) }, { t: 'y＝6x', col: C.yel, a: fade(t, .7, .9) }]);
     } else {
-      var G = CH.rect(R.x0, R.y0, R.x1, R.y1 - R.h * .26), Pl = PL(D, G, { x: [0, 6], y: [0, 36], stepX: 1, stepY: 6, labX: 1, labY: 6, fit: false, xn: 'x(秒)', yn: 'y(cm²)', m: { r: 3.6 } });
+      var G = CH.rect(R.x0, R.y0, R.x1, R.y1 - R.h * .26), Pl = PL(D, G, { x: [0, 6], y: [0, 36], stepX: 1, stepY: 6, labX: 1, labY: 6, fit: false, xn: 'x', yn: 'y', m: { r: 2.6 } });
       var tt = k === 2 ? fade(t, 0, .6) : 1;
       CH.lin(D, Pl, 6, 0, { x0: 0, x1: XM * tt, col: C.yel, w: 3, ends: tt >= 1 ? ['in', 'in'] : null });
       if (k === 2) { var a2 = fade(t, .6, .8); CH.pt(D, Pl, 5, 30, { col: C.yel, lab: '(5, 30)', dir: 'nw', a: a2 }); CH.pseg(D, Pl, [5, 0], [5, 30], { col: C.green, dash: true, a: a2 }); CH.pseg(D, Pl, [0, 30], [5, 30], { col: C.green, dash: true, a: a2 }); }
       if (k === 3) {
         var a3 = fade(t, .1, .4), a4 = fade(t, .5, .8);
-        CH.fn(D, Pl, function () { return 36; }, { x0: 0, x1: 6, col: 'rgba(0,0,0,0)', w: 1 });
-        CH.text(D, Pl.X(0.1), Pl.Y(36) + s * .4, 'y＝40 は グラフの はんいの外', { size: s * .8, col: C.pink, align: 'left', a: a3 });
-        CH.pseg(D, Pl, [5, 30], [5, 36], { col: C.pink, dash: true, a: a4 });
-        CH.text(D, Pl.X(5), Pl.Y(33) , '最大 30', { size: s * .8, col: C.pink, a: a4, align: 'right', dx: -4 });
+        CH.pt(D, Pl, 5, 30, { col: C.yel, a: a3 });
+        CH.pseg(D, Pl, [0, 30], [5, 30], { col: C.pink, dash: true, a: a3 });
+        CH.text(D, Pl.X(4.8), Pl.Y(33), '最大 30', { size: s * .85, col: C.pink, a: a4, align: 'right', outline: OUT });
       }
       var Z2 = CH.rect(R.x0, R.y1 - R.h * .25, R.x1, R.y1);
       if (k === 2) lines(D, Z2, [{ t: 'P が C に着くまで　0≦x≦5', col: C.yel, a: fade(t, .65, .85) }, { t: 'y の変域　0≦y≦30', col: C.yel, a: fade(t, .8, .95) }]);
@@ -256,18 +255,18 @@
     var ax = R.cx - d / 2 - (nb - NA) * k / 2 * 0, bx;
     ax = R.cx - d / 2; bx = ax + d;
     gearPoly(D, ax, cy, NA, k, -.26 * sa + del, C.blue, o.a); gearPoly(D, bx, cy, nb, k, Math.PI + .24 * sb - del * NA / nb, C.orange, o.a);
-    CH.text(D, ax, cy - NA * k - s * 1.5, 'A　歯数 ' + NA, { col: C.blue, size: s, a: o.a }); CH.text(D, ax, cy - NA * k - s * 2.8, '毎分 ' + ra + ' 回転', { col: C.blue, size: s, a: o.a });
+    CH.text(D, ax, cy - NA * k - s * 2.8, 'A　歯数 ' + NA, { col: C.blue, size: s, a: o.a }); CH.text(D, ax, cy - NA * k - s * 1.5, '毎分 ' + ra + ' 回転', { col: C.blue, size: s, a: o.a });
     CH.text(D, bx, cy + nb * k + s * 1.6, 'B　歯数 ' + qb, { col: C.orange, size: s, a: o.a }); CH.text(D, bx, cy + nb * k + s * 2.9, '毎分 ' + rb + ' 回転', { col: C.orange, size: s, a: o.a });
   }
   function p4(D, k, t) {
-    var R = full(D), s = CH.fs(D, .8), top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (k === 1 || k === 3 ? .5 : .66)), bot = CH.rect(R.x0 + R.w * .04, R.y0 + R.h * (k === 1 || k === 3 ? .56 : .7), R.x1 - R.w * .04, R.y1);
+    var R = full(D), s = CH.fs(D, .8), top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (k === 1 || k === 3 ? .46 : .66)), bot = CH.rect(R.x0 + R.w * .04, R.y0 + R.h * (k === 1 || k === 3 ? .6 : .7), R.x1 - R.w * .04, R.y1);
     var nb = k === 2 ? 16 : k === 3 ? 48 : 36;
     gears(D, top, nb, 30, k === 0 ? '？' : k === 2 ? 45 : k === 3 ? 15 : 'y', 24, nb);
     if (k === 0) lines(D, bot, [{ t: '歯数×回転数が等しい　24×30＝36×y', a: fade(t, 0, .25) }, { t: '720＝36y　y＝720÷36＝20', a: fade(t, .3, .6) }, { t: '毎分 20回転', col: C.yel, a: fade(t, .65, .9) }]);
     if (k === 1) {
       var xs = [12, 18, 24, 36, 48];
       TB(D, bot, [['x（歯数）'].concat(xs.map(String)), ['y（回転数）'].concat(xs.map(function (x) { return String(K4 / x); })), ['x×y'].concat(xs.map(function (x) { return String(K4); }))], { top: true, fw: .22, size: s, rh: s * 2.3, hl: function (rr, c) { return rr === 2 && c > 0 ? C.yel : null; }, show: function (rr, c) { return rr === 2 ? fade(t, .2 + c * .08, .4 + c * .08) : 1; } });
-      CH.text(D, bot.cx, bot.y1 - s * 1.2, 'xy＝720　→　y＝720÷x ＝ [720/x]'.replace(/\[720\/x\]/, '720÷x'), { size: s * 1.05, col: C.yel, a: fade(t, .75, .95) });
+      TX(D, bot.cx, bot.y1 - s * 1.2, 'xy＝720　→　y＝[720/x]', { size: s * 1.1, col: C.yel, a: fade(t, .75, .95) });
     }
     if (k === 2) lines(D, bot, [{ t: '720＝x×45', a: fade(t, 0, .3) }, { t: 'x＝720÷45＝16', col: C.yel, a: fade(t, .4, .7) }, { t: '歯数 16', col: C.yel, a: fade(t, .75, .95) }]);
     if (k === 3) {
@@ -281,7 +280,7 @@
 
   /* ---------- 類題5：2つのグラフ ---------- */
   function p5(D, k, t) {
-    var r = L2(D, .6, .66), s = CH.fs(D, .85), Pl = PL(D, r[0], { x: [0, 20], y: [0, 60], stepX: 4, stepY: 10, labX: 4, labY: 10, fit: false, xn: 'x(分)', yn: 'y(L)', m: { r: 3.2 } }), R = r[1];
+    var r = L2(D, .6, .66), s = CH.fs(D, .85), Pl = PL(D, r[0], { x: [0, 20], y: [0, 60], stepX: 4, stepY: 10, labX: 4, labY: 10, fit: false, xn: 'x', yn: 'y', m: { r: 2.4 } }), R = r[1];
     CH.fn(D, Pl, function () { return 60; }, { x0: 0, x1: 20, col: 'rgba(242,240,230,.5)', dash: true, w: 1.6 });
     CH.text(D, Pl.X(20) - 4, Pl.Y(60) - s * .8, '満水 60L', { size: s * .8, align: 'right', col: 'rgba(242,240,230,.85)' });
     CH.lin(D, Pl, 5, 0, { x0: 0, x1: 12, col: C.pink, w: 3 }); CH.lin(D, Pl, 3, 0, { x0: 0, x1: 20, col: C.blue, w: 3 });
@@ -301,7 +300,7 @@
       var a1 = fade(t, .1, .4), a2 = fade(t, .45, .75);
       CH.pseg(D, Pl, [10, 0], [10, 50], { col: C.chalk, dash: true, a: a1 });
       CH.pt(D, Pl, 10, 50, { col: C.pink, lab: '50', dir: 'w', a: a1, size: s * .85 }); CH.pt(D, Pl, 10, 30, { col: C.blue, lab: '30', dir: 'e', a: a1, size: s * .85 });
-      CH.pseg(D, Pl, [10, 30], [10, 50], { col: C.yel, w: 4, a: a2 }); CH.text(D, Pl.X(10) + s * .8, Pl.Y(40), '差 20L', { col: C.yel, a: a2, size: s * .9, align: 'left' });
+      CH.pseg(D, Pl, [10, 30], [10, 50], { col: C.yel, w: 4, a: a2 }); CH.text(D, Pl.X(10) + s * .8, Pl.Y(40), '差 20L', { col: C.yel, a: a2, size: s * .9, align: 'left', outline: OUT });
       lines(D, r[1], [{ t: 'x＝10 のところを縦に見る', a: fade(t, 0, .2) }, { t: 'A は 50L、B は 30L', a: fade(t, .25, .45) }, { t: '50−30＝20（L）', a: fade(t, .5, .7) }, { t: '正しい', col: C.yel, a: fade(t, .75, .95) }]);
     }
   }

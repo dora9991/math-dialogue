@@ -37,6 +37,7 @@
   CH.check(fee(100) === 400 && okx[0] === 151 && okx[okx.length - 1] === 180 && fee(62) === 300 && fee(88) === 300 && fee(60) === 200 && fee(61) === 300 && fee(300) === 800, '類題5');
 
   function lab(D, x, y, s, col, o) { o = o || {}; CH.text(D, x, y, s, { col: col || C.chalk, outline: OUT, size: o.size || CH.fs(D, .85), align: o.align, a: o.a, num: o.num }); }
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = CH.fr(s[k]); }); if (s.notes) s.notes = s.notes.map(CH.fr); if (s.b) s.b.t = CH.fr(s.b.t); }); return st; }
   function stage(D, o) { return CH.box(D, o || { l: .11, r: .08, t: .12, b: .15 }); }
 
   /* ---------- 類題1 ---------- */
@@ -63,7 +64,7 @@
   }
 
   /* ---------- 類題3 ---------- */
-  function pl3(D) { return CH.plane(D, stage(D, { l: .1, r: .1, t: .1, b: .13 }), { x: [-4, 4], y: [-1, 11], step: 1 }); }
+  function pl3(D) { return CH.plane(D, stage(D, { l: .42, r: .02, t: .1, b: .13 }), { x: [-4, 4], y: [-1, 11], step: 1 }); }
   function par3(D, Pl, a) { CH.fn(D, Pl, F3, { col: C.orange, w: 3, a: a }); }
 
   /* ---------- 類題4 ---------- */
@@ -76,7 +77,7 @@
     o = o || {}; SEG5.forEach(function (g, i) {
       var col = o.col ? o.col(i) : C.yel, a = o.a ? o.a(i) : 1;
       CH.pseg(D, Pl, [g[0], g[2]], [g[1], g[2]], { col: col, w: 3.2, a: a });
-      CH.pt(D, Pl, g[0], g[2], { col: col, open: i > 0, r: CH.fs(D, .26), a: a });
+      CH.pt(D, Pl, g[0], g[2], { col: col, open: true, r: CH.fs(D, .26), a: a });
       CH.pt(D, Pl, g[1], g[2], { col: col, r: CH.fs(D, .26), a: i === SEG5.length - 1 ? 0 : a });
     });
   }
@@ -84,7 +85,7 @@
   K3.run({
     no: '類題', title: '学力推移調査型の類題　中3 関数 y＝ax²（5題）', flat: true, hint: '',
     links: [{ href: 'index.html', label: '目次' }],
-    steps: [
+    steps: fixSteps([
       /* ---------------- 類題1 ---------------- */
       { tag: '類題1', bh: '類題1　坂をころがるボール（平均の速さ）', q: 'なめらかな坂の上でボールを静かに放すと、放してから x 秒間に進む距離 y m は、y が x の2乗に比例して ふえる。次の表は、その記録の一部である。',
         notes: ['(1) y を x の式で表しなさい。また、表の ア にあてはまる数を求めなさい。', '(2) x＝1 から x＝4 までの、ボールの平均の速さは 秒速何m か。', '(3) あおいさんは「ボールは 1秒ごとに同じだけ速くなるから、1秒〜2秒の平均の速さと 3秒〜4秒の平均の速さは 同じ」と考えた。正しいか。わけも書きなさい。'],
@@ -106,7 +107,7 @@
           var a1 = CH.smooth(0, .3, t), a2 = CH.smooth(.3, .6, t), a3 = CH.smooth(.6, .85, t);
           CH.pseg(D, Pl, [1, 3], [4, 48], { col: C.blue, w: 3, a: a1 });
           CH.pseg(D, Pl, [1, 3], [4, 3], { col: C.pink, w: 2.4, dash: true, a: a2 }); CH.pseg(D, Pl, [4, 3], [4, 48], { col: C.pink, w: 2.4, dash: true, a: a2 });
-          lab(D, Pl.X(2.5), Pl.Y(3) + Pl.s * 1.2, '＋3（秒）', C.pink, { a: a2 }); lab(D, Pl.X(4) + Pl.s * .5, Pl.Y(25), '＋45（m）', C.pink, { a: a2, align: 'left' });
+          lab(D, Pl.X(2.5), Pl.Y(3) - Pl.s * 1.2, '＋3（秒）', C.pink, { a: a2 }); lab(D, Pl.X(4) + Pl.s * .5, Pl.Y(25), '＋45（m）', C.pink, { a: a2, align: 'left' });
           lab(D, Pl.X(.2), Pl.Y(66), '45 ÷ 3 ＝ 15', C.yel, { a: a3, align: 'left', size: CH.fs(D, 1.1) }); lab(D, Pl.X(.2), Pl.Y(58), '（秒速 15m）', C.yel, { a: a3, align: 'left' });
         } },
       { tag: '類題1', q: '(3)「1秒〜2秒と 3秒〜4秒の平均の速さは 同じ」は正しい？', a: '正しくない', sub: '1秒〜2秒：(12−3)÷1＝9　3秒〜4秒：(48−27)÷1＝21。y＝ax² の変化の割合は一定でなく、x がふえるほど大きくなる。速さは 1秒ごとに同じだけふえるのではない', dur: 4.5,
@@ -158,8 +159,8 @@
             var y = R.y0 + g[3] * h * 2.4 + R.h * .1; lab(D, R.x0 + R.w * .17, y + h / 2, g[1], g[2], { align: 'right' });
             CH.tape(D, R.x0 + R.w * .19, y, R.w * .8 * g[0] / 144 * (g[3] ? k : 1) + (g[3] ? 0 : 0), h, [{ v: 1, col: g[2], txt: g[3] ? (k > .95 ? '144m' : '') : '36m' }], 1);
           });
-          lab(D, R.cx, R.y0 + R.h * .6, '速さ 2倍　→　停止距離 144 ÷ 36 ＝ 4倍', C.yel, { a: CH.smooth(.5, .8, t), size: CH.fs(D, 1.1) });
-          lab(D, R.cx, R.y0 + R.h * .76, 'y は x の2乗に比例 → x が2倍で y は 2² ＝ 4倍', C.green, { a: CH.smooth(.75, 1, t) });
+          lab(D, R.cx, R.y0 + R.h * .68, '速さ 2倍　→　停止距離 144 ÷ 36 ＝ 4倍', C.yel, { a: CH.smooth(.5, .8, t), size: CH.fs(D, 1.1) });
+          lab(D, R.cx, R.y0 + R.h * .82, 'y は x の2乗に比例 → x が2倍で y は 2² ＝ 4倍', C.green, { a: CH.smooth(.75, 1, t) });
         } },
       /* ---------------- 類題3 ---------------- */
       { tag: '類題3', bh: '類題3　放物線と直線・三角形の面積', q: '右の図のように、関数 y＝x² のグラフ上に、x 座標が −2 の点 A と、x 座標が 3 の点 B がある。O は原点である。（図は、放物線と、△OAB を表す。）',
@@ -184,7 +185,7 @@
           CH.lin(D, Pl, 1, 6, { col: C.blue, w: 3, t: CH.smooth(0, .4, t) });
           CH.slopeTri(D, Pl, 1, 6, -2, 5, { col: C.pink, lx: '＋5', ly: '＋5', a: CH.smooth(.3, .6, t) });
           CH.pt(D, Pl, -2, 4, { col: C.yel, lab: 'A', dir: 'nw' }); CH.pt(D, Pl, 3, 9, { col: C.yel, lab: 'B', dir: 'se' }); CH.pt(D, Pl, 0, 6, { col: C.green, a: CH.smooth(.6, .85, t), lab: 'C(0, 6)', dir: 'ne' });
-          lab(D, Pl.X(-3.9), Pl.Y(10.2), '傾き 5÷5 ＝ 1　切片 6', C.pink, { a: CH.smooth(.5, .8, t), align: 'left' }); lab(D, Pl.X(-3.9), Pl.Y(9.2), 'y ＝ x ＋ 6', C.yel, { a: CH.smooth(.75, 1, t), align: 'left', size: CH.fs(D, 1.1) });
+          lab(D, D.W * .04, Pl.Y(10.2), '傾き 5÷5 ＝ 1　切片 6', C.pink, { a: CH.smooth(.5, .8, t), align: 'left' }); lab(D, D.W * .04, Pl.Y(9.2), 'y ＝ x ＋ 6', C.yel, { a: CH.smooth(.75, 1, t), align: 'left', size: CH.fs(D, 1.1) });
         } },
       { tag: '類題3', q: '(3) △OAB の面積は？', a: '15cm²', sub: '直線 AB と y 軸の交点を C(0, 6) とし、△OAB を △OAC と △OBC に分ける。△OAC＝[1/2]×6×2＝6、△OBC＝[1/2]×6×3＝9、6＋9＝15', dur: 4,
         b: { t: '(3) OC＝6 を底辺に　[1/2]×6×2＋[1/2]×6×3＝<b>15cm²</b>', col: C.yel },
@@ -194,9 +195,9 @@
           CH.poly(D, [[Pl.X(0), Pl.Y(0)], [Pl.X(3), Pl.Y(9)], [Pl.X(0), Pl.Y(6)]], { fill: 'rgba(255,186,120,.28)', a: CH.smooth(.3, .6, t) });
           CH.poly(D, [[Pl.X(0), Pl.Y(0)], [Pl.X(-2), Pl.Y(4)], [Pl.X(3), Pl.Y(9)]], { stroke: C.chalk, sw: 2.4 });
           CH.pseg(D, Pl, [0, 0], [0, 6], { col: C.green, w: 3, a: CH.smooth(0, .2, t) });
-          CH.pt(D, Pl, -2, 4, { col: C.yel, lab: 'A', dir: 'nw' }); CH.pt(D, Pl, 3, 9, { col: C.yel, lab: 'B', dir: 'se' }); CH.pt(D, Pl, 0, 6, { col: C.green, lab: 'C', dir: 'ne' });
-          lab(D, Pl.X(-3.9), Pl.Y(9.6), '△OAC ＝ 6×2÷2 ＝ 6', C.blue, { a: CH.smooth(.1, .35, t), align: 'left' }); lab(D, Pl.X(-3.9), Pl.Y(8.6), '△OBC ＝ 6×3÷2 ＝ 9', C.orange, { a: CH.smooth(.4, .65, t), align: 'left' });
-          lab(D, Pl.X(-3.9), Pl.Y(7.4), '6 ＋ 9 ＝ 15（cm²）', C.yel, { a: CH.smooth(.7, 1, t), align: 'left', size: CH.fs(D, 1.05) });
+          CH.pt(D, Pl, -2, 4, { col: C.yel, lab: 'A', dir: 'nw' }); CH.pt(D, Pl, 3, 9, { col: C.yel, lab: 'B', dir: 'se' }); CH.pt(D, Pl, 0, 6, { col: C.green, lab: 'C', dir: 'ne', a: CH.smooth(0, .2, t) });
+          lab(D, D.W * .04, Pl.Y(9.6), '△OAC ＝ 6×2÷2 ＝ 6', C.blue, { a: CH.smooth(.1, .35, t), align: 'left' }); lab(D, D.W * .04, Pl.Y(8.6), '△OBC ＝ 6×3÷2 ＝ 9', C.orange, { a: CH.smooth(.4, .65, t), align: 'left' });
+          lab(D, D.W * .04, Pl.Y(7.4), '6 ＋ 9 ＝ 15（cm²）', C.yel, { a: CH.smooth(.7, 1, t), align: 'left', size: CH.fs(D, 1.05) });
         } },
       { tag: '類題3', q: '(4) 2点の x 座標が s、t のとき、直線の傾きが s＋t になることを説明する', a: '傾き＝(t²−s²)÷(t−s)＝(t＋s)(t−s)÷(t−s)＝s＋t', sub: 'y＝x² 上の2点は (s, s²)、(t, t²)。傾き＝(y の増加量)÷(x の増加量)＝(t²−s²)÷(t−s)。分子を因数分解して (t＋s)(t−s)。t−s で約分して s＋t。（−2＋3＝1 で、(2) の傾きと一致する）', dur: 6,
         b: { t: '(4) (t²−s²)÷(t−s)＝(t＋s)(t−s)÷(t−s)＝<b>s＋t</b>', col: C.yel },
@@ -232,9 +233,9 @@
         draw: function (D) {
           var t = D.ph ? D.t : 0, Pl = pl4(D); CH.fn(D, Pl, F4, { col: 'rgba(255,186,120,.35)', w: 2.4, x0: -3, x1: 4 }); CH.fn(D, Pl, F4, { col: C.orange, w: 4.4, x0: -1, x1: 3 });
           var a = CH.smooth(0, .3, t), b = CH.smooth(.35, .65, t), c = CH.smooth(.65, .95, t);
-          CH.pseg(D, Pl, [-3, 2], [4, 2], { col: C.pink, w: 2.4, dash: true, a: a }); CH.pt(D, Pl, -1, 2, { col: C.pink, a: a, lab: 'ゆうきさんの 最小値 2', dir: 'ne', size: CH.fs(D, .8) });
+          CH.pseg(D, Pl, [-3, 2], [4, 2], { col: C.pink, w: 2.4, dash: true, a: a }); CH.pt(D, Pl, -1, 2, { col: C.pink, a: a, lab: 'ゆうきさんの 最小値 2', dir: 'w', size: CH.fs(D, .8) });
           CH.circle(D, Pl.X(0), Pl.Y(0), CH.fs(D, .75), { stroke: C.green, sw: 3, a: b }); CH.pt(D, Pl, 0, 0, { col: C.green, a: b });
-          lab(D, Pl.X(.7), Pl.Y(.2), '← x＝0 のとき y＝0', C.green, { a: b, align: 'left' });
+          lab(D, Pl.X(.25), Pl.Y(-1.3), '↑ x＝0 のとき y＝0', C.green, { a: b, align: 'left' });
           lab(D, Pl.X(-2.9), Pl.Y(16), 'x の変域に 0 がある', C.yel, { a: c, align: 'left' }); lab(D, Pl.X(-2.9), Pl.Y(14.3), '→ y は 0 まで下がる', C.yel, { a: c, align: 'left' });
         } },
       { tag: '類題4', q: '(4) y＝ax²（a＜0）で、−2≦x≦4 のとき −8≦y≦0。a は？', a: 'a＝−[1/2]', sub: 'a＜0 のグラフは下に開き、x＝0 で最大値 0。x の変域のはしで、原点から遠い x＝4 のとき y が最小になるので、x＝4、y＝−8 を代入して −8＝16a、a＝−[1/2]。（x＝−2 のとき y＝−2 で、−8≦y≦0 に入る）', dur: 5,
@@ -248,7 +249,7 @@
           lab(D, Pl.X(-2.9), Pl.Y(-5.2), '−8 ＝ a × 4²', C.pink, { a: b, align: 'left' }); lab(D, Pl.X(-2.9), Pl.Y(-6.4), '16a ＝ −8　a ＝ −1/2', C.yel, { a: b, align: 'left', size: CH.fs(D, 1.05) });
         } },
       /* ---------------- 類題5 ---------------- */
-      { tag: '類題5', bh: '類題5　駐車場の料金（階段状のグラフ）', q: 'ある駐車場では、車を入れてから x 分たったときの料金を y 円とする。60分までは 200円。60分をこえると、30分までごとに 100円ずつ高くなる。ただし、料金は 800円より高くならない。下のグラフは、その関係を表したものである。●はその点をふくみ、○はふくまない。',
+      { tag: '類題5', bh: '類題5　駐車場の料金（階段状のグラフ）', q: 'ある駐車場では、車を入れてから x 分たったときの料金を y 円とする。60分までは 200円。60分をこえると、30分ごとに 100円ずつ高くなる。ただし、料金は 800円より高くならない。下のグラフは、その関係を表したものである。●はその点をふくみ、○はふくまない。',
         notes: ['(1) 100分 停めたときの料金を求めなさい。', '(2) 料金が 600円になるのは、停めた時間 x が どんな範囲のときか。不等号を使って表しなさい。', '(3) Aさんは 62分、Bさんは 88分 停めた。Bさんのほうが 26分長く停めたのに、2人の料金は同じになった。そのわけを、グラフをもとに説明しなさい。', '(4) 停めた時間 x（分）を決めると、料金 y（円）はただ1つに決まる。このとき y は x の関数といえるか。わけも書きなさい。'],
         draw: function (D) { var Pl = pl5(D); steps5(D, Pl); } },
       { tag: '類題5', q: '(1) 100分 停めたときの料金は？', a: '400円', sub: 'x＝100 は 90＜x≦120 の部分で、y＝400', dur: 2,
@@ -285,7 +286,7 @@
           lab(D, Pl.X(66), Pl.Y(150), 'x＝60 のとき y＝200 だけ', C.green, { a: CH.smooth(.4, .7, t), align: 'left' });
           lab(D, Pl.X(125), Pl.Y(300), 'x を決めると y が1つに決まる', C.yel, { a: CH.smooth(.65, .95, t), align: 'left' }); lab(D, Pl.X(125), Pl.Y(240), '→ 関数といえる', C.yel, { a: CH.smooth(.8, 1, t), align: 'left' });
         } }
-    ]
+    ])
   });
 })();
 </script>
