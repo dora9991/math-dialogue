@@ -246,6 +246,16 @@ body[data-view="work"] { overflow: hidden; }
 .sc-names input { flex: 1; min-width: 0; min-height: 38px; background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 4px 8px; font-size: 15px; }
 .sc-colors .sw { width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgba(128, 128, 128, 0.6); padding: 0; }
 .sc-colors .sw.on { box-shadow: 0 0 0 3px var(--accent); }
+/* 背番号をタップで選ぶマス（新しい試合の小窓・設定・記録の「＋」で、同じもの） */
+.sc-nogrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 6px; margin: 6px 0 2px; }
+.sc-nb { min-height: 44px; padding: 0; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel2); color: var(--text); font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sc-nb:active { transform: scale(0.95); }
+.sc-nb.on { background: var(--accent); border: 2px solid var(--accent); color: #fff; font-weight: 900; }
+.sc-nogridbox .linkbtn { margin-top: 4px; }
+.sc-nostext { display: block; margin-top: 8px; }
+.sc-nostext small { display: block; color: var(--muted); margin-bottom: 3px; }
+.sc-nostext input { width: 100%; }
+.sc-nameswrap { margin-bottom: 4px; }
 /* お知らせの帯の中のボタン（「見る」など。暗い帯の上で、はっきり読める白） */
 .toast .tbtn { flex: none; min-height: 38px; padding: 6px 16px; border: 0; border-radius: 9px; background: #fff; color: #111827; font-size: 14.5px; font-weight: 800; }
 .toast .tbtn:active { transform: scale(0.96); }
@@ -319,11 +329,13 @@ body[data-view="work"] { overflow: hidden; }
 .tp-more > button { flex: 1 1 0; min-width: 0; height: 42px; border-radius: 10px; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 8px; }
 .tp-mark { border: 0; background: var(--k-mark); color: var(--k-mark-ink); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15); }
 .tp-listbtn { border: 1px solid var(--line2); background: var(--panel2); color: var(--text); }
+.tp-more > .tp-addno { flex: 0 0 auto; border: 1.5px dashed var(--line2); background: transparent; color: var(--muted); }
 .tp-low .tp-opplab { flex: none; }
 .tp-low .tp-opplab span { max-width: 4.5em; }
 .tp-low .tp-op { width: 44px; height: 40px; }
 .tp-low .tp-more > button { flex: 0 0 auto; width: 46px; height: 40px; font-size: 17px; padding: 0; }
 .tp-low .tp-full { display: none; }
+.tp-low .tp-more > .tp-addno { display: none; }      /* 低い画面（スマホの横など）は、並べる余裕がない。⚙ 設定の「背番号」から足せる */
 .tp-low .tp-more { justify-content: flex-end; }
 .tp-low .tp-hint:not(.tp-on) { display: none; }
 .tp-low .tp-hint { flex: 1 1 auto; min-width: 0; min-height: 40px; font-size: 14px; padding-right: 0; }
@@ -3208,7 +3220,8 @@ body[data-view="work"] { overflow: hidden; }
      SC.app.save()                S.game を保存して、'change' を知らせる（記録を足した・直した・消したあとに呼ぶ）
      SC.app.savePrefs()           S.prefs を保存して、'prefs' を知らせる
      SC.app.setTab(id, arg)       タブを切りかえる（'tap' | 'scenes' | 'stats'）。arg は、そのパネルの show(arg) に渡る
-     SC.app.on(name, fn)          'time'(t)・'play'・'pause'・'media'(つながったか)・'change'・'prefs'・'tab'(id)・'range'(いまの区間 | null)・'open'(試合を開いた)
+     SC.app.on(name, fn)          'time'(t)・'play'・'pause'・'media'(つながったか)・'change'・'prefs'・'team'(背番号・名前・色を変えた)・'tab'(id)・'range'(いまの区間 | null)・'open'(試合を開いた)
+     SC.app.ui.noGrid(get, set)   背番号をタップで入れたり外したりするマス → { el, draw }（get()：いま選んでいる番号 / set(list)：変えたあとの番号）
      SC.app.panel(id, def)        パネルを登録する：{ mount(el), show(arg), hide(), badge() → 文字 | '' }
                                   mount は、作業の画面を作るたびに呼ばれる（el は毎回新しい。中身を作り直す）
      SC.app.settings(def)         設定の節を登録する：{ id, title, order, render(box, redraw) }（redraw()：設定の小窓を描き直す）
@@ -3361,6 +3374,24 @@ body[data-view="work"] { overflow: hidden; }
     g.videos = [{ vid: 'file1', n: 1, startedAt: t0, endedAt: null, duration: null, name: file ? file.name : '', mime: file ? file.type || '' : '', w: null, h: null, bytes: file ? file.size || null : null, status: 'done', gone: true, file: true }];
     return g;
   }
+  /* 背番号を、タップで入れたり外したりするマス（0・00・1〜30。「31〜99 も出す」で 99 まで。選んでいる 31 以上は、いつも出す）
+     get()：いま選んでいる番号の並び / set(list)：変えたあとの番号の並び（番号の順）。draw()：get() を読みなおして描く */
+  let noMore = false;
+  function noGrid(get, set) {
+    const grid = h('div', { class: 'sc-nogrid', id: 'scNoGrid', role: 'group', 'aria-label': '背番号を選ぶ' });
+    const more = h('button', { type: 'button', class: 'linkbtn', id: 'scNoMore', onclick: () => { noMore = !noMore; draw(); } });
+    function draw() {
+      const on = new Set(get());
+      const shown = ['0', '00'].concat(Array.from({ length: noMore ? 99 : 30 }, (_, k) => String(k + 1)));
+      on.forEach((no) => { if (!shown.includes(no)) shown.push(no); });
+      grid.innerHTML = '';
+      BT.sortNos(shown).forEach((no) => grid.append(h('button', { type: 'button', class: 'sc-nb' + (on.has(no) ? ' on' : ''), dataset: { no }, 'aria-pressed': on.has(no) ? 'true' : 'false',
+        onclick: () => { const cur = new Set(get()); if (cur.has(no)) cur.delete(no); else cur.add(no); set(BT.sortNos(Array.from(cur))); draw(); } }, no)));
+      more.textContent = noMore ? '31〜99 をかくす' : '31〜99 も出す';
+    }
+    draw();
+    return { el: h('div', { class: 'sc-nogridbox' }, grid, more), draw };
+  }
   /* 新しい試合：自分のチームの名前と背番号だけ（前の試合のものが入っている）。相手は名前だけ（なくてもよい） */
   function newGameSheet(file) {
     const last = SC.store.team() || { name: '', color: '#2f6fed', colorName: '青', players: [] };
@@ -3368,7 +3399,10 @@ body[data-view="work"] { overflow: hidden; }
     const nos = h('input', { type: 'text', id: 'scTeamNos', inputmode: 'text', placeholder: '例：4-15　または　4 5 7 8 10', value: BT.formatNumbers((last.players || []).map((p) => p.no)), autocomplete: 'off' });
     const opp = h('input', { type: 'text', id: 'scOppName', maxlength: 20, placeholder: '（なくてもよい）', autocomplete: 'off' });
     const count = h('small', { class: 'note', id: 'scNosCount' });
-    const draw = () => { const n = BT.parseNumbers(nos.value).length; count.textContent = n ? `${n}人` : '背番号がなくても始められます（あとで足せます）'; };
+    const drawCount = () => { const n = BT.parseNumbers(nos.value).length; count.textContent = n ? `${n}人` : '背番号がなくても始められます（あとで足せます）'; };
+    /* タップで選ぶマス（文字の欄・一括ボタンと、いつも同じ番号を指す） */
+    const grid = noGrid(() => BT.parseNumbers(nos.value), (list) => { nos.value = BT.formatNumbers(list); drawCount(); });
+    const draw = () => { drawCount(); grid.draw(); };
     nos.addEventListener('input', draw);
     const preset = (txt, lab) => h('button', { class: 'btn small', dataset: { preset: txt }, onclick: () => { nos.value = txt; draw(); } }, lab);
     const start = () => {
@@ -3383,8 +3417,8 @@ body[data-view="work"] { overflow: hidden; }
       body: h('div', { class: 'sc-form' },
         h('p', { class: 'sc-picked' }, '🎬 ', h('b', null, file ? file.name : '動画')),
         h('label', { class: 'field' }, h('span', null, '自分のチームの名前'), name),
-        h('label', { class: 'field' }, h('span', null, '自分のチームの背番号'), nos),
-        h('div', { class: 'row' }, preset('4-15', '4〜15'), preset('4-18', '4〜18'), preset('', '空にする'), count),
+        h('div', { class: 'field' }, h('span', null, '自分のチームの背番号（タップで選ぶ）'), h('div', { class: 'row' }, preset('4-15', '4〜15'), preset('4-18', '4〜18'), preset('', '全部はずす'), count), grid.el,
+          h('label', { class: 'sc-nostext' }, h('small', null, '文字で入れてもかまいません'), nos)),
         h('label', { class: 'field' }, h('span', null, '相手の名前'), opp),
         h('p', { class: 'note' }, '相手は、得点（1・2・3点）だけを記録します。名前・背番号・記録するものは、あとで ⚙ 設定から直せます。')),
       foot: [h('button', { class: 'btn', onclick: () => s.close() }, 'やめる'), h('button', { class: 'btn primary', id: 'scStart', onclick: start }, '▶ 記録をはじめる')]
@@ -3660,6 +3694,7 @@ body[data-view="work"] { overflow: hidden; }
   /* 設定の部品（パネルの設定の節でも使える） */
   const ui = {
     /* チェック：obj[key] を切りかえる。after は、切りかえたあと */
+    noGrid,
     check(obj, key, label, after) {
       return h('label', { class: 'chk' }, h('input', { type: 'checkbox', dataset: { pref: key }, checked: !!obj[key], onchange: (e) => { obj[key] = e.target.checked; savePrefs(); if (after) after(); } }), label);
     },
@@ -3671,12 +3706,22 @@ body[data-view="work"] { overflow: hidden; }
   /* 土台が持つ設定：チーム・背番号／画面の色／データ */
   settings({ id: 'team', title: '👥 チーム・背番号', order: 10, when: () => !!S.game, render(box, redraw) {
     const g = S.game, t = g.teams[0];
-    const changed = () => { SC.store.saveTeam(t); save(); drawWork(); };
+    const changed = () => { SC.store.saveTeam(t); save(); drawWork(); emit('team'); };
     const name = h('input', { type: 'text', id: 'setTeamName', maxlength: 20, value: t.name || '', placeholder: '自分のチームの名前', onchange: (e) => { t.name = e.target.value.trim().slice(0, 20); changed(); } });
-    const nos = h('input', { type: 'text', id: 'setTeamNos', value: BT.formatNumbers(t.players.map((p) => p.no)), placeholder: '例：4-15', onchange: (e) => { t.players = BT.playersFromNos(BT.parseNumbers(e.target.value), t.players); changed(); redraw(); } });
+    /* 背番号：タップで選ぶマス・文字の欄・名前の欄は、いつも同じ名簿を指す。変えたら、その場で書き換える（小窓は閉じない） */
+    const namesBox = h('div', { class: 'sc-nameswrap' });
+    const drawNames = () => {
+      namesBox.innerHTML = '';
+      if (t.players.length) namesBox.append(h('div', { class: 'sc-names' }, t.players.map((p) => h('label', null, h('b', null, '#' + p.no), h('input', { type: 'text', maxlength: 12, value: p.name || '', placeholder: '名前', dataset: { pname: p.no }, onchange: (e) => { p.name = e.target.value.trim().slice(0, 12); changed(); } })))));
+    };
+    const setNos = (list) => { t.players = BT.playersFromNos(list, t.players); changed(); nos.value = BT.formatNumbers(t.players.map((p) => p.no)); drawNames(); grid.draw(); };
+    const nos = h('input', { type: 'text', id: 'setTeamNos', value: BT.formatNumbers(t.players.map((p) => p.no)), placeholder: '例：4-15', onchange: (e) => setNos(BT.parseNumbers(e.target.value)) });
+    const grid = noGrid(() => t.players.map((p) => p.no), setNos);
     const opp = h('input', { type: 'text', id: 'setOppName', maxlength: 20, value: g.teams[1].name || '', placeholder: '相手の名前', onchange: (e) => { g.teams[1].name = e.target.value.trim().slice(0, 20); save(); drawWork(); } });
-    box.append(h('label', { class: 'field' }, h('small', null, '自分のチーム'), name), h('label', { class: 'field' }, h('small', null, '背番号（「4-15」「4 5 7」のように）'), nos),
-      t.players.length ? h('div', { class: 'sc-names' }, t.players.map((p) => h('label', null, h('b', null, '#' + p.no), h('input', { type: 'text', maxlength: 12, value: p.name || '', placeholder: '名前', dataset: { pname: p.no }, onchange: (e) => { p.name = e.target.value.trim().slice(0, 12); changed(); } })))) : null,
+    drawNames();
+    box.append(h('label', { class: 'field' }, h('small', null, '自分のチーム'), name),
+      h('div', { class: 'field' }, h('small', null, '背番号（タップで入れたり外したりできます）'), grid.el, h('label', { class: 'sc-nostext' }, h('small', null, '文字で入れてもかまいません（「4-15」「4 5 7」のように）'), nos)),
+      namesBox,
       h('div', { class: 'row sc-colors', role: 'group', 'aria-label': 'チームの色' }, BT.COLORS.map((c) => h('button', { class: 'sw' + (t.color.toLowerCase() === c.hex ? ' on' : ''), 'aria-label': c.name, title: c.name, dataset: { color: c.name }, style: { background: c.hex }, onclick: () => { t.color = c.hex; t.colorName = c.name; changed(); redraw(); } }))),
       h('label', { class: 'field' }, h('small', null, '相手の名前'), opp));
   } });
@@ -3993,6 +4038,20 @@ body[data-view="work"] { overflow: hidden; }
     BT.ui.toast(`消しました：${fmt(e.t)} ${who(g, e)} ${what(e)}`.replace(/\s+/g, ' '), 'ok', 4500, { label: 'もとに戻す', onClick: () => { if (S.game !== g || BT.findEvent(g, e.id)) return; g.events.splice(Math.min(i, g.events.length), 0, e); A.save(); drawLast(); } });
   }
 
+  /* ---------- 背番号を足す（記録の途中で、名簿にない番号が出たとき。設定の「チーム・背番号」と同じマス） ---------- */
+  function addNo() {
+    const g = game();
+    if (!g) return;
+    A.stopRange();
+    const t = g.teams[0];
+    const grid = A.ui.noGrid(() => t.players.map((p) => p.no), (list) => { t.players = BT.playersFromNos(list, t.players); SC.store.saveTeam(t); A.save(); A.emit('team'); });
+    const s = BT.ui.sheet({
+      title: '背番号を足す',
+      body: h('div', { class: 'sc-form' }, grid.el, h('p', { class: 'note' }, '押した番号が、記録のボタンに入ります（もう一度押すと外れます。記録ずみのものは消えません）。')),
+      foot: [h('button', { class: 'btn primary', id: 'tpAddDone', onclick: () => s.close() }, '閉じる')]
+    });
+  }
+
   /* ---------- 記録の一覧 ---------- */
   function list() {
     const g = game();
@@ -4035,7 +4094,8 @@ body[data-view="work"] { overflow: hidden; }
       [1, 2, 3].map((p) => h('button', { class: 'tp-op', dataset: { opp: p }, 'aria-label': `${BT.teamName(g, 1)}の得点 +${p}`, onclick: () => tapOpp(p) }, '+' + p)));
     W.more = h('div', { class: 'tp-more' },
       rec.mark !== false ? h('button', { class: 'tp-mark', id: 'tpMark', 'aria-label': '★ あとで見る（いまの場面に印）', title: '★ あとで見る', onclick: tapMark }, '★', h('span', { class: 'tp-full' }, ' あとで見る')) : null,
-      h('button', { class: 'tp-listbtn', id: 'tpList', 'aria-label': '📋 記録の一覧', title: '記録の一覧', onclick: list }, '📋', h('span', { class: 'tp-full' }, ' 記録の一覧')));
+      h('button', { class: 'tp-listbtn', id: 'tpList', 'aria-label': '📋 記録の一覧', title: '記録の一覧', onclick: list }, '📋', h('span', { class: 'tp-full' }, ' 記録の一覧')),
+      h('button', { class: 'tp-addno', id: 'tpAddNo', 'aria-label': '背番号を足す', title: '名簿にない背番号を足す', onclick: addNo }, '＋', h('span', { class: 'tp-full' }, ' 番号')));
     W.lastMain = h('button', { class: 'tp-lastmain', id: 'tpLast', 'aria-label': 'いちばん新しい記録（押すと直せます）', onclick: () => { const e = last(game()); if (e) edit(e.id); } });
     W.undo = h('button', { class: 'tp-lb', id: 'tpUndo', 'aria-label': 'いちばん新しい記録を取り消す', onclick: undo }, '↶ 取り消す');
     W.redo = h('button', { class: 'tp-lb', id: 'tpRedo', 'aria-label': '取り消した記録をやり直す', hidden: true, onclick: redo }, '↷');
@@ -4129,7 +4189,9 @@ body[data-view="work"] { overflow: hidden; }
   });
   A.on('open', () => { P.redo = []; P.gid = S.game ? S.game.id : null; P.pick = null; });
   A.on('change', () => { if (S.game && P.W) drawLast(); });
-  A.on('prefs', () => { if (S.game && P.el) { const pk = P.pick; build(); P.pick = pk; drawPick(); } });
+  const rebuild = () => { if (S.game && P.el) { const pk = P.pick; build(); P.pick = pk; drawPick(); } };
+  A.on('prefs', rebuild);
+  A.on('team', rebuild);          // 背番号・名前・色を変えた（設定・「＋」）：番号のボタンを作りなおす
   A.on('media', () => { if (P.root) P.root.classList.toggle('tp-off', !A.hasVideo()); });
   A.on('range', (r) => { if (!r && P.watching) { P.watching = null; drawLast(); } });
   A.on('time', (t) => {
