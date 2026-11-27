@@ -157,7 +157,7 @@
   CH.check(GE.near(GE.ang(Q3, 'PAQ'), 36) && GE.near(GE.ang(Q3, 'PBQ'), 36) && GE.near(GE.ang(Q3, 'POQ'), 72) && GE.near(GE.ang(Q3, 'OPQ'), 54) && GE.near(GE.ang(Q3, 'PEQ'), 36), '類題3 円周角');
   CH.check(Math.hypot(Q3.C[0], Q3.C[1]) < 1 && GE.ang(Q3, 'PCQ') > 36 && GE.near(GE.ang(Q3, 'PCQ'), GE.ang(Q3, 'CEQ') + GE.ang(Q3, 'CQE')) && Q3.E[1] > Q3.P[1], '類題3 内側の点');
   function scene3(D, mode, t) { /* 0 問題 1 (1) 2 (2) 3 (3) 4 (4) */
-    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .05 }), FR = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (mode === 0 ? 1 : .8)), s = CH.fs(D), a = function (x, y) { return CH.smooth(x, y, t); };
+    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .05 }), FR = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (mode === 0 ? 1 : .72)), s = CH.fs(D), a = function (x, y) { return CH.smooth(x, y, t); };
     var Pp = { O: Q3.O, P: Q3.P, Q: Q3.Q, A: Q3.A, B: Q3.B, C: Q3.C, E: Q3.E, L1: [-1.5, Q3.P[1]], L2: [1.5, Q3.P[1]], N: [0, Q3.P[1] - .35] };
     var F = GE.fit(D, FR, Pp, { keys: ['L1', 'L2', 'N'], bounds: GE.circBounds([0, 0], 1), pad: .06, size: CH.fs(D, .85) });
     GE.circ(F, 'O', 1, { col: 'rgba(242,240,230,.7)' });
@@ -179,7 +179,7 @@
     GE.dot(F, 'O', { r: F.s * .12 }); GE.dot(F, 'C', { r: F.s * .12, col: C.orange });
     GE.labels(F, ['P', 'Q', 'A', 'B', 'C', 'E', 'O'].filter(function (k) { return (k !== 'E' || mode === 0 || mode >= 3); }), { dir: dirs, col: { P: C.yel, Q: C.yel, C: C.orange, E: C.orange } });
     var nn = F.X('N'); say(D, nn[0], nn[1] + F.s * .1, 'ゴール', { size: F.s * .9, col: C.yel });
-    var ty = R.y0 + R.h * .84;
+    var ty = R.y0 + R.h * .87;
     if (mode === 1 && t > .6) say(D, R.cx, ty, '同じ弧 PQ に対する 円周角は等しい　∠PBQ ＝ ∠PAQ ＝ 36°', { col: C.yel, a: a(.6, .8), maxW: R.w, num: true });
     if (mode === 2 && t > .6) say(D, R.cx, ty, '中心角は 円周角の 2倍　∠POQ ＝ 2 × 36° ＝ 72°', { col: C.yel, a: a(.6, .8), maxW: R.w, num: true });
     if (mode === 3 && t > .15) { say(D, R.cx, ty - s * .4, 'OP＝OQ（半径）の二等辺三角形', { col: C.pink, a: a(.15, .35), maxW: R.w }); if (t > .5) say(D, R.cx, ty + s * 1.1, '∠OPQ ＝ (180° − 72°) ÷ 2 ＝ 54°', { col: C.yel, a: a(.5, .7), maxW: R.w, num: true }); }
