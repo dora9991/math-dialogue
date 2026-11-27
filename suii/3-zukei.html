@@ -121,8 +121,8 @@
     can(D, cxS, by, u, 2.8, HS, C.blue, 1); can(D, cxB, by, u, 4.2, HB, C.blue, 1);
     dim({ D: D, X: function (p) { return p; }, s: s }, [cxS + 2.8 * u + s * .6, by], [cxS + 2.8 * u + s * .6, by - HS * u], s * .6, '6cm', { col: C.chalk, size: s * .8 });
     dim({ D: D, X: function (p) { return p; }, s: s }, [cxB + 4.2 * u + s * .6, by], [cxB + 4.2 * u + s * .6, by - HB * u], s * .6, '9cm', { col: C.chalk, size: s * .8 });
-    say(D, cxS, by + s * 2.4, '小缶　160mL', { size: s, maxW: FR.w * .42 }); say(D, cxB, by + s * 2.4, '大缶　？mL', { size: s, maxW: FR.w * .42, col: mode === 2 && t > .5 ? C.yel : C.chalk });
-    if (mode === 2 && t > .5) say(D, cxB, by + s * 2.4, '大缶　540mL', { size: s, maxW: FR.w * .42, col: C.yel, a: CH.smooth(.5, .7, t) });
+    say(D, cxS, by + s * 2.4, '小缶　160mL', { size: s, maxW: FR.w * .42 }); var big = mode === 2 && t > .5;
+    say(D, cxB, by + s * 2.4, big ? '大缶　540mL' : '大缶　？mL', { size: s, maxW: FR.w * .42, col: big ? C.yel : C.chalk });
   }
   function scene2(D, mode, t) { /* 0 問題 1 面積比 2 得か説明 3 体積比 4 容量 */
     var R = CH.box(D, { l: .03, r: .03, t: .04, b: .04 }), s = CH.fs(D), a = function (x, y) { return CH.smooth(x, y, t); };

@@ -11,7 +11,7 @@
 (function () {
   const S3 = Math.sqrt(3), R = Math.sqrt(6) / 2, P = [0, -2.5, 1.5], V = [0, -4, 3], N3 = [0, 1, -1];
   // 見取図：z 軸のまわりに −20°、上から 32° 見下ろす（x 軸は右、y 軸は奥＝右上へ）
-  const PS = -28 * Math.PI / 180, EL = 17 * Math.PI / 180;
+  const PS = -12 * Math.PI / 180, EL = 13 * Math.PI / 180;
   const pj = (x, y, z) => [x * Math.cos(PS) - y * Math.sin(PS), z * Math.cos(EL) + (x * Math.sin(PS) + y * Math.cos(PS)) * Math.sin(EL)];
   const pjv = v => pj(v[0], v[1], v[2]);
   const Kpt = ph => [R * Math.cos(ph), P[1] + (R / Math.SQRT2) * Math.sin(ph), P[2] + (R / Math.SQRT2) * Math.sin(ph)];   // K 上の点（平面 z−y=4）
@@ -47,15 +47,15 @@
   // 横から見た図（x 軸の方向から見る＝yz 平面に写す）。横軸 y・縦軸 z
   const Y1 = 2 + 3 * S3, Y2 = 2 - 3 * S3;
   const side = id => ({ t: 'fig', id, col: 1, view: [-6.4, -1.3, 9.4, 4.7], w: 640, h: 248, items: [
-    { k: 'axes', tx: [[-4, '−4'], [-1, '−1'], [2, '2']], ty: [[3, '3']], xl: 'y', yl: 'z' },
+    { k: 'axes', tx: [[2, '2']], ty: [[3, '3']], xl: 'y', yl: 'z' },
     { k: 'line', m: 1, n: 4, c: 'b', wd: 1.5, dash: true },
     { k: 'seg', a: [P[1] - S3 / 2, P[2] - S3 / 2], b: [P[1] + S3 / 2, P[2] + S3 / 2], c: 'b', wd: 5 },
     { k: 'seg', a: [-4, 3], b: [-1, 0], c: 'w', wd: 2, dash: true },
     { k: 'seg', a: [-4, 3], b: [Y1, 0], c: 'b', wd: 2.5 }, { k: 'seg', a: [-4, 3], b: [Y2, 0], c: 'b', wd: 2.5 },
     { k: 'seg', a: [Y2, 0], b: [Y1, 0], c: 'y', wd: 6 },
     { k: 'pt', at: [-4, 3], name: 'V', dir: 'n', c: 'y', size: 22 }, { k: 'pt', at: [P[1], P[2]], c: 'p' },
-    { k: 'pt', at: [Y2, 0], c: 'y' }, { k: 'pt', at: [Y1, 0], c: 'y' }, { k: 'pt', at: [-1, 0], c: 'w' },
-    { k: 'label', at: [-2.3, 2.45], text: 'K（横から）', c: 'b', size: 18, anchor: 'end', plain: true },
+    { k: 'pt', at: [Y2, 0], c: 'y' }, { k: 'pt', at: [Y1, 0], c: 'y' }, { k: 'pt', at: [-1, 0], c: 'w', name: '(−1)', dir: 's', size: 18 },
+    { k: 'label', at: [-1.9, 0.75], text: 'K（横から）', c: 'b', size: 18, anchor: 'start', plain: true },
     { k: 'label', at: [5.1, 1.8], text: '母線', c: 'b', size: 18, anchor: 'start', plain: true },
     { k: 'label', at: [Y2 - 0.3, -0.6], text: '2−3√3', c: 'y', size: 18, anchor: 'end', plain: true },
     { k: 'label', at: [Y1 + 0.2, -0.6], text: '2+3√3', c: 'y', size: 18, anchor: 'middle', plain: true }] });

@@ -87,10 +87,10 @@
           { t: 'm', size: 'sm', tex: '\\mathrm{B}(\\theta+\\sin\\theta,\\ 1+\\cos\\theta)', note: 'O について A と反対側' },
           { t: 'm', size: 'sm', tex: '\\overrightarrow{\\mathrm{BC}}=(-\\sqrt3,\\,0)\\ \\text{を時計まわりに}\\ \\theta\\ \\text{回す}' },
           roll('r1', PI / 2)] },
-      { ask: { type: 'choice', q: 'C の座標は？（$\\overrightarrow{\\mathrm{BC}}$ は $(-\\sqrt3,\\,0)$ を時計まわりに $\\theta$ 回したもの）',
-        opts: ['$(\\theta+\\sin\\theta+\\sqrt3\\cos\\theta,\\ 1+\\cos\\theta-\\sqrt3\\sin\\theta)$', '$(\\theta+\\sin\\theta-\\sqrt3\\cos\\theta,\\ 1+\\cos\\theta+\\sqrt3\\sin\\theta)$', '$(\\theta-\\sin\\theta-\\sqrt3\\cos\\theta,\\ 1-\\cos\\theta+\\sqrt3\\sin\\theta)$', '$(\\theta-\\sqrt3\\cos\\theta,\\ 1+\\sqrt3\\sin\\theta)$'], ok: 1,
-        why: { 0: '回す向きが逆（反時計まわり）です。', 2: 'それは D の座標（起点が A）です。C は B から進みます。', 3: 'O から進めています。起点は B です。' },
-        good: '時計まわり $\\theta$：$(x,y)\\to(x\\cos\\theta+y\\sin\\theta,\\ -x\\sin\\theta+y\\cos\\theta)$。検算：$\\theta=0$ で $(-\\sqrt3,2)$、$\\theta=\\pi$ で $(\\pi+\\sqrt3,0)$。',
+      { ask: { type: 'choice', q: '$\\overrightarrow{\\mathrm{BC}}$ は、$(-\\sqrt3,\\,0)$ を時計まわりに $\\theta$ 回したもの。成分は？',
+        opts: ['$(-\\sqrt3\\cos\\theta,\\,\\sqrt3\\sin\\theta)$', '$(-\\sqrt3\\cos\\theta,\\,-\\sqrt3\\sin\\theta)$', '$(-\\sqrt3\\sin\\theta,\\,\\sqrt3\\cos\\theta)$', '$(-\\sqrt3,\\,0)$'], ok: 0,
+        why: { 1: '回す向きが逆（反時計まわり）です。$\\theta=\\frac\\pi2$ なら C は B の真上にきます。', 2: 'sin と cos が入れかわっています。$\\theta=0$ で $(-\\sqrt3,0)$ にもどる形です。', 3: '$\\theta$ だけ回っているので、向きは変わります。' },
+        good: '時計まわり $\\theta$：$(x,y)\\to(x\\cos\\theta+y\\sin\\theta,\\ -x\\sin\\theta+y\\cos\\theta)$。C は B にこれを足した点です。',
         add: [{ t: 'ans', label: '(1) 答', tex: '\\mathrm{C}(\\theta+\\sin\\theta-\\sqrt3\\cos\\theta,\\ 1+\\cos\\theta+\\sqrt3\\sin\\theta)' }] } },
 
       // ---------- (2) ----------
