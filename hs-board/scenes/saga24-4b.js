@@ -27,7 +27,7 @@
   const V1 = [-2.6, -5.2, 4.8, 2.6];
   const F1 = (id, extra) => cfig(id, [1, 0], [
     { k: 'label', at: [-0.9, 1.9], text: 'C₁', c: 'y', size: 24 }, { k: 'label', at: [3.6, -3.7], text: 'C₂', c: 'b', size: 24 }
-  ].concat(extra || []), V1, 340);
+  ].concat(extra || []), V1, 400);
   const P1 = [{ k: 'pt', at: [3, 0], name: '3', dir: 'ne', c: 'p', size: 22 }, { k: 'pt', at: [-1, 0], name: '−1', dir: 'nw', c: 'p', size: 22 }];
   // (3) α=−0.8+0.6i の図（一般の場合の例）
   const AL = [-0.8, 0.6], V3 = [-3.4, -5.2, 4.6, 3.0];
@@ -35,8 +35,8 @@
   const F3 = (id, extra) => cfig(id, AL, [
     { k: 'label', at: [-2.4, 2.3], text: 'C₁', c: 'y', size: 24 }, { k: 'label', at: [3.6, -3.8], text: 'C₂', c: 'b', size: 24 },
     { k: 'line', p1: [0, 0], p2: Z1, c: 'p', dash: true },
-    { k: 'pt', at: Z1, name: 'z₁', dir: 'n', c: 'p', size: 24 }, { k: 'pt', at: Z2, name: 'z₂', dir: 'se', c: 'p', size: 24 }
-  ].concat(extra || []), V3, 340);
+    { k: 'pt', at: Z1, name: 'z₁', dir: 'ne', c: 'p', size: 24 }, { k: 'pt', at: Z2, name: 'z₂', dir: 'sw', c: 'p', size: 24 }
+  ].concat(extra || []), V3, 410);
   const POINTS = [
     '2円がちょうど2点で交わる ⇔ $|r_1-r_2|<d<r_1+r_2$。中心間の距離 $d$ は **三角不等式** で上下からはさむ',
     '$|z-\\alpha|^2=(z-\\alpha)(\\overline{z}-\\overline{\\alpha})$ と展開。2つの円の式を **辺々引く** と $z\\overline{z}$ と右辺が消える',
@@ -80,7 +80,7 @@
       { clear: true, part: '(1) 証明', say: '後半は「どんな $\\alpha$ でもちょうど2点で交わる」ことの証明。2円の位置関係は、中心間の距離 $d$ と半径で決まります。',
         add: [{ t: 'h', text: '(1)　いつも2点で交わることの証明' },
           { t: 'm', tex: 'd=|\\alpha-(1-2i)|', note: '中心 α と 1−2i の距離' },
-          cfig('f2', AL, [{ k: 'seg', a: AL, b: C, c: 'g', wd: 3, label: 'd', dx: 16, dy: 4 }], V3, 340)] },
+          cfig('f2', AL, [{ k: 'seg', a: AL, b: C, c: 'g', wd: 3, label: 'd', dx: 16, dy: 4 }], V3, 410)] },
       { ask: { type: 'choice', q: '半径 2 と $2\\sqrt2$ の円がちょうど2点で交わる条件は？',
         opts: ['$d<2+2\\sqrt2$', '$2<d<2\\sqrt2$', '$2\\sqrt2-2<d<2\\sqrt2+2$', '$d>2\\sqrt2-2$'], ok: 2,
         why: { 0: 'これだけでは、小さい円が大きい円の中に入って交わらない場合がのぞけません。', 1: '半径どうしの間ではなく、半径の差と和の間です。', 3: 'これだけでは、2円が離れすぎて交わらない場合がのぞけません。' },

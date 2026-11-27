@@ -29,7 +29,7 @@
   // 逆にたどる木
   const nd = (x, y, text, o) => Object.assign({ k: 'label', at: [x, y], text, size: 23, plain: false }, o || {});
   const ed = (a, b, o) => Object.assign({ k: 'seg', a, b, c: 'd', wd: 2, arrow: true }, o || {});
-  const tree = (id, extra) => ({ t: 'fig', id, col: 1, view: [0, 0, 12.6, 4.2], w: 700, h: 233, items: [
+  const tree = (id, extra) => ({ t: 'fig', id, col: 0, view: [0, 0, 12.6, 4.2], w: 700, h: 233, items: [
     nd(11.7, 2.2, 'a₅=4', { c: 'y' }),
     ed([10.6, 2.2], [11.15, 2.2]), nd(9.7, 2.2, 'a₄=2', { c: 'y' }),
     ed([8.3, 2.2], [8.9, 2.2]), nd(7.4, 2.2, 'a₃=4', { c: 'y' }),
@@ -111,7 +111,7 @@
         add: [{ t: 'ans', label: '(2) 答', text: '$a_4=2$，　$a_3=4$' }] },
 
       // ---------- (3) ----------
-      { clear: true, part: '(3)', say: 'さらに逆にたどります。右の図は、ここまでの「逆にたどる木」。× は (1) や規則の範囲で消えた候補です。次は $a_2$。(1) より $a_2>0$ です。',
+      { clear: true, cols: [1], part: '(3)', say: 'さらに逆にたどります。右の図は、ここまでの「逆にたどる木」。× は (1) や規則の範囲で消えた候補です。次は $a_2$。(1) より $a_2>0$ です。',
         add: [{ t: 'h', text: '(3)　a₂ と a₁ のとりうる値' },
           { t: 'm', size: 'sm', tex: 'f(a_2)=a_3=4,\\qquad a_2>0' },
           tree('t1')] },
