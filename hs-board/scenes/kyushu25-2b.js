@@ -28,7 +28,7 @@
     { k: 'fn', f: FX, a: 0, b: 0.93, c: 'w' },
     { k: 'seg', a: [Q4, 0], b: [Q4, 3 / 4], c: 'd', dash: true, wd: 2 }].concat(extra || []) });
   const gFig = (id, extra) => ({ t: 'fig', id, col: 1, view: [-0.15, -0.08, 1.15, 0.5], w: 400, h: 290, items: [
-    { k: 'axes', tx: [[1, '1']], ty: [[1 / 3, '1/3'], [3 / 8, '3/8']], xl: 't', yl: '' },
+    { k: 'axes', tx: [[1, '1']], ty: [[1 / 3, '1/3']], xl: 't', yl: '' },
     { k: 'area', f: GT, a: 0, b: 1, c: 'y', alpha: 0.3, label: 'S', lat: [0.4, 0.15] },
     { k: 'fn', f: GT, a: 0, b: 1.1, c: 'w', label: 'y = g(t)', lat: [0.55, 0.43], la: 'start' },
     { k: 'seg', a: [1, 0], b: [1, 3 / 8], c: 'd', dash: true, wd: 2 }].concat(extra || []) });
@@ -123,7 +123,7 @@
         why: { 0: '$\\frac34$ は置換前の $f\\left(\\frac{\\pi}{4}\\right)$。$g$ は $1+t^2$ で割ったあとの式です。', 1: '$g(0)=\\frac{1}{1\\cdot3}$。分母の $(t+3)$ を忘れています。', 2: '$g(1)=\\frac{3}{2\\cdot4}$。分母の $(t+3)=4$ を 3 にしています。' },
         good: '$g(0)=\\dfrac{1}{3}$、$g(1)=\\dfrac{3}{2\\cdot4}=\\dfrac38$。幅 1 の長方形と比べても $S\\approx0.373$ は自然です。',
         add: [{ t: 'box', col: 1, c: 'g', size: 'sm', label: '見直し', text: '$g\\left(\\frac12\\right)=\\frac{8}{21}\\approx0.381$\n幅 1 で高さ 0.33〜0.38 → $S\\approx0.373$ ✓' }] } },
-      { say: '答案では、置換・区間・約分の理由を一言ずつ書きます。$t=\\tan x$ とおくと $\\dfrac{dt}{dx}=1+t^2$（(1) より）、$x:0\\to\\frac{\\pi}{4}$ で $t:0\\to1$ です。',
+      { say: '答案では、置換・区間・約分の理由を一言ずつ書きます。$t=\\tan x$ とおくと $\\dfrac{dt}{dx}=1+t^2$、区間は $t:0\\to1$。どれも (1) の結果が根拠です。',
         add: [{ t: 'box', c: 'b', size: 'sm', label: '答案のポイント', text: '「$t=\\tan x$ とおくと $\\dfrac{dt}{dx}=1+t^2$（(1) より）」「$x:0\\to\\frac{\\pi}{4}$ のとき $t:0\\to1$」\n「$2t^3+t^2+2t+1=(2t+1)(t^2+1)$ より約分」「$t+1>0$ なので絶対値は不要」' }] },
 
       // ---------- 発展 ----------
