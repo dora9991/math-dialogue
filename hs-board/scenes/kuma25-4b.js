@@ -62,7 +62,7 @@
         add: [{ t: 'ans', label: '(1)', text: '$x>0$ で　$e^x>\\dfrac{x^n}{n!}$　（すべての自然数 $n$）' }] },
       { ask: { type: 'choice', q: '(1) に $x=n$ を入れると、$n!$ について何が言える？',
         opts: ['$n!>\\dfrac{n^n}{e^n}$', '$n!<\\dfrac{n^n}{e^n}$', '$n!>n^n\\,e^n$', '$n!>\\dfrac{n^n}{e}$'], ok: 0,
-        why: { 1: '$e^n>\\frac{n^n}{n!}$ の両辺に $\\frac{n!}{e^n}$ をかけても、不等号の向きは変わりません。', 2: '$e^n$ は分母にあたります。$\\frac{n!}{\\,}$ を移項すると $e^{-n}$ になります。', 3: '$e^n$ を $e$ と見まちがえています。$n$ 乗が残ります。' },
+        why: { 1: '$e^n>\\frac{n^n}{n!}$ の両辺に $\\frac{n!}{e^n}$ をかけても、不等号の向きは変わりません。', 2: '$e^n>\\frac{n^n}{n!}$ から $n!>\\frac{n^n}{e^n}$。$e^n$ は分子ではなく分母に来ます。', 3: '$e^n$ を $e$ と見まちがえています。$n$ 乗が残ります。' },
         good: '$e^n>\\dfrac{n^n}{n!}$ より $n!>n^n e^{-n}$。これが $n!$ の **下からの評価** (A) です。',
         add: [{ t: 'box', c: 'y', size: 'sm', label: '(A)', text: '$n!>\\left(\\dfrac ne\\right)^n=n^ne^{-n}$' }] } },
 
