@@ -17,7 +17,7 @@
   const roots = [{ k: 'pt', at: [al, 0], name: 'α', dir: 'sw', c: 'p', size: 24 }, { k: 'pt', at: [be, 0], name: 'β', dir: 'nw', c: 'p', size: 24 }, { k: 'pt', at: [ga, 0], name: 'γ', dir: 'se', c: 'p', size: 24 }];
   const zoom = (id, extra) => ({ t: 'fig', id, col: 1, view: [-0.65, -0.6, 1.25, 3.5], w: 560, h: 440, items: [
     { k: 'axes', tx: [[-0.25, '−1/4'], [0.5, '1/2'], [1, '1']], ty: [[1, '1'], [3, '3']] },
-    { k: 'fn', f: F, a: -0.5, b: 1.03, label: 'y=f(x)', lat: [-0.5, 1.4], la: 'start' }
+    { k: 'fn', f: F, a: -0.645, b: 1.03, label: 'y=f(x)', lat: [-0.6, 1.8], la: 'start' }
   ].concat(extra || []) });
   const POINTS = [
     '解が具体的に求まらない3次方程式は、**増減表＋区間の端の値の符号**で、解の個数と範囲を示す',
