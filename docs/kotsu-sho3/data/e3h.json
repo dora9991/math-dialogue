@@ -1,0 +1,4515 @@
+[
+ {
+  "id": "bou3-01-L1-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 1,
+  "q": "ぼうグラフの 1めもりは、何人ですか。",
+  "c": [
+   {
+    "t": "1人",
+    "w": "1めもりは いつも 1人と 思った"
+   },
+   {
+    "t": "5人",
+    "w": "めもりの 数字を 見まちがえた"
+   },
+   {
+    "t": "2人",
+    "k": 1
+   },
+   {
+    "t": "10人",
+    "w": "大きい めもりの 数を 読んだ"
+   }
+  ],
+  "e": "めもりの 数字は 0、2、4、6…と ならんで いる。\n1めもり ふえる ごとに 2人 ふえる。\nこたえ 2人",
+  "h": "となりあう めもりの 数字の ちがいを 見よう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-01-L1-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 1,
+  "q": "ぼうグラフの 1めもりは 2人です。ブランコの ぼうは 何人を あらわしていますか。",
+  "c": [
+   {
+    "t": "6人",
+    "k": 1
+   },
+   {
+    "t": "3人",
+    "w": "3めもりを 3人と 読んだ"
+   },
+   {
+    "t": "12人",
+    "w": "2人を 6回 たした"
+   },
+   {
+    "t": "8人",
+    "w": "サッカーの めもりを 読んだ"
+   }
+  ],
+  "e": "ブランコの ぼうの 先は、めもりの 6の ところ。\nこたえ 6人",
+  "h": "ぼうの 先が、どの めもりの 数字と 同じ 高さか 見よう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-01-L1-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 1,
+  "q": "ぼうグラフで、えらんだ 人が いちばん 少ない あそびは どれですか。",
+  "c": [
+   {
+    "t": "サッカー",
+    "w": "いちばん 高い ぼうを えらんだ"
+   },
+   {
+    "t": "なわとび",
+    "w": "2ばんめに 少ない ぼう"
+   },
+   {
+    "t": "おにごっこ",
+    "w": "2ばんめに 多い ぼう"
+   },
+   {
+    "t": "ブランコ",
+    "k": 1
+   }
+  ],
+  "e": "いちばん ひくい ぼうを さがす。\nブランコの ぼうが いちばん ひくい。\nこたえ ブランコ",
+  "h": "ぼうが いちばん ひくい ところを さがそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-01-L1-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 1,
+  "q": "ぼうグラフの 1めもりは 2人です。なわとびを えらんだ 人は 何人ですか。",
+  "c": [
+   {
+    "t": "5人",
+    "w": "5めもりを 5人と 読んだ"
+   },
+   {
+    "t": "10人",
+    "k": 1
+   },
+   {
+    "t": "8人",
+    "w": "ほかの ぼうと 見まちがえた"
+   },
+   {
+    "t": "12人",
+    "w": "ぼうの 先の 1つ 上の めもりを 読んだ"
+   }
+  ],
+  "e": "なわとびの ぼうの 先は、めもりの 10の ところ。\nこたえ 10人",
+  "h": "ぼうの 先と 同じ 高さの めもりの 数字を 読もう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-01-L1-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 1,
+  "q": "ぼうグラフの 1めもりは 2人です。おにごっこの ぼうの 高さは、何めもりですか。",
+  "c": [
+   {
+    "t": "14めもり",
+    "w": "人数を めもりの 数と 思った"
+   },
+   {
+    "t": "7めもり",
+    "k": 1
+   },
+   {
+    "t": "6めもり",
+    "w": "1つ ひくい ぼうと 同じに した"
+   },
+   {
+    "t": "8めもり",
+    "w": "サッカーの めもりを 読んだ"
+   }
+  ],
+  "e": "14人を 2人ずつ 数えると、14 ÷ 2 = 7\nぼうの 先は 7めもり目。\nこたえ 7めもり",
+  "h": "1めもりが 2人 だから、14人は 何めもりぶんかな。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-01-L2-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 2,
+  "q": "すきな くだものの ぼうグラフです。1めもりは 2人です。りんごと みかんの ちがいは 何人ですか。",
+  "c": [
+   {
+    "t": "12人",
+    "w": "りんごの 人数を 答えた"
+   },
+   {
+    "t": "18人",
+    "w": "2つを たした"
+   },
+   {
+    "t": "3人",
+    "w": "めもりの ちがいを 人数と 読んだ"
+   },
+   {
+    "t": "6人",
+    "k": 1
+   }
+  ],
+  "e": "りんごは 12人、みかんは 6人。\n12 − 6 = 6\nこたえ 6人",
+  "h": "それぞれ 何人か 読んでから、ひこう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"157.1\" x2=\"262\" y2=\"157.1\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"157.1\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"134.3\" x2=\"262\" y2=\"134.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"134.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"111.4\" x2=\"262\" y2=\"111.4\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"111.4\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"88.6\" x2=\"262\" y2=\"88.6\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"88.6\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"65.7\" x2=\"262\" y2=\"65.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"65.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"42.9\" x2=\"262\" y2=\"42.9\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"42.9\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"42.9\" width=\"36\" height=\"137.1\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">りんご</text><rect x=\"104\" y=\"111.4\" width=\"36\" height=\"68.6\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">みかん</text><rect x=\"156\" y=\"88.6\" width=\"36\" height=\"91.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">もも</text><rect x=\"208\" y=\"134.3\" width=\"36\" height=\"45.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ぶどう</text></svg>"
+ },
+ {
+  "id": "bou3-01-L2-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 2,
+  "q": "すきな 色の ぼうグラフです。1めもりは 5人です。青を えらんだ 人は 何人ですか。",
+  "c": [
+   {
+    "t": "15人",
+    "k": 1
+   },
+   {
+    "t": "3人",
+    "w": "3めもりを 3人と 読んだ"
+   },
+   {
+    "t": "20人",
+    "w": "ほかの ぼうと 見まちがえた"
+   },
+   {
+    "t": "10人",
+    "w": "みどりの ぼうを 読んだ"
+   }
+  ],
+  "e": "青の ぼうは 3めもり。\n5 × 3 = 15\nこたえ 15人",
+  "h": "1めもりが 5人 だから、めもりの 数字を 読もう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"153.3\" x2=\"262\" y2=\"153.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"153.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"126.7\" x2=\"262\" y2=\"126.7\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"126.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"73.3\" x2=\"262\" y2=\"73.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"73.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"46.7\" x2=\"262\" y2=\"46.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"46.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">赤</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">青</text><rect x=\"156\" y=\"20\" width=\"36\" height=\"160\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">黄</text><rect x=\"208\" y=\"126.7\" width=\"36\" height=\"53.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">みどり</text></svg>"
+ },
+ {
+  "id": "bou3-01-L2-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 2,
+  "q": "すきな くだものの ぼうグラフです。1めもりは 2人です。4つの くだものを えらんだ 人は、あわせて 何人ですか。",
+  "c": [
+   {
+    "t": "15人",
+    "w": "めもりの 数を たした"
+   },
+   {
+    "t": "12人",
+    "w": "いちばん 多い ぼうだけ 読んだ"
+   },
+   {
+    "t": "30人",
+    "k": 1
+   },
+   {
+    "t": "28人",
+    "w": "ぼうを 1つ 読みまちがえた"
+   }
+  ],
+  "e": "12 + 6 + 8 + 4 = 30\nこたえ 30人",
+  "h": "4つの ぼうの 人数を 1つずつ 読んで、たそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"157.1\" x2=\"262\" y2=\"157.1\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"157.1\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"134.3\" x2=\"262\" y2=\"134.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"134.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"111.4\" x2=\"262\" y2=\"111.4\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"111.4\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"88.6\" x2=\"262\" y2=\"88.6\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"88.6\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"65.7\" x2=\"262\" y2=\"65.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"65.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"42.9\" x2=\"262\" y2=\"42.9\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"42.9\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"42.9\" width=\"36\" height=\"137.1\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">りんご</text><rect x=\"104\" y=\"111.4\" width=\"36\" height=\"68.6\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">みかん</text><rect x=\"156\" y=\"88.6\" width=\"36\" height=\"91.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">もも</text><rect x=\"208\" y=\"134.3\" width=\"36\" height=\"45.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ぶどう</text></svg>"
+ },
+ {
+  "id": "bou3-01-L2-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 2,
+  "q": "1めもりが 2人の ぼうグラフで、ぼうの 高さが 7めもりです。何人を あらわして いますか。",
+  "c": [
+   {
+    "t": "14人",
+    "k": 1
+   },
+   {
+    "t": "7人",
+    "w": "めもりの 数を そのまま 人数と した"
+   },
+   {
+    "t": "9人",
+    "w": "7に 2を たした"
+   },
+   {
+    "t": "5人",
+    "w": "7から 2を ひいた"
+   }
+  ],
+  "e": "1めもりが 2人で 7めもり ぶん。\n2 × 7 = 14\nこたえ 14人",
+  "h": "2人が 7つ ぶん だよ。"
+ },
+ {
+  "id": "bou3-01-L2-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 2,
+  "q": "1めもりが 2人の ぼうグラフで、10人を ぼうで あらわします。ぼうの 高さは 何めもりですか。",
+  "c": [
+   {
+    "t": "10めもり",
+    "w": "人数を そのまま めもりの 数と した"
+   },
+   {
+    "t": "20めもり",
+    "w": "10に 2を かけた"
+   },
+   {
+    "t": "5めもり",
+    "k": 1
+   },
+   {
+    "t": "8めもり",
+    "w": "10から 2を ひいた"
+   }
+  ],
+  "e": "10人を 2人ずつ に 分ける。\n10 ÷ 2 = 5\nこたえ 5めもり",
+  "h": "2人で 1めもり。10人は 何めもりぶんかな。"
+ },
+ {
+  "id": "bou3-01-L3-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 3,
+  "q": "3年生の すきな あそびの ぼうグラフです。1めもりは 2人です。4つの あそびを あわせると、何人ですか。",
+  "c": [
+   {
+    "t": "23人",
+    "w": "めもりの 数を たした"
+   },
+   {
+    "t": "46人",
+    "k": 1
+   },
+   {
+    "t": "16人",
+    "w": "いちばん 多い ぼうだけ 読んだ"
+   },
+   {
+    "t": "44人",
+    "w": "ぼうを 1つ 読みまちがえた"
+   }
+  ],
+  "e": "16 + 10 + 6 + 14 = 46\nこたえ 46人",
+  "h": "ぼうを 1つずつ 人数に して たそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-01-L3-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 3,
+  "q": "すきな くだものの ぼうグラフです。1めもりは 2人です。りんごを えらんだ 人は、みかんを えらんだ 人の 何倍ですか。",
+  "c": [
+   {
+    "t": "6倍",
+    "w": "ちがいの 6人を 倍と まちがえた"
+   },
+   {
+    "t": "3倍",
+    "w": "ぶどうと くらべた"
+   },
+   {
+    "t": "4倍",
+    "w": "ももと みかんで 考えた"
+   },
+   {
+    "t": "2倍",
+    "k": 1
+   }
+  ],
+  "e": "りんご 12人、みかん 6人。\n12 ÷ 6 = 2\nこたえ 2倍",
+  "h": "6人の ぼうが 何こ分で 12人に なるかな。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"157.1\" x2=\"262\" y2=\"157.1\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"157.1\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"134.3\" x2=\"262\" y2=\"134.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"134.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"111.4\" x2=\"262\" y2=\"111.4\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"111.4\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"88.6\" x2=\"262\" y2=\"88.6\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"88.6\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"65.7\" x2=\"262\" y2=\"65.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"65.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"42.9\" x2=\"262\" y2=\"42.9\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"42.9\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"42.9\" width=\"36\" height=\"137.1\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">りんご</text><rect x=\"104\" y=\"111.4\" width=\"36\" height=\"68.6\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">みかん</text><rect x=\"156\" y=\"88.6\" width=\"36\" height=\"91.4\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">もも</text><rect x=\"208\" y=\"134.3\" width=\"36\" height=\"45.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ぶどう</text></svg>"
+ },
+ {
+  "id": "bou3-01-L3-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 3,
+  "q": "ピヨは「1めもりは いつも 1人だよ」と いって、サッカーの ぼうを 8人と 読みました。ぼうグラフの 1めもりは 2人です。サッカーは ほんとうは 何人ですか。",
+  "c": [
+   {
+    "t": "8人",
+    "w": "ピヨと 同じ 読みまちがい"
+   },
+   {
+    "t": "10人",
+    "w": "8に 2を たした"
+   },
+   {
+    "t": "18人",
+    "w": "8に 10を たした"
+   },
+   {
+    "t": "16人",
+    "k": 1
+   }
+  ],
+  "e": "サッカーの ぼうは 8めもり。\n1めもりが 2人 だから、2 × 8 = 16\nこたえ 16人",
+  "h": "8は めもりの 数。1めもりは 何人ぶんかな。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-01-L3-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 3,
+  "q": "ぼうグラフで、えらんだ 人が 2ばんめに 多い あそびは どれですか。",
+  "c": [
+   {
+    "t": "サッカー",
+    "w": "いちばん 多い あそび"
+   },
+   {
+    "t": "おにごっこ",
+    "k": 1
+   },
+   {
+    "t": "なわとび",
+    "w": "3ばんめに 多い あそび"
+   },
+   {
+    "t": "ブランコ",
+    "w": "いちばん 少ない あそび"
+   }
+  ],
+  "e": "多い じゅんに ならべると、サッカー 16人、おにごっこ 14人、なわとび 10人、ブランコ 6人。\nこたえ おにごっこ",
+  "h": "ぼうの 高い じゅんに 見て いこう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-01-L3-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 3,
+  "q": "ぼうグラフの 2つの あそびを あわせると 24人に なります。どの 2つですか。",
+  "c": [
+   {
+    "t": "サッカーと なわとび",
+    "w": "あわせて 26人"
+   },
+   {
+    "t": "サッカーと ブランコ",
+    "w": "あわせて 22人"
+   },
+   {
+    "t": "なわとびと おにごっこ",
+    "k": 1
+   },
+   {
+    "t": "ブランコと おにごっこ",
+    "w": "あわせて 20人"
+   }
+  ],
+  "e": "なわとび 10人 と おにごっこ 14人。\n10 + 14 = 24\nこたえ なわとびと おにごっこ",
+  "h": "2つずつ たして 24人に なる ものを さがそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-01-L4-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 4,
+  "q": "ぼうグラフの 1めもりは 2人です。ブランコの ぼうより 4めもり 高い ぼうの あそびは どれですか。",
+  "c": [
+   {
+    "t": "おにごっこ",
+    "k": 1
+   },
+   {
+    "t": "サッカー",
+    "w": "5めもり 高い ぼう"
+   },
+   {
+    "t": "なわとび",
+    "w": "2めもり 高い ぼう"
+   },
+   {
+    "t": "ブランコ",
+    "w": "同じ 高さの ぼう"
+   }
+  ],
+  "e": "ブランコは 3めもり。\n3 + 4 = 7めもり。\n7めもりの ぼうは おにごっこ。\nこたえ おにごっこ",
+  "h": "ブランコの ぼうは 何めもりかな。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-01-L4-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 4,
+  "q": "1めもりを 1人に かえて、ぼうグラフを かきなおします。サッカーの ぼうは 何めもりに なりますか。",
+  "c": [
+   {
+    "t": "8めもり",
+    "w": "いまの めもりの 数"
+   },
+   {
+    "t": "32めもり",
+    "w": "2を かけた"
+   },
+   {
+    "t": "16めもり",
+    "k": 1
+   },
+   {
+    "t": "14めもり",
+    "w": "16から 2を ひいた"
+   }
+  ],
+  "e": "1めもりが 1人なら、16人は 16めもり。\nこたえ 16めもり",
+  "h": "1めもりが 1人の ときの めもりの 数を 考えよう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-01-L4-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 4,
+  "q": "ぼうグラフを 見て、ただしい せつめいを えらびましょう。1めもりは 2人です。",
+  "c": [
+   {
+    "t": "サッカーは ブランコより 10人 多い",
+    "k": 1
+   },
+   {
+    "t": "おにごっこは なわとびより 6人 多い",
+    "w": "14 − 10 = 4人"
+   },
+   {
+    "t": "なわとびの 2倍が サッカーだ",
+    "w": "10の 2倍は 20"
+   },
+   {
+    "t": "4つの あそびの ぜんぶで 40人だ",
+    "w": "ぜんぶで 46人"
+   }
+  ],
+  "e": "サッカー 16人、ブランコ 6人。\n16 − 6 = 10\nほかの せつめいは、人数が あわない。\nこたえ サッカーは ブランコより 10人 多い",
+  "h": "ぼうを 人数に して たしかめよう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-01-L4-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 4,
+  "q": "ブランコを えらんだ 人が あと 4人 ふえると、どの あそびの ぼうと 同じ 高さに なりますか。1めもりは 2人です。",
+  "c": [
+   {
+    "t": "サッカー",
+    "w": "あと 10人 ふえたとき"
+   },
+   {
+    "t": "なわとび",
+    "k": 1
+   },
+   {
+    "t": "おにごっこ",
+    "w": "あと 8人 ふえたとき"
+   },
+   {
+    "t": "ブランコ",
+    "w": "ふえて いない ときの ぼう"
+   }
+  ],
+  "e": "ブランコ 6人 + 4人 = 10人。\n10人の ぼうは なわとび。\nこたえ なわとび",
+  "h": "ブランコの 人数を 出して、同じ 人数の ぼうを さがそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-01-L4-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-01",
+  "l": "bou3-01",
+  "d": 4,
+  "q": "サッカーを えらんだ 人が 2人 へって、おにごっこを えらんだ 人が 2人 ふえました。いちばん 多い あそびは どれですか。",
+  "c": [
+   {
+    "t": "サッカー",
+    "w": "へった あとは 14人"
+   },
+   {
+    "t": "なわとび",
+    "w": "10人で 多くない"
+   },
+   {
+    "t": "ブランコ",
+    "w": "いちばん 少ない"
+   },
+   {
+    "t": "おにごっこ",
+    "k": 1
+   }
+  ],
+  "e": "サッカーは 16 − 2 = 14人。\nおにごっこは 14 + 2 = 16人。\nこたえ おにごっこ",
+  "h": "へった あとの 人数と、ふえた あとの 人数を 出そう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">6</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">8</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">12</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">14</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">16</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">18</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">サッカー</text><rect x=\"104\" y=\"100\" width=\"36\" height=\"80\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">なわとび</text><rect x=\"156\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">ブランコ</text><rect x=\"208\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">おにごっこ</text></svg>"
+ },
+ {
+  "id": "bou3-02-L1-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 1,
+  "q": "1めもりを 5こに した ぼうグラフで、45この ぼうは 何めもりの 高さですか。",
+  "c": [
+   {
+    "t": "5めもり",
+    "w": "5こを めもりの 数と した"
+   },
+   {
+    "t": "45めもり",
+    "w": "こ数を めもりの 数と した"
+   },
+   {
+    "t": "9めもり",
+    "k": 1
+   },
+   {
+    "t": "10めもり",
+    "w": "50こと 同じと 思った"
+   }
+  ],
+  "e": "1めもりが 5こ。\n45 ÷ 5 = 9\nこたえ 9めもり",
+  "h": "5こで 1めもり。45こは 何めもりぶんかな。"
+ },
+ {
+  "id": "bou3-02-L1-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 1,
+  "q": "ぼうグラフを かく とき、ぼうを かくより 先に きめて おく ことは どれですか。",
+  "c": [
+   {
+    "t": "めもりの 大きさ",
+    "k": 1
+   },
+   {
+    "t": "いちばん 長い ぼうの 色",
+    "w": "色は ぼうを かいてからでも よい"
+   },
+   {
+    "t": "ぼうの 長さの じゅんばん",
+    "w": "じゅんばんは ぼうを かいてから くらべれば よい"
+   },
+   {
+    "t": "グラフの 紙の 大きさだけ",
+    "w": "紙の 大きさだけでは、ぼうの 長さが きまらない"
+   }
+  ],
+  "e": "いちばん 多い 数が グラフに 入るように、先に 1めもりの 大きさを きめる。\nそれから ぼうを かく。\nこたえ めもりの 大きさ",
+  "h": "1めもりを いくつに すると、いちばん 長い ぼうが 入るかな。"
+ },
+ {
+  "id": "bou3-02-L1-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 1,
+  "q": "あつめた どんぐりの ぼうグラフです。1めもりは 何こですか。",
+  "c": [
+   {
+    "t": "1こ",
+    "w": "1めもりは いつも 1こと 思った"
+   },
+   {
+    "t": "10こ",
+    "w": "大きい めもりの 数を 読んだ"
+   },
+   {
+    "t": "50こ",
+    "w": "いちばん 上の めもりを 読んだ"
+   },
+   {
+    "t": "5こ",
+    "k": 1
+   }
+  ],
+  "e": "めもりの 数字は 0、5、10、15…。\n1めもり ふえる ごとに 5こ ふえる。\nこたえ 5こ",
+  "h": "となりあう めもりの 数字の ちがいを 見よう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">50</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（こ）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1はん</text><rect x=\"104\" y=\"116\" width=\"36\" height=\"64\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2はん</text><rect x=\"156\" y=\"36\" width=\"36\" height=\"144\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3はん</text><rect x=\"208\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4はん</text></svg>"
+ },
+ {
+  "id": "bou3-02-L1-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 1,
+  "q": "1めもりを 5こに した ぼうグラフで、ぼうの 高さが 6めもりです。何こを あらわしますか。",
+  "c": [
+   {
+    "t": "6こ",
+    "w": "めもりの 数を そのまま こ数と した"
+   },
+   {
+    "t": "30こ",
+    "k": 1
+   },
+   {
+    "t": "11こ",
+    "w": "6に 5を たした"
+   },
+   {
+    "t": "1こ",
+    "w": "6から 5を ひいた"
+   }
+  ],
+  "e": "1めもりが 5こで 6めもりぶん。\n5 × 6 = 30\nこたえ 30こ",
+  "h": "5こが 6つぶん だよ。"
+ },
+ {
+  "id": "bou3-02-L1-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 1,
+  "q": "ぼうグラフの 一番 上に かく「題」には、何を かきますか。",
+  "c": [
+   {
+    "t": "いちばん 多い 数",
+    "w": "題は 数では ない"
+   },
+   {
+    "t": "何を あらわす グラフか",
+    "k": 1
+   },
+   {
+    "t": "ぼうの 数",
+    "w": "題は ぼうの 数では ない"
+   },
+   {
+    "t": "めもりの 数字",
+    "w": "めもりの 数字は たてに かく"
+   }
+  ],
+  "e": "題を 見ると、何の ぼうグラフか わかる。\nこたえ 何を あらわす グラフか",
+  "h": "グラフを 見る 人が 何の グラフか わかる ことばを かこう。"
+ },
+ {
+  "id": "bou3-02-L2-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 2,
+  "q": "1めもりが 5この ぼうグラフです。3はんの ぼうは 何めもりの 高さですか。",
+  "c": [
+   {
+    "t": "45めもり",
+    "w": "こ数を めもりの 数と した"
+   },
+   {
+    "t": "7めもり",
+    "w": "1はんの ぼうを 読んだ"
+   },
+   {
+    "t": "8めもり",
+    "w": "1つ ひくい 高さを 読んだ"
+   },
+   {
+    "t": "9めもり",
+    "k": 1
+   }
+  ],
+  "e": "3はんの ぼうの 先は、めもりの 45の ところ。\n45 ÷ 5 = 9\nこたえ 9めもり",
+  "h": "45は 何こぶんかな。5こで 1めもりだよ。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">50</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（こ）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1はん</text><rect x=\"104\" y=\"116\" width=\"36\" height=\"64\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2はん</text><rect x=\"156\" y=\"36\" width=\"36\" height=\"144\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3はん</text><rect x=\"208\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4はん</text></svg>"
+ },
+ {
+  "id": "bou3-02-L2-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 2,
+  "q": "ピヨは 1めもりを 1こに して、45この ぼうを かこうと しましたが、紙から はみ出して しまいました。どう すれば いいですか。",
+  "c": [
+   {
+    "t": "1めもりを 5こに して、ぼうを みじかく する",
+    "k": 1
+   },
+   {
+    "t": "ぼうを 2本に 分けて かく",
+    "w": "1本の ぼうで かく"
+   },
+   {
+    "t": "1めもりを もっと 小さく する",
+    "w": "もっと 高く なって しまう"
+   },
+   {
+    "t": "45この ぼうは かかない",
+    "w": "ぼうが かけなく なる"
+   }
+  ],
+  "e": "1めもりを 5こに すると、45この ぼうは 9めもりで すむ。\nこたえ 1めもりを 5こに して、ぼうを みじかく する",
+  "h": "1めもりの 大きさを 大きく すると、ぼうは どうなるかな。"
+ },
+ {
+  "id": "bou3-02-L2-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 2,
+  "q": "1めもりが 5この ぼうグラフです。2はん(20こ)と 4はん(15こ)の ぼうの 高さの ちがいは 何めもりですか。",
+  "c": [
+   {
+    "t": "5めもり",
+    "w": "こ数の ちがいを めもりと 思った"
+   },
+   {
+    "t": "4めもり",
+    "w": "2はんの めもりの 数"
+   },
+   {
+    "t": "1めもり",
+    "k": 1
+   },
+   {
+    "t": "7めもり",
+    "w": "2つの めもりを たした"
+   }
+  ],
+  "e": "2はんは 20 ÷ 5 = 4めもり。\n4はんは 15 ÷ 5 = 3めもり。\n4 − 3 = 1\nこたえ 1めもり",
+  "h": "それぞれ 何めもりか 出してから ひこう。"
+ },
+ {
+  "id": "bou3-02-L2-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 2,
+  "q": "1めもりを 10こに した ぼうグラフで、30この ぼうは 何めもりの 高さですか。",
+  "c": [
+   {
+    "t": "3めもり",
+    "k": 1
+   },
+   {
+    "t": "30めもり",
+    "w": "こ数を めもりの 数と した"
+   },
+   {
+    "t": "6めもり",
+    "w": "5こで 1めもりと 思った"
+   },
+   {
+    "t": "10めもり",
+    "w": "10を めもりの 数と した"
+   }
+  ],
+  "e": "1めもりが 10こ。\n30 ÷ 10 = 3\nこたえ 3めもり",
+  "h": "10こで 1めもり。30こは 何めもりぶんかな。"
+ },
+ {
+  "id": "bou3-02-L2-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 2,
+  "q": "40この ぼうが、8めもりの 高さに なる ぼうグラフが あります。1めもりは 何こですか。",
+  "c": [
+   {
+    "t": "8こ",
+    "w": "めもりの 数を こ数と した"
+   },
+   {
+    "t": "32こ",
+    "w": "40から 8を ひいた"
+   },
+   {
+    "t": "5こ",
+    "k": 1
+   },
+   {
+    "t": "48こ",
+    "w": "40に 8を たした"
+   }
+  ],
+  "e": "40この ぼうが 8めもり。\n40 ÷ 8 = 5\nこたえ 5こ",
+  "h": "8めもりで 40こ。1めもりぶんは いくつかな。"
+ },
+ {
+  "id": "bou3-02-L3-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 3,
+  "q": "1めもりが 5この ぼうグラフです。1はんは 35こ、3はんは 45こです。3はんの ぼうは、1はんの ぼうより 何めもり 高いですか。",
+  "c": [
+   {
+    "t": "10めもり",
+    "w": "こ数の ちがいを めもりの 数と した"
+   },
+   {
+    "t": "2めもり",
+    "k": 1
+   },
+   {
+    "t": "1めもり",
+    "w": "ちがいを 1つぶんと 思った"
+   },
+   {
+    "t": "3めもり",
+    "w": "めもりを 数えまちがえた"
+   }
+  ],
+  "e": "45 − 35 = 10こ\n10 ÷ 5 = 2\nこたえ 2めもり",
+  "h": "こ数の ちがいを 出して、5こで 何めもりぶんか 考えよう。"
+ },
+ {
+  "id": "bou3-02-L3-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 3,
+  "q": "ピヨが かいた ぼうグラフです。3はんの ぼうが ちがって います。3はんは 45こです。1めもりは 5こです。ぼうを 何めもりの 高さに なおせば いいですか。",
+  "c": [
+   {
+    "t": "8めもり",
+    "w": "いまの ぼうの 高さ"
+   },
+   {
+    "t": "10めもり",
+    "w": "50こと 同じと 思った"
+   },
+   {
+    "t": "45めもり",
+    "w": "こ数を めもりの 数と した"
+   },
+   {
+    "t": "9めもり",
+    "k": 1
+   }
+  ],
+  "e": "45 ÷ 5 = 9\n3はんの ぼうは 9めもりに なおす。\nこたえ 9めもり",
+  "h": "45こを あらわす ぼうの 高さを 出そう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"164\" x2=\"262\" y2=\"164\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"164\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"148\" x2=\"262\" y2=\"148\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"148\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"132\" x2=\"262\" y2=\"132\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"132\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"116\" x2=\"262\" y2=\"116\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"116\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"84\" x2=\"262\" y2=\"84\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"84\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><line x1=\"44\" y1=\"68\" x2=\"262\" y2=\"68\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"68\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">35</text><line x1=\"44\" y1=\"52\" x2=\"262\" y2=\"52\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"52\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">40</text><line x1=\"44\" y1=\"36\" x2=\"262\" y2=\"36\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"36\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">45</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">50</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（こ）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"68\" width=\"36\" height=\"112\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">1はん</text><rect x=\"104\" y=\"116\" width=\"36\" height=\"64\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">2はん</text><rect x=\"156\" y=\"52\" width=\"36\" height=\"128\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">3はん</text><rect x=\"208\" y=\"132\" width=\"36\" height=\"48\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">4はん</text></svg>"
+ },
+ {
+  "id": "bou3-02-L3-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 3,
+  "q": "1はんは 35こ、2はんは 20こ、3はんは 45こ、4はんは 15こ ひろいました。どんぐりは あわせて 何こですか。",
+  "c": [
+   {
+    "t": "105こ",
+    "w": "くり上がりを わすれた"
+   },
+   {
+    "t": "95こ",
+    "w": "たし算を まちがえた"
+   },
+   {
+    "t": "125こ",
+    "w": "くり上がりを 2回 した"
+   },
+   {
+    "t": "115こ",
+    "k": 1
+   }
+  ],
+  "e": "35 + 20 + 45 + 15 = 115\nこたえ 115こ",
+  "h": "たす じゅんばんを くふうしてもよいよ。"
+ },
+ {
+  "id": "bou3-02-L3-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 3,
+  "q": "どんぐりを いちばん 多く ひろった 3はん(45こ)と、いちばん 少なく ひろった 4はん(15こ)の ちがいは 何こですか。",
+  "c": [
+   {
+    "t": "60こ",
+    "w": "2つの 数を たした"
+   },
+   {
+    "t": "30こ",
+    "k": 1
+   },
+   {
+    "t": "10こ",
+    "w": "十の くらいの 数を まちがえた"
+   },
+   {
+    "t": "25こ",
+    "w": "ひき算を まちがえた"
+   }
+  ],
+  "e": "45 − 15 = 30\nこたえ 30こ",
+  "h": "多い ほうから 少ない ほうを ひこう。"
+ },
+ {
+  "id": "bou3-02-L3-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 3,
+  "q": "35・20・45・15この ぼうが、めもりの ちょうど 上に なるように、1めもりの 大きさを えらびます。つぎの うち、いちばん 大きい 1めもりは どれですか。",
+  "c": [
+   {
+    "t": "1こ",
+    "w": "ぼうが 高く なりすぎる。もっと 大きく できる"
+   },
+   {
+    "t": "10こ",
+    "w": "35こが めもりの ちょうど 上に ならない"
+   },
+   {
+    "t": "5こ",
+    "k": 1
+   },
+   {
+    "t": "15こ",
+    "w": "20こが めもりの ちょうど 上に ならない"
+   }
+  ],
+  "e": "10こだと 35こが 3めもりと 半分に なる。\n5こなら 35、20、45、15が ぜんぶ ちょうど めもりの 上に なる。\nこたえ 5こ",
+  "h": "35・20・45・15 を ぜんぶ わりきれる 数を さがそう。"
+ },
+ {
+  "id": "bou3-02-L4-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 4,
+  "q": "1めもりが 5こで、0から 50までの めもりが あります。55この ぼうを かくには、どう しますか。",
+  "c": [
+   {
+    "t": "55まで めもりを ふやして かく",
+    "k": 1
+   },
+   {
+    "t": "ぼうを 50で 切って かく",
+    "w": "55こを あらわせない"
+   },
+   {
+    "t": "1めもりを 55こに する",
+    "w": "ほかの ぼうが 見えなく なる"
+   },
+   {
+    "t": "55この ぼうは かかない",
+    "w": "かく ことが できる"
+   }
+  ],
+  "e": "50までしか めもりが ないと、55こは かけない。\nめもりを 55まで ふやして かく。\nこたえ 55まで めもりを ふやして かく",
+  "h": "50を こえる 数は、めもりが たりないよ。"
+ },
+ {
+  "id": "bou3-02-L4-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 4,
+  "q": "1めもりが 5こで、ぼうの 高さは 1はん 6めもり、2はん 4めもり、3はん 8めもり、4はん 2めもりです。どんぐりは あわせて 何こですか。",
+  "c": [
+   {
+    "t": "20こ",
+    "w": "めもりの 数を たしただけ"
+   },
+   {
+    "t": "25こ",
+    "w": "5を たした"
+   },
+   {
+    "t": "100こ",
+    "k": 1
+   },
+   {
+    "t": "110こ",
+    "w": "めもりの 数を まちがえた"
+   }
+  ],
+  "e": "めもりの 数を たす。6 + 4 + 8 + 2 = 20\n1めもりが 5こ。5 × 20 = 100\nこたえ 100こ",
+  "h": "ぜんぶで 何めもりぶん か 出して から、5を かけよう。"
+ },
+ {
+  "id": "bou3-02-L4-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 4,
+  "q": "同じ ひょうを、1めもり 5こと 1めもり 10こで かきます。20この ぼうは、それぞれ 何めもりに なりますか。",
+  "c": [
+   {
+    "t": "5この ときは 4めもり、10この ときは 2めもり",
+    "k": 1
+   },
+   {
+    "t": "5この ときは 2めもり、10この ときは 4めもり",
+    "w": "5こと 10この ぎゃく"
+   },
+   {
+    "t": "どちらも 4めもり",
+    "w": "めもりの 大きさが かわる ことを わすれた"
+   },
+   {
+    "t": "5この ときは 20めもり、10この ときは 20めもり",
+    "w": "こ数を めもりの 数と した"
+   }
+  ],
+  "e": "5こで 1めもり：20 ÷ 5 = 4\n10こで 1めもり：20 ÷ 10 = 2\nこたえ 5この ときは 4めもり、10この ときは 2めもり",
+  "h": "1めもりが 大きいと、ぼうは ひくく なるよ。"
+ },
+ {
+  "id": "bou3-02-L4-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 4,
+  "q": "1めもりが 5こです。1はんの ぼうは 7めもりです。2はんの ぼうは、1はんより 3めもり ひくいです。2はんの どんぐりは 何こですか。",
+  "c": [
+   {
+    "t": "4こ",
+    "w": "めもりの 数を こ数と した"
+   },
+   {
+    "t": "20こ",
+    "k": 1
+   },
+   {
+    "t": "35こ",
+    "w": "1はんの こ数"
+   },
+   {
+    "t": "15こ",
+    "w": "ひくい 3めもりぶんの こ数"
+   }
+  ],
+  "e": "2はんは 7 − 3 = 4めもり。\n5 × 4 = 20\nこたえ 20こ",
+  "h": "2はんの ぼうは 何めもりか、まず 出そう。"
+ },
+ {
+  "id": "bou3-02-L4-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-02",
+  "l": "bou3-02",
+  "d": 4,
+  "q": "2はんと 4はんの どんぐりを あわせると 35こです。3はんは 45こです。3はんの ほうが 何こ 多いですか。",
+  "c": [
+   {
+    "t": "80こ",
+    "w": "3つを あわせた"
+   },
+   {
+    "t": "35こ",
+    "w": "2はんと 4はんの 合計"
+   },
+   {
+    "t": "45こ",
+    "w": "3はんの こ数"
+   },
+   {
+    "t": "10こ",
+    "k": 1
+   }
+  ],
+  "e": "2はんと 4はんは あわせて 35こ。\n45 − 35 = 10\nこたえ 10こ",
+  "h": "2はんと 4はんの 合計と、3はんを くらべよう。"
+ },
+ {
+  "id": "bou3-03-L1-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 1,
+  "q": "「学年」と「すきな くだもの」で 分ける ひょうが あります。「2年」の 行と「りんご」の 列が 交わる マスには、何の 数を 入れますか。",
+  "c": [
+   {
+    "t": "りんごが すきな 人の ぜんぶの 数",
+    "w": "それは 合計の らんに 入る"
+   },
+   {
+    "t": "2年の 人の ぜんぶの 数",
+    "w": "それは 合計の らんに 入る"
+   },
+   {
+    "t": "2年で、りんごが すきな 人の 数",
+    "k": 1
+   },
+   {
+    "t": "1年で、りんごが すきな 人の 数",
+    "w": "1年の 行の マス"
+   }
+  ],
+  "e": "行は 学年、列は くだもの。\n交わる マスは、その 学年で その くだものが すきな 人の 数。\nこたえ 2年で、りんごが すきな 人の 数",
+  "h": "行が 学年、列が くだものを あらわすよ。"
+ },
+ {
+  "id": "bou3-03-L1-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 1,
+  "q": "ひょうの いちばん はしの「合計」の らんには、何を 入れますか。",
+  "c": [
+   {
+    "t": "たてか よこに ならんだ 数を ぜんぶ たした 数",
+    "k": 1
+   },
+   {
+    "t": "いちばん 大きい 数",
+    "w": "大きい 数を 入れる ところでは ない"
+   },
+   {
+    "t": "いちばん 小さい 数",
+    "w": "小さい 数を 入れる ところでは ない"
+   },
+   {
+    "t": "ならんだ 数の ちがい",
+    "w": "ひいた 数では ない"
+   }
+  ],
+  "e": "合計は、ならんだ 数を ぜんぶ たした 数。\nこたえ たてか よこに ならんだ 数を ぜんぶ たした 数",
+  "h": "「合計」は あわせた 数の こと。"
+ },
+ {
+  "id": "bou3-03-L1-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 1,
+  "q": "1年は いちご 2人・りんご 1人・みかん 1人、2年は いちご 3人・りんご 0人・みかん 1人、3年は いちご 1人・りんご 2人・みかん 1人です。ひょうの「2年」と「りんご」の マスには、何人と 入れますか。",
+  "c": [
+   {
+    "t": "1人",
+    "w": "2年の みかんの 数"
+   },
+   {
+    "t": "3人",
+    "w": "2年の いちごの 数"
+   },
+   {
+    "t": "4人",
+    "w": "2年の 合計"
+   },
+   {
+    "t": "0人",
+    "k": 1
+   }
+  ],
+  "e": "2年の りんごは 0人。\n0人の ときも、0と かく。\nこたえ 0人",
+  "h": "2年の りんごが すきな 人は 何人と かいて あるかな。"
+ },
+ {
+  "id": "bou3-03-L1-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 1,
+  "q": "1年は いちご 2人・りんご 1人・みかん 1人、2年は いちご 3人・りんご 0人・みかん 1人、3年は いちご 1人・りんご 2人・みかん 1人です。2年の 合計は 何人ですか。",
+  "c": [
+   {
+    "t": "3人",
+    "w": "いちごの 数だけ 読んだ"
+   },
+   {
+    "t": "4人",
+    "k": 1
+   },
+   {
+    "t": "1人",
+    "w": "みかんの 数だけ 読んだ"
+   },
+   {
+    "t": "5人",
+    "w": "たし算を まちがえた"
+   }
+  ],
+  "e": "3 + 0 + 1 = 4\nこたえ 4人",
+  "h": "2年の 行の 数を ぜんぶ たそう。"
+ },
+ {
+  "id": "bou3-03-L1-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 1,
+  "q": "1年は いちご 2人・りんご 1人・みかん 1人、2年は いちご 3人・りんご 0人・みかん 1人、3年は いちご 1人・りんご 2人・みかん 1人です。りんごの 合計は 何人ですか。",
+  "c": [
+   {
+    "t": "2人",
+    "w": "3年の りんごだけ 読んだ"
+   },
+   {
+    "t": "3人",
+    "k": 1
+   },
+   {
+    "t": "6人",
+    "w": "いちごの 合計"
+   },
+   {
+    "t": "1人",
+    "w": "1年の りんごだけ 読んだ"
+   }
+  ],
+  "e": "1 + 0 + 2 = 3\nこたえ 3人",
+  "h": "りんごの 列の 数を ぜんぶ たそう。"
+ },
+ {
+  "id": "bou3-03-L2-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 2,
+  "q": "1年は いちご 2人・りんご 1人・みかん 1人、2年は いちご 3人・りんご 0人・みかん 1人、3年は いちご 1人・りんご 2人・みかん 1人です。いちごが すきな 人は、学年ぜんぶで 何人ですか。",
+  "c": [
+   {
+    "t": "5人",
+    "w": "たし算を まちがえた"
+   },
+   {
+    "t": "3人",
+    "w": "2年の いちごだけ 読んだ"
+   },
+   {
+    "t": "12人",
+    "w": "みんなの 合計"
+   },
+   {
+    "t": "6人",
+    "k": 1
+   }
+  ],
+  "e": "2 + 3 + 1 = 6\nこたえ 6人",
+  "h": "いちごの 列の 数を ぜんぶ たそう。"
+ },
+ {
+  "id": "bou3-03-L2-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 2,
+  "q": "1年は いちご 2人・りんご 1人・みかん 1人、2年は いちご 3人・りんご 0人・みかん 1人、3年は いちご 1人・りんご 2人・みかん 1人です。1年と 2年を あわせると、何人ですか。",
+  "c": [
+   {
+    "t": "8人",
+    "k": 1
+   },
+   {
+    "t": "4人",
+    "w": "1年だけ 数えた"
+   },
+   {
+    "t": "12人",
+    "w": "みんなの 合計"
+   },
+   {
+    "t": "6人",
+    "w": "たし算を まちがえた"
+   }
+  ],
+  "e": "1年は 2 + 1 + 1 = 4人。\n2年は 3 + 0 + 1 = 4人。\n4 + 4 = 8\nこたえ 8人",
+  "h": "1年の 合計と 2年の 合計を たそう。"
+ },
+ {
+  "id": "bou3-03-L2-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 2,
+  "q": "いちごの 合計が 6人、みかんの 合計が 3人、みんなの 合計が 12人です。りんごの 合計は 何人ですか。",
+  "c": [
+   {
+    "t": "9人",
+    "w": "いちごと みかんを たした"
+   },
+   {
+    "t": "15人",
+    "w": "3つを たした"
+   },
+   {
+    "t": "3人",
+    "k": 1
+   },
+   {
+    "t": "6人",
+    "w": "いちごと 同じと 思った"
+   }
+  ],
+  "e": "12 − 6 − 3 = 3\nこたえ 3人",
+  "h": "みんなの 合計から、わかって いる 数を ひこう。"
+ },
+ {
+  "id": "bou3-03-L2-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 2,
+  "q": "1年は いちご 2人・りんご 1人・みかん 1人、2年は いちご 3人・りんご 0人・みかん 1人、3年は いちご 1人・りんご 2人・みかん 1人です。どの 学年の、どの くだものが いちばん 多いですか。",
+  "c": [
+   {
+    "t": "2年の いちご",
+    "k": 1
+   },
+   {
+    "t": "1年の いちご",
+    "w": "2人で、いちばん 多く ない"
+   },
+   {
+    "t": "3年の りんご",
+    "w": "2人で、いちばん 多く ない"
+   },
+   {
+    "t": "2年の りんご",
+    "w": "0人で、いちばん 少ない"
+   }
+  ],
+  "e": "ひょうの 数で いちばん 大きいのは 3人。\nそれは 2年の いちご。\nこたえ 2年の いちご",
+  "h": "ひょうの マスを 1つずつ 見よう。"
+ },
+ {
+  "id": "bou3-03-L2-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 2,
+  "q": "3年は 合計 4人です。いちごが 1人、りんごが 2人です。3年の みかんは 何人ですか。",
+  "c": [
+   {
+    "t": "3人",
+    "w": "4から 1を ひいた"
+   },
+   {
+    "t": "2人",
+    "w": "りんごと 同じと 思った"
+   },
+   {
+    "t": "1人",
+    "k": 1
+   },
+   {
+    "t": "0人",
+    "w": "みかんは いないと 思った"
+   }
+  ],
+  "e": "4 − 1 − 2 = 1\nこたえ 1人",
+  "h": "合計から、いちごと りんごを ひこう。"
+ },
+ {
+  "id": "bou3-03-L3-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 3,
+  "q": "ピヨは、2年の いちご 3人・りんご 0人・みかん 1人の 合計を 3人と かきました。ただしい 合計は 何人ですか。",
+  "c": [
+   {
+    "t": "3人",
+    "w": "ピヨの こたえ。いちごの 数だけ"
+   },
+   {
+    "t": "4人",
+    "k": 1
+   },
+   {
+    "t": "1人",
+    "w": "みかんの 数だけ"
+   },
+   {
+    "t": "5人",
+    "w": "たし算を まちがえた"
+   }
+  ],
+  "e": "3 + 0 + 1 = 4\nこたえ 4人",
+  "h": "3つの 数を ぜんぶ たそう。"
+ },
+ {
+  "id": "bou3-03-L3-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 3,
+  "q": "ひょうの みんなの 合計は 12人の はずです。ひょうの 数を ぜんぶ たしたら 11人に なりました。何人ぶん 入れわすれて いますか。",
+  "c": [
+   {
+    "t": "11人",
+    "w": "たした 数を 答えた"
+   },
+   {
+    "t": "12人",
+    "w": "みんなの 合計を 答えた"
+   },
+   {
+    "t": "2人",
+    "w": "ひき算を まちがえた"
+   },
+   {
+    "t": "1人",
+    "k": 1
+   }
+  ],
+  "e": "12 − 11 = 1\nこたえ 1人",
+  "h": "みんなの 合計と、たして 出た 数の ちがいを 見よう。"
+ },
+ {
+  "id": "bou3-03-L3-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 3,
+  "q": "1組は サッカー 5人・ドッジボール 4人、2組は サッカー 3人・ドッジボール 6人です。ドッジボールが すきな 人は、1組と 2組で あわせて 何人ですか。",
+  "c": [
+   {
+    "t": "9人",
+    "w": "1組の 合計"
+   },
+   {
+    "t": "8人",
+    "w": "サッカーの 合計"
+   },
+   {
+    "t": "18人",
+    "w": "みんなの 合計"
+   },
+   {
+    "t": "10人",
+    "k": 1
+   }
+  ],
+  "e": "ドッジボールの 列を 見る。\n4 + 6 = 10\nこたえ 10人",
+  "h": "ドッジボールの 列の 数を たそう。"
+ },
+ {
+  "id": "bou3-03-L3-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 3,
+  "q": "1組は サッカー 5人・ドッジボール 4人、2組は サッカー 3人・ドッジボール 6人です。サッカーが すきな 人は、どちらの 組が 何人 多いですか。",
+  "c": [
+   {
+    "t": "2組が 2人 多い",
+    "w": "組を ぎゃくに した"
+   },
+   {
+    "t": "1組が 2人 多い",
+    "k": 1
+   },
+   {
+    "t": "1組が 8人 多い",
+    "w": "あわせた 数を 答えた"
+   },
+   {
+    "t": "2組が 3人 多い",
+    "w": "2組の 人数を 答えた"
+   }
+  ],
+  "e": "1組は 5人、2組は 3人。\n5 − 3 = 2\nこたえ 1組が 2人 多い",
+  "h": "サッカーの 列の 数を くらべよう。"
+ },
+ {
+  "id": "bou3-03-L3-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 3,
+  "q": "1組は サッカー 5人・ドッジボール 4人、2組は サッカー 3人・ドッジボール 6人です。2組では、サッカーと ドッジボールの どちらが 何人 多いですか。",
+  "c": [
+   {
+    "t": "サッカーが 3人 多い",
+    "w": "多い ほうを まちがえた"
+   },
+   {
+    "t": "ドッジボールが 9人 多い",
+    "w": "あわせた 数を 答えた"
+   },
+   {
+    "t": "ドッジボールが 3人 多い",
+    "k": 1
+   },
+   {
+    "t": "ドッジボールが 6人 多い",
+    "w": "2組の ドッジボールの 数"
+   }
+  ],
+  "e": "2組の ドッジボールは 6人、サッカーは 3人。\n6 − 3 = 3\nこたえ ドッジボールが 3人 多い",
+  "h": "2組の 行の 数を くらべよう。"
+ },
+ {
+  "id": "bou3-03-L4-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 4,
+  "q": "いちごの 合計は 6人です。1年の いちごは 2人、2年の いちごは 3人です。3年の いちごは 何人ですか。",
+  "c": [
+   {
+    "t": "1人",
+    "k": 1
+   },
+   {
+    "t": "3人",
+    "w": "6から 3を 1回だけ ひいた"
+   },
+   {
+    "t": "4人",
+    "w": "6から 2を 1回だけ ひいた"
+   },
+   {
+    "t": "11人",
+    "w": "ぜんぶ たした"
+   }
+  ],
+  "e": "6 − 2 − 3 = 1\nこたえ 1人",
+  "h": "合計から、わかって いる 数を ひこう。"
+ },
+ {
+  "id": "bou3-03-L4-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 4,
+  "q": "1年の 合計と 2年の 合計は、どちらも 4人です。みんなの 合計は 12人です。3年の 合計は 何人ですか。",
+  "c": [
+   {
+    "t": "8人",
+    "w": "4と 4を たした"
+   },
+   {
+    "t": "12人",
+    "w": "みんなの 合計"
+   },
+   {
+    "t": "4人",
+    "k": 1
+   },
+   {
+    "t": "3人",
+    "w": "学年の 数"
+   }
+  ],
+  "e": "12 − 4 − 4 = 4\nこたえ 4人",
+  "h": "みんなの 合計から、1年と 2年を ひこう。"
+ },
+ {
+  "id": "bou3-03-L4-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 4,
+  "q": "よこの 合計を ぜんぶ たした 数と、たての 合計を ぜんぶ たした 数は、どう なりますか。",
+  "c": [
+   {
+    "t": "どちらも みんなの 合計と 同じに なる",
+    "k": 1
+   },
+   {
+    "t": "よこの 合計の ほうが 多くなる",
+    "w": "同じ 数を たして いる"
+   },
+   {
+    "t": "たての 合計の ほうが 多くなる",
+    "w": "同じ 数を たして いる"
+   },
+   {
+    "t": "ちがう 数に なる",
+    "w": "ひょうの 数は どちらも ぜんぶ たしている"
+   }
+  ],
+  "e": "よこの 合計も、たての 合計も、ひょうの 数を ぜんぶ たした もの。\nだから どちらも みんなの 合計。\nこたえ どちらも みんなの 合計と 同じに なる",
+  "h": "どちらも ひょうの 数を ぜんぶ たして いるよ。"
+ },
+ {
+  "id": "bou3-03-L4-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 4,
+  "q": "ピヨは「1年の いちごは 2人、2年は 3人、3年は 1人。だから いちごの 合計は 2 + 3 = 5人」と いいました。ただしい 合計は 何人ですか。",
+  "c": [
+   {
+    "t": "5人",
+    "w": "ピヨの こたえ。3年を たしわすれた"
+   },
+   {
+    "t": "6人",
+    "k": 1
+   },
+   {
+    "t": "3人",
+    "w": "2年の いちごだけ 読んだ"
+   },
+   {
+    "t": "7人",
+    "w": "たし算を まちがえた"
+   }
+  ],
+  "e": "2 + 3 + 1 = 6\nこたえ 6人",
+  "h": "3年の いちごも わすれずに たそう。"
+ },
+ {
+  "id": "bou3-03-L4-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-03",
+  "l": "bou3-03",
+  "d": 4,
+  "q": "いちごの 合計が 6人、りんごの 合計が 3人、みかんの 合計が 3人です。1年の 合計は 4人、2年の 合計も 4人です。3年の 合計と、みんなの 合計を 答えましょう。",
+  "c": [
+   {
+    "t": "3年は 4人、みんなは 15人",
+    "w": "みんなの 合計が あわない"
+   },
+   {
+    "t": "3年は 6人、みんなは 12人",
+    "w": "3年の 合計が あわない"
+   },
+   {
+    "t": "3年は 4人、みんなは 8人",
+    "w": "みんなの 合計が あわない"
+   },
+   {
+    "t": "3年は 4人、みんなは 12人",
+    "k": 1
+   }
+  ],
+  "e": "みんなの 合計は 6 + 3 + 3 = 12\n3年の 合計は 12 − 4 − 4 = 4\nこたえ 3年は 4人、みんなは 12人",
+  "h": "まず くだものの 合計を たして、みんなの 合計を 出そう。"
+ },
+ {
+  "id": "bou3-04-L1-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 1,
+  "q": "すきな きょうかの ぼうグラフです。1めもりは 何人ですか。",
+  "c": [
+   {
+    "t": "1人",
+    "w": "1めもりは いつも 1人と 思った"
+   },
+   {
+    "t": "2人",
+    "w": "めもりの 数字を 見まちがえた"
+   },
+   {
+    "t": "5人",
+    "k": 1
+   },
+   {
+    "t": "10人",
+    "w": "大きい めもりの 数を 読んだ"
+   }
+  ],
+  "e": "めもりの 数字は 0、5、10、15…。\n1めもり ふえる ごとに 5人 ふえる。\nこたえ 5人",
+  "h": "となりあう めもりの 数字の ちがいを 見よう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"153.3\" x2=\"262\" y2=\"153.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"153.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"126.7\" x2=\"262\" y2=\"126.7\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"126.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"73.3\" x2=\"262\" y2=\"73.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"73.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"46.7\" x2=\"262\" y2=\"46.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"46.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"20\" width=\"36\" height=\"160\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">体育</text><rect x=\"104\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">算数</text><rect x=\"156\" y=\"73.3\" width=\"36\" height=\"106.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">図工</text><rect x=\"208\" y=\"126.7\" width=\"36\" height=\"53.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">音楽</text></svg>"
+ },
+ {
+  "id": "bou3-04-L1-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 1,
+  "q": "すきな きょうかの ぼうグラフで、いちばん 多い きょうかは どれですか。",
+  "c": [
+   {
+    "t": "体育",
+    "k": 1
+   },
+   {
+    "t": "算数",
+    "w": "2ばんめに 高い ぼう"
+   },
+   {
+    "t": "図工",
+    "w": "3ばんめに 高い ぼう"
+   },
+   {
+    "t": "音楽",
+    "w": "いちばん ひくい ぼう"
+   }
+  ],
+  "e": "いちばん 高い ぼうを さがす。\n体育の ぼうが いちばん 高い。\nこたえ 体育",
+  "h": "いちばん 高い ぼうを さがそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"153.3\" x2=\"262\" y2=\"153.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"153.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"126.7\" x2=\"262\" y2=\"126.7\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"126.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"73.3\" x2=\"262\" y2=\"73.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"73.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"46.7\" x2=\"262\" y2=\"46.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"46.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"20\" width=\"36\" height=\"160\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">体育</text><rect x=\"104\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">算数</text><rect x=\"156\" y=\"73.3\" width=\"36\" height=\"106.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">図工</text><rect x=\"208\" y=\"126.7\" width=\"36\" height=\"53.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">音楽</text></svg>"
+ },
+ {
+  "id": "bou3-04-L1-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 1,
+  "q": "ぼうグラフの 1めもりは 5人です。音楽を えらんだ 人は 何人ですか。",
+  "c": [
+   {
+    "t": "2人",
+    "w": "2めもりを 2人と 読んだ"
+   },
+   {
+    "t": "5人",
+    "w": "1めもりを 答えた"
+   },
+   {
+    "t": "15人",
+    "w": "3めもりぶんと 思った"
+   },
+   {
+    "t": "10人",
+    "k": 1
+   }
+  ],
+  "e": "音楽の ぼうの 先は、めもりの 10の ところ。\nこたえ 10人",
+  "h": "ぼうの 先と 同じ 高さの めもりの 数字を 読もう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"153.3\" x2=\"262\" y2=\"153.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"153.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"126.7\" x2=\"262\" y2=\"126.7\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"126.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"73.3\" x2=\"262\" y2=\"73.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"73.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"46.7\" x2=\"262\" y2=\"46.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"46.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"20\" width=\"36\" height=\"160\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">体育</text><rect x=\"104\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">算数</text><rect x=\"156\" y=\"73.3\" width=\"36\" height=\"106.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">図工</text><rect x=\"208\" y=\"126.7\" width=\"36\" height=\"53.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">音楽</text></svg>"
+ },
+ {
+  "id": "bou3-04-L1-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 1,
+  "q": "ぼうグラフの 1めもりは 5人です。算数を えらんだ 人は 何人ですか。",
+  "c": [
+   {
+    "t": "5人",
+    "w": "5めもりを 5人と 読んだ"
+   },
+   {
+    "t": "25人",
+    "k": 1
+   },
+   {
+    "t": "20人",
+    "w": "図工の ぼうを 読んだ"
+   },
+   {
+    "t": "30人",
+    "w": "体育の ぼうを 読んだ"
+   }
+  ],
+  "e": "算数の ぼうの 先は、めもりの 25の ところ。\nこたえ 25人",
+  "h": "ぼうの 先と 同じ 高さの めもりの 数字を 読もう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"153.3\" x2=\"262\" y2=\"153.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"153.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"126.7\" x2=\"262\" y2=\"126.7\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"126.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"73.3\" x2=\"262\" y2=\"73.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"73.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"46.7\" x2=\"262\" y2=\"46.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"46.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"20\" width=\"36\" height=\"160\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">体育</text><rect x=\"104\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">算数</text><rect x=\"156\" y=\"73.3\" width=\"36\" height=\"106.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">図工</text><rect x=\"208\" y=\"126.7\" width=\"36\" height=\"53.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">音楽</text></svg>"
+ },
+ {
+  "id": "bou3-04-L1-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 1,
+  "q": "ぼうグラフの 1めもりは 5人です。図工の ぼうの 高さは 何めもりですか。",
+  "c": [
+   {
+    "t": "20めもり",
+    "w": "人数を めもりの 数と した"
+   },
+   {
+    "t": "4めもり",
+    "k": 1
+   },
+   {
+    "t": "5めもり",
+    "w": "算数の ぼうを 読んだ"
+   },
+   {
+    "t": "3めもり",
+    "w": "1つ ひくい ぼうを 読んだ"
+   }
+  ],
+  "e": "20人を 5人ずつ に 分ける。\n20 ÷ 5 = 4\nこたえ 4めもり",
+  "h": "5人で 1めもり。20人は 何めもりぶんかな。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"153.3\" x2=\"262\" y2=\"153.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"153.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"126.7\" x2=\"262\" y2=\"126.7\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"126.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"73.3\" x2=\"262\" y2=\"73.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"73.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"46.7\" x2=\"262\" y2=\"46.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"46.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"20\" width=\"36\" height=\"160\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">体育</text><rect x=\"104\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">算数</text><rect x=\"156\" y=\"73.3\" width=\"36\" height=\"106.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">図工</text><rect x=\"208\" y=\"126.7\" width=\"36\" height=\"53.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">音楽</text></svg>"
+ },
+ {
+  "id": "bou3-04-L2-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 2,
+  "q": "ぼうグラフの 1めもりは 5人です。体育を えらんだ 人は、音楽を えらんだ 人より 何人 多いですか。",
+  "c": [
+   {
+    "t": "40人",
+    "w": "2つを たした"
+   },
+   {
+    "t": "4めもり",
+    "w": "めもりの 数で 答えた"
+   },
+   {
+    "t": "10人",
+    "w": "音楽の 人数"
+   },
+   {
+    "t": "20人",
+    "k": 1
+   }
+  ],
+  "e": "体育は 30人、音楽は 10人。\n30 − 10 = 20\nこたえ 20人",
+  "h": "それぞれ 何人か 読んでから、ひこう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"153.3\" x2=\"262\" y2=\"153.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"153.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"126.7\" x2=\"262\" y2=\"126.7\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"126.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"73.3\" x2=\"262\" y2=\"73.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"73.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"46.7\" x2=\"262\" y2=\"46.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"46.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"20\" width=\"36\" height=\"160\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">体育</text><rect x=\"104\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">算数</text><rect x=\"156\" y=\"73.3\" width=\"36\" height=\"106.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">図工</text><rect x=\"208\" y=\"126.7\" width=\"36\" height=\"53.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">音楽</text></svg>"
+ },
+ {
+  "id": "bou3-04-L2-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 2,
+  "q": "ぼうグラフの 1めもりは 5人です。4つの きょうかを えらんだ 人は、あわせて 何人ですか。",
+  "c": [
+   {
+    "t": "85人",
+    "k": 1
+   },
+   {
+    "t": "35人",
+    "w": "いちばん 多い 2つだけ たした"
+   },
+   {
+    "t": "75人",
+    "w": "音楽の 人を たしわすれた"
+   },
+   {
+    "t": "80人",
+    "w": "たし算を まちがえた"
+   }
+  ],
+  "e": "30 + 25 + 20 + 10 = 85\nこたえ 85人",
+  "h": "4つの ぼうを 1つずつ 人数に して たそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"153.3\" x2=\"262\" y2=\"153.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"153.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"126.7\" x2=\"262\" y2=\"126.7\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"126.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"73.3\" x2=\"262\" y2=\"73.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"73.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"46.7\" x2=\"262\" y2=\"46.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"46.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"20\" width=\"36\" height=\"160\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">体育</text><rect x=\"104\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">算数</text><rect x=\"156\" y=\"73.3\" width=\"36\" height=\"106.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">図工</text><rect x=\"208\" y=\"126.7\" width=\"36\" height=\"53.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">音楽</text></svg>"
+ },
+ {
+  "id": "bou3-04-L2-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 2,
+  "q": "ぼうグラフの 1めもりは 5人です。算数と 図工を あわせると 何人ですか。",
+  "c": [
+   {
+    "t": "9人",
+    "w": "めもりの 数を たした"
+   },
+   {
+    "t": "5人",
+    "w": "2つの ちがい"
+   },
+   {
+    "t": "45人",
+    "k": 1
+   },
+   {
+    "t": "55人",
+    "w": "体育と 算数を あわせた"
+   }
+  ],
+  "e": "算数は 25人、図工は 20人。\n25 + 20 = 45\nこたえ 45人",
+  "h": "2つの ぼうの 人数を 読んで たそう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"153.3\" x2=\"262\" y2=\"153.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"153.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"126.7\" x2=\"262\" y2=\"126.7\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"126.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"73.3\" x2=\"262\" y2=\"73.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"73.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"46.7\" x2=\"262\" y2=\"46.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"46.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"20\" width=\"36\" height=\"160\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">体育</text><rect x=\"104\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">算数</text><rect x=\"156\" y=\"73.3\" width=\"36\" height=\"106.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">図工</text><rect x=\"208\" y=\"126.7\" width=\"36\" height=\"53.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">音楽</text></svg>"
+ },
+ {
+  "id": "bou3-04-L2-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 2,
+  "q": "ぼうグラフの 1めもりは 5人です。体育を えらんだ 人は、音楽を えらんだ 人の 何倍ですか。",
+  "c": [
+   {
+    "t": "3倍",
+    "k": 1
+   },
+   {
+    "t": "20倍",
+    "w": "ちがいの 20人を 倍と まちがえた"
+   },
+   {
+    "t": "2倍",
+    "w": "音楽と 図工の くらべ"
+   },
+   {
+    "t": "5倍",
+    "w": "1めもりの 人数と まちがえた"
+   }
+  ],
+  "e": "体育 30人、音楽 10人。\n30 ÷ 10 = 3\nこたえ 3倍",
+  "h": "10人が 何こぶんで 30人に なるかな。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"153.3\" x2=\"262\" y2=\"153.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"153.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"126.7\" x2=\"262\" y2=\"126.7\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"126.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"73.3\" x2=\"262\" y2=\"73.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"73.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"46.7\" x2=\"262\" y2=\"46.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"46.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"20\" width=\"36\" height=\"160\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">体育</text><rect x=\"104\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">算数</text><rect x=\"156\" y=\"73.3\" width=\"36\" height=\"106.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">図工</text><rect x=\"208\" y=\"126.7\" width=\"36\" height=\"53.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">音楽</text></svg>"
+ },
+ {
+  "id": "bou3-04-L2-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 2,
+  "q": "1めもりが 5人の ぼうグラフで、ぼうの 高さが 6めもりです。何人を あらわしていますか。",
+  "c": [
+   {
+    "t": "6人",
+    "w": "めもりの 数を そのまま 人数と した"
+   },
+   {
+    "t": "11人",
+    "w": "6に 5を たした"
+   },
+   {
+    "t": "30人",
+    "k": 1
+   },
+   {
+    "t": "1人",
+    "w": "6から 5を ひいた"
+   }
+  ],
+  "e": "1めもりが 5人で 6めもりぶん。\n5 × 6 = 30\nこたえ 30人",
+  "h": "5人が 6つぶん だよ。"
+ },
+ {
+  "id": "bou3-04-L3-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 3,
+  "q": "ひょうでは、体育 30人・算数 25人・図工 20人・音楽 10人です。ぼうグラフと ひょうを くらべます。ぼうの 高さが ちがう きょうかは どれですか。",
+  "c": [
+   {
+    "t": "体育",
+    "w": "ひょうと 同じ 高さ"
+   },
+   {
+    "t": "図工",
+    "k": 1
+   },
+   {
+    "t": "算数",
+    "w": "ひょうと 同じ 高さ"
+   },
+   {
+    "t": "音楽",
+    "w": "ひょうと 同じ 高さ"
+   }
+  ],
+  "e": "図工の ぼうは 25人の 高さ。\nひょうでは 20人。\nこたえ 図工",
+  "h": "ぼうの 高さを、ひょうの 数と 1つずつ くらべよう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"153.3\" x2=\"262\" y2=\"153.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"153.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"126.7\" x2=\"262\" y2=\"126.7\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"126.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"73.3\" x2=\"262\" y2=\"73.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"73.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"46.7\" x2=\"262\" y2=\"46.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"46.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"20\" width=\"36\" height=\"160\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">体育</text><rect x=\"104\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">算数</text><rect x=\"156\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">図工</text><rect x=\"208\" y=\"126.7\" width=\"36\" height=\"53.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">音楽</text></svg>"
+ },
+ {
+  "id": "bou3-04-L3-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 3,
+  "q": "サッカーが すきな 人は、1組 8人、2組 5人です。ピヨは 8 + 5 = 12 と かきました。ただしい 合計は 何人ですか。",
+  "c": [
+   {
+    "t": "12人",
+    "w": "ピヨの こたえ。たし算を まちがえた"
+   },
+   {
+    "t": "3人",
+    "w": "ひき算を した"
+   },
+   {
+    "t": "40人",
+    "w": "みんなの 合計"
+   },
+   {
+    "t": "13人",
+    "k": 1
+   }
+  ],
+  "e": "8 + 5 = 13\nこたえ 13人",
+  "h": "一の くらいから 計算しなおそう。"
+ },
+ {
+  "id": "bou3-04-L3-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 3,
+  "q": "ぼうグラフの 1めもりは 5人です。音楽を えらんだ 人が あと 何人 ふえると、体育と 同じ 人数に なりますか。",
+  "c": [
+   {
+    "t": "30人",
+    "w": "体育の 人数"
+   },
+   {
+    "t": "10人",
+    "w": "音楽の 人数"
+   },
+   {
+    "t": "15人",
+    "w": "めもりの 数を まちがえた"
+   },
+   {
+    "t": "20人",
+    "k": 1
+   }
+  ],
+  "e": "体育 30人、音楽 10人。\n30 − 10 = 20\nこたえ 20人",
+  "h": "2つの 人数の ちがいを 出そう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"153.3\" x2=\"262\" y2=\"153.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"153.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"126.7\" x2=\"262\" y2=\"126.7\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"126.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"73.3\" x2=\"262\" y2=\"73.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"73.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"46.7\" x2=\"262\" y2=\"46.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"46.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"20\" width=\"36\" height=\"160\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">体育</text><rect x=\"104\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">算数</text><rect x=\"156\" y=\"73.3\" width=\"36\" height=\"106.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">図工</text><rect x=\"208\" y=\"126.7\" width=\"36\" height=\"53.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">音楽</text></svg>"
+ },
+ {
+  "id": "bou3-04-L3-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 3,
+  "q": "1組は サッカー 8人・ドッジボール 6人・なわとび 6人、2組は サッカー 5人・ドッジボール 9人・なわとび 6人です。1組の 合計は 何人ですか。",
+  "c": [
+   {
+    "t": "14人",
+    "w": "サッカーと ドッジボールだけ たした"
+   },
+   {
+    "t": "20人",
+    "k": 1
+   },
+   {
+    "t": "40人",
+    "w": "みんなの 合計"
+   },
+   {
+    "t": "26人",
+    "w": "たし算を まちがえた"
+   }
+  ],
+  "e": "8 + 6 + 6 = 20\nこたえ 20人",
+  "h": "1組の 行の 数を ぜんぶ たそう。"
+ },
+ {
+  "id": "bou3-04-L3-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 3,
+  "q": "1組は サッカー 8人・ドッジボール 6人・なわとび 6人、2組は サッカー 5人・ドッジボール 9人・なわとび 6人です。1組と 2組を あわせて、いちばん 多い スポーツは どれですか。",
+  "c": [
+   {
+    "t": "サッカー",
+    "w": "1組で いちばん 多い スポーツ"
+   },
+   {
+    "t": "なわとび",
+    "w": "いちばん 少ない スポーツ"
+   },
+   {
+    "t": "ドッジボール",
+    "k": 1
+   },
+   {
+    "t": "ぜんぶ 同じ",
+    "w": "合計が ちがう"
+   }
+  ],
+  "e": "サッカー 8 + 5 = 13、ドッジボール 6 + 9 = 15、なわとび 6 + 6 = 12。\nこたえ ドッジボール",
+  "h": "スポーツごとの 合計を 出して くらべよう。"
+ },
+ {
+  "id": "bou3-04-L4-01",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 4,
+  "q": "ぼうグラフの 1めもりは 5人です。体育を えらんだ 人が 5人 へって、算数を えらんだ 人が 5人 ふえました。いちばん 多い きょうかは どれですか。",
+  "c": [
+   {
+    "t": "算数",
+    "k": 1
+   },
+   {
+    "t": "体育",
+    "w": "へった あとは 25人"
+   },
+   {
+    "t": "図工",
+    "w": "20人で 多くない"
+   },
+   {
+    "t": "音楽",
+    "w": "いちばん 少ない"
+   }
+  ],
+  "e": "体育は 30 − 5 = 25人。\n算数は 25 + 5 = 30人。\nこたえ 算数",
+  "h": "へった あとと ふえた あとの 人数を 出そう。",
+  "f": "<svg class=\"fig\" viewBox=\"0 0 268 220\" width=\"268\" height=\"220\" role=\"img\" aria-label=\"ぼうグラフ\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"180\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">0</text><line x1=\"44\" y1=\"153.3\" x2=\"262\" y2=\"153.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"153.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">5</text><line x1=\"44\" y1=\"126.7\" x2=\"262\" y2=\"126.7\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"126.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">10</text><line x1=\"44\" y1=\"100\" x2=\"262\" y2=\"100\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"100\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">15</text><line x1=\"44\" y1=\"73.3\" x2=\"262\" y2=\"73.3\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"73.3\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">20</text><line x1=\"44\" y1=\"46.7\" x2=\"262\" y2=\"46.7\" class=\"fg-l\" stroke-width=\"0.8\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"46.7\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">25</text><line x1=\"44\" y1=\"20\" x2=\"262\" y2=\"20\" class=\"fg-l\" stroke-width=\"0.4\" stroke-opacity=\"0.5\"/><text x=\"30\" y=\"20\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">30</text><text x=\"30\" y=\"8\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"10\" class=\"fg-t\">（人）</text><line x1=\"44\" y1=\"20\" x2=\"44\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><line x1=\"44\" y1=\"180\" x2=\"262\" y2=\"180\" class=\"fg-l\" stroke-width=\"1.5\"/><rect x=\"52\" y=\"20\" width=\"36\" height=\"160\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"70\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">体育</text><rect x=\"104\" y=\"46.7\" width=\"36\" height=\"133.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"122\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">算数</text><rect x=\"156\" y=\"73.3\" width=\"36\" height=\"106.7\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"174\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">図工</text><rect x=\"208\" y=\"126.7\" width=\"36\" height=\"53.3\" class=\"fg-l fg-soft\" stroke-width=\"1.5\"/><text x=\"226\" y=\"196\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"11\" class=\"fg-t\">音楽</text></svg>"
+ },
+ {
+  "id": "bou3-04-L4-02",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 4,
+  "q": "4つの きょうかを えらんだ 人は、ぜんぶで 85人です。体育 30人・算数 25人・図工 20人です。音楽を えらんだ 人は 何人ですか。",
+  "c": [
+   {
+    "t": "75人",
+    "w": "3つの きょうかを たした"
+   },
+   {
+    "t": "15人",
+    "w": "ひき算を まちがえた"
+   },
+   {
+    "t": "10人",
+    "k": 1
+   },
+   {
+    "t": "5人",
+    "w": "ひき算を まちがえた"
+   }
+  ],
+  "e": "30 + 25 + 20 = 75\n85 − 75 = 10\nこたえ 10人",
+  "h": "ぜんぶの 人数から、わかって いる 人数を ひこう。"
+ },
+ {
+  "id": "bou3-04-L4-03",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 4,
+  "q": "1めもりを 5人から 10人に かえて、図工の 20人を ぼうグラフに かきます。ぼうは 何めもりに なりますか。",
+  "c": [
+   {
+    "t": "2めもり",
+    "k": 1
+   },
+   {
+    "t": "4めもり",
+    "w": "5人で 1めもりの ときの 数"
+   },
+   {
+    "t": "10めもり",
+    "w": "10人を めもりの 数と した"
+   },
+   {
+    "t": "20めもり",
+    "w": "人数を めもりの 数と した"
+   }
+  ],
+  "e": "1めもりが 10人 だから、20 ÷ 10 = 2\nこたえ 2めもり",
+  "h": "10人で 1めもり。20人は 何めもりぶんかな。"
+ },
+ {
+  "id": "bou3-04-L4-04",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 4,
+  "q": "1組は サッカー 8人・ドッジボール 6人・なわとび 6人、2組は サッカー 5人・ドッジボール 9人・なわとび 6人です。ドッジボールが すきな 人は、1組と 2組で ぜんぶで 15人です。1組は 6人です。2組は 何人ですか。",
+  "c": [
+   {
+    "t": "21人",
+    "w": "たし算を した"
+   },
+   {
+    "t": "9人",
+    "k": 1
+   },
+   {
+    "t": "6人",
+    "w": "1組の 人数"
+   },
+   {
+    "t": "15人",
+    "w": "ぜんぶの 人数"
+   }
+  ],
+  "e": "15 − 6 = 9\nこたえ 9人",
+  "h": "ぜんぶの 人数から、1組の 人数を ひこう。"
+ },
+ {
+  "id": "bou3-04-L4-05",
+  "u": "E3-TQ",
+  "s": "E3-TQ-04",
+  "l": "bou3-04",
+  "d": 4,
+  "q": "1組は 20人です。サッカーが 8人、ドッジボールが 6人の とき、なわとびは 何人ですか。",
+  "c": [
+   {
+    "t": "14人",
+    "w": "8と 6を たした"
+   },
+   {
+    "t": "12人",
+    "w": "20から 8を ひいた"
+   },
+   {
+    "t": "28人",
+    "w": "3つを たした"
+   },
+   {
+    "t": "6人",
+    "k": 1
+   }
+  ],
+  "e": "20 − 8 − 6 = 6\nこたえ 6人",
+  "h": "20人から、サッカーと ドッジボールの 人数を ひこう。"
+ },
+ {
+  "id": "nito3-01-L1-01",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 1,
+  "q": "へんの 長さが 次の 三角形の うち、二等へん三角形は どれですか。",
+  "c": [
+   {
+    "t": "3cm・4cm・5cm",
+    "w": "3つの へんの 長さが ぜんぶ ちがう"
+   },
+   {
+    "t": "4cm・5cm・6cm",
+    "w": "同じ 長さの へんが 1本も ない"
+   },
+   {
+    "t": "3cm・3cm・5cm",
+    "k": 1
+   },
+   {
+    "t": "5cm・6cm・7cm",
+    "w": "どの へんも 長さが ちがう"
+   }
+  ],
+  "e": "3cmの へんが 2本 ある。\n2つの へんの 長さが 同じ 三角形が 二等へん三角形。\nこたえ 3cm・3cm・5cm",
+  "h": "同じ 長さの へんが 2本 ある ものを さがそう。"
+ },
+ {
+  "id": "nito3-01-L1-02",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 1,
+  "q": "二等へん三角形は、どんな 三角形ですか。",
+  "c": [
+   {
+    "t": "2つの へんの 長さが 同じ 三角形",
+    "k": 1
+   },
+   {
+    "t": "3つの へんの 長さが ぜんぶ ちがう 三角形",
+    "w": "長さを くらべるのを わすれた"
+   },
+   {
+    "t": "角が 4つ ある 三角形",
+    "w": "三角形の 角は 3つ"
+   },
+   {
+    "t": "へんが 2本しか ない 三角形",
+    "w": "三角形の へんは 3本"
+   }
+  ],
+  "e": "2つの へんの 長さが 同じ 三角形を、二等へん三角形と いう。\nこたえ 2つの へんの 長さが 同じ 三角形",
+  "h": "へんの 長さに 注目しよう。"
+ },
+ {
+  "id": "nito3-01-L1-03",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 1,
+  "q": "二等へん三角形の「二等」は、何が 2つ 同じと いう いみですか。",
+  "c": [
+   {
+    "t": "かどの 数",
+    "w": "かどは どんな 三角形でも 3つ"
+   },
+   {
+    "t": "ちょう点の 数",
+    "w": "ちょう点は どんな 三角形でも 3つ"
+   },
+   {
+    "t": "三角形の 数",
+    "w": "三角形は 1つだけ"
+   },
+   {
+    "t": "へんの 長さ",
+    "k": 1
+   }
+  ],
+  "e": "同じ 長さの へんが 2本 ある。\n「等」は「等しい」、つまり「同じ」と いう こと。\nこたえ へんの 長さ",
+  "h": "「二等」の「等」は「同じ」と いう いみ。"
+ },
+ {
+  "id": "nito3-01-L1-04",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 1,
+  "q": "二等へん三角形を ぐるっと まわして、向きを かえました。へんの 長さは どう なりますか。",
+  "c": [
+   {
+    "t": "長く なる",
+    "w": "向きを かえると 長さも かわると 思った"
+   },
+   {
+    "t": "かわらない",
+    "k": 1
+   },
+   {
+    "t": "みじかく なる",
+    "w": "向きを かえると 長さも かわると 思った"
+   },
+   {
+    "t": "ぜんぶ ちがう 長さに なる",
+    "w": "二等へん三角形では なくなると 思った"
+   }
+  ],
+  "e": "三角形を まわしても、へんの 長さは かわらない。\nだから、二等へん三角形の ままだよ。\nこたえ かわらない",
+  "h": "紙を まわしても、紙の 大きさは かわるかな。"
+ },
+ {
+  "id": "nito3-01-L1-05",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 1,
+  "q": "二等へん三角形を 半分に おって、ぴったり かさねました。同じ 大きさに なる 角は、何こですか。",
+  "c": [
+   {
+    "t": "1こ",
+    "w": "かさなった 角を 1つと 数えた"
+   },
+   {
+    "t": "2こ",
+    "k": 1
+   },
+   {
+    "t": "0こ",
+    "w": "かさなる 角は ないと 思った"
+   },
+   {
+    "t": "4こ",
+    "w": "かさなった 角を 2回ずつ 数えた"
+   }
+  ],
+  "e": "半分に おると、下の 2つの 角が ぴったり かさなる。\nだから 同じ 大きさの 角は 2つ。\nこたえ 2こ",
+  "h": "おって かさなる 角を 数えよう。"
+ },
+ {
+  "id": "nito3-01-L2-01",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 2,
+  "q": "次の うち、二等へん三角形に なるのは どれですか。",
+  "c": [
+   {
+    "t": "6cm・7cm・8cm",
+    "w": "ぜんぶ ちがう 長さ"
+   },
+   {
+    "t": "7cm・8cm・9cm",
+    "w": "ぜんぶ ちがう 長さ"
+   },
+   {
+    "t": "5cm・6cm・7cm",
+    "w": "ぜんぶ ちがう 長さ"
+   },
+   {
+    "t": "6cm・8cm・8cm",
+    "k": 1
+   }
+  ],
+  "e": "8cmの へんが 2本 ある。\nこたえ 6cm・8cm・8cm",
+  "h": "同じ 長さの へんが 2本 ある ものを さがそう。"
+ },
+ {
+  "id": "nito3-01-L2-02",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 2,
+  "q": "二等へん三角形の 2つの へんの 長さが 5cmと 9cmです。のこりの 1本の へんは 何cmですか。",
+  "c": [
+   {
+    "t": "5cmか 9cm",
+    "k": 1
+   },
+   {
+    "t": "7cm",
+    "w": "5と 9の まん中を とった"
+   },
+   {
+    "t": "14cm",
+    "w": "5と 9を たした"
+   },
+   {
+    "t": "4cm",
+    "w": "9から 5を ひいた"
+   }
+  ],
+  "e": "二等へん三角形は 同じ 長さの へんが 2本 ある。\nのこりの へんは、5cmか 9cmの どちらかと 同じ。\nこたえ 5cmか 9cm",
+  "h": "のこりの へんは、どちらかの へんと 同じ 長さに なるよ。"
+ },
+ {
+  "id": "nito3-01-L2-03",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 2,
+  "q": "あ〜えの 三角形の へんの 長さです。二等へん三角形は どれですか。\nあ 5cm・6cm・7cm、い 6cm・6cm・9cm、う 4cm・7cm・9cm、え 3cm・5cm・6cm",
+  "c": [
+   {
+    "t": "あ",
+    "w": "3つの へんの 長さが ぜんぶ ちがう"
+   },
+   {
+    "t": "い",
+    "k": 1
+   },
+   {
+    "t": "う",
+    "w": "3つの へんの 長さが ぜんぶ ちがう"
+   },
+   {
+    "t": "え",
+    "w": "3つの へんの 長さが ぜんぶ ちがう"
+   }
+  ],
+  "e": "い は 6cmが 2本 ある。\nほかは 3つの へんが ぜんぶ ちがう。\nこたえ い",
+  "h": "同じ 長さの へんが 2本 ある ものを さがそう。"
+ },
+ {
+  "id": "nito3-01-L2-04",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 2,
+  "q": "二等へん三角形 アイウで、へん アイと アウの 長さが 同じです。同じ 大きさの 角は どれと どれですか。",
+  "c": [
+   {
+    "t": "イと ウ",
+    "k": 1
+   },
+   {
+    "t": "アと イ",
+    "w": "アと イは かさならない"
+   },
+   {
+    "t": "アと ウ",
+    "w": "アと ウは かさならない"
+   },
+   {
+    "t": "3つとも ちがう 大きさ",
+    "w": "2つは 同じ 大きさに なる"
+   }
+  ],
+  "e": "同じ 長さの へんが あつまる アの 反対がわの 2つの 角が、同じ 大きさ。\nこたえ イと ウ",
+  "h": "半分に おって かさなる 角を 考えよう。"
+ },
+ {
+  "id": "nito3-01-L2-05",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 2,
+  "q": "4cm・4cm・6cmの 二等へん三角形を、ななめに おきました。4cmの へんは 何本 ありますか。",
+  "c": [
+   {
+    "t": "1本",
+    "w": "4cmの へんを 1本と 数えた"
+   },
+   {
+    "t": "3本",
+    "w": "6cmの へんも 4cmだと 思った"
+   },
+   {
+    "t": "2本",
+    "k": 1
+   },
+   {
+    "t": "0本",
+    "w": "向きを かえると 長さが かわると 思った"
+   }
+  ],
+  "e": "向きを かえても、へんの 長さは そのまま。\n4cmの へんは 2本。\nこたえ 2本",
+  "h": "向きを かえても 長さは かわらないよ。"
+ },
+ {
+  "id": "nito3-01-L3-01",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 3,
+  "q": "あ〜えの 三角形の へんの 長さです。二等へん三角形は 何こ ありますか。\nあ 4cm・4cm・6cm、い 5cm・6cm・7cm、う 7cm・7cm・3cm、え 8cm・9cm・10cm",
+  "c": [
+   {
+    "t": "1こ",
+    "w": "あだけ 見つけた"
+   },
+   {
+    "t": "2こ",
+    "k": 1
+   },
+   {
+    "t": "3こ",
+    "w": "い も 二等へん三角形だと 思った"
+   },
+   {
+    "t": "0こ",
+    "w": "二等へん三角形は ないと 思った"
+   }
+  ],
+  "e": "あは 4cmが 2本、うは 7cmが 2本。\nいと えは ぜんぶ ちがう 長さ。\nこたえ 2こ",
+  "h": "1つずつ、同じ 長さの へんが 2本 あるか 見よう。"
+ },
+ {
+  "id": "nito3-01-L3-02",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 3,
+  "q": "ピヨは「3cm・5cm・7cmの 三角形は 二等へん三角形だよ」と いいました。ただしい せつめいは どれですか。",
+  "c": [
+   {
+    "t": "3cmと 5cmを たすと 8cmだから、二等へん三角形だ",
+    "w": "たし算の 答えと へんの 長さは かんけいない"
+   },
+   {
+    "t": "7cmが いちばん 長いから、二等へん三角形だ",
+    "w": "いちばん 長い へんは かんけいない"
+   },
+   {
+    "t": "5cmが まん中の 長さだから、二等へん三角形だ",
+    "w": "まん中の 長さは かんけいない"
+   },
+   {
+    "t": "3つの へんの 長さが ぜんぶ ちがうので、二等へん三角形では ない",
+    "k": 1
+   }
+  ],
+  "e": "二等へん三角形は、同じ 長さの へんが 2本 ある。\n3cm・5cm・7cmは ぜんぶ ちがう。\nこたえ ぜんぶ ちがうので、二等へん三角形では ない",
+  "h": "同じ 長さの へんが あるか どうか 見よう。"
+ },
+ {
+  "id": "nito3-01-L3-03",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 3,
+  "q": "二等へん三角形の 同じ 長さの へんは 6cmで、のこりの へんは 9cmです。3つの へんの 長さを ぜんぶ たすと 何cmですか。",
+  "c": [
+   {
+    "t": "15cm",
+    "w": "6cmの へんを 1本しか たさなかった"
+   },
+   {
+    "t": "24cm",
+    "w": "9cmを 2本 たした"
+   },
+   {
+    "t": "18cm",
+    "w": "3本とも 6cmだと 思った"
+   },
+   {
+    "t": "21cm",
+    "k": 1
+   }
+  ],
+  "e": "6cmの へんが 2本、9cmの へんが 1本。\n6 + 6 + 9 = 21\nこたえ 21cm",
+  "h": "へんは 3本。6cmの へんが 何本 あるかな。"
+ },
+ {
+  "id": "nito3-01-L3-04",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 3,
+  "q": "二等へん三角形で、同じ 長さの へんの 数と、同じ 大きさの 角の 数を たすと いくつですか。",
+  "c": [
+   {
+    "t": "2",
+    "w": "へんの 数か 角の 数の どちらかしか 使わなかった"
+   },
+   {
+    "t": "4",
+    "k": 1
+   },
+   {
+    "t": "5",
+    "w": "へんを 2本、角を 3こと 数えた"
+   },
+   {
+    "t": "6",
+    "w": "へんも 角も 3つと 数えた"
+   }
+  ],
+  "e": "同じ 長さの へんは 2本、同じ 大きさの 角は 2つ。\n2 + 2 = 4\nこたえ 4",
+  "h": "へんと 角、それぞれ 何つ 同じか 考えよう。"
+ },
+ {
+  "id": "nito3-01-L3-05",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 3,
+  "q": "二等へん三角形の へんの 長さを 小さい じゅんに ならべると、3cm・7cm・7cmでした。同じ 長さの へんは 何cmですか。",
+  "c": [
+   {
+    "t": "3cm",
+    "w": "3cmの へんは 1本しか ない"
+   },
+   {
+    "t": "10cm",
+    "w": "3と 7を たした"
+   },
+   {
+    "t": "7cm",
+    "k": 1
+   },
+   {
+    "t": "14cm",
+    "w": "7と 7を たした"
+   }
+  ],
+  "e": "2本 ある 長さが、同じ 長さの へん。\n7cmが 2本 ある。\nこたえ 7cm",
+  "h": "2本 ある 長さは どれかな。"
+ },
+ {
+  "id": "nito3-01-L4-01",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 4,
+  "q": "2つの へんが 6cmと 9cmの 二等へん三角形は、何しゅるい できますか。",
+  "c": [
+   {
+    "t": "2しゅるい",
+    "k": 1
+   },
+   {
+    "t": "1しゅるい",
+    "w": "のこりの へんは 1とおりだけと 思った"
+   },
+   {
+    "t": "3しゅるい",
+    "w": "3つの へんを べつべつに 考えた"
+   },
+   {
+    "t": "4しゅるい",
+    "w": "ならべかたも 数えてしまった"
+   }
+  ],
+  "e": "のこりの へんは 6cmか 9cm。\n6cm・6cm・9cmと 6cm・9cm・9cmの 2しゅるい。\nこたえ 2しゅるい",
+  "h": "のこりの へんが 6cmの ときと 9cmの とき、2つを 考えよう。"
+ },
+ {
+  "id": "nito3-01-L4-02",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 4,
+  "q": "二等へん三角形の 3つの へんの 長さを ぜんぶ たすと 17cmです。同じ 長さの へんは 6cmです。のこりの へんは 何cmですか。",
+  "c": [
+   {
+    "t": "6cm",
+    "w": "同じ 長さの へんと まちがえた"
+   },
+   {
+    "t": "11cm",
+    "w": "17から 6を 1回しか ひかなかった"
+   },
+   {
+    "t": "5cm",
+    "k": 1
+   },
+   {
+    "t": "12cm",
+    "w": "6cmの へんを 2本 たした"
+   }
+  ],
+  "e": "6cmの へんが 2本 あるから、6 + 6 = 12\n17 − 12 = 5\nこたえ 5cm",
+  "h": "6cmの へんが 2本 あることから 考えよう。"
+ },
+ {
+  "id": "nito3-01-L4-03",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 4,
+  "q": "次の せつめいの うち、まちがって いるものは どれですか。",
+  "c": [
+   {
+    "t": "二等へん三角形を ななめに おくと、二等へん三角形では なくなる",
+    "k": 1
+   },
+   {
+    "t": "二等へん三角形は、2つの へんの 長さが 同じ",
+    "w": "これは ただしい せつめい"
+   },
+   {
+    "t": "二等へん三角形には、同じ 大きさの 角が 2つ ある",
+    "w": "これは ただしい せつめい"
+   },
+   {
+    "t": "二等へん三角形を 半分に おると、ぴったり かさなる",
+    "w": "これは ただしい せつめい"
+   }
+  ],
+  "e": "向きを かえても、へんの 長さは かわらない。\nだから ななめに おいても 二等へん三角形のまま。\nこたえ ななめに おくと 二等へん三角形では なくなる、が まちがい",
+  "h": "向きを かえると へんの 長さは かわるかな。"
+ },
+ {
+  "id": "nito3-01-L4-04",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 4,
+  "q": "あ〜えの 三角形の へんの 長さです。二等へん三角形の うち、いちばん 長い へんが 8cmの ものは どれですか。\nあ 4cm・4cm・7cm、い 5cm・5cm・8cm、う 6cm・7cm・8cm、え 3cm・6cm・6cm",
+  "c": [
+   {
+    "t": "あ",
+    "w": "いちばん 長い へんは 7cm"
+   },
+   {
+    "t": "い",
+    "k": 1
+   },
+   {
+    "t": "う",
+    "w": "8cmの へんは あるが、二等へん三角形では ない"
+   },
+   {
+    "t": "え",
+    "w": "いちばん 長い へんは 6cm"
+   }
+  ],
+  "e": "あは 7cm、えは 6cmが いちばん 長い。\nうは 8cmが あるが、ぜんぶ ちがう 長さ。\nこたえ い",
+  "h": "まず 二等へん三角形を えらんで、いちばん 長い へんを 見よう。"
+ },
+ {
+  "id": "nito3-01-L4-05",
+  "u": "E3-TO",
+  "s": "E3-TO-01",
+  "l": "nito3-01",
+  "d": 4,
+  "q": "ある 三角形の へんを はかると、2本が 同じ 長さでした。この 三角形の 角に ついて、かならず いえる ことは どれですか。",
+  "c": [
+   {
+    "t": "3つの 角が ぜんぶ 同じ 大きさ",
+    "w": "2つだけが 同じ 大きさの ことも ある"
+   },
+   {
+    "t": "角は ぜんぶ ちがう 大きさ",
+    "w": "二等へん三角形には 同じ 大きさの 角が ある"
+   },
+   {
+    "t": "同じ 大きさの 角は 1つも ない",
+    "w": "二等へん三角形には 同じ 大きさの 角が ある"
+   },
+   {
+    "t": "同じ 大きさの 角が 2つ ある",
+    "k": 1
+   }
+  ],
+  "e": "2つの へんが 同じなら、二等へん三角形。\n二等へん三角形は、同じ 大きさの 角が 2つ ある。\nこたえ 同じ 大きさの 角が 2つ ある",
+  "h": "二等へん三角形の 角の ひみつを 思い出そう。"
+ },
+ {
+  "id": "nito3-02-L1-01",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 1,
+  "q": "3つの へんの 長さが ぜんぶ 同じ 三角形を、何と いいますか。",
+  "c": [
+   {
+    "t": "長方形",
+    "w": "三角形では ない"
+   },
+   {
+    "t": "正方形",
+    "w": "三角形では ない"
+   },
+   {
+    "t": "正三角形",
+    "k": 1
+   },
+   {
+    "t": "円",
+    "w": "三角形では ない"
+   }
+  ],
+  "e": "3つの へんの 長さが ぜんぶ 同じ 三角形を、正三角形と いう。\nこたえ 正三角形",
+  "h": "「正」は ぜんぶ ととのって いると いう いみ。"
+ },
+ {
+  "id": "nito3-02-L1-02",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 1,
+  "q": "次の うち、正三角形は どれですか。",
+  "c": [
+   {
+    "t": "3cm・3cm・3cm",
+    "k": 1
+   },
+   {
+    "t": "3cm・3cm・4cm",
+    "w": "2つの へんだけ 同じ"
+   },
+   {
+    "t": "3cm・4cm・5cm",
+    "w": "ぜんぶ ちがう 長さ"
+   },
+   {
+    "t": "4cm・5cm・6cm",
+    "w": "ぜんぶ ちがう 長さ"
+   }
+  ],
+  "e": "3cmの へんが 3本 ある。\nぜんぶ 同じ 長さだから 正三角形。\nこたえ 3cm・3cm・3cm",
+  "h": "3つとも 同じ 長さの ものを さがそう。"
+ },
+ {
+  "id": "nito3-02-L1-03",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 1,
+  "q": "1つの へんが 7cmの 正三角形です。ほかの へんは それぞれ 何cmですか。",
+  "c": [
+   {
+    "t": "14cm",
+    "w": "7と 7を たした"
+   },
+   {
+    "t": "21cm",
+    "w": "7を 3回 たした"
+   },
+   {
+    "t": "3cm",
+    "w": "へんの 数を 長さと まちがえた"
+   },
+   {
+    "t": "7cm",
+    "k": 1
+   }
+  ],
+  "e": "正三角形は、3つの へんが ぜんぶ 同じ 長さ。\nこたえ 7cm",
+  "h": "正三角形の へんは ぜんぶ 同じ 長さだよ。"
+ },
+ {
+  "id": "nito3-02-L1-04",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 1,
+  "q": "正三角形の 3つの 角の 大きさは、どう なっていますか。",
+  "c": [
+   {
+    "t": "2つだけ 同じ 大きさ",
+    "w": "二等へん三角形と まちがえた"
+   },
+   {
+    "t": "3つとも 同じ 大きさ",
+    "k": 1
+   },
+   {
+    "t": "ぜんぶ ちがう 大きさ",
+    "w": "回して かさなる ことを わすれた"
+   },
+   {
+    "t": "1つだけ 大きい",
+    "w": "角の ちがいが あると 思った"
+   }
+  ],
+  "e": "正三角形を 回すと、3つの 角が じゅんばんに かさなる。\nだから 3つとも 同じ 大きさ。\nこたえ 3つとも 同じ 大きさ",
+  "h": "回して ぴったり かさなる ことから 考えよう。"
+ },
+ {
+  "id": "nito3-02-L1-05",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 1,
+  "q": "正三角形の 3つの へんの うち、同じ 長さの へんは 何本 ありますか。",
+  "c": [
+   {
+    "t": "1本",
+    "w": "ぜんぶ ちがうと 思った"
+   },
+   {
+    "t": "3本",
+    "k": 1
+   },
+   {
+    "t": "2本",
+    "w": "二等へん三角形と まちがえた"
+   },
+   {
+    "t": "4本",
+    "w": "三角形の へんは 3本"
+   }
+  ],
+  "e": "正三角形は、3本とも 同じ 長さ。\nこたえ 3本",
+  "h": "正三角形の へんの 長さを 思い出そう。"
+ },
+ {
+  "id": "nito3-02-L2-01",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 2,
+  "q": "あ〜えの 三角形の へんの 長さです。正三角形は どれですか。\nあ 5cm・5cm・6cm、い 4cm・5cm・6cm、う 6cm・6cm・7cm、え 5cm・5cm・5cm",
+  "c": [
+   {
+    "t": "あ",
+    "w": "2つの へんだけ 同じ"
+   },
+   {
+    "t": "い",
+    "w": "ぜんぶ ちがう 長さ"
+   },
+   {
+    "t": "う",
+    "w": "2つの へんだけ 同じ"
+   },
+   {
+    "t": "え",
+    "k": 1
+   }
+  ],
+  "e": "えは 5cmが 3本。\nこたえ え",
+  "h": "3つとも 同じ 長さの ものを さがそう。"
+ },
+ {
+  "id": "nito3-02-L2-02",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 2,
+  "q": "21cmの ひもを ちょうど 使って、正三角形を つくります。1つの へんは 何cmに すれば いいですか。",
+  "c": [
+   {
+    "t": "7cm",
+    "k": 1
+   },
+   {
+    "t": "18cm",
+    "w": "21から 3を ひいた"
+   },
+   {
+    "t": "14cm",
+    "w": "21から 7を ひいた"
+   },
+   {
+    "t": "63cm",
+    "w": "21に 3を かけた"
+   }
+  ],
+  "e": "21cmを 3つに 同じ 長さで 分ける。\n21 ÷ 3 = 7\nこたえ 7cm",
+  "h": "3本の へんが 同じ 長さに なるように 分けよう。"
+ },
+ {
+  "id": "nito3-02-L2-03",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 2,
+  "q": "正三角形を、ぐるっと 回して かさねます。もとの ところも ふくめて、ぴったり かさなるのは 何回ですか。",
+  "c": [
+   {
+    "t": "2回",
+    "w": "もとの ところを 数えなかった"
+   },
+   {
+    "t": "4回",
+    "w": "もとの ところを 2回 数えた"
+   },
+   {
+    "t": "3回",
+    "k": 1
+   },
+   {
+    "t": "6回",
+    "w": "3つの 角を 2回ずつ 数えた"
+   }
+  ],
+  "e": "回すと 3つの 角が じゅんばんに かさなる。\nもとの ところと あわせて 3回。\nこたえ 3回",
+  "h": "もとの ところも 数えて 考えよう。"
+ },
+ {
+  "id": "nito3-02-L2-04",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 2,
+  "q": "ストローが、6cmが 3本・5cmが 2本・7cmが 1本 あります。正三角形に なるように 3本 えらびます。どれを えらびますか。",
+  "c": [
+   {
+    "t": "6cm・6cm・6cm",
+    "k": 1
+   },
+   {
+    "t": "5cm・5cm・6cm",
+    "w": "2本だけ 同じ 長さ"
+   },
+   {
+    "t": "5cm・6cm・7cm",
+    "w": "ぜんぶ ちがう 長さ"
+   },
+   {
+    "t": "5cm・5cm・7cm",
+    "w": "2本だけ 同じ 長さ"
+   }
+  ],
+  "e": "3本とも 同じ 長さに する。\n6cmが 3本 あるから、6cmを 3本 えらぶ。\nこたえ 6cm・6cm・6cm",
+  "h": "同じ 長さの ストローが 3本 ある ものを さがそう。"
+ },
+ {
+  "id": "nito3-02-L2-05",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 2,
+  "q": "1つの へんが 5cmの 正三角形が あります。3つの へんの 長さを ぜんぶ たすと 何cmですか。",
+  "c": [
+   {
+    "t": "5cm",
+    "w": "1本分しか たさなかった"
+   },
+   {
+    "t": "10cm",
+    "w": "2本分しか たさなかった"
+   },
+   {
+    "t": "15cm",
+    "k": 1
+   },
+   {
+    "t": "25cm",
+    "w": "5を 5回 たした"
+   }
+  ],
+  "e": "3つの へんは ぜんぶ 5cm。\n5 + 5 + 5 = 15\nこたえ 15cm",
+  "h": "へんは 3本。どれも 5cmだよ。"
+ },
+ {
+  "id": "nito3-02-L3-01",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 3,
+  "q": "ピヨは「2つの へんが 同じ 三角形は ぜんぶ 正三角形だよ」と いいました。ただしい せつめいは どれですか。",
+  "c": [
+   {
+    "t": "2つの へんが 同じなら、3本目も かならず 同じ 長さに なる",
+    "w": "3本目は ちがう 長さの ことも ある"
+   },
+   {
+    "t": "正三角形は 3つの へんが ぜんぶ 同じ。2つだけ 同じ 三角形は、正三角形では ない",
+    "k": 1
+   },
+   {
+    "t": "正三角形は 2つの へんが 同じ 三角形のことだ",
+    "w": "正三角形は 3つの へんが 同じ"
+   },
+   {
+    "t": "2つの へんが 同じ 三角形は、へんが 4本 ある",
+    "w": "三角形の へんは 3本"
+   }
+  ],
+  "e": "正三角形は、3本とも 同じ 長さ。\n5cm・5cm・6cmのような 三角形は 正三角形では ない。\nこたえ 3つの へんが ぜんぶ 同じ ものだけ 正三角形",
+  "h": "3本とも 同じかどうか 見よう。"
+ },
+ {
+  "id": "nito3-02-L3-02",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 3,
+  "q": "30cmの ひもを ちょうど 使って、正三角形を つくります。1つの へんは 何cmに なりますか。",
+  "c": [
+   {
+    "t": "27cm",
+    "w": "30から 3を ひいた"
+   },
+   {
+    "t": "20cm",
+    "w": "30から 10を ひいた"
+   },
+   {
+    "t": "90cm",
+    "w": "30に 3を かけた"
+   },
+   {
+    "t": "10cm",
+    "k": 1
+   }
+  ],
+  "e": "30cmを 3つに 同じ 長さで 分ける。\n30 ÷ 3 = 10\nこたえ 10cm",
+  "h": "正三角形の へんは 3本。同じ 長さに 分けよう。"
+ },
+ {
+  "id": "nito3-02-L3-03",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 3,
+  "q": "1つの へんが 4cmの 正三角形を、2こ つくります。ひもは あわせて 何cm いりますか。",
+  "c": [
+   {
+    "t": "12cm",
+    "w": "1こ分しか 考えなかった"
+   },
+   {
+    "t": "8cm",
+    "w": "へんを 2本分しか 考えなかった"
+   },
+   {
+    "t": "6cm",
+    "w": "4+4−2 のように まちがえた"
+   },
+   {
+    "t": "24cm",
+    "k": 1
+   }
+  ],
+  "e": "1こ分は 4 × 3 = 12\n2こ分は 12 + 12 = 24\nこたえ 24cm",
+  "h": "まず 1こ分の ひもの 長さを 出そう。"
+ },
+ {
+  "id": "nito3-02-L3-04",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 3,
+  "q": "三角形を ぐるっと 回して、ぴったり かさなるのは、へんの 長さが 次の どの 三角形ですか。",
+  "c": [
+   {
+    "t": "4cm・4cm・5cm",
+    "w": "ずれて しまう"
+   },
+   {
+    "t": "4cm・4cm・4cm",
+    "k": 1
+   },
+   {
+    "t": "4cm・5cm・6cm",
+    "w": "ずれて しまう"
+   },
+   {
+    "t": "5cm・6cm・7cm",
+    "w": "ずれて しまう"
+   }
+  ],
+  "e": "3本の へんが ぜんぶ 同じ 三角形だけが、回して ぴったり かさなる。\nこたえ 4cm・4cm・4cm",
+  "h": "3つの へんが 同じ 三角形は どれかな。"
+ },
+ {
+  "id": "nito3-02-L3-05",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 3,
+  "q": "次の うち、ただしい ものは どれですか。",
+  "c": [
+   {
+    "t": "正三角形は 角が 2つだけ 同じ 大きさ",
+    "w": "3つとも 同じ 大きさ"
+   },
+   {
+    "t": "正三角形を 回すと、ずれてしまう",
+    "w": "ぴったり かさなる"
+   },
+   {
+    "t": "正三角形は 3つの へんの 長さが ぜんぶ 同じ",
+    "k": 1
+   },
+   {
+    "t": "正三角形の へんは 2本だけ 同じ 長さ",
+    "w": "3本とも 同じ 長さ"
+   }
+  ],
+  "e": "正三角形は、3つの へんが ぜんぶ 同じ 長さで、3つの 角も ぜんぶ 同じ 大きさ。\nこたえ 3つの へんの 長さが ぜんぶ 同じ",
+  "h": "へんと 角の ひみつを 思い出そう。"
+ },
+ {
+  "id": "nito3-02-L4-01",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 4,
+  "q": "ストローが 次のように あります。3本 えらんでも、正三角形に ならない くみあわせは どれですか。",
+  "c": [
+   {
+    "t": "4cm・4cm・5cm",
+    "k": 1
+   },
+   {
+    "t": "6cm・6cm・6cm",
+    "w": "3本とも 同じ 長さだから 正三角形に なる"
+   },
+   {
+    "t": "3cm・3cm・3cm",
+    "w": "3本とも 同じ 長さだから 正三角形に なる"
+   },
+   {
+    "t": "9cm・9cm・9cm",
+    "w": "3本とも 同じ 長さだから 正三角形に なる"
+   }
+  ],
+  "e": "4cm・4cm・5cmは、5cmの へんだけ ちがう。\nだから 正三角形に ならない。\nこたえ 4cm・4cm・5cm",
+  "h": "3本の 長さが ぜんぶ 同じに なるか 見よう。"
+ },
+ {
+  "id": "nito3-02-L4-02",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 4,
+  "q": "24cmの ひもを ちょうど 使って、二等へん三角形を つくります。同じ 長さの へんを 10cmに すると、のこりの へんは 何cmですか。",
+  "c": [
+   {
+    "t": "14cm",
+    "w": "24から 10を 1回しか ひかなかった"
+   },
+   {
+    "t": "8cm",
+    "w": "正三角形の 1つの へんの 長さ"
+   },
+   {
+    "t": "4cm",
+    "k": 1
+   },
+   {
+    "t": "20cm",
+    "w": "10cmの へんを 2本 たした"
+   }
+  ],
+  "e": "10cmの へんが 2本 だから 10 + 10 = 20\n24 − 20 = 4\nこたえ 4cm",
+  "h": "10cmの へんが 2本 ある ことから 考えよう。"
+ },
+ {
+  "id": "nito3-02-L4-03",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 4,
+  "q": "3本の ストローを つないで 三角形を つくります。2本は 5cmです。のこりの 1本を 何cmに すると、正三角形に なりますか。",
+  "c": [
+   {
+    "t": "5cm",
+    "k": 1
+   },
+   {
+    "t": "10cm",
+    "w": "5と 5を たした"
+   },
+   {
+    "t": "2cm",
+    "w": "5cmより みじかく してしまった"
+   },
+   {
+    "t": "15cm",
+    "w": "5を 3回 たした"
+   }
+  ],
+  "e": "正三角形は 3本とも 同じ 長さ。\n2本が 5cmだから、のこりの 1本も 5cm。\nこたえ 5cm",
+  "h": "3本とも 同じ 長さに しよう。"
+ },
+ {
+  "id": "nito3-02-L4-04",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 4,
+  "q": "正三角形で、同じ 大きさの 角は 何こ ありますか。",
+  "c": [
+   {
+    "t": "2こ",
+    "w": "二等へん三角形と まちがえた"
+   },
+   {
+    "t": "3こ",
+    "k": 1
+   },
+   {
+    "t": "1こ",
+    "w": "ぜんぶ ちがうと 思った"
+   },
+   {
+    "t": "6こ",
+    "w": "角を 2回ずつ 数えた"
+   }
+  ],
+  "e": "正三角形は 3つの 角が ぜんぶ 同じ 大きさ。\nこたえ 3こ",
+  "h": "正三角形の 角は 回して ぴったり かさなるよ。"
+ },
+ {
+  "id": "nito3-02-L4-05",
+  "u": "E3-TO",
+  "s": "E3-TO-02",
+  "l": "nito3-02",
+  "d": 4,
+  "q": "20cmの ひもから、1つの へんが 6cmの 正三角形を つくります。ひもは 何cm のこりますか。",
+  "c": [
+   {
+    "t": "14cm",
+    "w": "20から 6を 1回しか ひかなかった"
+   },
+   {
+    "t": "18cm",
+    "w": "正三角形に つかった ひもの 長さ"
+   },
+   {
+    "t": "3cm",
+    "w": "20÷6 の まちがい"
+   },
+   {
+    "t": "2cm",
+    "k": 1
+   }
+  ],
+  "e": "正三角形には 6 × 3 = 18cm つかう。\n20 − 18 = 2\nこたえ 2cm",
+  "h": "まず 正三角形に つかう ひもの 長さを 出そう。"
+ },
+ {
+  "id": "nito3-03-L1-01",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 1,
+  "q": "コンパスで 3cm・4cm・4cmの 二等へん三角形を かきます。はじめに ものさしで 3cmの へんを ひきました。つぎに、コンパスの ひらきを 何cmに しますか。",
+  "c": [
+   {
+    "t": "3cm",
+    "w": "3cmの へんと 同じ ひらきに した"
+   },
+   {
+    "t": "2cm",
+    "w": "3cmの 半分に した"
+   },
+   {
+    "t": "4cm",
+    "k": 1
+   },
+   {
+    "t": "7cm",
+    "w": "3と 4を たした"
+   }
+  ],
+  "e": "のこりの 2つの へんは 4cm。\nコンパスの ひらきを 4cmに して、両はしの 点から 円の 一部を かく。\nこたえ 4cm",
+  "h": "のこりの 2本の へんの 長さに 合わせよう。"
+ },
+ {
+  "id": "nito3-03-L1-02",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 1,
+  "q": "コンパスの ひらきを 6cmに して、円の 一部を かきました。中心から 円の 一部の どの 点までも、何cm ですか。",
+  "c": [
+   {
+    "t": "6cm",
+    "k": 1
+   },
+   {
+    "t": "3cm",
+    "w": "ひらきの 半分と 思った"
+   },
+   {
+    "t": "12cm",
+    "w": "ひらきの 2倍と 思った"
+   },
+   {
+    "t": "1cm",
+    "w": "1めもりぶんだと 思った"
+   }
+  ],
+  "e": "コンパスの ひらきの 長さが、中心から 円の 一部までの 長さ。\nこたえ 6cm",
+  "h": "コンパスの ひらきは、はりから えんぴつまでの 長さだよ。"
+ },
+ {
+  "id": "nito3-03-L1-03",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 1,
+  "q": "コンパスで 3cm・3cm・3cmの 正三角形を かきます。コンパスの ひらきは 何cmに しますか。",
+  "c": [
+   {
+    "t": "6cm",
+    "w": "3の 2倍に した"
+   },
+   {
+    "t": "9cm",
+    "w": "3を 3回 たした"
+   },
+   {
+    "t": "1cm",
+    "w": "3を 3で わった"
+   },
+   {
+    "t": "3cm",
+    "k": 1
+   }
+  ],
+  "e": "3つの へんが ぜんぶ 3cm。\nひらきも 3cmに する。\nこたえ 3cm",
+  "h": "3つの へんの 長さは いくつかな。"
+ },
+ {
+  "id": "nito3-03-L1-04",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 1,
+  "q": "コンパスで 三角形を かく とき、2つの 円の 一部が 交わった 点は、三角形の 何に なりますか。",
+  "c": [
+   {
+    "t": "へんの まん中の 点",
+    "w": "まん中ではなく 3つ目の ちょう点"
+   },
+   {
+    "t": "三角形の ちょう点",
+    "k": 1
+   },
+   {
+    "t": "コンパスの はりを さす 点",
+    "w": "はりを さした のは はじめの 2点"
+   },
+   {
+    "t": "三角形の 外の 点",
+    "w": "三角形の ちょう点に なる"
+   }
+  ],
+  "e": "交わった 点は 3つ目の ちょう点に なる。\nその 点と、はじめの 2つの 点を 線で むすぶ。\nこたえ 三角形の ちょう点",
+  "h": "交わった 点を、はじめの 2つの 点と むすぶと どう なるかな。"
+ },
+ {
+  "id": "nito3-03-L1-05",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 1,
+  "q": "5cm・5cm・6cmの 二等へん三角形を かきます。ひらきを 5cmに して 2つの 点から 円の 一部を かく やりかたで かく とき、はじめに ものさしで ひく へんは 何cmですか。",
+  "c": [
+   {
+    "t": "5cm",
+    "w": "ひらきと 同じに した"
+   },
+   {
+    "t": "6cm",
+    "k": 1
+   },
+   {
+    "t": "11cm",
+    "w": "5と 6を たした"
+   },
+   {
+    "t": "10cm",
+    "w": "5と 5を たした"
+   }
+  ],
+  "e": "同じ 長さの 2本の へんは コンパスで かく。\nだから ものさしで ひく へんは、のこりの 6cm。\nこたえ 6cm",
+  "h": "コンパスで かく へんは 5cmが 2本だよ。"
+ },
+ {
+  "id": "nito3-03-L2-01",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 2,
+  "q": "4cm・4cm・5cmの 二等へん三角形を かきます。5cmの へんを 先に ひきました。コンパスの ひらきは 何cmに しますか。",
+  "c": [
+   {
+    "t": "5cm",
+    "w": "先に ひいた へんと 同じに した"
+   },
+   {
+    "t": "9cm",
+    "w": "4と 5を たした"
+   },
+   {
+    "t": "2cm",
+    "w": "5の 半分ぐらいに した"
+   },
+   {
+    "t": "4cm",
+    "k": 1
+   }
+  ],
+  "e": "同じ 長さの 2本の へんが 4cm。\nひらきを 4cmに して かく。\nこたえ 4cm",
+  "h": "コンパスで かくのは、同じ 長さの 2本の へんだよ。"
+ },
+ {
+  "id": "nito3-03-L2-02",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 2,
+  "q": "ピヨは 3cm・4cm・4cmの 三角形を かくのに、3cmの へんを ひいてから、コンパスの ひらきを 半分の 2cmに しました。ただしい ひらきは どれですか。",
+  "c": [
+   {
+    "t": "4cm",
+    "k": 1
+   },
+   {
+    "t": "2cm",
+    "w": "半分では 4cmの へんに ならない"
+   },
+   {
+    "t": "3cm",
+    "w": "3cmの へんを かく ひらき"
+   },
+   {
+    "t": "1cm",
+    "w": "もっと 小さく してしまった"
+   }
+  ],
+  "e": "4cmの へんを かくには、ひらきを 4cmに する。\nひらきは 半分に しない。\nこたえ 4cm",
+  "h": "かきたい へんの 長さと ひらきを くらべよう。"
+ },
+ {
+  "id": "nito3-03-L2-03",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 2,
+  "q": "7cm・7cm・4cmの 二等へん三角形を コンパスで かきます。ただしい やりかたは どれですか。",
+  "c": [
+   {
+    "t": "7cmの へんを ひいて、ひらきを 4cmに する",
+    "w": "4cm・4cm・7cmが できて しまう"
+   },
+   {
+    "t": "4cmの へんを ひいて、ひらきを 4cmに する",
+    "w": "4cm・4cm・4cmが できて しまう"
+   },
+   {
+    "t": "4cmの へんを ひいて、ひらきを 7cmに する",
+    "k": 1
+   },
+   {
+    "t": "7cmの へんを ひいて、ひらきを 11cmに する",
+    "w": "11cmの へんは できない"
+   }
+  ],
+  "e": "7cmが 2本 だから、ひらきは 7cm。\nのこりの 4cmの へんを ものさしで ひく。\nこたえ 4cmの へんを ひいて、ひらきを 7cmに する",
+  "h": "コンパスで かく 2本の へんは 何cmかな。"
+ },
+ {
+  "id": "nito3-03-L2-04",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 2,
+  "q": "コンパスの ひらきを 3cmに して、3cmの へん アイの 両はしの 点アと 点イから 円の 一部を かきました。交わった 点を ウと します。三角形 アイウの へんの 長さは どれですか。",
+  "c": [
+   {
+    "t": "3cm・3cm・3cm",
+    "k": 1
+   },
+   {
+    "t": "3cm・3cm・6cm",
+    "w": "ア ウと イ ウを 2倍に した"
+   },
+   {
+    "t": "3cm・4cm・4cm",
+    "w": "ひらきを 4cmと まちがえた"
+   },
+   {
+    "t": "3cm・4cm・5cm",
+    "w": "ぜんぶ ちがう 長さに なると 思った"
+   }
+  ],
+  "e": "ア ウ も イ ウも、ひらきと 同じ 3cm。\nア イも 3cm。\nこたえ 3cm・3cm・3cm",
+  "h": "ア ウと イ ウは、コンパスの ひらきの 長さだよ。"
+ },
+ {
+  "id": "nito3-03-L2-05",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 2,
+  "q": "3cm・4cm・4cmの 二等へん三角形を かく じゅんばんは どれですか。",
+  "c": [
+   {
+    "t": "ひらきを 4cmに する → 交わった 点と むすぶ → 3cmの へんを ひく → 円の 一部を かく",
+    "w": "むすぶ のは さいご"
+   },
+   {
+    "t": "交わった 点と むすぶ → 3cmの へんを ひく → ひらきを 4cmに する → 円の 一部を かく",
+    "w": "交わった 点は 円の 一部を かいたあと"
+   },
+   {
+    "t": "3cmの へんを ひく → ひらきを 4cmに する → 2つの 点から 円の 一部を かく → 交わった 点と むすぶ",
+    "k": 1
+   },
+   {
+    "t": "円の 一部を かく → 3cmの へんを ひく → 交わった 点と むすぶ → ひらきを 4cmに する",
+    "w": "ひらきを きめてから かく"
+   }
+  ],
+  "e": "まず 3cmの へんを ひく。\n4cmに ひらいて 両はしから 円の 一部を かき、交わった 点と むすぶ。\nこたえ 3cmの へんを ひく → ひらきを 4cmに する → 2つの 点から 円の 一部を かく → 交わった 点と むすぶ",
+  "h": "1番目は ものさしで へんを ひく ことだよ。"
+ },
+ {
+  "id": "nito3-03-L3-01",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 3,
+  "q": "3cm・4cm・4cmの 三角形を かこうと して、まちがえて ひらきを 3cmに しました。3cmの へんを ひいて、両はしから 円の 一部を かくと、できる 三角形の へんの 長さは どれですか。",
+  "c": [
+   {
+    "t": "3cm・4cm・4cm",
+    "w": "ひらきは 4cmでは なかった"
+   },
+   {
+    "t": "3cm・3cm・3cm",
+    "k": 1
+   },
+   {
+    "t": "3cm・3cm・4cm",
+    "w": "ひらきは 3cm"
+   },
+   {
+    "t": "4cm・4cm・4cm",
+    "w": "ひらきは 3cm"
+   }
+  ],
+  "e": "ひらきが 3cmだから、ほかの 2つの へんも 3cm。\nへんは 3cm・3cm・3cm。\nこたえ 3cm・3cm・3cm",
+  "h": "ほかの 2つの へんの 長さは ひらきと 同じ。"
+ },
+ {
+  "id": "nito3-03-L3-02",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 3,
+  "q": "5cmの へんを ひいて、ひらきを 6cmに して、両はしの 点から 円の 一部を かきました。できる 三角形の へんの 長さは どれですか。",
+  "c": [
+   {
+    "t": "5cm・5cm・6cm",
+    "w": "ひらきは 6cm"
+   },
+   {
+    "t": "5cm・5cm・5cm",
+    "w": "ひらきは 6cm"
+   },
+   {
+    "t": "6cm・6cm・6cm",
+    "w": "ひいた へんは 5cm"
+   },
+   {
+    "t": "5cm・6cm・6cm",
+    "k": 1
+   }
+  ],
+  "e": "ひらきが 6cmだから、2つの へんは 6cm。\nひいた へんは 5cm。\nこたえ 5cm・6cm・6cm",
+  "h": "2つの へんは ひらきと 同じ 長さだよ。"
+ },
+ {
+  "id": "nito3-03-L3-03",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 3,
+  "q": "コンパスで かいた 三角形の 2つの へんが 同じ 長さに なるのは、なぜですか。",
+  "c": [
+   {
+    "t": "ものさしで はかって そろえたから",
+    "w": "コンパスの ひらきで きまる"
+   },
+   {
+    "t": "3つ目の へんが 長いから",
+    "w": "3つ目の へんは かんけいない"
+   },
+   {
+    "t": "交わった 点が まん中に あるから",
+    "w": "ひらきの 長さで きまる"
+   },
+   {
+    "t": "どちらも コンパスの ひらきと 同じ 長さだから",
+    "k": 1
+   }
+  ],
+  "e": "同じ ひらきで かいた 円の 一部の 点は、中心から 同じ 長さ。\nだから 2つの へんは 同じ 長さに なる。\nこたえ どちらも コンパスの ひらきと 同じ 長さだから",
+  "h": "コンパスの ひらきを かえずに かいたよ。"
+ },
+ {
+  "id": "nito3-03-L3-04",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 3,
+  "q": "コンパスで 3cm・4cm・4cmの 三角形を かきました。3つの へんの 長さを ぜんぶ たすと 何cmですか。",
+  "c": [
+   {
+    "t": "7cm",
+    "w": "3と 4を たした"
+   },
+   {
+    "t": "11cm",
+    "k": 1
+   },
+   {
+    "t": "12cm",
+    "w": "4cmを 3本 たした"
+   },
+   {
+    "t": "8cm",
+    "w": "4と 4を たした"
+   }
+  ],
+  "e": "3 + 4 + 4 = 11\nこたえ 11cm",
+  "h": "へんは 3cmが 1本、4cmが 2本。"
+ },
+ {
+  "id": "nito3-03-L3-05",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 3,
+  "q": "次の うち、ただしい ものは どれですか。",
+  "c": [
+   {
+    "t": "5cm・5cm・6cmの 三角形は、6cmの へんを ひいて ひらきを 6cmに して かける",
+    "w": "ひらきが 6cmだと 6cm・6cm・6cmに なる"
+   },
+   {
+    "t": "5cm・5cm・6cmの 三角形は、ひらきを 11cmに して かける",
+    "w": "ひらきは 5cm"
+   },
+   {
+    "t": "5cm・5cm・6cmの 三角形は、6cmの へんを ひいて ひらきを 5cmに して かける",
+    "k": 1
+   },
+   {
+    "t": "5cm・5cm・6cmの 三角形は、ひらきを 1cmに して かける",
+    "w": "ひらきは 5cm"
+   }
+  ],
+  "e": "5cmが 2本 だから ひらきは 5cm。\nひく へんは 6cm。\nこたえ 6cmの へんを ひいて ひらきを 5cmに して かける",
+  "h": "2本の 同じ 長さの へんを コンパスで かくよ。"
+ },
+ {
+  "id": "nito3-03-L4-01",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 4,
+  "q": "コンパスで かいた 三角形の へんを はかると、6cm・6cm・8cmでした。ものさしで ひいた のは 8cmの へんです。コンパスの ひらきは 何cmでしたか。",
+  "c": [
+   {
+    "t": "6cm",
+    "k": 1
+   },
+   {
+    "t": "8cm",
+    "w": "ひいた へんの 長さ"
+   },
+   {
+    "t": "2cm",
+    "w": "8と 6の ちがい"
+   },
+   {
+    "t": "14cm",
+    "w": "8と 6を たした"
+   }
+  ],
+  "e": "同じ 長さの 2本の へんが コンパスで かいた へん。\nそれは 6cm。\nこたえ 6cm",
+  "h": "コンパスで かくのは、同じ 長さの 2本の へんだよ。"
+ },
+ {
+  "id": "nito3-03-L4-02",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 4,
+  "q": "4cmの へんの 二等へん三角形を 2つ かきます。1つは ひらき 3cm、もう 1つは ひらき 5cmで かきます。3つの へんの 長さの 合計は、どちらが 何cm 長いですか。",
+  "c": [
+   {
+    "t": "5cmの ほうが 2cm 長い",
+    "w": "ひらきの ちがいだけを 見た"
+   },
+   {
+    "t": "3cmの ほうが 4cm 長い",
+    "w": "長さを くらべ まちがえた"
+   },
+   {
+    "t": "5cmの ほうが 4cm 長い",
+    "k": 1
+   },
+   {
+    "t": "5cmの ほうが 10cm 長い",
+    "w": "5と 5を たして しまった"
+   }
+  ],
+  "e": "ひらき3cm：3 + 3 + 4 = 10\nひらき5cm：5 + 5 + 4 = 14\n14 − 10 = 4\nこたえ 5cmの ほうが 4cm 長い",
+  "h": "2つの 三角形の へんの 合計を、それぞれ 出そう。"
+ },
+ {
+  "id": "nito3-03-L4-03",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 4,
+  "q": "3cmの へんの 両はしの 点から、ひらき 1cmで 円の 一部を かきました。この 2つの 円の 一部は 交わるでしょうか。",
+  "c": [
+   {
+    "t": "交わらない。1cmと 1cmを あわせても 3cmに ならないから",
+    "k": 1
+   },
+   {
+    "t": "交わる。1cm・1cm・3cmの 三角形が できる",
+    "w": "1cmと 1cmでは 3cmに とどかない"
+   },
+   {
+    "t": "交わる。2つの 円の 一部は かならず 交わる",
+    "w": "ひらきが 小さいと 交わらない"
+   },
+   {
+    "t": "交わらない。1cmは 3cmの 半分だから",
+    "w": "1cmは 3cmの 半分では ない"
+   }
+  ],
+  "e": "どちらの 円の 一部も、1cmしか とどかない。\n2つの 点は 3cm はなれて いるから、1 + 1 = 2 では とどかない。\nこたえ 交わらない",
+  "h": "ひらきが 小さいと、とどくかな。"
+ },
+ {
+  "id": "nito3-03-L4-04",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 4,
+  "q": "コンパスの ひらきと、ものさしで ひく へんの 長さが 同じに なる 三角形は、どれですか。ただし、同じ ひらきで 2つの 点から 円の 一部を かく やりかたです。",
+  "c": [
+   {
+    "t": "4cm・4cm・5cm",
+    "w": "ひく へんは 5cm、ひらきは 4cmで 同じ じゃない"
+   },
+   {
+    "t": "4cm・4cm・4cm",
+    "k": 1
+   },
+   {
+    "t": "4cm・5cm・5cm",
+    "w": "ひく へんは 4cm、ひらきは 5cmで 同じ じゃない"
+   },
+   {
+    "t": "5cm・5cm・7cm",
+    "w": "ひく へんは 7cm、ひらきは 5cmで 同じ じゃない"
+   }
+  ],
+  "e": "ひく へんと ひらきが 同じなら、3つの へんが ぜんぶ 同じ。\nそれは 正三角形。\nこたえ 4cm・4cm・4cm",
+  "h": "3つの へんが ぜんぶ 同じに なる ときを 考えよう。"
+ },
+ {
+  "id": "nito3-03-L4-05",
+  "u": "E3-TO",
+  "s": "E3-TO-03",
+  "l": "nito3-03",
+  "d": 4,
+  "q": "ひらきを 7cmに して、ものさしで 8cmの へんを ひいて、二等へん三角形を かきました。3つの へんの 長さを ぜんぶ たすと 何cmですか。",
+  "c": [
+   {
+    "t": "15cm",
+    "w": "7と 8を たした"
+   },
+   {
+    "t": "21cm",
+    "w": "7cmを 3本 たした"
+   },
+   {
+    "t": "24cm",
+    "w": "8cmを 3本 たした"
+   },
+   {
+    "t": "22cm",
+    "k": 1
+   }
+  ],
+  "e": "7 + 7 + 8 = 22\nこたえ 22cm",
+  "h": "コンパスで かいた 2本の へんは 7cmだよ。"
+ },
+ {
+  "id": "nito3-04-L1-01",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 1,
+  "q": "5cm・5cm・3cmの 二等へん三角形が あります。まわりの 長さは 何cmですか。",
+  "c": [
+   {
+    "t": "8cm",
+    "w": "5と 3しか たさなかった"
+   },
+   {
+    "t": "10cm",
+    "w": "5と 5しか たさなかった"
+   },
+   {
+    "t": "13cm",
+    "k": 1
+   },
+   {
+    "t": "15cm",
+    "w": "5cmを 3本 たした"
+   }
+  ],
+  "e": "3つの へんの 長さを ぜんぶ たす。\n5 + 5 + 3 = 13\nこたえ 13cm",
+  "h": "まわりの 長さは、3つの へんを ぜんぶ たした 長さ。"
+ },
+ {
+  "id": "nito3-04-L1-02",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 1,
+  "q": "3cm・4cm・5cmの 三角形は、何三角形ですか。",
+  "c": [
+   {
+    "t": "二等へん三角形でも 正三角形でも ない",
+    "k": 1
+   },
+   {
+    "t": "二等へん三角形",
+    "w": "同じ 長さの へんが ない"
+   },
+   {
+    "t": "正三角形",
+    "w": "3つとも 同じでは ない"
+   },
+   {
+    "t": "2つの へんが 同じ 三角形",
+    "w": "同じ 長さの へんが ない"
+   }
+  ],
+  "e": "3cm・4cm・5cmは ぜんぶ ちがう 長さ。\nこたえ 二等へん三角形でも 正三角形でも ない",
+  "h": "同じ 長さの へんが あるか 見よう。"
+ },
+ {
+  "id": "nito3-04-L1-03",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 1,
+  "q": "1つの へんが 6cmの 正三角形が あります。まわりの 長さは 何cmですか。",
+  "c": [
+   {
+    "t": "12cm",
+    "w": "2本分しか たさなかった"
+   },
+   {
+    "t": "6cm",
+    "w": "1本分しか 考えなかった"
+   },
+   {
+    "t": "36cm",
+    "w": "6を 6回 たした"
+   },
+   {
+    "t": "18cm",
+    "k": 1
+   }
+  ],
+  "e": "6cmの へんが 3本。\n6 × 3 = 18\nこたえ 18cm",
+  "h": "へんは 3本。どれも 6cmだよ。"
+ },
+ {
+  "id": "nito3-04-L1-04",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 1,
+  "q": "2つの へんの 長さが 同じ 三角形は、何三角形ですか。",
+  "c": [
+   {
+    "t": "正三角形",
+    "w": "正三角形は 3つとも 同じ"
+   },
+   {
+    "t": "二等へん三角形",
+    "k": 1
+   },
+   {
+    "t": "長方形",
+    "w": "三角形では ない"
+   },
+   {
+    "t": "円",
+    "w": "三角形では ない"
+   }
+  ],
+  "e": "2つの へんの 長さが 同じ 三角形が 二等へん三角形。\nこたえ 二等へん三角形",
+  "h": "2つの へんが 同じ 三角形の 名前を 思い出そう。"
+ },
+ {
+  "id": "nito3-04-L1-05",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 1,
+  "q": "15cmの ひもを ちょうど 使って、正三角形を つくります。1つの へんは 何cmですか。",
+  "c": [
+   {
+    "t": "10cm",
+    "w": "15から 5を ひいた"
+   },
+   {
+    "t": "5cm",
+    "k": 1
+   },
+   {
+    "t": "12cm",
+    "w": "15から 3を ひいた"
+   },
+   {
+    "t": "45cm",
+    "w": "15に 3を かけた"
+   }
+  ],
+  "e": "15cmを 3つに 同じ 長さで 分ける。\n15 ÷ 3 = 5\nこたえ 5cm",
+  "h": "3本の へんが 同じ 長さに なるように 分けよう。"
+ },
+ {
+  "id": "nito3-04-L2-01",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 2,
+  "q": "あ〜えの 三角形の へんの 長さです。二等へん三角形でも 正三角形でも ない ものは どれですか。\nあ 7cm・7cm・7cm、い 7cm・7cm・9cm、う 6cm・8cm・9cm、え 9cm・9cm・4cm",
+  "c": [
+   {
+    "t": "あ",
+    "w": "3つとも 同じ 長さ"
+   },
+   {
+    "t": "い",
+    "w": "7cmが 2本 ある"
+   },
+   {
+    "t": "う",
+    "k": 1
+   },
+   {
+    "t": "え",
+    "w": "9cmが 2本 ある"
+   }
+  ],
+  "e": "うは 6cm・8cm・9cmで ぜんぶ ちがう 長さ。\nこたえ う",
+  "h": "同じ 長さの へんが 1本も ない ものを さがそう。"
+ },
+ {
+  "id": "nito3-04-L2-02",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 2,
+  "q": "7cm・7cm・4cmの 二等へん三角形が あります。まわりの 長さは 何cmですか。",
+  "c": [
+   {
+    "t": "18cm",
+    "k": 1
+   },
+   {
+    "t": "11cm",
+    "w": "7と 4しか たさなかった"
+   },
+   {
+    "t": "14cm",
+    "w": "7と 7しか たさなかった"
+   },
+   {
+    "t": "28cm",
+    "w": "7を 4回 たした"
+   }
+  ],
+  "e": "7 + 7 + 4 = 18\nこたえ 18cm",
+  "h": "3つの へんを ぜんぶ たそう。"
+ },
+ {
+  "id": "nito3-04-L2-03",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 2,
+  "q": "まわりの 長さが 24cmの 正三角形が あります。1つの へんは 何cmですか。",
+  "c": [
+   {
+    "t": "21cm",
+    "w": "24から 3を ひいた"
+   },
+   {
+    "t": "12cm",
+    "w": "24÷2 と まちがえた"
+   },
+   {
+    "t": "8cm",
+    "k": 1
+   },
+   {
+    "t": "72cm",
+    "w": "24に 3を かけた"
+   }
+  ],
+  "e": "3つの へんは 同じ 長さ。\n24 ÷ 3 = 8\nこたえ 8cm",
+  "h": "まわりの 長さを 3つに 同じ 長さで 分けよう。"
+ },
+ {
+  "id": "nito3-04-L2-04",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 2,
+  "q": "まわりの 長さが 25cmの 二等へん三角形が あります。同じ 長さの へんは 9cmです。のこりの へんは 何cmですか。",
+  "c": [
+   {
+    "t": "7cm",
+    "k": 1
+   },
+   {
+    "t": "16cm",
+    "w": "25から 9を 1回しか ひかなかった"
+   },
+   {
+    "t": "18cm",
+    "w": "9cmを 2本 たした"
+   },
+   {
+    "t": "9cm",
+    "w": "同じ 長さの へんと まちがえた"
+   }
+  ],
+  "e": "9cmの へんが 2本 だから 9 + 9 = 18\n25 − 18 = 7\nこたえ 7cm",
+  "h": "9cmの へんが 2本 ある ことから 考えよう。"
+ },
+ {
+  "id": "nito3-04-L2-05",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 2,
+  "q": "ピヨは、5cm・5cm・3cmの 二等へん三角形の まわりの 長さの 式を「5 + 3 = 8」と かきました。ただしい 式は どれですか。",
+  "c": [
+   {
+    "t": "5 + 3 = 8",
+    "w": "5cmの へんは 2本 ある"
+   },
+   {
+    "t": "5 × 3 = 15",
+    "w": "3本とも 5cmでは ない"
+   },
+   {
+    "t": "5 + 5 + 3 = 13",
+    "k": 1
+   },
+   {
+    "t": "5 + 5 = 10",
+    "w": "3cmの へんも たす"
+   }
+  ],
+  "e": "5cmが 2本、3cmが 1本。\nぜんぶ たして 5 + 5 + 3 = 13\nこたえ 5 + 5 + 3 = 13",
+  "h": "3つの へんを ぜんぶ たす 式に しよう。"
+ },
+ {
+  "id": "nito3-04-L3-01",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 3,
+  "q": "まわりの 長さが 17cmの 二等へん三角形が あります。同じ 長さの へんは 6cmです。のこりの へんは 何cmですか。",
+  "c": [
+   {
+    "t": "11cm",
+    "w": "17から 6を 1回しか ひかなかった"
+   },
+   {
+    "t": "5cm",
+    "k": 1
+   },
+   {
+    "t": "12cm",
+    "w": "6cmの へんを 2本 たした"
+   },
+   {
+    "t": "6cm",
+    "w": "同じ 長さの へんと まちがえた"
+   }
+  ],
+  "e": "6 + 6 = 12\n17 − 12 = 5\nこたえ 5cm",
+  "h": "同じ 長さの へんが 2本 ある ことを つかおう。"
+ },
+ {
+  "id": "nito3-04-L3-02",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 3,
+  "q": "1つの へんが 4cmの 正三角形の かざりを 5こ つくります。ひもは ぜんぶで 何cm いりますか。",
+  "c": [
+   {
+    "t": "20cm",
+    "w": "1つの へんの 長さ×5 だけ"
+   },
+   {
+    "t": "12cm",
+    "w": "1こ分しか 考えなかった"
+   },
+   {
+    "t": "32cm",
+    "w": "4+4+... の まちがい"
+   },
+   {
+    "t": "60cm",
+    "k": 1
+   }
+  ],
+  "e": "1こ分は 4 × 3 = 12\n5こ分は 12 × 5 = 60\nこたえ 60cm",
+  "h": "まず 1こ分の ひもの 長さを 出そう。"
+ },
+ {
+  "id": "nito3-04-L3-03",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 3,
+  "q": "二等へん三角形の へんが 8cm・8cm・5cmと、正三角形の へんが 6cmです。まわりの 長さは、どちらが 何cm 長いですか。",
+  "c": [
+   {
+    "t": "正三角形が 3cm 長い",
+    "w": "まわりの 長さを 出していない"
+   },
+   {
+    "t": "二等へん三角形が 15cm 長い",
+    "w": "3つの へんの ちがいを まちがえた"
+   },
+   {
+    "t": "同じ 長さ",
+    "w": "まわりの 長さが ちがう"
+   },
+   {
+    "t": "二等へん三角形が 3cm 長い",
+    "k": 1
+   }
+  ],
+  "e": "二等へん三角形：8 + 8 + 5 = 21\n正三角形：6 × 3 = 18\n21 − 18 = 3\nこたえ 二等へん三角形が 3cm 長い",
+  "h": "それぞれの まわりの 長さを 出して くらべよう。"
+ },
+ {
+  "id": "nito3-04-L3-04",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 3,
+  "q": "次の うち、ただしい ものは どれですか。",
+  "c": [
+   {
+    "t": "正三角形の へんは 2本だけ 同じ 長さだ",
+    "w": "正三角形は 3本とも 同じ"
+   },
+   {
+    "t": "二等へん三角形には、同じ 大きさの 角が 2つ ある",
+    "k": 1
+   },
+   {
+    "t": "3cm・4cm・5cmの 三角形は 二等へん三角形だ",
+    "w": "ぜんぶ ちがう 長さ"
+   },
+   {
+    "t": "二等へん三角形は 向きを かえると 正三角形に なる",
+    "w": "向きを かえても かわらない"
+   }
+  ],
+  "e": "二等へん三角形は、同じ 大きさの 角が 2つ ある。\nこたえ 二等へん三角形には、同じ 大きさの 角が 2つ ある",
+  "h": "へんと 角の ひみつを 思い出そう。"
+ },
+ {
+  "id": "nito3-04-L3-05",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 3,
+  "q": "まわりの 長さが 21cmの 正三角形と 同じ 長さの ひもで、二等へん三角形を つくります。同じ 長さの へんを 8cmに すると、のこりの へんは 何cmですか。",
+  "c": [
+   {
+    "t": "13cm",
+    "w": "21から 8を 1回しか ひかなかった"
+   },
+   {
+    "t": "7cm",
+    "w": "正三角形の 1つの へんの 長さ"
+   },
+   {
+    "t": "5cm",
+    "k": 1
+   },
+   {
+    "t": "16cm",
+    "w": "8cmの へんを 2本 たした"
+   }
+  ],
+  "e": "ひもの 長さは 21cm。\n8 + 8 = 16\n21 − 16 = 5\nこたえ 5cm",
+  "h": "ひもの 長さは かわらないよ。8cmが 2本 ある ことを つかおう。"
+ },
+ {
+  "id": "nito3-04-L4-01",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 4,
+  "q": "まわりの 長さが 30cmの 二等へん三角形が あります。同じ 長さの へんは 12cmです。のこりの へんは 何cmですか。",
+  "c": [
+   {
+    "t": "6cm",
+    "k": 1
+   },
+   {
+    "t": "18cm",
+    "w": "30から 12を 1回しか ひかなかった"
+   },
+   {
+    "t": "24cm",
+    "w": "12cmの へんを 2本 たした"
+   },
+   {
+    "t": "10cm",
+    "w": "30÷3 の まちがい"
+   }
+  ],
+  "e": "12 + 12 = 24\n30 − 24 = 6\nこたえ 6cm",
+  "h": "12cmの へんが 2本 ある ことを つかおう。"
+ },
+ {
+  "id": "nito3-04-L4-02",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 4,
+  "q": "5cm・5cm・□cmの 二等へん三角形が あります。□は 5ではありません。まわりの 長さが 14cmの とき、□に はいる 数は 何ですか。",
+  "c": [
+   {
+    "t": "9cm",
+    "w": "14から 5を 1回しか ひかなかった"
+   },
+   {
+    "t": "10cm",
+    "w": "5と 5を たした"
+   },
+   {
+    "t": "4cm",
+    "k": 1
+   },
+   {
+    "t": "14cm",
+    "w": "まわりの 長さと まちがえた"
+   }
+  ],
+  "e": "5 + 5 = 10\n14 − 10 = 4\nこたえ 4cm",
+  "h": "5cmの へんが 2本 ある ことを つかおう。"
+ },
+ {
+  "id": "nito3-04-L4-03",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 4,
+  "q": "1つの へんが 9cmの 正三角形と、まわりの 長さが 同じ 二等へん三角形が あります。二等へん三角形の 同じ 長さの へんは 10cmです。のこりの へんは 何cmですか。",
+  "c": [
+   {
+    "t": "7cm",
+    "k": 1
+   },
+   {
+    "t": "17cm",
+    "w": "27から 10を 1回しか ひかなかった"
+   },
+   {
+    "t": "9cm",
+    "w": "正三角形の 1つの へんの 長さ"
+   },
+   {
+    "t": "20cm",
+    "w": "10cmの へんを 2本 たした"
+   }
+  ],
+  "e": "正三角形の まわりは 9 × 3 = 27\n10 + 10 = 20\n27 − 20 = 7\nこたえ 7cm",
+  "h": "まず 正三角形の まわりの 長さを 出そう。"
+ },
+ {
+  "id": "nito3-04-L4-04",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 4,
+  "q": "5cmの ストローで、正三角形を 4こ つくります。ストローは つなげず、1本ずつ つかいます。ストローは 何本 いりますか。",
+  "c": [
+   {
+    "t": "4本",
+    "w": "1こに 1本と 考えた"
+   },
+   {
+    "t": "12本",
+    "k": 1
+   },
+   {
+    "t": "3本",
+    "w": "1こ分しか 考えなかった"
+   },
+   {
+    "t": "20本",
+    "w": "5×4 と まちがえた"
+   }
+  ],
+  "e": "正三角形 1こに ストローは 3本。\n3 × 4 = 12\nこたえ 12本",
+  "h": "正三角形 1こに 何本 いるかな。"
+ },
+ {
+  "id": "nito3-04-L4-05",
+  "u": "E3-TO",
+  "s": "E3-TO-04",
+  "l": "nito3-04",
+  "d": 4,
+  "q": "まわりの 長さが いちばん 長いのは どれですか。\nあ 正三角形で、1つの へんが 6cm\nい 二等へん三角形で、へんが 7cm・7cm・5cm\nう 二等へん三角形で、へんが 8cm・8cm・2cm\nえ 正三角形で、1つの へんが 5cm",
+  "c": [
+   {
+    "t": "あ",
+    "w": "まわりは 18cmで、いちばん 長くは ない"
+   },
+   {
+    "t": "い",
+    "k": 1
+   },
+   {
+    "t": "う",
+    "w": "まわりは 18cmで、いちばん 長くは ない"
+   },
+   {
+    "t": "え",
+    "w": "まわりは 15cmで、いちばん みじかい"
+   }
+  ],
+  "e": "あ 6 × 3 = 18\nい 7 + 7 + 5 = 19\nう 8 + 8 + 2 = 18\nえ 5 × 3 = 15\nこたえ い",
+  "h": "それぞれの まわりの 長さを 出して くらべよう。"
+ }
+]

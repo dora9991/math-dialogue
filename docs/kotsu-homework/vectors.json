@@ -1,0 +1,453 @@
+[
+ {
+  "name": "N問：4/10解いた（期間中・一部）",
+  "hw": {
+   "unit_id": "J1-u1",
+   "n": 10,
+   "min": null,
+   "start_date": "2026-11-16",
+   "due_date": "2026-11-20"
+  },
+  "state": {
+   "log": [
+    {
+     "t": 1794963600000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    },
+    {
+     "t": 1794963000000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": false,
+     "h": false,
+     "d": 10
+    },
+    {
+     "t": 1794913200000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    },
+    {
+     "t": 1794909600000,
+     "u": "J1-u2",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    },
+    {
+     "t": 1794783600000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    }
+   ],
+   "daily": {}
+  },
+  "nowMs": 1794970800000,
+  "expect": {
+   "count": 4,
+   "correct": 3,
+   "sec": 0,
+   "pct": 0.4,
+   "done": false,
+   "doneAt": null,
+   "status": "partial",
+   "phase": "active"
+  }
+ },
+ {
+  "name": "N問：3/3 達成（達成日＝3件目の日）",
+  "hw": {
+   "unit_id": "J1-u1",
+   "n": 3,
+   "min": null,
+   "start_date": "2026-11-16",
+   "due_date": "2026-11-20"
+  },
+  "state": {
+   "log": [
+    {
+     "t": 1794963600000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    },
+    {
+     "t": 1794913200000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": false,
+     "h": false,
+     "d": 10
+    },
+    {
+     "t": 1794783600000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    },
+    {
+     "t": 1794754799000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    }
+   ],
+   "daily": {}
+  },
+  "nowMs": 1794970800000,
+  "expect": {
+   "count": 3,
+   "correct": 2,
+   "sec": 0,
+   "pct": 1,
+   "done": true,
+   "doneAt": "2026-11-18",
+   "status": "done",
+   "phase": "active"
+  }
+ },
+ {
+  "name": "M分：20分＝1200秒。累積で11/17に達成",
+  "hw": {
+   "unit_id": null,
+   "n": null,
+   "min": 20,
+   "start_date": "2026-11-16",
+   "due_date": "2026-11-20"
+  },
+  "state": {
+   "log": [],
+   "daily": {
+    "2026-11-15": {
+     "n": 9,
+     "c": 9,
+     "xp": 0,
+     "sec": 9999
+    },
+    "2026-11-16": {
+     "n": 2,
+     "c": 2,
+     "xp": 0,
+     "sec": 700
+    },
+    "2026-11-17": {
+     "n": 3,
+     "c": 3,
+     "xp": 0,
+     "sec": 600
+    },
+    "2026-11-18": {
+     "sec": 100
+    }
+   }
+  },
+  "nowMs": 1794970800000,
+  "expect": {
+   "count": 0,
+   "correct": 0,
+   "sec": 1400,
+   "pct": 1,
+   "done": true,
+   "doneAt": "2026-11-17",
+   "status": "done",
+   "phase": "active"
+  }
+ },
+ {
+  "name": "M分：10分のうち 6分",
+  "hw": {
+   "unit_id": null,
+   "n": null,
+   "min": 10,
+   "start_date": "2026-11-18",
+   "due_date": "2026-11-18"
+  },
+  "state": {
+   "log": [],
+   "daily": {
+    "2026-11-18": {
+     "sec": 360
+    }
+   }
+  },
+  "nowMs": 1794970800000,
+  "expect": {
+   "count": 0,
+   "correct": 0,
+   "sec": 360,
+   "pct": 0.6,
+   "done": false,
+   "doneAt": null,
+   "status": "partial",
+   "phase": "active"
+  }
+ },
+ {
+  "name": "両方：N問は達成、分は未達成→一部。pct は小さいほう",
+  "hw": {
+   "unit_id": "J1-u1",
+   "n": 2,
+   "min": 30,
+   "start_date": "2026-11-18",
+   "due_date": "2026-11-19"
+  },
+  "state": {
+   "log": [
+    {
+     "t": 1794963600000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    },
+    {
+     "t": 1794963900000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    }
+   ],
+   "daily": {
+    "2026-11-18": {
+     "sec": 900
+    }
+   }
+  },
+  "nowMs": 1794970800000,
+  "expect": {
+   "count": 2,
+   "correct": 2,
+   "sec": 900,
+   "pct": 0.5,
+   "done": false,
+   "doneAt": null,
+   "status": "partial",
+   "phase": "active"
+  }
+ },
+ {
+  "name": "両方達成：N問は11/18、分は11/19に届く→達成日 11/19",
+  "hw": {
+   "unit_id": "J1-u1",
+   "n": 2,
+   "min": 10,
+   "start_date": "2026-11-18",
+   "due_date": "2026-11-19"
+  },
+  "state": {
+   "log": [
+    {
+     "t": 1794963600000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    },
+    {
+     "t": 1794963900000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    }
+   ],
+   "daily": {
+    "2026-11-18": {
+     "sec": 300
+    },
+    "2026-11-19": {
+     "sec": 400
+    }
+   }
+  },
+  "nowMs": 1795086000000,
+  "expect": {
+   "count": 2,
+   "correct": 2,
+   "sec": 700,
+   "pct": 1,
+   "done": true,
+   "doneAt": "2026-11-19",
+   "status": "done",
+   "phase": "active"
+  }
+ },
+ {
+  "name": "期間後：未達成（phase=ended, status=partial）",
+  "hw": {
+   "unit_id": "J1-u1",
+   "n": 5,
+   "min": null,
+   "start_date": "2026-11-10",
+   "due_date": "2026-11-12"
+  },
+  "state": {
+   "log": [
+    {
+     "t": 1794358800000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    },
+    {
+     "t": 1794445200000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    }
+   ],
+   "daily": {}
+  },
+  "nowMs": 1794970800000,
+  "expect": {
+   "count": 2,
+   "correct": 2,
+   "sec": 0,
+   "pct": 0.4,
+   "done": false,
+   "doneAt": null,
+   "status": "partial",
+   "phase": "ended"
+  }
+ },
+ {
+  "name": "これから（phase=upcoming）",
+  "hw": {
+   "unit_id": "J1-u1",
+   "n": 5,
+   "min": null,
+   "start_date": "2026-11-25",
+   "due_date": "2026-11-27"
+  },
+  "state": {
+   "log": [
+    {
+     "t": 1794963600000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    }
+   ],
+   "daily": {}
+  },
+  "nowMs": 1794970800000,
+  "expect": {
+   "count": 0,
+   "correct": 0,
+   "sec": 0,
+   "pct": 0,
+   "done": false,
+   "doneAt": null,
+   "status": "none",
+   "phase": "upcoming"
+  }
+ },
+ {
+  "name": "境界：due の 23:59:59 は入る、翌日 0:00:00 は入らない",
+  "hw": {
+   "unit_id": "J1-u1",
+   "n": 5,
+   "min": null,
+   "start_date": "2026-11-18",
+   "due_date": "2026-11-18"
+  },
+  "state": {
+   "log": [
+    {
+     "t": 1795014000000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    },
+    {
+     "t": 1795013999000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    },
+    {
+     "t": 1794927600000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    },
+    {
+     "t": 1794927599000,
+     "u": "J1-u1",
+     "L": 1,
+     "ok": true,
+     "h": false,
+     "d": 10
+    }
+   ],
+   "daily": {}
+  },
+  "nowMs": 1794970800000,
+  "expect": {
+   "count": 2,
+   "correct": 2,
+   "sec": 0,
+   "pct": 0.4,
+   "done": false,
+   "doneAt": null,
+   "status": "partial",
+   "phase": "active"
+  }
+ },
+ {
+  "name": "記録なし",
+  "hw": {
+   "unit_id": "J1-u1",
+   "n": 5,
+   "min": null,
+   "start_date": "2026-11-18",
+   "due_date": "2026-11-20"
+  },
+  "state": {},
+  "nowMs": 1794970800000,
+  "expect": {
+   "count": 0,
+   "correct": 0,
+   "sec": 0,
+   "pct": 0,
+   "done": false,
+   "doneAt": null,
+   "status": "none",
+   "phase": "active"
+  }
+ }
+]

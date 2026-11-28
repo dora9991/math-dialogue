@@ -1,0 +1,46 @@
+import { createServer } from "node:http";
+import { readFileSync, existsSync, statSync, realpathSync } from "node:fs";
+import { join, extname } from "node:path";
+import { createRequire } from "node:module";
+const require = createRequire("/home/user/math-dialogue/kotsu-homework/tools/x.mjs");
+const { chromium } = require("playwright");
+const { createMock, seedDemo, seedHomework } = await import("/home/user/math-dialogue/kotsu-homework/tools/mock-server.mjs");
+const ROOT = process.argv[2];
+const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png" };
+const mock = createMock(); seedDemo(mock); seedHomework(mock);
+const m = await mock.listen(54473);
+const srv = createServer((req, res) => {
+  let p = decodeURIComponent(req.url.split("?")[0]); if (!p.startsWith("/math-dialogue/")) { res.writeHead(404); return res.end("no"); }
+  p = p.slice("/math-dialogue".length); let fp = join(ROOT, "math-dialogue", p); if (existsSync(fp) && statSync(fp).isDirectory()) fp = join(fp, "index.html");
+  if (!existsSync(fp)) { res.writeHead(404); return res.end("no"); }
+  res.writeHead(200, { "Content-Type": MIME[extname(fp)] || "application/octet-stream" }); res.end(readFileSync(fp));
+});
+await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+const base = `http://127.0.0.1:${srv.address().port}`;
+let fail = 0; const ck = (n, c, i) => { console.log((c ? "PASS" : "FAIL") + "  " + n + (i !== undefined ? "  " + JSON.stringify(i) : "")); if (!c) fail++; };
+const b = await chromium.launch();
+for (const [label, store] of [["localStorage", "localStorage"], ["sessionStorage（この端末でログインしたままにしない）", "sessionStorage"]]) {
+  const ctx = await b.newContext({ viewport: { width: 1200, height: 800 } });
+  const staff = JSON.stringify({ token: "tok-t1", user: { id: "u", login: "t1", role: "teacher", nick: "先生" }, org: { name: "テスト中学" }, server: "http://127.0.0.1:54473" });
+  await ctx.addInitScript(([st, v]) => { try { if (!window[st].getItem("kotsu-staff-v1")) window[st].setItem("kotsu-staff-v1", v); } catch {} }, [store, staff]);
+  const p = await ctx.newPage(); const errs = [];
+  p.on("pageerror", (e) => errs.push(String(e))); p.on("console", (mm) => { if (mm.type() === "error" && !/404|Failed to load resource/.test(mm.text())) errs.push(mm.text()); });
+  await p.goto(`${base}/math-dialogue/solo/teacher/`); await p.waitForTimeout(2500);
+  // 1) 最初の「担当のクラス」の画面のボタン
+  const homeBtn = await p.evaluate(() => [...document.querySelectorAll('a.k-btn')].map((x) => x.innerText.trim() + '→' + x.getAttribute('href')));
+  ck(`${label}：「担当のクラス」の画面に「📌 宿題を出す・見る」のボタンが出る`, homeBtn.some((t) => /宿題を出す・見る→.*homework\//.test(t)), homeBtn);
+  // 2) クラスを開いたあとの見出し
+  await p.locator('.k-class').first().click(); await p.waitForTimeout(2000);
+  const tabs = await p.evaluate(() => [...document.querySelectorAll('button')].map((x) => x.innerText.replace(/\s+/g, ' ').trim()).filter((t) => /宿題|学習の一覧|困っている/.test(t)));
+  ck(`${label}：クラスの画面の見出しに「📌 宿題を出す・見る」が出る`, tabs.some((t) => /宿題を出す・見る/.test(t)), tabs);
+  ck(`${label}：既存の見出し（学習の一覧・困っている子）は、そのまま`, tabs.some((t) => /学習の一覧/.test(t)) && tabs.some((t) => /困っている子/.test(t)));
+  await p.locator('button:has-text("宿題を出す・見る")').first().click();
+  await p.waitForURL(/\/solo\/teacher\/homework\//, { timeout: 8000 }); await p.waitForTimeout(2500);
+  const txt = await p.evaluate(() => document.body.innerText);
+  ck(`${label}：同じタブで 宿題のページに移る`, /\/solo\/teacher\/homework\//.test(p.url()), p.url());
+  ck(`${label}：ログインを引きついで、宿題の一覧が出る（ログインの案内ではない）`, /宿題/.test(txt) && !/ログインの期限|ログインしなおして/.test(txt), txt.slice(0, 100).replace(/\n+/g, " | "));
+  ck(`${label}：コンソールのエラーなし`, errs.length === 0, errs.slice(0, 3));
+  if (store === "localStorage") await p.screenshot({ path: "entry-after.png" });
+  await ctx.close();
+}
+await b.close(); srv.close(); await m.close(); console.log("FAILS", fail); process.exit(fail ? 1 : 0);

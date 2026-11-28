@@ -1,0 +1,43 @@
+"""先生・管理者の画面に、パスキー（Face ID・指紋）での ログインを 足す パッチ。
+使い方: python3 patch_pk.py <assets の フォルダ（公開中）> <pk.js> <出力フォルダ>
+  出力：pk-<hash>.js・teacher-<hash>.js・admin-<hash>.js と、names.json（新しい 名前）。
+  (1) ログイン画面（kanri の L）の 子に、PkLogin（「🔑 Face ID・指紋でログイン」）を 足す。ログイン後の 動きは、パスワードの ときと 同じ
+  (2) 右上（kanri の H）の 子に、PkManage（「🔑 Face ID」：この 端末の 登録・一覧・消す）を 足す
+anchor は ちょうど 1回 出ることを assert する。kanri・api・client は 変えない（同じ ものを import する）。"""
+import sys, os, json, hashlib, base64
+src, pkjs, out = sys.argv[1], sys.argv[2], sys.argv[3]
+os.makedirs(out, exist_ok=True)
+h8 = lambda b: base64.urlsafe_b64encode(hashlib.sha256(b).digest()).decode()[:8]
+TEACHER, ADMIN = 'teacher-2YyY7ATZ.js', 'admin-KzlrA5rC.js'
+
+pk = open(pkjs, 'rb').read()
+for dep in (b'./client-BsKaA_AS.js', b'./api-CcqOTfNE.js', b'./kanri-ScwLHlVJ.js'):
+    assert dep in pk and os.path.exists(os.path.join(src, dep.decode()[2:])), dep
+pkname = f'pk-{h8(pk)}.js'
+open(os.path.join(out, pkname), 'wb').write(pk)
+
+def patch(name, reps, tag):
+    s = open(os.path.join(src, name), encoding='utf-8').read()
+    assert 'PkLogin' not in s, 'すでに入っています'
+    for old, new in reps:
+        assert s.count(old) == 1, (name, s.count(old), old[:90])
+        s = s.replace(old, new)
+    s = f'import{{PkLogin as PKL,PkManage as PKM}}from"./{pkname}";' + s
+    b = s.encode('utf-8'); nm = f'{tag}-{h8(b)}.js'
+    open(os.path.join(out, nm), 'wb').write(b)
+    return nm
+
+t = patch(TEACHER, [
+    ('children:s.jsxs("div",{className:"k-tiny k-muted",style:{textAlign:"center",marginTop:10},children:["管理者の方は ",s.jsx("a",{href:Os,children:"管理者の画面"})," へ（この画面にも入れます）"]})})}Is.createRoot',
+     'children:s.jsxs(s.Fragment,{children:[s.jsx(PKL,{onSession:async k=>{j(As(k)),a(k)}}),s.jsxs("div",{className:"k-tiny k-muted",style:{textAlign:"center",marginTop:10},children:["管理者の方は ",s.jsx("a",{href:Os,children:"管理者の画面"})," へ（この画面にも入れます）"]})]})})}Is.createRoot'),
+    ('children:e.user.role==="admin"&&s.jsx("a",{className:"k-btn sm ghost no-print",href:Os,children:"管理者の画面へ"})})',
+     'children:s.jsxs(s.Fragment,{children:[s.jsx(PKM,{}),e.user.role==="admin"&&s.jsx("a",{className:"k-btn sm ghost no-print",href:Os,children:"管理者の画面へ"})]})})'),
+], 'teacher')
+a = patch(ADMIN, [
+    ('children:e.jsxs("div",{className:"k-tiny k-muted",style:{textAlign:"center",marginTop:10},children:["先生は ",e.jsx("a",{href:K,children:"先生の画面"})," へ"]})});',
+     'children:e.jsxs(e.Fragment,{children:[e.jsx(PKL,{onSession:async H=>{if(H.user.role!=="admin"){const h=new Error("role");throw h.code="role",await q(),h}t(H)}}),e.jsxs("div",{className:"k-tiny k-muted",style:{textAlign:"center",marginTop:10},children:["先生は ",e.jsx("a",{href:K,children:"先生の画面"})," へ"]})]})});'),
+    ('children:e.jsx("a",{className:"k-btn sm ghost no-print",href:K,children:"先生の画面へ"})})',
+     'children:e.jsxs(e.Fragment,{children:[e.jsx(PKM,{}),e.jsx("a",{className:"k-btn sm ghost no-print",href:K,children:"先生の画面へ"})]})})'),
+], 'admin')
+json.dump({'pk': pkname, 'teacher': t, 'admin': a, 'old_teacher': TEACHER, 'old_admin': ADMIN}, open(os.path.join(out, 'names.json'), 'w'))
+print('ok', pkname, t, a)

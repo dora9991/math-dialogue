@@ -1,0 +1,16 @@
+"""「カードで学ぶ」で、つぎへ／まえ／番号を押したとき、新しいカードを一番上から出す。
+使い方: python3 patch_card_top.py <公開中の solo-*.js> <出力 solo-*.js>
+いままで：押した瞬間に「なめらかに上へスクロール」を始め、同時にカードを入れかえていた。
+          入れかえでページの長さが変わると、端末によってはスクロールが途中で止まり、新しいカードの下のほう（例題・問題）から始まっていた。
+これから：カードを入れかえた「あと」（画面を描き終えたあと）に、カードの上端へ すぐに戻す（なめらかなスクロールは使わない）。
+anchor は ちょうど1回 出ることを assert する。"""
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+s = open(src, encoding='utf-8').read()
+old = 'x.current&&x.current.getBoundingClientRect().top<0&&x.current.scrollIntoView({block:"start",behavior:"smooth"})};if(r===void 0)return e.jsx("div",{className:"card scd-wait"'
+new = '(()=>{const el=x.current;if(!el)return;const go=()=>{el.isConnected&&el.getBoundingClientRect().top<0&&el.scrollIntoView({block:"start"})};requestAnimationFrame(()=>requestAnimationFrame(go));setTimeout(go,150)})()};if(r===void 0)return e.jsx("div",{className:"card scd-wait"'
+assert s.count(old) == 1, s.count(old)
+assert 'el.isConnected&&el.getBoundingClientRect().top<0' not in s, 'すでに入っています'
+s = s.replace(old, new)
+open(dst, 'w', encoding='utf-8').write(s)
+print('ok', len(s))

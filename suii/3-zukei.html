@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>学力推移調査型の類題　中3 相似・円・三平方の定理</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 中3 図形　学力推移調査型の類題（5題）。
+   5つの型：①影の長さで木の高さを測る（相似の利用）／②ピザと缶の大きさと値段（面積比・体積比で得かどうかの説明）／
+   ③円周角でシュートの角度をくらべる／④はしごの高さ（三平方の定理と、考えのまちがいの説明）／⑤相似の証明の穴うめと、条件をかえたときの説明。
+   場面も数値もすべて自作。答えは、ページの中で座標や計算から計算し直して確かめている（CH.check）。 */
+(function () {
+  var C = CH.C, OUT = 'rgba(20,40,30,.9)', TAU = Math.PI * 2;
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function say(D, x, y, s, o) { o = o || {}; var size = o.size || CH.fs(D); if (o.maxW) size = CH.fitSize(D, s, o.maxW, size, { num: o.num }); CH.text(D, x, y, s, { col: o.col, a: o.a, size: size, num: o.num, align: o.align, outline: o.outline === false ? null : OUT }); }
+  /* 線分 pq にそった寸法線と字（off：線からのはなれ（px）、負なら反対がわ） */
+  function dim(F, p, q, off, txt, o) {
+    o = o || {}; var a = F.X(p), b = F.X(q), dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = -dy / L, uy = dx / L, sg = off < 0 ? -1 : 1, col = o.col || C.chalk, sz = o.size || F.s * .9;
+    var a2 = [a[0] + ux * off, a[1] + uy * off], b2 = [b[0] + ux * off, b[1] + uy * off], gap = sz * .65 + Math.abs(ux) * txt.length * sz * .3;
+    CH.arrow(F.D, a2[0], a2[1], b2[0], b2[1], { col: col, w: 2, a: o.a, head: 7 }); CH.arrow(F.D, b2[0], b2[1], a2[0], a2[1], { col: col, w: 2, a: o.a, head: 7 });
+    say(F.D, (a2[0] + b2[0]) / 2 + ux * sg * gap, (a2[1] + b2[1]) / 2 + uy * sg * gap, txt, { col: col, size: sz, a: o.a, num: true });
+  }
+  /* 図を入れる四角と、その下の字のための行（R の上 fh の割合が図） */
+  function lay(D, fh, o) { o = o || {}; var R = CH.box(D, { l: o.l == null ? .04 : o.l, r: o.r == null ? .04 : o.r, t: o.t == null ? .04 : o.t, b: o.b == null ? .04 : o.b }); return { R: R, FR: CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * fh), ty: R.y0 + R.h * fh, s: CH.fs(D) }; }
+  function lines(D, L, arr, a) { /* arr：[[字, 色, 出はじめ]]。L.ty から下へ */
+    arr.forEach(function (r, i) { var k = r[2] == null ? 1 : a(r[2]); if (k > 0) say(D, L.R.cx, L.ty + L.s * (1.3 + i * 1.5), r[0], { col: r[1] || C.chalk, a: k, maxW: L.R.w, num: true }); });
+  }
+
+  /* ================= 類題1　影の長さで木の高さ ================= */
+  var ST = 1.2, SH = 1.8, TS = 9, WALL = 6, WH = 1.2;
+  var H1 = ST * TS / SH, VS = WALL + WH * SH / ST, H2 = VS * ST / SH, WRONG = ST * (WALL + WH) / SH;
+  var PG = { G0: [-1.6, 0], G1: [14.4, 0], O: [0, 0], T: [0, H1], R: [TS, 0], S: [11, 0], U: [11, ST], V: [11 + SH, 0] };
+  var PW = { G0: [-1.6, 0], G1: [9.6, 0], O: [0, 0], T: [0, H2], W: [WALL, 0], X: [WALL, WH], Y: [WALL, 6.9], Z: [VS, 0] };
+  CH.check(CH.near(H1, 6) && CH.near(VS, 7.8) && CH.near(H2, 5.2) && CH.near(WRONG, 4.8), '類題1 数値');
+  CH.check(GE.isPar(PG, 'TR', 'UV') && CH.near(GE.len(PG, 'OT') / GE.len(PG, 'OR'), GE.len(PG, 'SU') / GE.len(PG, 'SV')), '類題1 図（太陽の光は平行・相似）');
+  CH.check(GE.isPar(PW, 'TX', 'XZ') && CH.near((H2 - WH) / WALL, ST / SH) && CH.near(H2 / VS, ST / SH), '類題1 かべの図');
+  function ground1(D, R, t, k) {
+    var F = GE.fit(D, R, PG, { pad: .12, size: CH.fs(D, .8) }), s = F.s, a1 = CH.smooth(0, .3, t);
+    GE.seg(F, ['G0', 'G1'], { col: 'rgba(242,240,230,.6)', w: 2 });
+    if (k >= 1 && t > 0) { GE.polyP(F, [PG.O, PG.T, PG.R], { col: C.pink, fa: .2 * a1, sw: 0.01, a: a1 }); GE.polyP(F, [PG.S, PG.U, PG.V], { col: C.pink, fa: .3 * a1, sw: 0.01, a: a1 }); }
+    GE.seg(F, ['T', 'R'], { col: C.yel, dash: true, w: 2.2 }); GE.seg(F, ['U', 'V'], { col: C.yel, dash: true, w: 2.2 });
+    GE.seg(F, ['O', 'R'], { col: C.blue, w: 6 }); GE.seg(F, ['S', 'V'], { col: C.blue, w: 6 });
+    GE.seg(F, ['O', 'T'], { col: C.green, w: 6 }); var T = F.X('T'); CH.circle(D, T[0], T[1], F.u * .55, { fill: 'rgba(120,200,140,.45)', stroke: C.green, sw: 2 });
+    GE.seg(F, ['S', 'U'], { col: C.orange, w: 5 });
+    if (k >= 1) { GE.right(F, 'TOR', { col: C.chalk, r: F.s * .55 }); GE.right(F, 'USV', { col: C.chalk, r: F.s * .5 }); }
+    if (k === 1 && t > .4) { var a = CH.smooth(.4, .7, t); GE.arc(F, 'TRO', { col: C.yel, fill: true, a: a, r: F.s * 1.5 }); GE.arc(F, 'UVS', { col: C.yel, fill: true, a: a, r: F.s * 1.1 }); }
+    var ans = k >= 2 ? CH.smooth(.1, .4, t) : 0;
+    dim(F, 'T', 'O', -F.s * 1.2, ans > 0 ? '6m' : '？m', { col: ans > 0 ? C.yel : C.chalk }); dim(F, 'O', 'R', F.s * 1.3, '9m', {});
+    dim(F, 'U', 'S', -F.s * 1.0, '1.2m', {}); dim(F, 'S', 'V', F.s * 1.3, '1.8m', {});
+    return F;
+  }
+  function wall1(D, R, t, k) {
+    var F = GE.fit(D, R, PW, { pad: .12, size: CH.fs(D, .8) }), s = F.s, A = F.X('W'), Y = F.X('Y');
+    GE.seg(F, ['G0', 'G1'], { col: 'rgba(242,240,230,.6)', w: 2 });
+    CH.fillRect(D, A[0], Y[1], A[0] + F.u * .7, A[1], { fill: 'rgba(200,180,160,.35)', stroke: 'rgba(242,240,230,.7)' });
+    GE.seg(F, ['T', 'X'], { col: C.yel, dash: true, w: 2.2 });
+    GE.seg(F, ['O', 'W'], { col: C.blue, w: 6 }); GE.seg(F, ['W', 'X'], { col: C.blue, w: 6 });
+    GE.seg(F, ['O', 'T'], { col: C.green, w: 6 }); var T = F.X('T'); CH.circle(D, T[0], T[1], F.u * .5, { fill: 'rgba(120,200,140,.45)', stroke: C.green, sw: 2 });
+    var ans = k >= 2 ? CH.smooth(.05, .3, t) : 0;
+    dim(F, 'T', 'O', -F.s * 1.2, ans > 0 ? '5.2m' : '？m', { col: ans > 0 ? C.yel : C.chalk }); dim(F, 'O', 'W', F.s * 1.3, '6m', {});
+    dim(F, 'X', 'W', F.s * 1.6, '1.2m', {});
+    if (k >= 2) {
+      var a = CH.smooth(.3, .6, t);
+      CH.line(D, F.X('X')[0], F.X('X')[1], F.X('Z')[0], F.X('Z')[1], { col: C.yel, dash: true, w: 2.2, a: a });
+      GE.polyP(F, [PW.X, PW.W, PW.Z], { col: C.pink, fa: .3 * a, sw: .01, a: a });
+      if (k === 2) { dim(F, 'W', 'Z', F.s * 1.3, '1.8m', { col: C.pink, a: a }); }
+      if (k === 3) {
+        var b = CH.smooth(.3, .6, t), p7 = F.X([WALL + WH, 0]), p8 = F.X('Z');
+        CH.line(D, p7[0], p7[1] - F.s, p7[0], p7[1] + F.s, { col: C.pink, w: 3, a: b }); say(D, p7[0] - F.s * .3, p7[1] + F.s * 2.2, '7.2m ×', { col: C.pink, a: b, size: F.s * .9, num: true, align: 'right' });
+        CH.line(D, p8[0], p8[1] - F.s, p8[0], p8[1] + F.s, { col: C.yel, w: 3, a: b }); say(D, p8[0] + F.s * .3, p8[1] + F.s * 2.2, '7.8m', { col: C.yel, a: b, size: F.s * .9, num: true, align: 'left' });
+      }
+    }
+    return F;
+  }
+  function scene1(D, mode, t) { /* mode 0 問題 1 相似条件 2 (2)の答え 3 かべ(3) 4 かべ(4) */
+    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .05 }), P = CH.rows(R, 2, .1);
+    if (mode <= 2) { var fr = mode === 0 ? P[0] : R; ground1(D, mode === 0 ? fr : CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .72), t, mode === 0 ? 0 : mode === 1 ? 1 : 2); }
+    if (mode === 0) { wall1(D, P[1], 0, 0); say(D, P[0].cx, P[0].y0 - 2, '場面1', { size: CH.fs(D, .8), col: C.chalk, align: 'center' }); say(D, P[1].cx, P[1].y0 - 2, '場面2（かべのある場所）', { size: CH.fs(D, .8), col: C.chalk }); }
+    if (mode >= 3) wall1(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .72), t, mode === 3 ? 2 : 3);
+    var s = CH.fs(D), ty = R.y0 + R.h * .78, a = function (x, y) { return CH.smooth(x, y, t); };
+    if (mode === 1 && t > .6) say(D, R.cx, ty + s * .8, '光は平行 → 影の先の角が等しい　　垂直 → 90° が等しい', { col: C.yel, a: a(.6, .75), maxW: R.w }), say(D, R.cx, ty + s * 2.3, '2組の角が、それぞれ等しい', { col: C.yel, a: a(.75, .9), maxW: R.w });
+    if (mode === 2) { if (t > .25) say(D, R.cx, ty + s * .8, '相似比　木：棒 ＝ 9：1.8 ＝ 5：1', { col: C.pink, a: a(.25, .4), maxW: R.w, num: true }); if (t > .45) say(D, R.cx, ty + s * 2.3, 'x ＝ 1.2 × 5 ＝ 6（m）', { col: C.yel, a: a(.45, .6), maxW: R.w, num: true }); }
+    if (mode === 3) { if (t > .1) say(D, R.cx, ty + s * .8, '壁の上の 1.2m ＝ 地面なら 1.2×(1.8÷1.2) ＝ 1.8m（延長）', { col: C.pink, a: a(.1, .3), maxW: R.w, num: true }); if (t > .5) say(D, R.cx, ty + s * 2.3, '影の長さ 6＋1.8＝7.8m → 高さ 7.8×(1.2÷1.8)＝5.2m', { col: C.yel, a: a(.5, .7), maxW: R.w, num: true }); }
+    if (mode === 4 && t > .55) say(D, R.cx, ty + s * .8, '壁の上の影は 地面の影とは ちがう（地面なら 1.8m ぶん）', { col: C.yel, a: a(.55, .75), maxW: R.w }), say(D, R.cx, ty + s * 2.3, '7.2m ではなく 7.8m で考える → 5.2m', { col: C.yel, a: a(.7, .9), maxW: R.w, num: true });
+  }
+
+  /* ================= 類題2　ピザと缶 ================= */
+  var DM = 20, DL = 30, PM = 1200, PL = 2400, HS = 6, HB = 9, VOLS = 160;
+  CH.check(DM * DM / 100 === 4 && DL * DL / 100 === 9 && CH.near(DL * DL / (DM * DM), 2.25) && PL / PM === 2 && 2.25 > 2, '類題2 ピザ');
+  CH.check(HS * HS * HS === 216 && HB * HB * HB === 729 && 216 / 27 === 8 && 729 / 27 === 27 && CH.near(VOLS * 27 / 8, 540), '類題2 缶');
+  function pizza(D, cx, cy, r, col, a, u) {
+    CH.circle(D, cx, cy, r, { fill: 'rgba(255,200,120,.3)', stroke: col, sw: 3.2, a: a });
+    for (var i = 0; i < 4; i++) { var an = i * Math.PI / 4; CH.line(D, cx + Math.cos(an) * r, cy + Math.sin(an) * r, cx - Math.cos(an) * r, cy - Math.sin(an) * r, { col: 'rgba(242,240,230,.22)', w: 1.4, a: a }); }
+    [[.35, .2], [-.4, .15], [.1, -.5], [-.15, .5], [.55, -.25], [-.5, -.4]].forEach(function (p) { CH.circle(D, cx + p[0] * r, cy + p[1] * r, r * .13, { fill: 'rgba(230,100,90,.55)', a: a }); });
+  }
+  function can(D, cx, by, u, r, h, col, a) {
+    var g = D.ctx, w = r * u, hh = h * u, ry = w * .3; g.save(); g.globalAlpha = D.ga * (a == null ? 1 : a); g.fillStyle = hexA(col, .22); g.strokeStyle = col; g.lineWidth = 2.8;
+    g.beginPath(); g.moveTo(cx - w, by - hh); g.lineTo(cx - w, by); g.ellipse(cx, by, w, ry, 0, Math.PI, 0, true); g.lineTo(cx + w, by - hh); g.closePath(); g.fill(); g.stroke();
+    g.beginPath(); g.ellipse(cx, by - hh, w, ry, 0, 0, TAU); g.fill(); g.stroke(); g.restore();
+  }
+  function pz(D, FR, t, mode) { /* mode 0 問題 1 面積比 2 くらべる */
+    var u = Math.min(FR.h * .78 / (DL * 1), FR.w * .44 / ((DM + DL) / 1)) * (mode === 2 ? .8 : 1), cxM = FR.x0 + FR.w * .27, cxL = FR.x0 + FR.w * .73, cy = FR.cy - (mode === 2 ? 0 : FR.h * .02), s = CH.fs(D, .85);
+    pizza(D, cxM, cy, DM / 2 * u, C.orange, 1); pizza(D, cxL, cy, DL / 2 * u, C.orange, 1);
+    CH.line(D, cxM - DM / 2 * u, cy, cxM + DM / 2 * u, cy, { col: C.yel, w: 2.4, dash: true }); CH.line(D, cxL - DL / 2 * u, cy, cxL + DL / 2 * u, cy, { col: C.yel, w: 2.4, dash: true });
+    var by = cy + DL / 2 * u + s * 1.1;
+    say(D, cxM, by, 'M　直径 20cm', { size: s, maxW: FR.w * .42 }); say(D, cxL, by, 'L　直径 30cm', { size: s, maxW: FR.w * .42 });
+    say(D, cxM, by + s * 1.4, '1200円', { size: s, col: C.yel, num: true }); say(D, cxL, by + s * 1.4, '2400円', { size: s, col: C.yel, num: true });
+  }
+  function cans(D, FR, t, mode) { /* mode 0 問題 1 体積比 2 容量 */
+    var u = Math.min(FR.h * .55 / HB, FR.w * .15 / 4.2), by = FR.cy + HB * u * .5, cxS = FR.x0 + FR.w * .28, cxB = FR.x0 + FR.w * .68, s = CH.fs(D, .85);
+    can(D, cxS, by, u, 2.8, HS, C.blue, 1); can(D, cxB, by, u, 4.2, HB, C.blue, 1);
+    dim({ D: D, X: function (p) { return p; }, s: s }, [cxS - 2.8 * u - s * .6, by], [cxS - 2.8 * u - s * .6, by - HS * u], -s * .6, '6cm', { col: C.chalk, size: s * .8 });
+    dim({ D: D, X: function (p) { return p; }, s: s }, [cxB + 4.2 * u + s * .6, by], [cxB + 4.2 * u + s * .6, by - HB * u], s * .6, '9cm', { col: C.chalk, size: s * .8 });
+    say(D, cxS, by + s * 2.4, '小缶　160mL', { size: s, maxW: FR.w * .36 }); var big = mode === 2 && t > .5;
+    say(D, cxB, by + s * 2.4, big ? '大缶　540mL' : '大缶　？mL', { size: s, maxW: FR.w * .36, col: big ? C.yel : C.chalk });
+  }
+  function scene2(D, mode, t) { /* 0 問題 1 面積比 2 得か説明 3 体積比 4 容量 */
+    var R = CH.box(D, { l: .03, r: .03, t: .04, b: .04 }), s = CH.fs(D), a = function (x, y) { return CH.smooth(x, y, t); };
+    if (mode === 0) { var P = CH.cols(R, 2, .05); pz(D, CH.rect(P[0].x0, P[0].y0, P[0].x1, P[0].y0 + P[0].h * .9), 0, 0); cans(D, CH.rect(P[1].x0, P[1].y0, P[1].x1, P[1].y0 + P[1].h * .9), 0, 0); CH.line(D, R.cx, R.y0, R.cx, R.y1, { col: 'rgba(242,240,230,.2)', w: 1.5 }); return; }
+    if (mode === 1) {
+      pz(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .66), t, 1); var ty = R.y0 + R.h * .78;
+      if (t > .15) say(D, R.cx, ty, '直径の比 20：30 ＝ 2：3　→　相似比 2：3', { col: C.pink, a: a(.15, .35), maxW: R.w });
+      if (t > .5) say(D, R.cx, ty + s * 1.6, '面積比 ＝ 2²：3² ＝ 4：9', { col: C.yel, a: a(.5, .7), maxW: R.w, num: true });
+      return;
+    }
+    if (mode === 2) {
+      pz(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .42), 0, 0);
+      var bx = R.x0 + R.w * .2, bw = R.w * .28, by0 = R.y0 + R.h * .62, bh = s * 1.1, k = a(.05, .45), rows = [['面積', 1, 2.25, C.pink, '2.25倍'], ['値段', 1, 2, C.blue, '2倍']];
+      say(D, R.cx, R.y0 + R.h * .54, 'M を 1 としたときの L', { size: s * .85, col: 'rgba(242,240,230,.8)' });
+      rows.forEach(function (r, i) {
+        var y = by0 + i * bh * 1.5; say(D, bx - s * .4, y + bh / 2, r[0], { align: 'right', col: r[3], size: s });
+        CH.fillRect(D, bx, y, bx + bw * r[1], y + bh, { fill: hexA(C.chalk, .35) });
+        CH.fillRect(D, bx + bw * r[1], y, bx + bw * (r[1] + (r[2] - 1) * k), y + bh, { fill: hexA(r[3], .75) });
+        if (t > .45) say(D, bx + bw * r[2] + s * .5, y + bh / 2, r[4], { align: 'left', col: r[3], size: s, a: a(.45, .6), num: true });
+      });
+      if (t > .65) say(D, R.cx, R.y1 - s * .4, '面積は 2.25倍で 値段は 2倍 → L のほうが 得', { col: C.yel, a: a(.65, .85), maxW: R.w });
+      return;
+    }
+    cans(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .66), t, mode === 4 ? 2 : 1); var ty2 = R.y0 + R.h * .8;
+    if (mode === 3) { if (t > .15) say(D, R.cx, ty2, '高さの比 6：9 ＝ 2：3　→　相似比 2：3', { col: C.pink, a: a(.15, .35), maxW: R.w, num: true }); if (t > .5) say(D, R.cx, ty2 + s * 1.6, '体積比 ＝ 2³：3³ ＝ 8：27', { col: C.yel, a: a(.5, .7), maxW: R.w, num: true }); }
+    if (mode === 4) { if (t > .1) say(D, R.cx, ty2, '160：x ＝ 8：27', { col: C.pink, a: a(.1, .3), maxW: R.w, num: true }); if (t > .3) say(D, R.cx, ty2 + s * 1.6, 'x ＝ 160 × 27 ÷ 8 ＝ 540（mL）', { col: C.yel, a: a(.3, .5), maxW: R.w, num: true }); }
+  }
+
+  /* ================= 類題3　円周角とシュートの角度 ================= */
+  var Q3 = {}; Q3.O = [0, 0]; Q3.P = GE.polar([0, 0], 1, 234); Q3.Q = GE.polar([0, 0], 1, 306); Q3.A = GE.polar([0, 0], 1, 103); Q3.B = GE.polar([0, 0], 1, 14); Q3.C = GE.polar([0, 0], .42, 78);
+  (function () { var P = Q3.P, d = GE.sub(Q3.C, P), s = -2 * (P[0] * d[0] + P[1] * d[1]) / (d[0] * d[0] + d[1] * d[1]); Q3.E = [P[0] + d[0] * s, P[1] + d[1] * s]; })();
+  CH.check(GE.near(GE.ang(Q3, 'PAQ'), 36) && GE.near(GE.ang(Q3, 'PBQ'), 36) && GE.near(GE.ang(Q3, 'POQ'), 72) && GE.near(GE.ang(Q3, 'OPQ'), 54) && GE.near(GE.ang(Q3, 'PEQ'), 36), '類題3 円周角');
+  CH.check(Math.hypot(Q3.C[0], Q3.C[1]) < 1 && GE.ang(Q3, 'PCQ') > 36 && GE.near(GE.ang(Q3, 'PCQ'), GE.ang(Q3, 'CEQ') + GE.ang(Q3, 'CQE')) && Q3.E[1] > Q3.P[1], '類題3 内側の点');
+  function scene3(D, mode, t) { /* 0 問題 1 (1) 2 (2) 3 (3) 4 (4) */
+    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .05 }), FR = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (mode === 0 ? 1 : .72)), s = CH.fs(D), a = function (x, y) { return CH.smooth(x, y, t); };
+    var Pp = { O: Q3.O, P: Q3.P, Q: Q3.Q, A: Q3.A, B: Q3.B, C: Q3.C, E: Q3.E, L1: [-1.5, Q3.P[1]], L2: [1.5, Q3.P[1]], N: [0, Q3.P[1] - .35] };
+    var F = GE.fit(D, FR, Pp, { keys: ['L1', 'L2', 'N'], bounds: GE.circBounds([0, 0], 1), pad: .06, size: CH.fs(D, .85) });
+    GE.circ(F, 'O', 1, { col: 'rgba(242,240,230,.7)' });
+    GE.seg(F, ['L1', 'L2'], { col: 'rgba(242,240,230,.45)', w: 2 });
+    GE.seg(F, ['P', 'Q'], { col: C.yel, w: 6, glow: true });
+    var hl = function (cond) { return cond ? 1 : .45; };
+    var m1 = mode === 1 || mode === 0, m3 = mode === 3 || mode === 4 || mode === 0;
+    var ra = mode === 2 || mode === 0 || mode === 3 ? .5 : 1;
+    GE.seg(F, ['A', 'P'], { col: C.blue, w: 2.4, a: mode === 4 ? .35 : mode === 3 ? .45 : 1 }); GE.seg(F, ['A', 'Q'], { col: C.blue, w: 2.4, a: mode === 4 ? .35 : mode === 3 ? .45 : 1 });
+    GE.seg(F, ['B', 'P'], { col: C.green, w: 2.4, a: mode === 4 ? .35 : mode === 3 ? .45 : 1 }); GE.seg(F, ['B', 'Q'], { col: C.green, w: 2.4, a: mode === 4 ? .35 : mode === 3 ? .45 : 1 });
+    if (mode === 0 || mode >= 2) { GE.seg(F, ['O', 'P'], { col: C.pink, w: 2.4, dash: mode === 2 ? false : [5, 5], a: mode === 4 ? .4 : 1 }); GE.seg(F, ['O', 'Q'], { col: C.pink, w: 2.4, dash: mode === 2 ? false : [5, 5], a: mode === 4 ? .4 : 1 }); GE.seg(F, ['P', 'Q'], { col: C.yel, w: 6, glow: true }); }
+    if (mode === 0 || mode >= 3) { GE.seg(F, ['P', 'E'], { col: C.orange, w: 2.4 }); GE.seg(F, ['C', 'Q'], { col: C.orange, w: 2.4 }); GE.seg(F, ['E', 'Q'], { col: C.orange, w: 2.4 }); }
+    if (mode === 0) { GE.arc(F, 'PAQ', { col: C.blue, lab: '36°', r: F.s * 1.5 }); }
+    if (mode === 1) { GE.arc(F, 'PAQ', { col: C.blue, fill: true, lab: '36°', r: F.s * 1.5 }); var b1 = a(.2, .5); GE.arc(F, 'PBQ', { col: C.green, fill: true, a: b1, lab: t > .6 ? '36°' : '？', r: F.s * 1.5 }); }
+    if (mode === 2) { var b2 = a(.1, .5); GE.arc(F, 'POQ', { col: C.pink, fill: true, a: b2, lab: t > .55 ? '72°' : '？', r: F.s * 1.5 }); GE.arc(F, 'PAQ', { col: C.blue, lab: '36°', a: .6, r: F.s * 1.3 }); }
+    if (mode === 3) { var b3 = a(.1, .5); GE.arc(F, 'OPQ', { col: C.yel, fill: true, a: b3, lab: t > .7 ? '54°' : '？', r: F.s * 1.7 }); GE.arc(F, 'OQP', { col: C.yel, fill: true, a: b3, r: F.s * 1.7 }); GE.arc(F, 'POQ', { col: C.pink, lab: '72°', a: .8, r: F.s * 1.5 }); }
+    if (mode === 4) { if (t > 0) GE.arc(F, 'PEQ', { col: C.blue, fill: true, a: a(0, .2), lab: '36°', r: F.s * 1.1 }); var b4 = a(.3, .6); GE.arc(F, 'CEQ', { col: C.blue, fill: true, a: 0, r: F.s * 1 }); GE.arc(F, 'CQE', { col: C.green, fill: true, a: b4, r: F.s * 1.5 }); GE.arc(F, 'PCQ', { col: C.pink, fill: true, a: a(.55, .8), lab: '∠PCQ', r: F.s * 1.1 }); }
+    var dirs = { P: 'sw', Q: 'se', A: 'nw', B: 'ne', C: 'se', E: 'ne', O: 'e' };
+    GE.dot(F, 'O', { r: F.s * .12 }); GE.dot(F, 'C', { r: F.s * .12, col: C.orange });
+    GE.labels(F, ['P', 'Q', 'A', 'B', 'C', 'E', 'O'].filter(function (k) { return (k !== 'E' || mode === 0 || mode >= 3); }), { dir: dirs, col: { P: C.yel, Q: C.yel, C: C.orange, E: C.orange } });
+    var nn = F.X('N'); say(D, nn[0], nn[1] + F.s * .1, 'ゴール', { size: F.s * .9, col: C.yel });
+    var ty = R.y0 + R.h * .87;
+    if (mode === 1 && t > .6) say(D, R.cx, ty, '同じ弧 PQ に対する 円周角は等しい　∠PBQ ＝ ∠PAQ ＝ 36°', { col: C.yel, a: a(.6, .8), maxW: R.w, num: true });
+    if (mode === 2 && t > .6) say(D, R.cx, ty, '中心角は 円周角の 2倍　∠POQ ＝ 2 × 36° ＝ 72°', { col: C.yel, a: a(.6, .8), maxW: R.w, num: true });
+    if (mode === 3 && t > .15) { say(D, R.cx, ty - s * .4, 'OP＝OQ（半径）の二等辺三角形', { col: C.pink, a: a(.15, .35), maxW: R.w }); if (t > .5) say(D, R.cx, ty + s * 1.1, '∠OPQ ＝ (180° − 72°) ÷ 2 ＝ 54°', { col: C.yel, a: a(.5, .7), maxW: R.w, num: true }); }
+    if (mode === 4) {
+      if (t > .1) say(D, R.cx, ty - s * 1.2, '① ∠PEQ ＝ ∠PAQ ＝ 36°（同じ弧 PQ の円周角）', { col: C.blue, a: a(.1, .3), maxW: R.w, num: true });
+      if (t > .55) say(D, R.cx, ty + s * .3, '② △CEQ の外角 ∠PCQ ＝ ∠CEQ ＋ ∠CQE ＞ 36°', { col: C.pink, a: a(.55, .8), maxW: R.w, num: true });
+    }
+  }
+
+  /* ================= 類題4　はしご（三平方の定理） ================= */
+  var LAD = 7, F1 = 2, F2 = 3, WIN = 6;
+  var T1 = Math.sqrt(LAD * LAD - F1 * F1), T2 = Math.sqrt(LAD * LAD - F2 * F2), XW = Math.sqrt(LAD * LAD - WIN * WIN);
+  CH.check(CH.near(T1 * T1, 45) && CH.root(45) === '3√5' && CH.near(T2 * T2, 40) && CH.root(40) === '2√10' && CH.near(XW * XW, 13) && Math.abs(T1 - T2 - 0.3836) < 1e-3 && T1 - T2 < 1, '類題4');
+  function scene4(D, mode, t) { /* 0 問題 1 (1) 2 (2) 3 (3) */
+    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .05 }), FR = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (mode === 0 ? 1 : .74)), s = CH.fs(D), a = function (x, y) { return CH.smooth(x, y, t); };
+    var P = { G0: [-1.2, 0], G1: [5.6, 0], O: [0, 0], W: [0, 7.4], T1: [0, T1], F1: [F1, 0], T2: [0, T2], F2: [F2, 0], FW: [XW, 0], WN: [0, WIN] };
+    var F = GE.fit(D, FR, P, { pad: .1, size: CH.fs(D, .85) }), O = F.X('O'), W = F.X('W');
+    CH.fillRect(D, O[0] - F.u * 1.2, W[1], O[0], O[1], { fill: 'rgba(200,180,160,.3)', stroke: 'rgba(242,240,230,.7)' });
+    GE.seg(F, ['G0', 'G1'], { col: 'rgba(242,240,230,.6)', w: 2 });
+    var win = F.X([0, WIN]); CH.fillRect(D, win[0] - F.u * .7, win[1] - F.u * .5, win[0], win[1] + F.u * .5, { fill: 'rgba(160,200,240,.35)', stroke: C.blue, sw: 2 });
+    if (mode === 0 || mode === 2) { }
+    if (mode === 0 || mode === 1) { GE.seg(F, ['F1', 'T1'], { col: C.orange, w: 5 }); GE.right(F, ['T1', 'O', 'F1'], { col: C.chalk, r: F.s * .6 }); dim(F, 'O', 'F1', F.s * 1.2, '2m', {}); dim(F, 'F1', 'T1', F.s * 1.3, '7m', { col: C.orange }); dim(F, 'O', 'T1', -F.s * 1.0, mode === 1 && t > .5 ? '3√5m' : 'x m', { col: mode === 1 && t > .5 ? C.yel : C.chalk }); }
+    if (mode === 2) { GE.seg(F, ['FW', 'WN'], { col: C.orange, w: 5 }); GE.right(F, ['WN', 'O', 'FW'], { col: C.chalk, r: F.s * .6 }); dim(F, 'O', 'WN', -F.s * 1.0, '6m', {}); dim(F, 'FW', 'WN', F.s * 1.3, '7m', { col: C.orange }); dim(F, 'O', 'FW', F.s * 1.2, t > .5 ? '√13m' : 'x m', { col: t > .5 ? C.yel : C.chalk }); }
+    if (mode === 3) {
+      GE.seg(F, ['F1', 'T1'], { col: C.orange, w: 4, a: .6 }); GE.seg(F, ['F2', 'T2'], { col: C.green, w: 5 });
+      dim(F, 'O', 'F2', F.s * 1.2, '3m', { col: C.green });
+      var p1 = F.X('T1'), p2 = F.X('T2'); var hl = a(0, .2); CH.line(D, p1[0], p1[1], p1[0] + F.s * 3, p1[1], { col: C.orange, dash: true, w: 1.6, a: hl }); CH.line(D, p2[0], p2[1], p2[0] + F.s * 3, p2[1], { col: C.green, dash: true, w: 1.6, a: hl });   /* 高さを くらべる 点線は、答えを 出してから */
+      var b = a(.2, .5); CH.arrow(D, p1[0] + F.s * 2.4, p1[1], p1[0] + F.s * 2.4, p2[1], { col: C.pink, w: 2.6, a: b, head: 8 }); say(D, p1[0] + F.s * 2.6, (p1[1] + p2[1]) / 2 - F.s * 1.6, '約0.4m', { col: C.pink, a: b, align: 'left', size: F.s * .9, num: true });
+    }
+    var ty = R.y0 + R.h * .8;
+    if (mode === 0) { }
+    if (mode === 1) { if (t > .1) say(D, R.cx, ty, '2² ＋ x² ＝ 7²', { col: C.pink, a: a(.1, .3), maxW: R.w, num: true }); if (t > .3) say(D, R.cx, ty + s * 1.5, 'x² ＝ 49 − 4 ＝ 45　x ＞ 0 より x ＝ 3√5', { col: C.yel, a: a(.3, .5), maxW: R.w, num: true }); }
+    if (mode === 2) { if (t > .1) say(D, R.cx, ty, '6² ＋ x² ＝ 7²', { col: C.pink, a: a(.1, .3), maxW: R.w, num: true }); if (t > .3) say(D, R.cx, ty + s * 1.5, 'x² ＝ 49 − 36 ＝ 13　x ＞ 0 より x ＝ √13（約3.6m）', { col: C.yel, a: a(.3, .5), maxW: R.w, num: true }); }
+    if (mode === 3) { if (t > .15) say(D, R.cx, ty, '2m のとき 3√5 ≒ 6.71m　3m のとき √40 ＝ 2√10 ≒ 6.32m', { col: C.green, a: a(.15, .35), maxW: R.w, num: true }); if (t > .5) say(D, R.cx, ty + s * 1.5, '低くなるのは 約0.4m　1m ではない → 正しくない', { col: C.yel, a: a(.5, .7), maxW: R.w, num: true }); }
+  }
+
+  /* ================= 類題5　相似の証明の穴うめ ================= */
+  var P5 = { B: [0, 0], C: [10, 0], A: [3.6, 4.8], H: [3.6, 0] };
+  var P5b = { B: [0, 0], C: [10, 0], A: [5, 5 * Math.tan(50 * Math.PI / 180)], H: [5, 0] };
+  CH.check(CH.near(GE.len(P5, 'AB'), 6) && CH.near(GE.len(P5, 'AC'), 8) && CH.near(GE.len(P5, 'BC'), 10) && GE.near(GE.ang(P5, 'BAC'), 90) && GE.near(GE.ang(P5, 'BHA'), 90) && CH.near(6 * 6 / 10, 3.6) && CH.near(6 * 8 / 10, 4.8), '類題5 直角三角形');
+  CH.check(GE.near(GE.ang(P5b, 'ABC'), 50) && GE.near(GE.ang(P5b, 'ACB'), 50) && GE.near(GE.ang(P5b, 'BAC'), 80) && GE.near(GE.ang(P5b, 'BAH'), 40) && GE.near(GE.ang(P5b, 'BHA'), 90), '類題5 二等辺三角形');
+  function tri5(D, R, P, o) {
+    var F = GE.fit(D, R, P, { pad: .2, size: CH.fs(D, .85) }); o = o || {};
+    GE.poly(F, 'ABC', { col: C.blue, fa: .12, stroke: C.chalk }); if (o.hl) GE.poly(F, o.hl, { col: C.pink, fa: .3 * (o.ha == null ? 1 : o.ha), stroke: false });
+    GE.seg(F, ['A', 'H'], { col: C.yel, w: 2.4 }); GE.right(F, 'BHA', { col: C.yel, a: o.a }); if (o.rA) GE.right(F, 'BAC', { col: C.yel, a: o.a });
+    GE.labels(F, ['A', 'B', 'C', 'H'], { dir: { A: 'n', B: 'sw', C: 'se', H: 's' } });
+    return F;
+  }
+  function scene5(D, mode, t) { /* 0 問題 1 穴うめ 2 BH 3 AH 4 条件かえ */
+    var R = CH.box(D, { l: .03, r: .03, t: .03, b: .05 }), s = CH.fs(D), a = function (x, y) { return CH.smooth(x, y, t); };
+    if (mode === 0) {
+      var P = CH.rows(R, 2, .1), F = tri5(D, P[0], P5, { rA: true, a: 1 });
+      dim(F, 'B', 'A', -F.s * 1.1, '6cm', {}); dim(F, 'A', 'C', -F.s * 1.1, '8cm', {}); dim(F, 'B', 'C', F.s * 1.4, '10cm', {});
+      say(D, P[0].x0, P[0].y0 + s * .2, '(1)〜(3) の △ABC　∠A＝90°', { size: s * .8, maxW: P[0].w, align: 'left' });
+      var F2 = tri5(D, P[1], P5b, { a: 1 }); GE.arc(F2, 'ABC', { col: C.chalk, lab: '50°', r: F2.s * 2.2 }); say(D, P[1].x0, P[1].y0 + s * .2, '(4) の △ABC　AB＝AC', { size: s * .8, maxW: P[1].w, align: 'left' });
+      return;
+    }
+    if (mode === 1) {
+      var FR = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .6), F1 = tri5(D, FR, P5, { rA: true, a: 1, hl: t > 0 ? 'ABC' : null, ha: .0 });
+      if (t > .1) GE.poly(F1, 'ABC', { col: C.pink, fa: .2 * a(.1, .3), stroke: false });
+      if (t > .3) GE.poly(F1, 'HBA', { col: C.yel, fa: .3 * a(.3, .5), stroke: false });
+      var ty = R.y0 + R.h * .66, items = [['ア ＝ 90（∠BAC＝∠BHA＝90°）', C.yel, .1], ['イ ＝ 共通（∠B は △ABC と △HBA に共通）', C.yel, .35], ['ウ ＝ 2組の角が、それぞれ等しい', C.yel, .6]];
+      items.forEach(function (r, i) { if (t > r[2]) say(D, R.cx, ty + s * (.8 + i * 1.5), r[0], { col: r[1], a: a(r[2], r[2] + .2), maxW: R.w, num: true }); });
+      return;
+    }
+    if (mode === 2 || mode === 3) {
+      var FR2 = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .6), F3 = tri5(D, FR2, P5, { rA: true, a: 1, hl: mode === 2 ? 'ABC' : 'ABC', ha: 0 });
+      GE.poly(F3, mode === 2 ? 'HBA' : 'HBA', { col: C.pink, fa: .3, stroke: false });
+      dim(F3, 'B', 'A', -F3.s * 1.1, '6cm', {}); dim(F3, 'A', 'C', -F3.s * 1.1, '8cm', {}); dim(F3, 'B', 'C', F3.s * (mode === 2 ? 2.5 : 1.4), '10cm', {});   /* 問題文の 長さは、問いの 画面でも 図に 出す */
+      var ty2 = R.y0 + R.h * .66;
+      if (mode === 2) { dim(F3, 'B', 'H', F3.s * 1.35, 'x', { col: t > .4 ? C.yel : C.chalk }); if (t > .1) say(D, R.cx, ty2 + s * .8, '△ABC ∽ △HBA　AB：HB ＝ BC：BA', { col: C.pink, a: a(.1, .3), maxW: R.w, num: true }); if (t > .35) say(D, R.cx, ty2 + s * 2.3, '6：x ＝ 10：6　x ＝ 36÷10 ＝ 3.6（cm）', { col: C.yel, a: a(.35, .55), maxW: R.w, num: true }); }
+      if (mode === 3) { dim(F3, 'A', 'H', -F3.s * 1.1, 'y', { col: t > .4 ? C.yel : C.chalk }); if (t > .1) say(D, R.cx, ty2 + s * .8, '△ABC ∽ △HBA　AC：HA ＝ BC：BA', { col: C.pink, a: a(.1, .3), maxW: R.w, num: true }); if (t > .35) say(D, R.cx, ty2 + s * 2.3, '8：y ＝ 10：6　y ＝ 48÷10 ＝ 4.8（cm）', { col: C.yel, a: a(.35, .55), maxW: R.w, num: true }); }
+      return;
+    }
+    var FR3 = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .64), F4 = tri5(D, FR3, P5b, { a: 1 });
+    GE.arc(F4, 'ABC', { col: C.chalk, lab: '50°', r: F4.s * 2.2 }); GE.arc(F4, 'ACB', { col: C.chalk, lab: '50°', r: F4.s * 2.2 });
+    var b = a(.1, .35); GE.arc(F4, 'BAC', { col: C.pink, a: b, lab: '80°', r: F4.s * 3.4 }); GE.arc(F4, 'BAH', { col: C.green, a: b, lab: '40°', r: F4.s * 1.7 });
+    var ty3 = R.y0 + R.h * .7;
+    if (t > .3) say(D, R.cx, ty3 + s * .5, '△ABC の角は 50°・50°・80°　　△HBA の角は 50°・90°・40°', { col: C.chalk, a: a(.3, .5), maxW: R.w, num: true });
+    if (t > .55) say(D, R.cx, ty3 + s * 2, '等しい角が 1組（∠B）しかない → 相似とは いえない', { col: C.yel, a: a(.55, .8), maxW: R.w, num: true });
+  }
+
+  K3.run({
+    no: '類題', title: '学力推移調査型の類題　中3 相似・円・三平方の定理（5題）', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }],
+    steps: [
+      /* ---------------- 類題1 ---------------- */
+      { tag: '類題1', bh: '類題1　影の長さで 木の高さを測る', q: '木の高さを、影の長さを使って求める。太陽の光は平行で、木も棒も地面に垂直に立っている。同じ時刻に、長さ 1.2m の棒の影の長さをはかると 1.8m だった。',
+        notes: ['(1) 棒とその影でできる三角形と、木とその影でできる三角形は相似である。そのときの相似条件を答えなさい。', '(2) 場面1で、木の影の長さが 9m だった。木の高さを求めなさい。', '(3) 場面2では、木の影の先が壁にかかっていた。木の根もとから壁までは 6m で、壁の上にできた影の高さは 1.2m だった。木の高さを求めなさい。', '(4) ひろしさんは(3)を「壁の上の影 1.2m も地面にのばして、影を 6＋1.2＝7.2m とする。1.2：x＝1.8：7.2 より x＝4.8m」と考えた。この考えのまちがいを説明しなさい。'],
+        draw: function (D) { scene1(D, 0, 0); } },
+      { tag: '類題1', q: '(1) 相似条件は？', a: '2組の角が、それぞれ等しい', sub: '棒と木はどちらも地面に垂直で（90°）、太陽の光は平行なので、影の先の角も等しい。2組の角がそれぞれ等しいので相似', dur: 3,
+        b: { t: '(1) <b>2組の角が、それぞれ等しい</b>（90° と、光の角）', col: C.yel },
+        draw: function (D) { scene1(D, 1, D.ph ? D.t : 0); } },
+      { tag: '類題1', q: '(2) 木の高さは？', a: '6m', sub: '相似比は 棒：木 ＝ 1.8：9 ＝ 1：5。木の高さは 1.2×5＝6（m）', dur: 3,
+        b: { t: '(2) 1.2：x ＝ 1.8：9　x ＝ <b>6m</b>', col: C.yel },
+        draw: function (D) { scene1(D, 2, D.ph ? D.t : 0); } },
+      { tag: '類題1', q: '(3) 壁がある場所での 木の高さは？', a: '5.2m', sub: '壁の上の影 1.2m は、地面なら 1.2×(1.8÷1.2)＝1.8m ぶん。影の長さは 6＋1.8＝7.8m。高さ 1.2：x＝1.8：7.8 より x＝5.2。（光線の傾きで考えると、壁のところで 6×(1.2÷1.8)＝4m 低くなり 5.2−4＝1.2）', dur: 4,
+        b: { t: '(3) 影を地面にのばすと 6＋1.8＝7.8m　1.2：x＝1.8：7.8　x＝<b>5.2m</b>', col: C.yel },
+        draw: function (D) { scene1(D, 3, D.ph ? D.t : 0); } },
+      { tag: '類題1', q: '(4) 「6＋1.2＝7.2m として 1.2：x＝1.8：7.2」のまちがいは？', a: '壁の上の影の高さ 1.2m を、そのまま地面の影の長さとして たしている', sub: '壁の上の 1.2m は「高さ」で、地面の影の 1.2m ではない。地面にのばした長さにするには、1.2×(1.8÷1.2)＝1.8m とすべき。正しくは 6＋1.8＝7.8m で、木の高さは 5.2m', dur: 4,
+        b: { t: '(4) 壁の上の <b>高さ</b> 1.2m を 地面の<b>長さ</b>としてたした。地面なら 1.8m で 7.8m、高さは 5.2m', col: C.yel },
+        draw: function (D) { scene1(D, 4, D.ph ? D.t : 0); } },
+      /* ---------------- 類題2 ---------------- */
+      { tag: '類題2', bh: '類題2　ピザと缶の大きさと値段', q: 'ピザの店で、厚さが同じ円形の M ピザ（直径 20cm、1200円）と L ピザ（直径 30cm、2400円）を売っている。また、相似な円柱の形をした 小缶（高さ 6cm、容量 160mL）と 大缶（高さ 9cm）の飲み物がある。',
+        notes: ['(1) M ピザと L ピザの面積比を、もっとも簡単な整数の比で表しなさい。', '(2) 同じ面積あたりの値段でくらべると、M ピザと L ピザのどちらが得か。面積比を使って説明しなさい。', '(3) 小缶と大缶の体積比を、もっとも簡単な整数の比で表しなさい。', '(4) 大缶の容量は何 mL か求めなさい。'],
+        draw: function (D) { scene2(D, 0, 0); } },
+      { tag: '類題2', q: '(1) M と L の面積比は？', a: '4：9', sub: '直径の比 20：30＝2：3 より相似比は 2：3。面積比は 相似比の2乗 で 2²：3²＝4：9', dur: 3,
+        b: { t: '(1) 相似比 2：3 → 面積比 2²：3²＝<b>4：9</b>', col: C.yel },
+        draw: function (D) { scene2(D, 1, D.ph ? D.t : 0); } },
+      { tag: '類題2', q: '(2) 同じ面積あたりの値段は、M と L のどちらが得？（説明）', a: 'L が得。L の面積は M の 9÷4＝2.25倍だが、値段は 2400÷1200＝2倍だから。', sub: '面積比 4：9 より、L の面積は M の 2.25倍。値段は 2倍にしかなっていないので、同じ面積あたりの値段は L のほうが安い', dur: 4,
+        b: { t: '(2) 面積 <b>2.25倍</b>・値段 <b>2倍</b> → <b>L が得</b>', col: C.yel },
+        draw: function (D) { scene2(D, 2, D.ph ? D.t : 0); } },
+      { tag: '類題2', q: '(3) 小缶と大缶の体積比は？', a: '8：27', sub: '高さの比 6：9＝2：3 より相似比は 2：3。体積比は 相似比の3乗 で 2³：3³＝8：27', dur: 3,
+        b: { t: '(3) 相似比 2：3 → 体積比 2³：3³＝<b>8：27</b>', col: C.yel },
+        draw: function (D) { scene2(D, 3, D.ph ? D.t : 0); } },
+      { tag: '類題2', q: '(4) 大缶の容量は？', a: '540mL', sub: '160：x＝8：27 より x＝160×27÷8＝540', dur: 2.5,
+        b: { t: '(4) 160：x＝8：27　x＝<b>540mL</b>', col: C.yel },
+        draw: function (D) { scene2(D, 4, D.ph ? D.t : 0); } },
+      /* ---------------- 類題3 ---------------- */
+      { tag: '類題3', bh: '類題3　円周角と シュートの角度', q: 'サッカーのゴールの両はしを P、Q とする。円 O は 2点 P、Q を通る円で、点 A、B はこの円の周上の、シュートを打つ地点である。ゴールの両はしを見こむ角を「シュートの角度」とよぶ。点 A でのシュートの角度 ∠PAQ は 36° である。点 C は円 O の内側の点で、直線 PC と円 O の交点のうち P でないほうを E とする。',
+        notes: ['(1) 点 B でのシュートの角度 ∠PBQ を求めなさい。', '(2) ∠POQ の大きさを求めなさい。', '(3) ∠OPQ の大きさを求めなさい。', '(4) 点 C でのシュートの角度 ∠PCQ は、36° より大きいといえる。そのわけを、点 E を使って説明しなさい。'],
+        draw: function (D) { scene3(D, 0, 0); } },
+      { tag: '類題3', q: '(1) ∠PBQ は？', a: '36°', sub: '∠PAQ と ∠PBQ は 同じ弧 PQ に対する円周角だから等しい', dur: 3,
+        b: { t: '(1) 同じ弧 PQ の円周角 → ∠PBQ＝<b>36°</b>', col: C.yel },
+        draw: function (D) { scene3(D, 1, D.ph ? D.t : 0); } },
+      { tag: '類題3', q: '(2) ∠POQ は？', a: '72°', sub: '弧 PQ に対する中心角は、円周角の 2倍。36°×2＝72°', dur: 3,
+        b: { t: '(2) 中心角＝円周角×2 → ∠POQ＝<b>72°</b>', col: C.yel },
+        draw: function (D) { scene3(D, 2, D.ph ? D.t : 0); } },
+      { tag: '類題3', q: '(3) ∠OPQ は？', a: '54°', sub: 'OP＝OQ（半径）なので △OPQ は二等辺三角形。∠OPQ＝(180°−72°)÷2＝54°', dur: 3,
+        b: { t: '(3) △OPQ は二等辺三角形 → (180°−72°)÷2＝<b>54°</b>', col: C.yel },
+        draw: function (D) { scene3(D, 3, D.ph ? D.t : 0); } },
+      { tag: '類題3', q: '(4) 点 C からの ∠PCQ が 36° より大きいわけを、E を使って説明しよう。', a: '∠PEQ＝∠PAQ＝36°（同じ弧 PQ の円周角）。△CEQ で、∠PCQ は外角だから ∠PCQ＝∠CEQ＋∠CQE。∠CEQ＝∠PEQ＝36° なので、∠PCQ は 36° より大きい。', sub: '三角形の外角は、となりにない2つの内角の和に等しい。∠CQE＞0° なので、∠PCQ＞36°', dur: 5,
+        b: { t: '(4) ∠PEQ＝36°　外角 ∠PCQ＝∠CEQ＋∠CQE ＞ <b>36°</b>', col: C.yel },
+        draw: function (D) { scene3(D, 4, D.ph ? D.t : 0); } },
+      /* ---------------- 類題4 ---------------- */
+      { tag: '類題4', bh: '類題4　はしごの高さ（三平方の定理）', q: '体育館の壁に、長さ 7m のはしごを立てかける。地面は水平で、壁は地面に垂直である。はしごは曲がらず、まっすぐなものとする。',
+        notes: ['(1) 足もとを壁から 2m はなしたとき、はしごの先は地面から何 m の高さにとどくか。√ をふくむ形のままで答えなさい。', '(2) 地面から 6m の高さにある窓の下に、はしごの先をとどかせたい。足もとを壁から何 m はなせばよいか。', '(3) ゆうきさんは「足もとを 2m の位置から さらに 1m 遠ざけて 3m にすると、はしごの先の高さも 1m 低くなる」と言った。この考えは正しいか。わけも書きなさい。'],
+        draw: function (D) { scene4(D, 0, 0); } },
+      { tag: '類題4', q: '(1) はしごの先の高さは？', a: '3√5 m', sub: '高さを x m とすると 2²＋x²＝7²。x²＝45、x＞0 より x＝3√5', dur: 3,
+        b: { t: '(1) 2²＋x²＝7²　x²＝45　x＝<b>3√5 m</b>', col: C.yel },
+        draw: function (D) { scene4(D, 1, D.ph ? D.t : 0); } },
+      { tag: '類題4', q: '(2) 高さ 6m の窓の下にとどくとき、足もとは壁から何 m？', a: '√13 m', sub: '足もとの距離を x m とすると x²＋6²＝7²。x²＝13、x＞0 より x＝√13（約 3.6m）', dur: 3,
+        b: { t: '(2) x²＋6²＝7²　x²＝13　x＝<b>√13 m</b>', col: C.yel },
+        draw: function (D) { scene4(D, 2, D.ph ? D.t : 0); } },
+      { tag: '類題4', q: '(3) 「足もとを 1m 遠ざけると、先の高さも 1m 低くなる」は正しい？', a: '正しくない。足もとが 3m のときの高さは √(49−9)＝√40＝2√10 ≒ 6.32m。2m のときの 3√5 ≒ 6.71m との差は 約0.4m で、1m ではない。', sub: '足もとの動きと先の高さの変わり方は、比例の関係ではない（三平方の定理 x²＝49−（足もと）²）', dur: 5,
+        b: { t: '(3) 3√5 ≒ 6.71m → 2√10 ≒ 6.32m　<b>約0.4m</b> しか低くならない → <b>正しくない</b>', col: C.yel },
+        draw: function (D) { scene4(D, 3, D.ph ? D.t : 0); } },
+      /* ---------------- 類題5 ---------------- */
+      { tag: '類題5', bh: '類題5　相似の証明の穴うめと、条件をかえたとき', q: '図1は、∠BAC＝90° の直角三角形 ABC で、頂点 A から辺 BC に垂線 AH をひいたものである。AB＝6cm、AC＝8cm、BC＝10cm とする。図2は、AB＝AC、∠B＝50° の二等辺三角形 ABC で、同じように A から辺 BC に垂線 AH をひいたものである。',
+        notes: ['(1) 図1で △ABC∽△HBA を証明する。　△ABC と △HBA で、仮定より ∠BAC＝∠BHA＝ア° ……①　∠ABC＝∠HBA は イ ……②　①、②より、ウ ので、△ABC∽△HBA。　ア〜ウ にあてはまる数・ことばを答えなさい。', '(2) 図1で BH の長さを求めなさい。', '(3) 図1で AH の長さを求めなさい。', '(4) 図2の △ABC と △HBA は相似といえるか。わけも書きなさい。'],
+        draw: function (D) { scene5(D, 0, 0); } },
+      { tag: '類題5', q: '(1) ア〜ウは？', a: 'ア 90　イ 共通　ウ 2組の角が、それぞれ等しい', sub: '垂線 AH だから ∠BHA＝90°、∠BAC＝90°。∠B は両方の三角形にふくまれる共通な角', dur: 4,
+        b: { t: '(1) ア <b>90</b>　イ <b>共通</b>　ウ <b>2組の角が、それぞれ等しい</b>', col: C.yel },
+        draw: function (D) { scene5(D, 1, D.ph ? D.t : 0); } },
+      { tag: '類題5', q: '(2) BH の長さは？', a: '3.6cm', sub: '△ABC∽△HBA より AB：HB＝BC：BA。6：x＝10：6 より x＝3.6', dur: 3,
+        b: { t: '(2) 6：x＝10：6　x＝<b>3.6cm</b>', col: C.yel },
+        draw: function (D) { scene5(D, 2, D.ph ? D.t : 0); } },
+      { tag: '類題5', q: '(3) AH の長さは？', a: '4.8cm', sub: '△ABC∽△HBA より AC：HA＝BC：BA。8：y＝10：6 より y＝4.8（三平方の定理で確かめる：3.6²＋4.8²＝36）', dur: 3,
+        b: { t: '(3) 8：y＝10：6　y＝<b>4.8cm</b>', col: C.yel },
+        draw: function (D) { scene5(D, 3, D.ph ? D.t : 0); } },
+      { tag: '類題5', q: '(4) 図2の △ABC と △HBA は相似といえる？', a: 'いえない。図2では ∠BAC＝80° で 90° ではないから。△HBA の角は 50°・90°・40°、△ABC の角は 50°・50°・80° で、等しい角は ∠B の1組しかない。', sub: '∠BHA＝90° だが、∠BAC は 90° でない。相似になるには ∠BAC＝90° という条件が必要', dur: 5,
+        b: { t: '(4) <b>いえない</b>　∠BAC＝80° で 90° でない → 等しい角は ∠B の 1組だけ', col: C.yel },
+        draw: function (D) { scene5(D, 4, D.ph ? D.t : 0); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

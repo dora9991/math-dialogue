@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""コツコツくん「学習時間の数え方」改善パッチ。
+使い方: python3 patch_time.py solo-new.js solo-time.js
+solo-new.js（公開中の solo-uaZYllIo.js と同じ）を読んで、完全一致の置きかえで solo-time.js を作る。
+各 old が「ちょうど1回」出ることを assert する（出なければ止まる）。
+"""
+import sys
+
+src, dst = sys.argv[1], sys.argv[2]
+s = open(src, encoding='utf-8').read()
+
+
+def rep(old, new, label=''):
+    global s
+    n = s.count(old)
+    assert n == 1, (label, n, old[:90])
+    s = s.replace(old, new)
+
+
+# ─────────────────────────────────────────────────────────────
+# 1. 解答の時間（問題コンポーネント L0 のまわり）
+#    ・Yi()：フォーカスを見ない（document.hidden だけ）
+#    ・読む時間：直前の解答からの「見えていた時間」を、次の解答の sec に足す
+#       正解 最大20秒 / まちがい・わからない 最大90秒 / 直前の解答が5分より前なら0
+#    ・全体の上限：1回の sec は「前の解答からの実際の経過時間」をこえない（Z4()＝タブ共有の最後の解答時刻）
+#    ・問題以外の画面の「アクティブ時間」（ktStart / ktGrant）と、時間の表示（ktFm）もここに置く
+# ─────────────────────────────────────────────────────────────
+OLD_CORE = 'const Y4=180,Pn="kotsu-last-answer-at";let Ln=0;function Yi(){try{if(document.hidden||typeof document.hasFocus=="function"&&!document.hasFocus())return!1}catch{}return!0}function Z4(){let s=0;try{s=Number(localStorage.getItem(Pn))||0}catch{}return Math.max(s,Ln)}function e5(s=Date.now()){Ln=Math.max(Ln,s);try{s>=(Number(localStorage.getItem(Pn))||0)&&localStorage.setItem(Pn,String(s))}catch{}}function t5(s,t,a=0,n=0){let r=Math.max(0,t-s-Math.max(0,a));return n>0&&n<=t&&(r=Math.min(r,t-n)),Math.min(Y4,Math.round(r/1e3))}'
+
+NEW_CORE = r'''const Y4=180,Pn="kotsu-last-answer-at";let Ln=0,ktT0=Date.now(),ktLk=null,ktEp=0,ktRt=null,ktTd=0,ktH=0,ktHs=typeof document<"u"&&document.hidden?Date.now():0;try{typeof document<"u"&&document.addEventListener("visibilitychange",()=>{const s=Date.now();document.hidden?ktHs||(ktHs=s):ktHs&&(ktH+=s-ktHs,ktHs=0)})}catch{}function ktHid(s=Date.now()){return ktH+(ktHs?Math.max(0,s-ktHs):0)}function Yi(){try{if(document.hidden)return!1}catch{}return!0}function Z4(){let s=0;try{s=Number(localStorage.getItem(Pn))||0}catch{}return Math.max(s,Ln)}function e5(s=Date.now(),t){Ln=Math.max(Ln,s);try{s>=(Number(localStorage.getItem(Pn))||0)&&localStorage.setItem(Pn,String(s))}catch{}ktLk={t:s,ok:!!t,h:ktHid(s),e:ktEp}}function ktRd(s){const t=ktLk;if(!t||t.e!==ktEp||Z4()>t.t)return 0;const a=s-t.t;return a<0||a>3e5?0:Math.min(Math.max(0,a-(ktHid(s)-t.h)),t.ok?2e4:9e4)}function t5(s,t,a=0,n=0,r=0){let i=Math.max(0,t-s-Math.max(0,a));n>0&&n<=t&&(i=Math.min(i,t-n));let c=Math.min(Y4*1e3,i)+Math.max(0,r);return n>0&&n<=t&&(c=Math.min(c,t-n)),Math.round(c/1e3)}const ktCap={les:2400,tst:3600,nav:600,ref:300,fb:180},ktAll=5400,ktKey="kotsu-time-credit-v1";let ktMem=null;function ktFm(s){s=Math.max(0,Math.floor(Number(s)||0));if(s<60)return s?"1分未満":"0分";const t=Math.floor(s/60);return t<60?`${t}分`:`${Math.floor(t/60)}時間${t%60}分`}function ktCat(s){const t=s&&s.name;return t==="lesson"||t==="exam"||t==="unit"&&s.talk?"les":/^(diag|diagIntro|diagResult|mock|ana|anaIntro|anaResult)$/.test(t)?"tst":/^(home|plist|hub|map|unit|records|sum|print|ai)$/.test(t)?"nav":t==="reflnote"?"ref":t==="feedback"?"fb":null}function ktGrant(s,t,a){const n=Mt();let r=null;try{r=JSON.parse(localStorage.getItem(ktKey)||"null")}catch{}(!r||typeof r!="object")&&(r=ktMem),(!r||r.d!==n||!r.s||typeof r.s!="object")&&(r={d:n,s:{},at:0});const i=a-Math.max(t,Number(r.at)||0);if(i<=0)return 0;const c=Number(r.s[s])||0,l=Object.values(r.s).reduce((h,p)=>h+(Number(p)||0),0),u=Math.max(0,Math.min(i,(ktCap[s]-c)*1e3,(ktAll-l)*1e3));if(u>0){r.s[s]=Math.round((c+u/1e3)*1e3)/1e3,r.at=a,ktMem=r;try{localStorage.setItem(ktKey,JSON.stringify(r))}catch{}}return u}function ktStart(s,t){if(typeof window>"u")return()=>{};let a=Date.now(),n=0,r=0,i=a,c=null;const l=["pointerdown","keydown","scroll","touchstart"],u=()=>{n=Date.now()},h=g=>{const f=g&&g.data;f&&typeof f=="object"&&/^(ho-talk|ho-sho|hs-board)$/.test(f.src)&&/^(start|step|answer|result)$/.test(f.ev)&&u()},p=()=>{try{document.activeElement&&document.activeElement.tagName==="IFRAME"&&u()}catch{}},x=g=>{const f=Math.floor(r/1e3);f>0&&(r-=f*1e3,t(f,g)),i=Date.now()},v=()=>{const g=Date.now(),f=Math.min(2500,Math.max(0,g-a));a=g;const b=s();if(b!==c&&(c!==null&&x(!0),c=b),document.hidden||!f)return;const k=ktCat(b);if(!k||g-n>(/^(diag|mock|ana)$/.test(b.name)?15e4:45e3))return;const C=Z4();C>Ln&&C>ktT0&&g-C<19e4||(r+=ktGrant(k,g-f,g),g-i>=3e4&&x(!1))},y=setInterval(v,1e3),w=()=>{a=Date.now(),document.hidden&&x(!0)},m=()=>x(!0);return l.forEach(g=>window.addEventListener(g,u,{capture:!0,passive:!0})),window.addEventListener("message",h),window.addEventListener("blur",p),document.addEventListener("visibilitychange",w),window.addEventListener("pagehide",m),()=>{clearInterval(y),x(!0),l.forEach(g=>window.removeEventListener(g,u,{capture:!0})),window.removeEventListener("message",h),window.removeEventListener("blur",p),document.removeEventListener("visibilitychange",w),window.removeEventListener("pagehide",m)}}'''
+rep(OLD_CORE, NEW_CORE, 'core')
+
+# L0（問題コンポーネント）：読む時間の ref を足す
+rep('R=J.useRef(0);J.useEffect(()=>{const A=()=>{Yi()?',
+    'R=J.useRef(0),ktR=J.useRef(0);J.useEffect(()=>{const A=()=>{Yi()?', 'L0 ref')
+# 問題が表示されるとき：読む時間（ms）を決める（診断・模試は 0）
+rep('D(!1),H.current=Date.now(),B.current=0,q.current=0,R.current=typeof document<"u"&&!Yi()?Date.now():0},[s.key]);',
+    'D(!1),H.current=Date.now(),B.current=0,q.current=0,R.current=typeof document<"u"&&!Yi()?Date.now():0,ktR.current=h?0:ktRd(H.current)},[s.key]);', 'L0 display')
+# 答えたとき：読む時間を足す／正誤を記録する
+rep('re=t5(H.current,I,q.current+(R.current?I-R.current:0),Z4());e5(I),B.current=Date.now()',
+    're=t5(H.current,I,q.current+(R.current?I-R.current:0),Z4(),ktR.current);e5(I,!!A.correct),B.current=Date.now()', 'L0 answer')
+# 問題画面に「⏱ 今日 ○分」（診断・模試では出さない）
+rep('n!=null&&e.jsxs("span",{className:"chip",children:[a+1," / ",n]}),!h&&e.jsx(Wu,{level:s.level})',
+    'n!=null&&e.jsxs("span",{className:"chip",children:[a+1," / ",n]}),!h&&e.jsxs("span",{className:"chip kt-today",title:"今日 学習した時間",style:{opacity:.9},children:["⏱ 今日 ",ktFm(ktTd)]}),!h&&e.jsx(Wu,{level:s.level})', 'L0 chip')
+
+# ─────────────────────────────────────────────────────────────
+# 2. アプリ全体（jp）：問題以外の画面のアクティブ時間を数える
+#    flush は v2（同期のしくみ）の visibilitychange より先に登録する（同期が最新の sec を送れるように）
+# ─────────────────────────────────────────────────────────────
+rep('J.useEffect(()=>{v2({getState:()=>u.current,adopt:P,toast:l}),Ql({force:!0})},[]);',
+    'J.useEffect(()=>ktStart(()=>p.current,(n,f)=>{const S=u.current;if(!(S!=null&&S.profile)||!S.daily)return;const N={...S,daily:us(S,{sec:n})};h(N),f&&cu(N)}),[]);J.useEffect(()=>{v2({getState:()=>u.current,adopt:P,toast:l}),Ql({force:!0})},[]);', 'jp effect')
+# ルートが変わったら epoch を進める（読む時間は同じルートの中でだけ数える）／問題画面が読む「今日の秒」
+rep(';let Me=null;switch(r.name){case"onboard":',
+    ';ktRt!==r&&(ktRt=r,ktEp++),ktTd=Math.round(((s.daily||{})[Mt()]||{}).sec||0);let Me=null;switch(r.name){case"onboard":', 'jp epoch')
+
+# ─────────────────────────────────────────────────────────────
+# 3. 「⏱ 今日 ○分」の表示
+# ─────────────────────────────────────────────────────────────
+# ホーム（中学・小学の B2）：hero-chips の3つ目
+rep('["✏️ ",e.jsx(o,{children:"今日"})," ",xe,e.jsx("small",{children:e.jsx(o,{children:"問"})})]})]})',
+    '["✏️ ",e.jsx(o,{children:"今日"})," ",xe,e.jsx("small",{children:e.jsx(o,{children:"問"})})]}),e.jsxs("span",{className:"kt-today",title:"今日 学習した時間",children:["⏱ ",e.jsx(o,{children:"今日"})," ",ktFm(((s.daily||{})[Mt()]||{}).sec||0)]})]})', 'B2 chip')
+# ホーム（I2：目標カードの下の「今日の問題」）
+rep('e.jsx("div",{className:"k",children:"今日の問題"}),e.jsx("div",{className:"progress mt8",style:{height:5},children:e.jsx("i",{style:{width:`${Math.min(100,P.n/D*100)}%`}})})]}),',
+    'e.jsx("div",{className:"k",children:"今日の問題"}),e.jsx("div",{className:"progress mt8",style:{height:5},children:e.jsx("i",{style:{width:`${Math.min(100,P.n/D*100)}%`}})}),e.jsxs("div",{className:"tiny muted mt8",children:["⏱ 今日 ",ktFm(P.sec||0)]})]}),', 'I2 chip')
+# 記録ページ：「学習時間（合計）」に「今日 ○分」を足す
+rep('e.jsx("div",{className:"k",children:e.jsx(o,{children:"学習時間"})})',
+    'e.jsxs("div",{className:"k",children:[e.jsx(o,{children:"学習時間"}),e.jsxs("div",{className:"tiny",children:["今日 ",ktFm(((s.daily||{})[Mt()]||{}).sec||0)]})]})', 'records')
+
+# ─────────────────────────────────────────────────────────────
+# 4. 診断・模試を daily の n（解いた問題数）・c（正解数）に足す（totals・xp・units・log は触らない）
+# ─────────────────────────────────────────────────────────────
+rep('daily:us(s,{xp:n})};return{...ds(r),bonus:n}}',
+    'daily:us(s,{xp:n,n:Number((t.summary||{}).total)||0,c:Number((t.summary||{}).correct)||0})};return{...ds(r),bonus:n}}', 'diag n/c')
+# 模試：W5（採点）に「答えた数」「正解数」を足す → X5 で daily に足す（とばした問題・時間切れの問題は数えない）
+rep('wrong:r,timeSec:a}}function A1(',
+    'wrong:r,timeSec:a,ans:Array.isArray(t)?t.filter(c=>c&&!c.gaveUp).length:0,okN:Array.isArray(t)?t.filter(c=>c&&c.correct).length:0}}function A1(', 'W5')
+rep('return{...s,mock:[i,...s.mock||[]].slice(0,30)}}const Y5=',
+    'const ktN=Number(n.ans)||0;return{...s,mock:[i,...s.mock||[]].slice(0,30),...ktN>0?{daily:us(s,{n:ktN,c:Number(n.okN)||0})}:{}}}const Y5=', 'X5')
+
+# ─────────────────────────────────────────────────────────────
+# 5. 先生からのひとこと：読んだ古いもの（14日より前）は出さない。「ふるいひとこと N こ ▸」で開ける
+#    ・未読は、いくつ前のものでも出す（ひらいた直後も消えない）
+#    ・既読の新しいもの（14日以内）は、ホームでは最新の1つだけ
+#    ・Zl(...)（既読にする処理）は そのまま
+# ─────────────────────────────────────────────────────────────
+OLD_NOTES = 'function s1({onAll:s}){var u;const t=e1(),[a,n]=J.useState(!1);if(!t||!((u=t.notes)!=null&&u.length))return null;const r=t.notes.filter(h=>!h.read_at),i=t.notes.filter(h=>Date.now()-new Date(h.at).getTime()<7*864e5);if(!r.length&&!i.length)return null;const c=r.length?r.slice(0,3):i.slice(0,1),l=()=>{n(!0),Zl(r.map(h=>h.id))};return e.jsxs("div",{className:`card tn-card ${r.length&&!a?"new":""}`,children:[e.jsxs("h2",{children:["💌 ",e.jsx(o,{children:"先生から"}),r.length>0&&!a&&e.jsx("span",{className:"tn-badge",children:e.jsx(o,{children:`あたらしい ひとこと ${r.length}こ`})})]}),r.length&&!a?e.jsxs("button",{className:"btn block tn-open",onClick:l,children:["💌 ",e.jsx(o,{children:"ひらく"})]}):e.jsxs(e.Fragment,{children:[c.map(h=>e.jsx(t1,{n:h},h.id)),s&&t.notes.length>c.length&&e.jsx("button",{className:"btn ghost sm",onClick:s,children:e.jsx(o,{children:"前のひとことも見る"})})]})]})}function R2(){var t,a;const s=e1();return J.useEffect(()=>{const n=((s==null?void 0:s.notes)||[]).filter(r=>!r.read_at).map(r=>r.id);n.length&&Zl(n)},[(t=s==null?void 0:s.notes)==null?void 0:t.length]),!s||!((a=s.notes)!=null&&a.length)?null:e.jsxs("div",{className:"card tn-card",id:"teacher-notes",children:[e.jsxs("h2",{children:["💌 ",e.jsx(o,{children:"先生からの ひとこと"}),e.jsxs("span",{className:"sub",children:[s.notes.length,"こ"]})]}),s.notes.map(n=>e.jsx(t1,{n},n.id))]})}'
+
+NEW_NOTES = r'''const ktNote=s=>Date.now()-new Date(s.at).getTime()<14*864e5;function ktOld(s,t,a){return s.length?e.jsxs("div",{className:"tn-old",children:[e.jsx("button",{type:"button",className:"tn-old-btn tiny muted",onClick:a,"aria-expanded":t,style:{background:"none",border:0,padding:"8px 0 2px",textDecoration:"underline",cursor:"pointer",color:"inherit",font:"inherit"},children:`ふるいひとこと ${s.length}こ ${t?"▾":"▸"}`}),t&&s.map(n=>e.jsx(t1,{n},n.id))]}):null}function s1({onAll:s}){var u;const t=e1(),[a,n]=J.useState(null),[kO,kS]=J.useState(!1);if(!t||!((u=t.notes)!=null&&u.length))return null;const r=t.notes.filter(h=>!h.read_at),i=t.notes.filter(ktNote),c=a||(r.length?[]:i.slice(0,1));if(!r.length&&!c.length)return null;const ids=new Set(c.map(h=>h.id)),old=t.notes.filter(h=>h.read_at&&!ktNote(h)&&!ids.has(h.id)),more=i.filter(h=>h.read_at&&!ids.has(h.id)),l=()=>{n(r.slice(0,6)),Zl(r.map(h=>h.id))};return e.jsxs("div",{className:`card tn-card ${r.length&&!a?"new":""}`,children:[e.jsxs("h2",{children:["💌 ",e.jsx(o,{children:"先生から"}),r.length>0&&!a&&e.jsx("span",{className:"tn-badge",children:e.jsx(o,{children:`あたらしい ひとこと ${r.length}こ`})})]}),r.length&&!a?e.jsxs("button",{className:"btn block tn-open",onClick:l,children:["💌 ",e.jsx(o,{children:"ひらく"})]}):e.jsxs(e.Fragment,{children:[c.map(h=>e.jsx(t1,{n:h},h.id)),s&&more.length>0&&e.jsx("button",{className:"btn ghost sm",onClick:s,children:e.jsx(o,{children:"前のひとことも見る"})})]}),ktOld(old,kO,()=>kS(!kO))]})}function R2(){var t,a;const s=e1(),[kU]=J.useState(()=>new Set(((s&&s.notes)||[]).filter(n=>!n.read_at).map(n=>n.id))),[kO,kS]=J.useState(!1);if(J.useEffect(()=>{const n=((s==null?void 0:s.notes)||[]).filter(r=>!r.read_at).map(r=>r.id);n.length&&Zl(n)},[(t=s==null?void 0:s.notes)==null?void 0:t.length]),!s||!((a=s.notes)!=null&&a.length))return null;const kN=s.notes.filter(n=>kU.has(n.id)||!n.read_at||ktNote(n)),kD=s.notes.filter(n=>!kN.includes(n));return e.jsxs("div",{className:"card tn-card",id:"teacher-notes",children:[e.jsxs("h2",{children:["💌 ",e.jsx(o,{children:"先生からの ひとこと"}),e.jsxs("span",{className:"sub",children:[kN.length,"こ"]})]}),kN.length===0&&e.jsx("div",{className:"tiny muted",children:e.jsx(o,{children:"あたらしい ひとことは ないよ"})}),kN.map(n=>e.jsx(t1,{n},n.id)),ktOld(kD,kO,()=>kS(!kO))]})}'''
+rep(OLD_NOTES, NEW_NOTES, 'notes')
+
+# ─────────────────────────────────────────────────────────────
+# 6. マップ：小学生モード（E1〜E6のプロフィール）でも 中学（J1〜J3）まで出す（高校は今まで通り出さない）
+# ─────────────────────────────────────────────────────────────
+rep('g=a?s0.filter(v=>v[0]==="E"):s0,f=[...g].reverse()',
+    'g=a?s0.filter(v=>v[0]!=="H"):s0,f=[...g].reverse()', 'map rows')
+rep('h=Nc(s).map(se).filter(f=>f&&(!i||f.grade[0]==="E"))',
+    'h=Nc(s).map(se).filter(f=>f&&(!i||f.grade[0]!=="H"))', 'map sheet')
+
+open(dst, 'w', encoding='utf-8').write(s)
+print('ok', dst, len(s))

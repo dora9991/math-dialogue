@@ -1,0 +1,24 @@
+"""高1（数学Ⅰ・数学A）の「解説ごとの演習」を、公開中の solo バンドルに足すパッチ（中3の patch_k3.py と同じ考え方）。
+使い方: python3 patch_h1.py <土台の solo-*.js（中3まで入ったもの）> <build-chunks_h1.mjs の出力フォルダ> <出力 solo-*.js>
+  (1) 解説の索引 Wn の最後に、高1の授業 94 本（{f:<キー>, u:[単元], n:[5,5,5,5]}）を足す
+  (2) 読みこみの表（./<キー>.json → import("./<キー>-<hash>.js")）の最後に、8科目ぶんを足す
+anchor は「ちょうど1回」出ることを assert する。"""
+import sys, json, os, re
+src, chunkdir, dst = sys.argv[1], sys.argv[2], sys.argv[3]
+s = open(src, encoding='utf-8').read()
+L = json.load(open(os.path.join(chunkdir, 'lessons.json'), encoding='utf-8'))
+lessons, files = L['lessons'], L['files']
+def rep(old, new):
+    global s
+    assert s.count(old) == 1, (s.count(old), old[:90])
+    s = s.replace(old, new)
+assert '"m1a-01":{f:"h1' not in s, 'すでに高1の索引が入っています'
+wn = ''.join(',"%s":{f:"%s",u:%s,n:%s}' % (k, v['f'], json.dumps(v['u'], ensure_ascii=False, separators=(',', ':')), json.dumps(v['n'], separators=(',', ':'))) for k, v in sorted(lessons.items()))
+rep(',n:[5,5,5,5]}};let Rc={}', ',n:[5,5,5,5]}' + wn + '};let Rc={}')
+m = re.search(r'"\./g3tenkai\.json":\(\)=>_\(\(\)=>import\("\./g3tenkai-[A-Za-z0-9_-]+\.js"\),\[\]\)\}\)\}catch\{\}', s)
+assert m and len(re.findall(r'"\./g3tenkai\.json"', s)) == 1
+tail = m.group(0)
+add = ''.join(',"./%s.json":()=>_(()=>import("./%s"),[])' % (k, v) for k, v in sorted(files.items()))
+rep(tail, tail[:-len('})}catch{}')] + add + '})}catch{}')
+open(dst, 'w', encoding='utf-8').write(s)
+print('ok', len(s), '授業', len(lessons), 'ファイル', len(files))

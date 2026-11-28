@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>学力推移調査型の類題　中1 図形（5題）</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script src="../heikou/js/geo.js"></script>
+<script>
+/* 中1 図形　学力推移調査型の類題（5題）。
+   5つの型（作図の手順と理由の説明／図形の移動／おうぎ形の弧と面積の日常の場面／展開図と見取図の対応／円柱と円すいの体積の比べ方の説明）を、
+   場面と数値をすべて自作して作った。答えはページの中で計算し直して確かめている（CH.check）。 */
+(function () {
+  var C = CH.C, RAD = Math.PI / 180, TAU = Math.PI * 2, OUT = 'rgba(20,40,30,.9)';
+  function rd(x) { return Math.round(x * 1e6) / 1e6 + 0; }
+  function lab(F, p, deg, k, t, o) {
+    o = o || {}; var q = F.X(p);
+    CH.text(F.D, q[0] + Math.cos(deg * RAD) * F.s * k, q[1] - Math.sin(deg * RAD) * F.s * k, t, { col: o.col || C.chalk, size: F.s * (o.size || .9), a: o.a, outline: OUT, num: o.num });
+  }
+  function top(D, s, col, a) {
+    var B = CH.box(D, { t: 0, l: .02, r: .02 }), fs = CH.fitSize(D, s, B.w, CH.fs(D, 1));
+    CH.text(D, B.cx, B.y0 + CH.fs(D, 1) * .7, s, { col: col || C.yel, a: a, size: fs, outline: OUT });
+  }
+  function arcAt(F, c, r, a0, a1, o) {
+    o = o || {}; var g = F.D.ctx, p = F.X(c);
+    g.save(); g.globalAlpha = F.D.ga * (o.a == null ? 1 : o.a); g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2.2; g.lineCap = 'round';
+    if (o.dash) g.setLineDash(o.dash === true ? [8, 7] : o.dash); g.beginPath(); g.arc(p[0], p[1], r * F.u, -a0 * RAD, -a1 * RAD, true); g.stroke(); g.restore();
+  }
+  /* コンパスで弧をかく（k＝0〜1）。かいている途中は 2本の足も見せる */
+  function comp(F, c, r, a0, a1, k, o) {
+    o = o || {}; if (k <= 0) return; var a = a0 + (a1 - a0) * Math.min(1, k), col = o.col || C.blue;
+    arcAt(F, c, r, a0, a, { col: col, w: o.w || 2.4, a: o.a });
+    if (k < 1) {
+      var p = F.X(GE.polar(c, r, a)), q = F.X(c), m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], d = [p[0] - q[0], p[1] - q[1]], L = Math.hypot(d[0], d[1]) || 1, n = [d[1] / L, -d[0] / L];
+      if (n[1] > 0) n = [-n[0], -n[1]];
+      var hh = [m[0] + n[0] * Math.min(L * .5, F.s * 4), m[1] + n[1] * Math.min(L * .5, F.s * 4)];
+      CH.line(F.D, q[0], q[1], hh[0], hh[1], { col: 'rgba(242,240,230,.75)', w: 2.4 }); CH.line(F.D, hh[0], hh[1], p[0], p[1], { col: 'rgba(242,240,230,.75)', w: 2.4 });
+      CH.circle(F.D, hh[0], hh[1], F.s * .2, { fill: 'rgba(242,240,230,.85)' }); CH.circle(F.D, p[0], p[1], F.s * .15, { fill: col });
+    }
+  }
+  function ang(a, b) { return Math.atan2(b[1] - a[1], b[0] - a[0]) / RAD; }
+  function rotP(ps, c, deg) { return ps.map(function (p) { return GE.rot(p, c, deg); }); }
+  function foldP(ps, a, b, k) { return ps.map(function (p) { var f = GE.foot(p, a, b); return GE.lerpP(p, [2 * f[0] - p[0], 2 * f[1] - p[1]], CH.ease(k)); }); }
+  function cen(ps) { var c = [0, 0]; ps.forEach(function (p) { c[0] += p[0] / ps.length; c[1] += p[1] / ps.length; }); return c; }
+  function crs(T) { return (T[1][0] - T[0][0]) * (T[2][1] - T[0][1]) - (T[1][1] - T[0][1]) * (T[2][0] - T[0][0]); }
+  function dist(p, q) { return Math.hypot(p[0] - q[0], p[1] - q[1]); }
+
+  /* ================= 類題1　作図（公園の入口 A・B から等しいきょりの点 P） ================= */
+  var A1 = [3, 9], B1 = [9, 1], M1 = GE.mid(A1, B1), AB1 = dist(A1, B1), R1 = 6;
+  var H1 = Math.sqrt(R1 * R1 - (AB1 / 2) * (AB1 / 2)), U1 = [(B1[1] - A1[1]) / AB1 * -1, (B1[0] - A1[0]) / AB1];
+  var C1 = [M1[0] + H1 * U1[0], M1[1] + H1 * U1[1]], D1 = [M1[0] - H1 * U1[0], M1[1] - H1 * U1[1]], P1 = GE.meet(C1, D1, [0, 0], [1, 0]);
+  CH.check(GE.near(AB1, 10) && GE.near(dist(A1, C1), 6) && GE.near(dist(B1, C1), 6) && GE.near(dist(A1, D1), 6) && GE.near(dist(B1, D1), 6) && GE.near(dist(P1, A1), dist(P1, B1)) && GE.near(P1[1], 0) &&
+    GE.near((C1[0] - D1[0]) * (B1[0] - A1[0]) + (C1[1] - D1[1]) * (B1[1] - A1[1]), 0) && AB1 / 2 === 5, '類題1');
+  function f1(D) { return GE.fit(D, CH.box(D, { l: .05, r: .05, t: .12, b: .04 }), { a: [-2, -.6], b: [11.6, 10.6] }, { pad: .01 }); }
+  function base1(F, o) {
+    o = o || {};
+    GE.seg(F, [[-1.8, 0], [11.4, 0]], { col: C.chalk, w: 3 }); lab(F, [11.2, 0], 90, 1.1, 'ℓ', { col: C.chalk, size: 1.1 });
+    GE.seg(F, [A1, B1], { col: 'rgba(242,240,230,.55)', w: 2 });
+    GE.dot(F, A1, { col: C.blue, r: F.s * .22 }); GE.dot(F, B1, { col: C.blue, r: F.s * .22 });
+    lab(F, A1, 135, 1.0, 'A', { col: C.blue, size: 1.1 }); lab(F, B1, -45, 1.0, 'B', { col: C.blue, size: 1.1 });
+    if (o.mid) { GE.dot(F, M1, { col: C.pink, r: F.s * .16 }); }
+  }
+  function arcsR(F, r, k, col, span) {
+    var aAC = ang(A1, C1), aAD = ang(A1, D1), aBC = ang(B1, C1), aBD = ang(B1, D1);
+    if (r === 6) { comp(F, A1, 6, aAD - 11, aAC + 11, k, { col: col }); comp(F, B1, 6, aBC - 11, aBD + 11, Math.max(0, k * 2 - 1), { col: col }); }
+    else { var aM = ang(A1, M1), bM = ang(B1, M1); comp(F, A1, r, aM - span, aM + span, k, { col: col }); comp(F, B1, r, bM - span, bM + span, Math.max(0, k * 2 - 1), { col: col }); }
+  }
+
+  /* ================= 類題2　移動（方眼の △ABC） ================= */
+  var T1 = [[1, 1], [4, 1], [1, 3]], LM = [[5, -1], [5, 6]];
+  var T2 = T1.map(function (p) { return GE.reflect(p, LM[0], LM[1]).map(rd); }), T3 = T2.map(function (p) { return GE.rot(p, T2[0], -90).map(rd); });
+  CH.check(T2[0].join() === '9,1' && T2[1].join() === '6,1' && T2[2].join() === '9,3' && T3[0].join() === '9,1' && T3[1].join() === '9,4' && T3[2].join() === '11,1' &&
+    crs(T1) === 6 && crs(T2) === -6 && crs(T3) === -6 && GE.rot(T1[2], [5, 1], 180).map(rd).join() === '9,-1', '類題2');
+  function f2(D) { return GE.fit(D, CH.box(D, { l: .03, r: .03, t: .1, b: .05 }), { a: [-.4, -.6], b: [12.4, 5.2] }, { pad: .01 }); }
+  function grid2(F) {
+    for (var x = 0; x <= 12; x++) { GE.seg(F, [[x, 0], [x, 5]], { col: 'rgba(242,240,230,.16)', w: 1 }); lab(F, [x, 0], -90, .8, String(x), { col: 'rgba(242,240,230,.7)', size: .62, num: true }); }
+    for (var y = 0; y <= 5; y++) { GE.seg(F, [[0, y], [12, y]], { col: 'rgba(242,240,230,.16)', w: 1 }); if (y) lab(F, [0, y], 180, .8, String(y), { col: 'rgba(242,240,230,.7)', size: .62, num: true }); }
+    GE.seg(F, [[5, 0], [5, 5.3]], { col: C.orange, w: 2.6, dash: [7, 6] }); lab(F, [5, 5.35], 0, 0, 'm', { col: C.orange, size: 1.1 });
+  }
+  function tri2(F, T, col, names, o) {
+    o = o || {}; GE.polyP(F, T, { col: col, fa: o.fa == null ? .25 : o.fa, a: o.a, sw: o.sw || 2.6 });
+    if (names) { var c = cen(T); T.forEach(function (p, i) { var d = [p[0] - c[0], p[1] - c[1]], L = Math.hypot(d[0], d[1]) || 1, q = GE.add(p, [d[0] / L * .42, d[1] / L * .42]); if (o.ang && o.ang[i] != null) lab(F, p, o.ang[i], 1.0, names[i], { col: col, size: .9, a: o.a }); else lab(F, q, 0, 0, names[i], { col: col, size: .9, a: o.a }); }); }
+  }
+  /* 回る向きの矢印（ccw: 反時計まわり） */
+  function turn2(F, T, col, ccw, a) {
+    var c = cen(T), pts = [], n = 22, i, r = .55;
+    for (i = 0; i <= n; i++) { var t = i / n, ag = ccw ? 20 + 280 * t : 160 - 280 * t; pts.push(F.X(GE.polar(c, r, ag))); }
+    CH.poly(F.D, pts, { stroke: col, sw: 3, close: false, a: a });
+    var p = pts[n], q = pts[n - 1]; CH.arrow(F.D, q[0], q[1], p[0], p[1], { col: col, w: 3, head: F.s * .6, a: a });
+  }
+
+  /* ================= 類題3　おうぎ形（スプリンクラー） ================= */
+  CH.check(2 * 6 * 120 / 360 === 4 && 6 * 6 * 120 / 360 === 12 && 9 * 9 * 120 / 360 === 27 && 12 * 12 * 120 / 360 === 48 && 48 / 12 === 4, '類題3');
+  function sec(F, c, r, col, o) {
+    o = o || {}; var pts = [c], i; for (i = 0; i <= 40; i++) pts.push(GE.polar(c, r, 30 + 120 * i / 40));
+    GE.polyP(F, pts, { col: col, fa: o.fa == null ? .25 : o.fa, sw: o.sw || 2.6, a: o.a });
+  }
+  function secArc(F, c, r, col, w, a) { var pts = [], i; for (i = 0; i <= 40; i++) pts.push(F.X(GE.polar(c, r, 30 + 120 * i / 40))); CH.poly(F.D, pts, { stroke: col, sw: w || 5, close: false, a: a }); }
+  function fSec(D, w, h) { return GE.fit(D, CH.box(D, { l: .04, r: .04, t: .14, b: .04 }), { a: [-w, -.4], b: [w, h] }, { pad: .02 }); }
+
+  /* ================= 類題4　展開図と見取図（立方体） ================= */
+  var SQ = { 'ア': [4, 8, 4, 8], 'イ': [0, 4, 0, 4], 'ウ': [4, 8, 0, 4], 'エ': [8, 12, 0, 4], 'オ': [12, 16, 0, 4], 'カ': [4, 8, -4, 0] };
+  var NP = { P: [0, 4], Q: [4, 8], R: [16, 4], S: [8, 8], T: [12, 4] };
+  function to3(f, x, y) {
+    return f === 'ウ' ? [x - 4, 0, y] : f === 'ア' ? [x - 4, y - 4, 4] : f === 'カ' ? [x - 4, -y, 0] : f === 'イ' ? [0, 4 - x, y] : f === 'エ' ? [4, x - 8, y] : [16 - x, 4, y];
+  }
+  function at3(k) { var p = NP[k], out = []; Object.keys(SQ).forEach(function (f) { var s = SQ[f]; if (p[0] >= s[0] && p[0] <= s[1] && p[1] >= s[2] && p[1] <= s[3]) out.push(to3(f, p[0], p[1]).join()); }); return out[0]; }
+  CH.check(at3('P') === at3('Q') && at3('P') === at3('R') && at3('P') !== at3('S') && at3('P') !== at3('T') && at3('S') === at3('T') && 6 * 4 * 4 === 96, '類題4：点の重なり');
+  CH.check(to3('ウ', 6, 2)[1] === 0 && to3('オ', 14, 2)[1] === 4 && to3('ア', 6, 6)[2] === 4, '類題4：ウの向かいはオ');
+  var NET2 = [[0, 4, 0, 4, 'a'], [4, 8, 0, 4, 'b'], [8, 12, 0, 4, 'c'], [12, 16, 0, 4, 'd'], [0, 4, 4, 8, 'e'], [4, 8, 4, 8, 'f']];
+  function sqP(s) { return [[s[0], s[2]], [s[1], s[2]], [s[1], s[3]], [s[0], s[3]]]; }
+  function net2(D, R, o) {
+    o = o || {}; var F = GE.fit(D, R, { a: [0, 0], b: [16, 8] }, { pad: .03, size: o.size || CH.fs(D, .9) }), nm = ['ａ', 'ｂ', 'ｃ', 'ｄ', 'ｅ', 'ｆ'];
+    NET2.forEach(function (s, i) { var hl = i >= 4 && o.hl; GE.polyP(F, sqP(s), { col: hl ? C.pink : C.blue, fa: hl ? .4 : .14, sw: 2.2 }); var q = F.X([(s[0] + s[1]) / 2, (s[2] + s[3]) / 2]); CH.text(D, q[0], q[1], nm[i], { size: F.s * 1.2, outline: OUT }); });
+    return F;
+  }
+  function net(D, R, o) {
+    o = o || {}; var F = GE.fit(D, R, { a: [0, -4], b: [16, 8] }, { pad: .02, size: CH.fs(D, .9) });
+    Object.keys(SQ).forEach(function (f) {
+      var col = o.hl && o.hl[f] ? o.hl[f] : C.blue, hl = !!(o.hl && o.hl[f]);
+      GE.polyP(F, sqP(SQ[f]), { col: col, fa: hl ? .4 : .14, sw: 2.2 }); var s = SQ[f], q = F.X([(s[0] + s[1]) / 2, (s[2] + s[3]) / 2]);
+      CH.text(D, q[0], q[1], f, { col: hl ? C.yel : C.chalk, size: F.s * 1.2, outline: OUT });
+    });
+    if (o.size) { var a = F.X([4, -4.7]), b = F.X([8, -4.7]); CH.line(D, a[0], a[1], b[0], b[1], { col: C.green, w: 2.4, a: o.size }); CH.text(D, (a[0] + b[0]) / 2, a[1] + F.s * .9, '4cm', { col: C.green, size: F.s * .95, a: o.size, num: true }); }
+    return F;
+  }
+  function netPts(F, o) {
+    o = o || {}; Object.keys(NP).forEach(function (k) {
+      var on = !o.only || o.only.indexOf(k) >= 0, col = o.col && o.col[k] || (on ? C.orange : 'rgba(242,240,230,.45)'), dir = { P: [-1, 1], Q: [0, 1.1], R: [1, 1], S: [0, 1.1], T: [0, 1.1] }[k];
+      GE.dot(F, NP[k], { col: col, r: F.s * .24, a: o.a }); lab(F, NP[k], Math.atan2(dir[1], dir[0]) / RAD, 1.05, k, { col: col, size: 1.05, a: o.a });
+    });
+  }
+  function pj(p) { return [p[0] + .42 * p[1], p[2] + .42 * p[1]]; }
+  function cube(D, R, o) {
+    o = o || {}; var F = GE.fit(D, R, { a: [0, 0], b: [5.7, o.back ? 6.9 : 5.7] }, { pad: .06, size: CH.fs(D, .9) }), V = {}, i, j;
+    [0, 4].forEach(function (x) { [0, 4].forEach(function (y) { [0, 4].forEach(function (z) { V[x + ',' + y + ',' + z] = pj([x, y, z]); }); }); });
+    function p3(a) { return pj(a); }
+    function face(ps, col, fa, a) { GE.polyP(F, ps.map(p3), { col: col, fa: fa, sw: 2.4, a: a }); }
+    var hl = o.hl || {};
+    /* 見えない辺（点線） */
+    [[[0, 4, 0], [4, 4, 0]], [[0, 4, 0], [0, 0, 0]], [[0, 4, 0], [0, 4, 4]]].forEach(function (e) { GE.seg(F, [p3(e[0]), p3(e[1])], { col: 'rgba(242,240,230,.6)', w: 1.8, dash: [6, 6] }); });
+    face([[0, 0, 0], [4, 0, 0], [4, 0, 4], [0, 0, 4]], hl['ウ'] || C.blue, hl['ウ'] ? .4 : .14);
+    face([[0, 0, 4], [4, 0, 4], [4, 4, 4], [0, 4, 4]], hl['ア'] || C.blue, hl['ア'] ? .4 : .14);
+    face([[4, 0, 0], [4, 4, 0], [4, 4, 4], [4, 0, 4]], hl['エ'] || C.blue, hl['エ'] ? .4 : .14);
+    [['ウ', [2, 0, 2]], ['ア', [2, 2, 4]], ['エ', [4, 2, 2]]].forEach(function (z) { var q = F.X(p3(z[1])); CH.text(D, q[0], q[1], z[0], { col: hl[z[0]] ? C.yel : C.chalk, size: F.s * 1.15, outline: OUT }); });
+    if (o.back) { var q = F.X(p3([2, 4, 2])), w = F.X([3.2, 6.6]); CH.line(D, q[0], q[1], w[0], w[1] + F.s * .6, { col: C.yel, w: 2, dash: true, a: o.back }); CH.text(D, w[0], w[1], 'うら側の面 オ', { col: C.yel, size: F.s * 1.0, a: o.back, outline: OUT }); }
+    if (o.pt) { var pp = F.X(p3([0, 4, 4])); GE.dot(F, p3([0, 4, 4]), { col: C.orange, r: F.s * .26, a: o.pt }); CH.text(D, pp[0] - F.s * 1.0, pp[1] - F.s * 1.1, o.ptName || 'P', { col: C.orange, size: F.s * 1.05, a: o.pt, outline: OUT }); }
+    return F;
+  }
+
+  /* ================= 類題5　円柱と円すい ================= */
+  CH.check(3 * 3 * 5 === 45 && 2 * 3 * 3 + 2 * 3 * 5 === 48 && 5 * 5 * 6 / 3 === 50 && 50 - 45 === 5, '類題5');
+  function ell(D, x, y, rx, ry, o) {
+    o = o || {}; var g = D.ctx; g.save(); g.globalAlpha = D.ga * (o.a == null ? 1 : o.a); g.beginPath(); g.ellipse(x, y, rx, ry, 0, o.s0 || 0, o.s1 == null ? TAU : o.s1);
+    if (o.fill) { g.fillStyle = o.fill; g.fill(); } g.strokeStyle = o.col || C.chalk; g.lineWidth = o.w || 2.4; if (o.dash) g.setLineDash([6, 6]); g.stroke(); g.restore();
+  }
+  function cyl(D, cx, by, r, h, u, col, o) {
+    o = o || {}; var rx = r * u, ry = rx * .3, ty = by - h * u, g = D.ctx;
+    g.save(); g.globalAlpha = D.ga; g.fillStyle = 'rgba(160,200,255,.14)'; g.beginPath(); g.moveTo(cx - rx, ty); g.lineTo(cx - rx, by); g.ellipse(cx, by, rx, ry, 0, Math.PI, 0, true); g.lineTo(cx + rx, ty); g.closePath(); g.fillStyle = col.fill; g.fill(); g.restore();
+    CH.line(D, cx - rx, ty, cx - rx, by, { col: col.s, w: 2.6 }); CH.line(D, cx + rx, ty, cx + rx, by, { col: col.s, w: 2.6 });
+    ell(D, cx, by, rx, ry, { s0: 0, s1: Math.PI, col: col.s }); ell(D, cx, by, rx, ry, { s0: Math.PI, s1: TAU, col: col.s, dash: true, w: 1.8 });
+    ell(D, cx, ty, rx, ry, { col: col.s, fill: col.fill });
+    return { rx: rx, ry: ry, ty: ty };
+  }
+  function cone(D, cx, by, r, h, u, col, o) {
+    var rx = r * u, ry = rx * .3, ty = by - h * u, g = D.ctx;
+    g.save(); g.globalAlpha = D.ga; g.beginPath(); g.moveTo(cx, ty); g.lineTo(cx - rx, by); g.ellipse(cx, by, rx, ry, 0, Math.PI, 0, true); g.closePath(); g.fillStyle = col.fill; g.fill(); g.restore();
+    CH.line(D, cx, ty, cx - rx, by, { col: col.s, w: 2.6 }); CH.line(D, cx, ty, cx + rx, by, { col: col.s, w: 2.6 });
+    ell(D, cx, by, rx, ry, { s0: 0, s1: Math.PI, col: col.s }); ell(D, cx, by, rx, ry, { s0: Math.PI, s1: TAU, col: col.s, dash: true, w: 1.8 });
+    return { rx: rx, ry: ry, ty: ty };
+  }
+  function dims(D, x, by, rx, ty, rl, hl, col, s, a) {
+    CH.line(D, x, by, x + rx, by, { col: col, w: 2.2, dash: true, a: a }); CH.text(D, x + rx / 2, by - s * .8, rl, { col: col, size: s * .95, a: a, num: true, outline: OUT });
+    CH.line(D, x, by, x, ty, { col: col, w: 2.2, dash: true, a: a }); CH.text(D, x - s * .2, (by + ty) / 2, hl, { col: col, size: s * .95, a: a, align: 'right', num: true, outline: OUT });
+  }
+  var BL = { s: C.blue, fill: 'rgba(120,170,255,.18)' }, OR = { s: C.orange, fill: 'rgba(255,170,100,.18)' };
+  function solids(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .04, r: .04, t: .12, b: .1 }), s = CH.fs(D, .9), u = Math.min(R.h / 7.4, R.w / 21), by = R.y1 - u * .6, ax = R.x0 + R.w * .24, bx = R.x0 + R.w * .74;
+    var A = cyl(D, ax, by, 3, 5, u, BL), B = cone(D, bx, by, 5, 6, u, OR);
+    dims(D, ax, by, A.rx, A.ty, '3cm', '5cm', C.blue, s, o.da == null ? 1 : o.da); dims(D, bx, by, B.rx, B.ty, '5cm', '6cm', C.orange, s, o.da == null ? 1 : o.da);
+    CH.text(D, ax, A.ty - A.ry - s * 1.1, '円柱 A', { col: C.blue, size: s * 1.1 }); CH.text(D, bx, B.ty - s * 1.3, '円すい B', { col: C.orange, size: s * 1.1 });
+    return { R: R, s: s, u: u, by: by, ax: ax, bx: bx };
+  }
+
+  function fixSteps(st) { st.forEach(function (s) { ['q', 'a', 'sub', 'bh'].forEach(function (k) { if (s[k]) s[k] = CH.fr(s[k]); }); if (s.notes) s.notes = s.notes.map(CH.fr); if (s.b) (Array.isArray(s.b) ? s.b : [s.b]).forEach(function (b) { b.t = CH.fr(b.t); }); }); return st; }
+
+  K3.run({
+    no: '類題', title: '学力推移調査型の類題　中1 図形（5題）', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }],
+    steps: fixSteps([
+      /* ---------------- 類題1 ---------------- */
+      { tag: '類題1', bh: '類題1　公園の入口から等しいきょりの地点（作図）',
+        q: '公園の入口 A と B から等しいきょりにある地点 P を、まっすぐな道路 ℓ の上にとりたい。A と B のきょりは 10cm（図の縮尺）である。次の手順で P を作図する。① A と B を中心に、同じ半径の弧をかく。② 2つの弧の交点 C、D を通る直線 CD をひく。③ 直線 CD と ℓ との交点を P とする。',
+        notes: ['(1) ① の弧の半径は、何cmより大きくしなければならないか。', '(2) 交点 C について、AC＝BC となるわけを説明しなさい。', '(3) 点 P が A からも B からも等しいきょりにあるわけを説明しなさい。'],
+        draw: function (D) { var F = f1(D); base1(F); } },
+      { tag: '類題1', q: '(1) ① の弧の半径は、何cmより大きくする？', a: '5cm より大きくする', sub: '半径が 5cm（AB の半分）だと、2つの弧は AB の中点でふれるだけで、交点が 1つしかできない。5cm より大きければ 2点で交わり、直線 CD がひける', dur: 4,
+        b: { t: '(1) 半径＝AB の半分 5cm では 1点でふれるだけ → <b>5cm より大きく</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = f1(D); base1(F, { mid: t > .1 });
+          if (t > 0) { arcsR(F, 5, CH.smooth(0, .45, t), C.pink, 24); }
+          if (t > .5) { var a = CH.smooth(.5, .75, t); lab(F, M1, -20, 8, '半径 5cm → 1点M', { col: C.pink, size: .85, a: a }); arcsR(F, 6, CH.smooth(.55, .95, t), C.blue); }
+          if (t > .9) CH.text(D, CH.box(D, {}).cx, CH.box(D, { t: 0 }).y0 + CH.fs(D, 1) * .7, '半径 6cm なら 2点で交わる', { col: C.blue, a: CH.smooth(.9, 1, t), size: CH.fs(D, .95), outline: OUT });
+        } },
+      { tag: '類題1', q: '(2) 交点 C で AC＝BC となるわけは？', a: 'A と B から同じ半径の弧をかいたので、AC も BC もその半径に等しいから', sub: 'C は、A を中心とする半径 6cm の弧の上にあるので AC＝6cm。同じ C は、B を中心とする半径 6cm の弧の上にもあるので BC＝6cm。だから AC＝BC', dur: 4,
+        b: { t: '(2) 弧の上の点は、中心から 半径 だけはなれている → AC＝BC＝<b>半径</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = f1(D); base1(F); arcsR(F, 6, 1, C.blue);
+          GE.dot(F, C1, { col: C.yel, r: F.s * .2 }); GE.dot(F, D1, { col: C.yel, r: F.s * .2 }); lab(F, C1, 45, 1.0, 'C', { col: C.yel, size: 1.1 }); lab(F, D1, -135, 1.0, 'D', { col: C.yel, size: 1.1 });
+          if (t > .1) { var a = CH.smooth(.1, .4, t); GE.seg(F, [A1, GE.lerpP(A1, C1, a)], { col: C.green, w: 3.4 }); GE.seg(F, [B1, GE.lerpP(B1, C1, a)], { col: C.green, w: 3.4 }); }
+          if (t > .45) { var a2 = CH.smooth(.45, .65, t); lab(F, GE.mid(A1, C1), 85, 1.2, 'AC＝半径', { col: C.green, a: a2, size: .9 }); lab(F, GE.mid(B1, C1), 0, 3.3, 'BC＝半径', { col: C.green, a: a2, size: .9 }); GE.tick(F, [A1, C1], 1, { col: C.green, a: a2 }); GE.tick(F, [B1, C1], 1, { col: C.green, a: a2 }); }
+          if (t > .75) top(D, 'どちらも 同じ半径 だから AC ＝ BC', C.green, CH.smooth(.75, .95, t));
+        } },
+      { tag: '類題1', q: '(3) 点 P が A・B から等しいきょりにあるわけは？', a: '直線 CD は線分 AB の垂直二等分線で、垂直二等分線の上の点は、線分の両はしから等しいきょりにあるから、PA＝PB', sub: 'C も D も A・B から等しいきょりにある（AC＝BC、AD＝BD）。だから直線 CD は線分 AB の垂直二等分線。P はその直線の上の点なので PA＝PB', dur: 5,
+        b: { t: '(3) 直線 CD ＝ 線分 AB の<b>垂直二等分線</b> → 上の点 P は PA＝PB', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = f1(D); base1(F, { mid: t > 0 }); arcsR(F, 6, 1, 'rgba(120,170,255,.55)');
+          GE.dot(F, C1, { col: C.yel, r: F.s * .2 }); GE.dot(F, D1, { col: C.yel, r: F.s * .2 }); lab(F, C1, 45, 1.0, 'C', { col: C.yel, size: 1.1 }); lab(F, D1, -60, 1.0, 'D', { col: C.yel, size: 1.1 });
+          var k = CH.smooth(0, .3, t); GE.seg(F, [C1, GE.lerpP(C1, P1, k)], { col: C.yel, w: 3.2 }); lab(F, M1, 20, 1.0, 'M', { col: C.pink, size: .9, a: CH.smooth(.3, .4, t) });
+          if (t > .3) { F.P.A = A1; F.P.M = M1; F.P.C = C1; GE.right(F, 'AMC', { col: C.pink, a: CH.smooth(.3, .45, t) }); }
+          if (t > .4) { var a = CH.smooth(.4, .55, t); GE.dot(F, P1, { col: C.pink, r: F.s * .24, a: a }); lab(F, P1, -90, 1.1, 'P', { col: C.pink, size: 1.1, a: a }); }
+          if (t > .55) { var a2 = CH.smooth(.55, .8, t); GE.seg(F, [P1, A1], { col: C.pink, w: 3, a: a2 }); GE.seg(F, [P1, B1], { col: C.pink, w: 3, a: a2 }); GE.tick(F, [P1, A1], 2, { col: C.pink, a: a2 }); GE.tick(F, [P1, B1], 2, { col: C.pink, a: a2 }); }
+          if (t > .8) top(D, '直線 CD は 線分 AB の垂直二等分線 → PA ＝ PB', C.pink, CH.smooth(.8, 1, t));
+        } },
+      /* ---------------- 類題2 ---------------- */
+      { tag: '類題2', bh: '類題2　方眼の上の図形の移動',
+        q: '方眼の上に、A(1, 1)、B(4, 1)、C(1, 3) を頂点とする △ABC がある。直線 m は、点 (5, 0) を通り、縦の方眼の線と重なっている。△ABC を直線 m について対称移動した図形を △A′B′C′、△A′B′C′ を点 A′ を中心に 時計まわりに 90°回転移動した図形を △A″B″C″ とする。',
+        notes: ['(1) 点 A′ の座標を答えなさい。', '(2) 点 C″ の座標を答えなさい。', '(3) あやさんは「△A′B′C′ は、△ABC を回転移動しても重ねられる」と言った。正しいか。わけも書きなさい。'],
+        draw: function (D) { var F = f2(D); grid2(F); tri2(F, T1, C.blue, ['A', 'B', 'C']); } },
+      { tag: '類題2', q: '(1) 点 A′ の座標は？', a: 'A′(9, 1)', sub: 'A(1, 1) から m（x＝5）までは 4。m の反対側へ同じ 4 だけ進んだ x＝9。y は 1 のまま', dur: 3.5,
+        b: { t: '(1) m から A までが 4 → 反対側へ 4 → <b>A′(9, 1)</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = f2(D), k = CH.smooth(0, .6, t); grid2(F); tri2(F, T1, C.blue, ['A', 'B', 'C'], { fa: .15, ang: [null, 45, null] });
+          if (t > 0) { var Q = foldP(T1, LM[0], LM[1], k); tri2(F, Q, C.pink, null, { fa: .2 }); }
+          if (t > .6) { var a = CH.smooth(.6, .8, t); tri2(F, T2, C.pink, ['A′', 'B′', 'C′'], { a: a, ang: [null, 135, null] }); GE.seg(F, [[1, 1], [9, 1]], { col: C.yel, w: 2, dash: [6, 5], a: a }); lab(F, [3, 1], 90, .9, '4', { col: C.yel, size: .9, a: a, num: true }); lab(F, [7, 1], 90, .9, '4', { col: C.yel, size: .9, a: a, num: true }); }
+        } },
+      { tag: '類題2', q: '(2) 点 C″ の座標は？', a: 'C″(11, 1)', sub: 'A′(9, 1) から見て C′(9, 3) は真上に 2。時計まわりに 90°回すと、A′ から 右へ 2 の位置 → (11, 1)', dur: 4,
+        b: { t: '(2) A′ の真上 2 の C′ → 時計まわりに 90°で 右へ 2 → <b>C″(11, 1)</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = f2(D), k = CH.ease(CH.smooth(0, .65, t)); grid2(F); tri2(F, T1, C.blue, null, { fa: .1, sw: 1.6 }); tri2(F, T2, C.pink, ['A′', 'B′', 'C′'], { fa: .15, ang: [null, null, 135] });
+          var Q = rotP(T2, T2[0], -90 * k); tri2(F, Q, C.yel, null, { fa: .22 }); GE.arcDir(F, T2[0], 90 - 90 * k, 90, { col: C.yel, r: F.s * 1.9, w: 2.6 });
+          if (t > .65) { var a = CH.smooth(.65, .85, t); GE.polyP(F, T3, { col: C.yel, fa: .25, a: a }); lab(F, T3[2], -70, 1.9, 'C″(11, 1)', { col: C.yel, size: .95, a: a }); lab(F, T3[1], 90, 1.0, 'B″', { col: C.yel, size: .95, a: a }); GE.dot(F, T3[2], { col: C.yel, r: F.s * .22, a: a }); }
+        } },
+      { tag: '類題2', q: '(3) 「△A′B′C′ は △ABC を回転移動しても重ねられる」は正しい？', a: '正しくない', sub: '△ABC は A→B→C が反時計まわり。△A′B′C′ は A′→B′→C′ が時計まわりで、向きが逆（裏返し）になっている。平行移動・回転移動では図形は裏返らないので、重ねられない。重ねるには対称移動が必要', dur: 5,
+        b: { t: '(3) <b>正しくない</b>　A→B→C は反時計まわり、A′→B′→C′ は時計まわり（裏返し）→ 回転では重ならない', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = f2(D); grid2(F); tri2(F, T1, C.blue, ['A', 'B', 'C']); tri2(F, T2, C.pink, ['A′', 'B′', 'C′']);
+          if (t > .1) turn2(F, T1, C.blue, true, CH.smooth(.1, .3, t));
+          if (t > .35) turn2(F, T2, C.pink, false, CH.smooth(.35, .55, t));
+          if (t > .1) lab(F, [2.2, 4.3], 0, 0, '反時計まわり', { col: C.blue, size: .9, a: CH.smooth(.1, .3, t) });
+          if (t > .35) lab(F, [7.8, 4.3], 0, 0, '時計まわり', { col: C.pink, size: .9, a: CH.smooth(.35, .55, t) });
+          if (t > .7) top(D, '向きが逆（裏返し）→ 回転移動では重ならない', C.yel, CH.smooth(.7, .9, t));
+        } },
+      /* ---------------- 類題3 ---------------- */
+      { tag: '類題3', bh: '類題3　公園のスプリンクラー（おうぎ形）',
+        q: '公園のスプリンクラーは、中心 O から半径 6m、中心角 120°のおうぎ形の範囲に水をまく。円周率は π とする。',
+        notes: ['(1) 水がまかれる範囲の、弧の長さを求めなさい。', '(2) 水がまかれる範囲の、面積を求めなさい。', '(3) 中心角を 120°のまま、水がまかれる面積を 27π m² にしたい。半径を何mにすればよいか。', '(4) ひなさんは「半径を 2倍の 12m にすれば、水がまかれる面積も 2倍になる」と考えた。正しいか。わけも書きなさい。'],
+        draw: function (D) { var F = fSec(D, 5.4, 6.3), O = [0, 0]; sec(F, O, 6, C.green); GE.seg(F, [O, GE.polar(O, 6, 30)], { col: C.chalk, w: 2.4 }); GE.seg(F, [O, GE.polar(O, 6, 150)], { col: C.chalk, w: 2.4 }); GE.dot(F, O, { col: C.chalk }); lab(F, O, -90, 1, 'O', { size: 1.05 }); GE.arcDir(F, O, 30, 150, { col: C.yel, r: F.s * 2.4, lab: '120°' }); lab(F, GE.polar(O, 3.2, 30), -30, 1.1, '6m', { col: C.chalk, size: .95 }); } },
+      { tag: '類題3', q: '(1) 弧の長さは？', a: '4π m', sub: '2π×6×[120/360]＝12π×[1/3]＝4π', dur: 3,
+        b: { t: '(1) 2π×6×[1/3] ＝ <b>4π</b>（m）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = fSec(D, 5.4, 6.3), O = [0, 0]; sec(F, O, 6, C.green, { fa: .15 }); GE.seg(F, [O, GE.polar(O, 6, 30)], { col: C.chalk, w: 2.4 }); GE.seg(F, [O, GE.polar(O, 6, 150)], { col: C.chalk, w: 2.4 }); GE.dot(F, O, { col: C.chalk }); GE.arcDir(F, O, 30, 150, { col: C.chalk, r: F.s * 2.4, lab: '120°' });
+          var pts = [], i, n = Math.round(40 * CH.smooth(0, .6, t)); for (i = 0; i <= n; i++) pts.push(F.X(GE.polar(O, 6, 30 + 120 * i / 40))); if (n > 0) CH.poly(D, pts, { stroke: C.yel, sw: 6, close: false });
+          if (t > .6) CH.text(D, F.X([0, 3.2])[0], F.X([0, 3.2])[1], '弧 ＝ 円周 12π の 3分の1', { col: C.yel, a: CH.smooth(.6, .85, t), size: F.s * 1.05, outline: OUT });
+          if (t > .8) CH.text(D, F.X([0, 4.6])[0], F.X([0, 4.6])[1], '4π m', { col: C.yel, a: CH.smooth(.8, 1, t), size: F.s * 1.3, outline: OUT });
+        } },
+      { tag: '類題3', q: '(2) 面積は？', a: '12π m²', sub: 'π×6²×[120/360]＝36π×[1/3]＝12π', dur: 3,
+        b: { t: '(2) π×6²×[1/3] ＝ <b>12π</b>（m²）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = fSec(D, 5.4, 6.3), O = [0, 0]; sec(F, O, 6, t > .2 ? C.yel : C.green, { fa: .15 + .25 * CH.smooth(.2, .6, t) }); GE.seg(F, [O, GE.polar(O, 6, 30)], { col: C.chalk, w: 2.4 }); GE.seg(F, [O, GE.polar(O, 6, 150)], { col: C.chalk, w: 2.4 }); GE.dot(F, O, { col: C.chalk }); GE.arcDir(F, O, 30, 150, { col: C.chalk, r: F.s * 2.4, lab: '120°' });
+          if (t > .1) CH.text(D, F.X([0, 3.4])[0], F.X([0, 3.4])[1], '円の面積 36π の 3分の1', { col: C.yel, a: CH.smooth(.1, .4, t), size: F.s * 1.05, outline: OUT });
+          if (t > .6) CH.text(D, F.X([0, 2.2])[0], F.X([0, 2.2])[1], '12π m²', { col: C.yel, a: CH.smooth(.6, .85, t), size: F.s * 1.35, outline: OUT });
+        } },
+      { tag: '類題3', q: '(3) 面積を 27π m² にするには、半径を何mにする？', a: '9m', sub: '半径を r とすると π×r²×[1/3]＝27π → r²＝81 → r＝9（r＞0）', dur: 3.5,
+        b: { t: '(3) π r²×[1/3]＝27π　r²＝81　r＞0 より <b>r＝9（m）</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = fSec(D, 8, 9.3), O = [0, 0], k = CH.ease(CH.smooth(0, .6, t)), r = CH.lerp(6, 9, k); sec(F, O, 6, C.green, { fa: .1, sw: 1.6 }); sec(F, O, r, C.yel, { fa: .2 }); GE.dot(F, O, { col: C.chalk });
+          GE.seg(F, [O, GE.polar(O, r, 30)], { col: C.chalk, w: 2.4 }); GE.seg(F, [O, GE.polar(O, r, 150)], { col: C.chalk, w: 2.4 });
+          if (t > .6) { var a = CH.smooth(.6, .85, t); lab(F, GE.polar(O, 4.6, 30), -30, 1.1, '9m', { col: C.yel, size: 1, a: a }); CH.text(D, F.X([0, 4])[0], F.X([0, 4])[1], '27π m²', { col: C.yel, a: a, size: F.s * 1.3, outline: OUT }); }
+        } },
+      { tag: '類題3', q: '(4) 「半径を 2倍の 12m にすれば、面積も 2倍」は正しい？', a: '正しくない（4倍になる）', sub: '半径 12m のときの面積は π×12²×[1/3]＝48π。もとの 12π の 4倍。おうぎ形の面積は 半径の2乗に比例するので、半径を 2倍にすると面積は 2²＝4倍になる', dur: 4.5,
+        b: { t: '(4) <b>正しくない</b>　半径12m：π×12²×[1/3]＝48π ＝ 12π の <b>4倍</b>（面積は半径の2乗に比例）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, F = GE.fit(D, CH.box(D, { l: .03, r: .03, t: .16, b: .04 }), { a: [-13.4, -.4], b: [21.4, 12.5] }, { pad: .01 }), c1 = [-8, 0], c2 = [11, 0], k = CH.smooth(0, .4, t);
+          sec(F, c1, 6, C.green); GE.dot(F, c1, { col: C.chalk }); lab(F, c1, -90, 1, 'O', { size: .9 }); CH.text(D, F.X([-8, 2.8])[0], F.X([-8, 2.8])[1], '12π m²', { col: C.green, size: F.s * 1.1, outline: OUT });
+          if (k > 0) { sec(F, c2, 12, C.yel, { a: k, fa: .2 }); GE.dot(F, c2, { col: C.chalk, a: k }); lab(F, c2, -90, 1, 'O', { size: .9, a: k }); lab(F, GE.polar(c2, 6, 30), -30, 1.1, '12m', { col: C.yel, size: .95, a: k }); lab(F, GE.polar(c1, 3.2, 30), -30, 1.1, '6m', { col: C.green, size: .95 }); }
+          if (t > .45) { var a = CH.smooth(.45, .7, t); CH.text(D, F.X([11, 5.5])[0], F.X([11, 5.5])[1], '48π m²', { col: C.yel, size: F.s * 1.4, a: a, outline: OUT }); }
+          if (t > .7) top(D, '半径 2倍 → 面積は 2×2＝4倍（12π → 48π）', C.pink, CH.smooth(.7, .95, t));
+        } },
+      /* ---------------- 類題4 ---------------- */
+      { tag: '類題4', bh: '類題4　立方体の展開図と見取図',
+        q: '1辺が 4cm の立方体の展開図が、左の図1である。ア〜カは面の名前、P〜T は頂点を表す。右上は、図1を組み立てた立方体の見取図で、ウの面を手前、アの面を上に置いたものである。右下の図2は、正方形を 6まい つなげた図である。',
+        notes: ['(1) この立方体の表面積を求めなさい。', '(2) ウの面と平行になる面は、ア〜カのどれか。', '(3) 組み立てたとき、点 P と重なる点を、Q・R・S・T からすべて選びなさい。', '(4) 図2は、立方体の展開図にならない。そのわけを説明しなさい。'],
+        draw: function (D) { var R = CH.box(D, { l: .02, r: .02, t: .06, b: .04 }), F = net(D, CH.rect(R.x0, R.y0, R.x0 + R.w * .6, R.y1), { size: 1 }); netPts(F); CH.text(D, R.x0 + R.w * .3, R.y0 - F.s * .2, '図1', { col: C.chalk, size: F.s }); cube(D, CH.rect(R.x0 + R.w * .64, R.y0, R.x1, R.y0 + R.h * .56)); var G = net2(D, CH.rect(R.x0 + R.w * .64, R.y0 + R.h * .66, R.x1, R.y1), { size: CH.fs(D, .7) }); CH.text(D, R.x0 + R.w * .64 + 4, R.y0 + R.h * .64, '図2', { col: C.chalk, size: G.s, align: 'left' }); } },
+      { tag: '類題4', q: '(1) 立方体の表面積は？', a: '96 cm²', sub: '1つの面は 4×4＝16 cm²。面は 6つなので 16×6＝96', dur: 2.5,
+        b: { t: '(1) 4×4×6 ＝ <b>96</b>（cm²）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .02, r: .02, t: .1, b: .06 }), hl = {}; ['ア', 'イ', 'ウ', 'エ', 'オ', 'カ'].forEach(function (f, i) { if (t > i * .12) hl[f] = C.green; });
+          var F = net(D, CH.rect(R.x0, R.y0, R.x0 + R.w * .64, R.y1), { size: CH.smooth(0, .2, t), hl: hl }); cube(D, CH.rect(R.x0 + R.w * .68, R.y0 + R.h * .1, R.x1, R.y1 - R.h * .1));
+          if (t > .75) CH.text(D, R.x0 + R.w * .84, R.y0 + R.h * .1, '16 × 6 ＝ 96 cm²', { col: C.yel, a: CH.smooth(.75, .95, t), size: CH.fs(D, 1), outline: OUT });
+        } },
+      { tag: '類題4', q: '(2) ウの面と平行な面は？', a: 'オ', sub: '展開図で、ウの 左右に エ・イ、上下に ア・カ がつながっている。残る オ が、ウの向かい側の面。見取図では うら側にくる', dur: 3.5,
+        b: { t: '(2) ウの まわりの 4つ（ア・イ・エ・カ）が側面 → 向かいの面は <b>オ</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .02, r: .02, t: .1, b: .06 }), hl = { 'ウ': C.yel }; if (t > .45) hl['オ'] = C.yel;
+          net(D, CH.rect(R.x0, R.y0, R.x0 + R.w * .64, R.y1), { hl: hl }); cube(D, CH.rect(R.x0 + R.w * .68, R.y0 + R.h * .1, R.x1, R.y1 - R.h * .1), { hl: { 'ウ': C.yel }, back: CH.smooth(.45, .7, t) });
+        } },
+      { tag: '類題4', q: '(3) 点 P と重なる点は？', a: 'Q と R', sub: '点 P は、組み立てると 立方体の「うしろ・上・左」の頂点になる。展開図で、同じ頂点に集まるのは P・Q・R の3つ。S と T は、別の頂点（うしろ・上・右）で重なる', dur: 4,
+        b: { t: '(3) P・Q・R が同じ頂点 → <b>Q と R</b>（S と T は別の頂点）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .02, r: .02, t: .1, b: .06 }), a = CH.smooth(0, .4, t), F = net(D, CH.rect(R.x0, R.y0, R.x0 + R.w * .64, R.y1), {});
+          netPts(F, { only: t > 0 ? ['P', 'Q', 'R'] : null, col: t > 0 ? { P: C.orange, Q: C.pink, R: C.pink } : null });
+          cube(D, CH.rect(R.x0 + R.w * .68, R.y0 + R.h * .1, R.x1, R.y1 - R.h * .1), { pt: a, ptName: 'P＝Q＝R' });
+          if (t > .5) top(D, 'P・Q・R は 立方体の 1つの頂点に 集まる', C.pink, CH.smooth(.5, .8, t));
+        } },
+      { tag: '類題4', q: '(4) この図が展開図にならないわけは？', a: 'ｅ と ｆ の 2まいが、組み立てると 同じ面（上の面）に重なってしまい、向かい合う面（底）になる 1まいが足りないから', sub: 'ａ・ｂ・ｃ・ｄ の 4まいは、まわりの 4つの側面になる。その上の ｅ・ｆ は どちらも「上の面」にたたまれて重なる。底の面ができない', dur: 4.5,
+        b: { t: '(4) 上の 2まいが <b>同じ面に重なり</b>、底の面が できない → 展開図にならない', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .04, r: .04, t: .12, b: .06 }), F = net2(D, R, { hl: t > .2 });
+          if (t > .2) { var a = CH.smooth(.2, .5, t); CH.arrow(D, F.X([2, 7.2])[0], F.X([2, 7.2])[1], F.X([6, 7.2])[0], F.X([6, 7.2])[1], { col: C.yel, w: 3, head: F.s * .6, a: a }); CH.text(D, F.X([8.5, 6])[0], F.X([8.5, 6])[1], '2まいが 同じ「上の面」に 重なる', { col: C.pink, align: 'left', size: F.s * 1.0, a: a, outline: OUT }); CH.text(D, F.X([8.5, 4.6])[0], F.X([8.5, 4.6])[1], '→ 底の面が 1まい 足りない', { col: C.pink, align: 'left', size: F.s * 1.0, a: CH.smooth(.5, .8, t), outline: OUT }); }
+        } },
+      /* ---------------- 類題5 ---------------- */
+      { tag: '類題5', bh: '類題5　円柱の容器と円すいの容器（体積）',
+        q: '底面の半径が 3cm、高さが 5cm の円柱の容器 A と、底面の半径が 5cm、高さが 6cm の円すいの容器 B がある。円周率は π とする。',
+        notes: ['(1) 円柱 A の体積を求めなさい。', '(2) 円柱 A の表面積を求めなさい。', '(3) 円すい B の体積を求めなさい。', '(4) B にいっぱいに入れた水を、すべて A に移すと、水はあふれるか。(1)・(3) の結果を使って説明しなさい。'],
+        draw: function (D) { solids(D); } },
+      { tag: '類題5', q: '(1) 円柱 A の体積は？', a: '45π cm³', sub: '底面積 π×3²＝9π、高さ 5 → 9π×5＝45π', dur: 2.5,
+        b: { t: '(1) π×3²×5 ＝ <b>45π</b>（cm³）', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, S = solids(D); CH.text(D, S.ax, S.R.y0 + S.s * .5, t > .3 ? '9π × 5 ＝ 45π cm³' : '', { col: C.yel, a: CH.smooth(.3, .6, t), size: S.s * 1.15, outline: OUT }); if (t > 0) ell(D, S.ax, S.by - 5 * S.u, 3 * S.u, 3 * S.u * .3, { col: C.yel, fill: 'rgba(255,226,122,.3)', w: 3, a: CH.smooth(0, .3, t) }); } },
+      { tag: '類題5', q: '(2) 円柱 A の表面積は？', a: '48π cm²', sub: '底面 2つ：9π×2＝18π。側面は長方形で、横が 2π×3＝6π、縦が 5 → 30π。あわせて 18π＋30π＝48π', dur: 4,
+        b: { t: '(2) 底面 9π×2＋側面 (2π×3)×5 ＝18π＋30π＝<b>48π</b>（cm²）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, S = solids(D, { da: .3 }), R = S.R, h = S.u * 5, w = 6 * Math.PI * S.u * .5;
+          if (t > 0) { var a = CH.smooth(0, .3, t); CH.fillRect(D, R.x0 + R.w * .06, R.y0 + R.h * .05, R.x0 + R.w * .06 + w, R.y0 + R.h * .05 + h * .55, { fill: 'rgba(255,226,122,.2)', stroke: C.yel, sw: 2.6, a: a }); CH.text(D, R.x0 + R.w * .06 + w / 2, R.y0 + R.h * .05 + h * .275, '側面 6π × 5 ＝ 30π', { col: C.yel, size: S.s, a: a, outline: OUT }); CH.text(D, R.x0 + R.w * .06 + w / 2, R.y0 + R.h * .05 - S.s * .75, '横 ＝ 底面の円周 2π×3 ＝ 6π', { col: C.green, size: S.s * .85, a: a, outline: OUT }); }
+          if (t > .4) { var a2 = CH.smooth(.4, .6, t); CH.text(D, R.x0 + R.w * .06 + w / 2, R.y0 + R.h * .05 + h * .55 + S.s * 1.6, '底面 9π × 2 ＝ 18π', { col: C.blue, size: S.s, a: a2, outline: OUT }); }
+          if (t > .7) CH.text(D, R.x0 + R.w * .72, R.y0 + R.h * .18, '30π ＋ 18π ＝ 48π cm²', { col: C.yel, size: S.s * 1.2, a: CH.smooth(.7, .9, t), outline: OUT });
+        } },
+      { tag: '類題5', q: '(3) 円すい B の体積は？', a: '50π cm³', sub: '[1/3]×底面積×高さ＝[1/3]×π×5²×6＝50π', dur: 3,
+        b: { t: '(3) [1/3]×π×5²×6 ＝ <b>50π</b>（cm³）', col: C.yel },
+        draw: function (D) { var t = D.ph ? D.t : 0, S = solids(D); if (t > 0) ell(D, S.bx, S.by, 5 * S.u, 5 * S.u * .3, { col: C.yel, fill: 'rgba(255,226,122,.3)', w: 3, a: CH.smooth(0, .3, t) }); CH.text(D, S.bx, S.R.y0 + S.s * .5, '3分の1 × 25π × 6 ＝ 50π cm³', { col: C.yel, a: CH.smooth(.3, .6, t), size: S.s * 1.1, outline: OUT }); } },
+      { tag: '類題5', q: '(4) B の水を すべて A に移すと、あふれる？', a: 'あふれる', sub: 'B に入る水は 50π cm³、A の容積は 45π cm³。50π＞45π なので、50π−45π＝5π cm³ の水が あふれる', dur: 4.5,
+        b: { t: '(4) B の水 50π ＞ A の容積 45π → <b>あふれる</b>（5π cm³ 分）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, R = CH.box(D, { l: .08, r: .06, t: .22, b: .2 }), s = CH.fs(D, .95), h = Math.min(R.h * .22, 54), w = R.w * .8, k = CH.smooth(0, .45, t), tot = 50, x0 = R.x0 + R.w * .14;
+          CH.text(D, R.cx, R.y0 - s * 1.4, 'B の水（円すいの容積）と A の容積をくらべる', { col: C.chalk, size: CH.fitSize(D, 'B の水（円すいの容積）と A の容積をくらべる', R.w, s * 1.1), outline: OUT });
+          CH.text(D, x0 - s * .4, R.y0 + h * .5, 'B の水', { align: 'right', col: C.orange, size: s }); CH.tape(D, x0, R.y0, w, h, [{ v: 50, col: C.orange, txt: '50π' }], tot, { a: k });
+          CH.text(D, x0 - s * .4, R.y0 + h * 1.9, 'A の容積', { align: 'right', col: C.blue, size: s }); CH.tape(D, x0, R.y0 + h * 1.4, w, h, [{ v: 45, col: C.blue, txt: '45π' }], tot, { a: k });
+          if (t > .5) { var a = CH.smooth(.5, .75, t); CH.tape(D, x0, R.y0 + h * 2.8, w, h, [{ v: 45, col: C.green, txt: 'A に入る 45π' }, { v: 5, col: C.pink, txt: '' }], tot, { a: a }); CH.text(D, x0 - s * .4, R.y0 + h * 3.3, 'B の水を A へ', { align: 'right', col: C.green, size: s, a: a }); CH.text(D, x0 + w * 47.5 / 50, R.y0 + h * 4.1, 'あふれる 5π', { col: C.pink, size: s, a: a, outline: OUT }); }
+          if (t > .8) CH.text(D, R.cx, R.y1 + s * 1.2, '50π − 45π ＝ 5π（cm³）あふれる', { col: C.yel, size: s * 1.15, a: CH.smooth(.8, 1, t), outline: OUT });
+        } }
+    ])
+  });
+})();
+</script>
+</body>
+</html>

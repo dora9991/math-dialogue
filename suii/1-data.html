@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>データの活用（2） 類題5題</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 中1 データの活用（2）　学力推移調査型の類題（5題）。
+   型：累積相対度数の折れ線の読み取り／度数折れ線2つの比較と説明／階級の幅を変えたヒストグラム／度数分布表から平均値／ドットプロットと代表値。
+   場面と数値はすべて自作。答えはページの中で計算し直して確かめている（CH.check）。 */
+(function () {
+  var C = CH.C, YB = 'rgba(20,30,24,.85)';
+
+  /* ---------- 類題1　通学時間（累積相対度数の折れ線） ---------- */
+  var E1 = [0, 10, 20, 30, 40, 50, 60], H1 = [5, 15, 25, 30, 15, 10], CU1 = CH.cum(H1), CR1 = CU1.map(function (x) { return x / 100; });
+  CH.check(CH.sum(H1) === 100 && CU1.join() === '5,20,45,75,90,100' && CR1[2] === .45 && CR1[3] === .75 && 100 - CU1[3] === 25
+    && CU1[2] < 50 && CU1[3] >= 51 && 1 - CR1[2] === .55 && CH.near(1 - CR1[2], .55), '類題1');
+
+  /* ---------- 類題2　反復横とび（度数折れ線2つ） ---------- */
+  var M2 = [32.5, 37.5, 42.5, 47.5, 52.5, 57.5], P2 = [1, 3, 8, 10, 6, 2], Q2 = [0, 2, 4, 18, 5, 1];
+  CH.check(CH.sum(P2) === 30 && CH.sum(Q2) === 30 && Q2.indexOf(Math.max.apply(null, Q2)) === 3 && M2[3] === 47.5
+    && P2[3] + P2[4] + P2[5] === 18 && Q2[3] + Q2[4] + Q2[5] === 24 && 18 / 30 === .6 && 24 / 30 === .8 && P2[0] + P2[1] === 4 && Q2[0] + Q2[1] === 2
+    && CH.near(10 / 30, 1 / 3) && 18 / 30 === .6, '類題2');
+
+  /* ---------- 類題3　家庭学習の時間（階級の幅をかえる） ---------- */
+  var EA = [0, 40, 80, 120], HA = [16, 12, 12];
+  var EB = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120], HB = [0, 3, 6, 7, 2, 1, 2, 7, 8, 3, 1, 0];
+  var D3 = [0, 3, 6, 7, 2, 1, 2, 7, 8, 3, 1, 0];
+  CH.check(CH.sum(HA) === 40 && CH.sum(HB) === 40 && CH.sum(HB.slice(0, 4)) === HA[0] && CH.sum(HB.slice(4, 8)) === HA[1] && CH.sum(HB.slice(8)) === HA[2]
+    && HA.indexOf(16) === 0 && HB.indexOf(8) === 8 && CH.sum(HB.slice(6)) === 21 && 21 / 40 === .525 && HB[3] === 7 && HB[7] === 7 && D3.join() === HB.join(), '類題3');
+
+  /* ---------- 類題4　腹筋の回数（度数分布表から平均値） ---------- */
+  var D4 = [12, 15, 18, 21, 23, 24, 26, 27, 28, 31, 33, 34, 35, 37, 38, 41, 44, 46, 52, 56], E4 = [10, 20, 30, 40, 50, 60], F4 = CH.bin(D4, E4), V4 = [15, 25, 35, 45, 55];
+  var S4 = F4.map(function (f, i) { return f * V4[i]; });
+  CH.check(D4.length === 20 && F4.join() === '3,6,6,3,2' && S4.join() === '45,150,210,135,110' && CH.sum(S4) === 650 && CH.sum(S4) / 20 === 32.5
+    && CH.sum(D4) === 641 && CH.near(CH.sum(D4) / 20, 32.05) && CH.near(32.5 - 32.05, .45), '類題4');
+  function cv4(v) { return V4[Math.min(4, Math.floor((v - 10) / 10))]; }
+
+  /* ---------- 類題5　漢字テスト（ドットプロットと代表値） ---------- */
+  var V5 = [2, 3, 4, 5, 5, 5, 6, 7, 8, 8, 9, 10], W5 = V5.concat(6);
+  CH.check(CH.sum(V5) === 72 && CH.mean(V5) === 6 && CH.median(V5) === 5.5 && CH.mode(V5) === 5 && CH.sum(W5) === 78 && CH.mean(W5) === 6 && CH.median(W5) === 6
+    && V5.filter(function (x) { return x > 6; }).length === 5 && V5.filter(function (x) { return x < 6; }).length === 6
+    && CH.sum(V5.filter(function (x) { return x < 6; }).map(function (x) { return 6 - x; })) === 12 && CH.sum(V5.filter(function (x) { return x > 6; }).map(function (x) { return x - 6; })) === 12, '類題5');
+
+  /* ---------------- 図の道具 ---------------- */
+  function hist(D, R, E, H, o) {
+    o = o || {}; var Ax = CH.axes(D, R, { x: [E[0], E[E.length - 1]], y: [0, o.ymax], xt: o.xt || E, yt: o.yt, xl: o.xl, yl: o.yl });
+    CH.bars(D, Ax, E, H, { col: o.col || C.blue, labels: true, hl: o.hl, alpha: o.alpha });
+    return Ax;
+  }
+  function vline(D, Ax, x, y, t, col) { /* x の目もりから 点 (x, y) まで、そこから 縦軸まで 点線を のばす */
+    var k1 = CH.smooth(0, .5, t), k2 = CH.smooth(.5, 1, t);
+    CH.line(D, Ax.X(x), Ax.Y(0), Ax.X(x), CH.lerp(Ax.Y(0), Ax.Y(y), k1), { col: col, dash: true, w: 2.4 });
+    if (k2 > 0) CH.line(D, Ax.X(x), Ax.Y(y), CH.lerp(Ax.X(x), Ax.X(0), k2), Ax.Y(y), { col: col, dash: true, w: 2.4 });
+  }
+
+  /* 類題1 */
+  function cum1(D) {
+    var R = CH.box(D, { l: .1, r: .06, t: .1, b: .17 });
+    var Ax = CH.axes(D, R, { x: [0, 60], y: [0, 1], xt: E1, yt: [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1], yf: function (v) { return v.toFixed(1); }, xl: '（分）', yl: '累積相対度数' });
+    CH.path(D, Ax, [[0, 0]].concat(E1.slice(1).map(function (e, i) { return [e, CR1[i]]; })), { col: C.yel, r: 5 });
+    return Ax;
+  }
+  /* 類題2 */
+  function poly2(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .1, r: .06, t: .12, b: .17 });
+    var Ax = CH.axes(D, R, { x: [25, 65], y: [0, 20], xt: [30, 35, 40, 45, 50, 55, 60], yt: [0, 5, 10, 15, 20], xl: '（回）', yl: '（人）' });
+    [[P2, C.blue, '1組'], [Q2, C.orange, '2組']].forEach(function (g, j) {
+      var a = o.only == null || o.only === j ? 1 : .3;
+      CH.path(D, Ax, [[27.5, 0]].concat(M2.map(function (m, i) { return [m, g[0][i]]; })).concat([[62.5, 0]]), { col: g[1], r: 4.5, a: a, w: 3 });
+      var y = Ax.Y(18.6 - j * 2.2); CH.line(D, Ax.X(55), y, Ax.X(57), y, { col: g[1], w: 3 }); CH.text(D, Ax.X(57.6), y, g[2], { col: g[1], align: 'left' });
+    });
+    return Ax;
+  }
+  /* 類題3 */
+  function two3(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .08, r: .03, t: .2, b: .16 }), rs = CH.split(D, R, 2, .12);
+    var A1 = hist(D, rs[0], EA, HA, { ymax: 18, yt: [0, 4, 8, 12, 16], col: C.blue, xl: '（分）', yl: '（人）', hl: o.hla, alpha: o.ala });
+    var A2 = hist(D, rs[1], EB, HB, { xt: [0, 20, 40, 60, 80, 100, 120], ymax: 10, yt: [0, 2, 4, 6, 8, 10], col: C.orange, xl: '（分）', yl: '（人）', hl: o.hlb, alpha: o.alb });
+    CH.text(D, rs[0].cx, rs[0].y0 - A1.s * 3.4, '階級の幅 40分', { col: C.blue }); CH.text(D, rs[1].cx, rs[1].y0 - A2.s * 3.4, '階級の幅 10分', { col: C.orange });
+    return [A1, A2];
+  }
+  /* 類題4 */
+  function tab4(D, Rt, k, sh) {
+    sh = sh !== false;
+    var rows = [['度数（人）'].concat(F4, 20), ['階級値（回）'].concat(V4, ''), ['階級値×度数'].concat(S4.map(function (v, i) { return i === 2 && (k < 1 || (k === 1 && !sh)) ? 'ア' : v; }), k >= 2 && sh ? 650 : '')];
+    CH.table(D, Rt, ['階級（回）', '10〜20', '20〜30', '30〜40', '40〜50', '50〜60', '合計'], rows, { fw: .2, top: true, hl: function (r, c) { return (k === 1 && r === 3 && c === 3) || (k === 2 && r === 3 && c === 6) ? C.yel : null; } });
+  }
+  function lay4(D) { var R = CH.box(D, { l: .04, r: .04, t: .06, b: .08 }); return { Rt: CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .36), Rb: CH.rect(R.x0, R.y0 + R.h * .44, R.x1, R.y1) }; }
+  function dline4(D, Rb, o) {
+    var s = CH.fs(D), yl = Rb.y0 + Rb.h * .66, X = CH.numline(D, CH.rect(Rb.x0 + Rb.w * .03, yl - 10, Rb.x1 - Rb.w * .05, yl), 10, 60, 1, { lab: 10, unit: '（回）' });
+    [20, 30, 40, 50].forEach(function (v) { CH.line(D, X(v), yl, X(v), yl - Rb.h * .5, { col: 'rgba(242,240,230,.18)', w: 1.4 }); });
+    return { X: X, yl: yl, s: s };
+  }
+  /* 類題5 */
+  function dot5(D, o) {
+    o = o || {}; var R = CH.box(D, { l: .07, r: .07, t: .1, b: .14 }), s = CH.fs(D), yl = R.y0 + R.h * .74, X = CH.numline(D, CH.rect(R.x0, yl - 10, R.x1, yl), 0, 10, 1, { unit: '（点）' });
+    CH.dots(D, X, yl, o.add ? W5 : V5, { r: s * .58, col: o.col || function () { return C.blue; }, alpha: o.alpha });
+    return { R: R, X: X, yl: yl, s: s };
+  }
+  function lg(D, G, j, txt, col, a) { CH.text(D, G.X(.2), G.R.y0 + G.s * (1.1 + j * 1.8), txt, { col: col, align: 'left', a: a }); }
+
+  K3.run({
+    no: '類題', title: '学力推移調査型の類題　中1 データの活用（2）（5題）', flat: true, hint: '',
+    links: [{ href: 'index.html', label: '目次' }],
+    steps: [
+      /* ---------------- 類題1 ---------------- */
+      { tag: '類題1', bh: '類題1　通学時間（累積相対度数）', q: 'ある中学校の 1年生 100人の通学時間を調べ、累積相対度数を折れ線グラフに表した。たとえば 横軸が 30 の点は、通学時間が 30分未満の人の割合を表す。',
+        notes: ['(1) 30分未満の人の累積相対度数と、人数を求めなさい。', '(2) 通学時間が 40分以上の人は、何人か。', '(3) 通学時間の中央値がふくまれる階級を答えなさい。', '(4) ゆうきさんは「通学時間が 30分以上の人は、全体の半数より少ない」と言った。正しいか。わけも書きなさい。'],
+        draw: function (D) { cum1(D); } },
+      { tag: '類題1', q: '(1) 30分未満の人の累積相対度数と人数は？', a: '累積相対度数 0.45、人数 45人', sub: 'グラフで 30分の点の高さを読む → 0.45。100人の 0.45 だから 100 × 0.45 ＝ 45人', dur: 3,
+        b: { t: '(1) 横軸 30 の点の高さ → <b>0.45</b>　100 × 0.45 ＝ <b>45人</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Ax = cum1(D); if (t <= 0) return; vline(D, Ax, 30, .45, CH.smooth(0, .6, t), C.orange);
+          if (t > .6) CH.text(D, Ax.X(30) + Ax.s, Ax.Y(.45) + Ax.s * 1.8, '0.45 → 45人', { col: C.orange, align: 'left', a: CH.smooth(.6, .85, t), size: Ax.s * 1.2, outline: YB });
+        } },
+      { tag: '類題1', q: '(2) 40分以上の人は何人？', a: '25人', sub: '40分未満の累積相対度数は 0.75 → 75人。100 − 75 ＝ 25人', dur: 3,
+        b: { t: '(2) 40分未満 0.75 → 75人　100 − 75 ＝ <b>25人</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Ax = cum1(D); if (t <= 0) return; vline(D, Ax, 40, .75, CH.smooth(0, .6, t), C.orange);
+          if (t > .6) { var a = CH.smooth(.6, .85, t); CH.text(D, Ax.X(40) + Ax.s, Ax.Y(.75) + Ax.s * 1.8, '0.75 → 75人', { col: C.orange, align: 'left', a: a, size: Ax.s * 1.2, outline: YB }); CH.text(D, Ax.X(40) + Ax.s, Ax.Y(.75) + Ax.s * 3.6, '100 − 75 ＝ 25人', { col: C.green, align: 'left', a: a, size: Ax.s * 1.2, outline: YB }); }
+        } },
+      { tag: '類題1', q: '(3) 中央値がふくまれる階級は？', a: '30分以上 40分未満', sub: '100人の中央値は 50番目と 51番目の平均。30分未満が 45人、40分未満が 75人だから、50番目も 51番目も 30〜40分の階級にある（累積相対度数が 0.5 をこえるのは 30〜40分）', dur: 4,
+        b: { t: '(3) 30分未満 0.45（45人）、40分未満 0.75（75人）→ <b>30分以上 40分未満</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Ax = cum1(D); if (t <= 0) return; var k = CH.smooth(0, .4, t);
+          CH.line(D, Ax.X(0), Ax.Y(.5), CH.lerp(Ax.X(0), Ax.X(60), k), Ax.Y(.5), { col: C.green, dash: true, w: 2.4 }); CH.text(D, Ax.X(60), Ax.Y(.5) - Ax.s * 1, '0.5（半分）', { col: C.green, align: 'right', a: k, size: Ax.s });
+          if (t > .4) { var a = CH.smooth(.4, .7, t); CH.path(D, Ax, [[30, .45], [40, .75]], { col: C.pink, w: 6, a: a, r: 7 }); CH.text(D, Ax.X(35), Ax.Y(.45) + Ax.s * 2.2, '0.5 をこえるのは', { col: C.pink, a: a, size: Ax.s * 1.1, outline: YB }); CH.text(D, Ax.X(35), Ax.Y(.45) + Ax.s * 3.6, '30〜40分の あいだ', { col: C.pink, a: a, size: Ax.s * 1.1, outline: YB }); }
+        } },
+      { tag: '類題1', q: '(4) 「30分以上の人は、全体の半数より少ない」は正しい？', a: '正しくない', sub: '30分未満の累積相対度数は 0.45 だから、30分以上の相対度数は 1 − 0.45 ＝ 0.55。0.55 は 0.5 より大きいので、30分以上の人は 半数より多い（55人）', dur: 4,
+        b: { t: '(4) <b>正しくない</b>　30分以上 ＝ 1 − 0.45 ＝ <b>0.55</b> ＞ 0.5（55人で半数より多い）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Ax = cum1(D); if (t <= 0) return; var a1 = CH.smooth(0, .3, t), a2 = CH.smooth(.3, .7, t);
+          CH.circle(D, Ax.X(30), Ax.Y(.45), 10, { stroke: C.orange, sw: 2.6, a: a1 }); CH.text(D, Ax.X(30) + Ax.s, Ax.Y(.45) + Ax.s * 1.8, '30分未満 0.45', { col: C.orange, align: 'left', a: a1, size: Ax.s * 1.1, outline: YB });
+          CH.line(D, Ax.X(30), Ax.Y(.45), Ax.X(30), CH.lerp(Ax.Y(.45), Ax.Y(1), a2), { col: C.pink, w: 4, a: a2 }); CH.line(D, Ax.X(0), Ax.Y(1), Ax.X(60), Ax.Y(1), { col: 'rgba(242,240,230,.35)', dash: true, a: a2 });
+          if (t > .6) { var a = CH.smooth(.6, .85, t); CH.text(D, Ax.X(30) - Ax.s, Ax.Y(.72), '30分以上', { col: C.pink, align: 'right', a: a, size: Ax.s * 1.1, outline: YB }); CH.text(D, Ax.X(30) - Ax.s, Ax.Y(.72) + Ax.s * 1.6, '1 − 0.45 ＝ 0.55', { col: C.pink, align: 'right', a: a, size: Ax.s * 1.1, outline: YB }); }
+        } },
+      /* ---------------- 類題2 ---------------- */
+      { tag: '類題2', bh: '類題2　反復横とび（度数折れ線の比較）', q: '1組・2組それぞれ 30人の、反復横とび（1分間の回数）の記録を、度数折れ線に表した。たとえば 30〜35 の階級は、30回以上 35回未満を表す。',
+        notes: ['(1) 2組で、度数がいちばん多い階級の階級値を求めなさい。', '(2) 45回以上の人の相対度数を、1組・2組それぞれ求めなさい。', '(3) 35回未満の人は、1組・2組それぞれ何人か。', '(4) さおりさんは「どちらの組も 最頻値が同じだから、2つの組の記録の分布は同じようなものだ」と言った。正しいか。わけも書きなさい。'],
+        draw: function (D) { poly2(D); } },
+      { tag: '類題2', q: '(1) 2組で、度数が最も多い階級の階級値は？', a: '47.5回', sub: '2組で度数が最大なのは 45〜50回の階級（18人）。階級値は (45＋50)÷2 ＝ 47.5', dur: 2.5,
+        b: { t: '(1) 2組の最大は 45〜50回（18人）→ 階級値 <b>47.5回</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Ax = poly2(D, { only: t > 0 ? 1 : null }); if (t <= 0) return; var a = CH.smooth(0, .4, t);
+          CH.line(D, Ax.X(47.5), Ax.Y(0), Ax.X(47.5), Ax.Y(18), { col: C.yel, dash: true, w: 2.4, a: a }); CH.circle(D, Ax.X(47.5), Ax.Y(18), 11, { stroke: C.yel, sw: 2.6, a: a });
+          if (t > .4) CH.text(D, Ax.X(47.5) - Ax.s * 1.3, Ax.Y(18), '18人（最大）', { col: C.yel, align: 'right', a: CH.smooth(.4, .7, t), size: Ax.s * 1.1, outline: YB });
+          if (t > .6) CH.text(D, Ax.X(47.5) + Ax.s * .3, Ax.Y(0) - Ax.s * 1.3, '階級値 47.5', { col: C.yel, align: 'left', a: CH.smooth(.6, .85, t), size: Ax.s * 1.1, outline: YB });
+        } },
+      { tag: '類題2', q: '(2) 45回以上の人の相対度数は？（1組・2組）', a: '1組 0.60、2組 0.80', sub: '1組 10＋6＋2＝18人、18÷30＝0.60　2組 18＋5＋1＝24人、24÷30＝0.80', dur: 3,
+        b: { t: '(2) 1組 18÷30＝<b>0.60</b>　2組 24÷30＝<b>0.80</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Ax = poly2(D); if (t <= 0) return; var a = CH.smooth(0, .3, t);
+          CH.line(D, Ax.X(45), Ax.Y(0), Ax.X(45), Ax.Y(20), { col: C.green, dash: true, w: 2.4, a: a }); CH.text(D, Ax.X(45) + Ax.s * .4, Ax.Y(20) + Ax.s * .2, '45回以上 →', { col: C.green, align: 'left', a: a, size: Ax.s });
+          if (t > .3) { var b = CH.smooth(.3, .6, t); CH.text(D, Ax.X(26), Ax.Y(18.2), '1組  10＋6＋2 ＝ 18人 → 0.60', { col: C.blue, align: 'left', a: b, size: Ax.s * 1.1, outline: YB }); }
+          if (t > .6) { var c = CH.smooth(.6, .9, t); CH.text(D, Ax.X(26), Ax.Y(16.2), '2組  18＋5＋1 ＝ 24人 → 0.80', { col: C.orange, align: 'left', a: c, size: Ax.s * 1.1, outline: YB }); }
+        } },
+      { tag: '類題2', q: '(3) 35回未満の人は、1組・2組それぞれ何人？', a: '1組 4人、2組 2人', sub: '30〜35 と 35〜40 の度数をたす。1組 1＋3＝4人、2組 0＋2＝2人', dur: 2.5,
+        b: { t: '(3) 1組 1＋3＝<b>4人</b>　2組 0＋2＝<b>2人</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Ax = poly2(D); if (t <= 0) return; var a = CH.smooth(0, .3, t);
+          CH.line(D, Ax.X(35), Ax.Y(0), Ax.X(35), Ax.Y(20), { col: C.green, dash: true, w: 2.4, a: a }); CH.text(D, Ax.X(35) - Ax.s * .4, Ax.Y(20) + Ax.s * .2, '← 35回未満', { col: C.green, align: 'right', a: a, size: Ax.s });
+          if (t > .3) CH.text(D, Ax.X(36), Ax.Y(15.4), '1組  1＋3 ＝ 4人', { col: C.blue, align: 'left', a: CH.smooth(.3, .6, t), size: Ax.s * 1.1, outline: YB });
+          if (t > .6) CH.text(D, Ax.X(36), Ax.Y(13.4), '2組  0＋2 ＝ 2人', { col: C.orange, align: 'left', a: CH.smooth(.6, .9, t), size: Ax.s * 1.1, outline: YB });
+        } },
+      { tag: '類題2', q: '(4) 「最頻値が同じだから、分布は同じようなもの」は正しい？', a: '正しくない', sub: '2組は 45〜50回に 18人（30人の 0.60）が集まり、折れ線の山が高くてせまい。1組は 45〜50回が 10人（約 0.33）で、山がひくく 左右に広がっている。最頻値が同じでも、ちらばりのようすがちがう', dur: 5,
+        b: { t: '(4) <b>正しくない</b>　2組は 45〜50回に 18人（0.60）集中、1組は 10人（約 0.33）で広がっている', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, Ax = poly2(D); if (t <= 0) return; var a = CH.smooth(0, .3, t), b = CH.smooth(.3, .6, t), c = CH.smooth(.6, .9, t);
+          CH.line(D, Ax.X(47.5), Ax.Y(0), Ax.X(47.5), Ax.Y(18), { col: 'rgba(242,240,230,.4)', dash: true, a: a }); CH.text(D, Ax.X(47.5), Ax.Y(0) - Ax.s * 1.2, '最頻値 47.5（どちらも）', { col: C.chalk, a: a, size: Ax.s });
+          CH.circle(D, Ax.X(47.5), Ax.Y(18), 11, { stroke: C.orange, sw: 2.6, a: b }); CH.text(D, Ax.X(47.5) - Ax.s * 1.4, Ax.Y(18), '2組 18人（0.60）山が高く せまい', { col: C.orange, align: 'right', a: b, size: Ax.s, outline: YB });
+          CH.circle(D, Ax.X(47.5), Ax.Y(10), 11, { stroke: C.blue, sw: 2.6, a: c }); CH.text(D, Ax.X(47.5) - Ax.s * 1.4, Ax.Y(10), '1組 10人（約0.33）広がる', { col: C.blue, align: 'right', a: c, size: Ax.s, outline: YB });
+        } },
+      /* ---------------- 類題3 ---------------- */
+      { tag: '類題3', bh: '類題3　家庭学習の時間（階級の幅）', q: '40人の 1日の家庭学習の時間を、階級の幅を 40分と 10分にして、2つのヒストグラムに表した。たとえば 0〜40 は、0分以上 40分未満を表す。',
+        notes: ['(1) 階級の幅を 40分にしたヒストグラムで、最頻値を求めなさい。', '(2) 階級の幅を 10分にしたヒストグラムで、最頻値を求めなさい。', '(3) 学習時間が 60分以上の人の相対度数を求めなさい。', '(4) ひなたさんは、幅 40分のヒストグラムだけを見て「学習時間は、短い人ほど多い」と言った。幅 10分のヒストグラムを見ると、どんなことがわかるか。説明しなさい。'],
+        draw: function (D) { two3(D); } },
+      { tag: '類題3', q: '(1) 幅 40分のヒストグラムの最頻値は？', a: '20分', sub: '度数が最大（16人）の階級は 0〜40分。階級値は (0＋40)÷2 ＝ 20', dur: 2.5,
+        b: { t: '(1) 最大は 0〜40分（16人）→ 階級値 <b>20分</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, A = two3(D, { hla: function (i) { return t > 0 && i === 0 ? C.yel : null; }, alb: function () { return t > 0 ? .3 : 1; }, ala: null });
+          if (t > .3) CH.text(D, A[0].X(60), A[0].Y(15.2), '最頻値 20分', { col: C.yel, a: CH.smooth(.3, .6, t), size: A[0].s * 1.25, outline: YB });
+        } },
+      { tag: '類題3', q: '(2) 幅 10分のヒストグラムの最頻値は？', a: '85分', sub: '度数が最大（8人）の階級は 80〜90分。階級値は (80＋90)÷2 ＝ 85', dur: 2.5,
+        b: { t: '(2) 最大は 80〜90分（8人）→ 階級値 <b>85分</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, A = two3(D, { hlb: function (i) { return t > 0 && i === 8 ? C.yel : null; }, ala: function () { return t > 0 ? .3 : 1; } });
+          if (t > .3) CH.text(D, A[1].X(85), A[1].Y(8) - A[1].s * 3.2, '最頻値 85分', { col: C.yel, a: CH.smooth(.3, .6, t), size: A[1].s * 1.2, outline: YB });
+        } },
+      { tag: '類題3', q: '(3) 60分以上の人の相対度数は？', a: '0.525', sub: '60〜70・70〜80・80〜90・90〜100・100〜110 の度数をたす　2＋7＋8＋3＋1＝21人、21÷40＝0.525', dur: 3,
+        b: { t: '(3) 2＋7＋8＋3＋1＝21人　21÷40＝<b>0.525</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, A = two3(D, { hlb: function (i) { return t > 0 && i >= 6 ? C.green : null; }, alb: function (i) { return t > 0 && i < 6 ? .3 : 1; }, ala: function () { return t > 0 ? .3 : 1; } });
+          if (t > .3) CH.text(D, A[1].X(60), A[1].Y(10) + A[1].s * .3, '21人 ÷ 40人 ＝ 0.525', { col: C.green, align: 'center', a: CH.smooth(.3, .6, t), size: A[1].s * 1.15, outline: YB });
+        } },
+      { tag: '類題3', q: '(4) 幅 10分のヒストグラムを見ると、どんなことがわかる？', a: '山が2つあり、学習時間が短いグループと長いグループにわかれていることがわかる', sub: '幅 40分では 0〜40分が最も多く 右へ行くほど少なく見える。幅 10分にすると、30〜40分ごろ と 80〜90分ごろに 山が2つあり、短い時間の人と 長い時間の人の 2つのグループにわかれている。階級の幅によって、分布の見え方が変わる', dur: 5,
+        b: { t: '(4) 幅 10分では <b>山が2つ</b>（30〜40分ごろ・80〜90分ごろ）→ 短い人と長い人の <b>2グループ</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, A = two3(D, { hlb: function (i) { return t > .3 && (i >= 2 && i <= 4 || i >= 6 && i <= 9) ? C.pink : null; }, ala: function () { return t > 0 && t < .3 ? .6 : .35; } });
+          if (t > 0) CH.text(D, A[0].X(60), A[0].Y(17.2), '山は 1つに見える', { col: C.blue, a: CH.smooth(0, .25, t), size: A[0].s * 1.1, outline: YB });
+          if (t > .3) { var a = CH.smooth(.3, .6, t); CH.text(D, A[1].X(32), A[1].Y(7) - A[1].s * 3.3, '山①', { col: C.pink, a: a, size: A[1].s * 1.2, outline: YB }); CH.text(D, A[1].X(85), A[1].Y(8) - A[1].s * 3.3, '山②', { col: C.pink, a: a, size: A[1].s * 1.2, outline: YB }); }
+          if (t > .65) CH.text(D, A[0].X(60), A[0].Y(7), '10分の幅では', { col: C.pink, a: CH.smooth(.65, .9, t), size: A[0].s * 1.05, outline: YB }), CH.text(D, A[0].X(60), A[0].Y(7) + A[0].s * 1.7, '山が 2つ → 2グループ', { col: C.pink, a: CH.smooth(.65, .9, t), size: A[0].s * 1.05, outline: YB });
+        } },
+      /* ---------------- 類題4 ---------------- */
+      { tag: '類題4', bh: '類題4　腹筋の回数（度数分布表から平均値）', q: '20人が 1分間に行った腹筋の回数を調べた。　12・15・18・21・23・24・26・27・28・31・33・34・35・37・38・41・44・46・52・56（回）　このデータを、次の度数分布表にまとめた。',
+        notes: ['(1) 表の ア にあてはまる数を求めなさい。', '(2) 度数分布表から、階級値を使って平均値を求めなさい。', '(3) もとのデータの 20個の値から、実際の平均値を求めなさい。', '(4) (2)と(3)の平均値がちがう わけを説明しなさい。'],
+        draw: function (D) {
+          var L = lay4(D), s = CH.fs(D); tab4(D, L.Rt, 0); CH.text(D, L.Rb.x0, L.Rb.y0, 'もとのデータ（回）', { align: 'left', size: s * .85, col: 'rgba(242,240,230,.75)' });
+          var cw = L.Rb.w / 10, ch = Math.min(L.Rb.h * .3, cw * .62);
+          D4.forEach(function (v, i) { CH.card(D, L.Rb.x0 + cw * (i % 10 + .5), L.Rb.y0 + L.Rb.h * .3 + Math.floor(i / 10) * ch * 1.3, cw * .86, ch, v, { col: C.blue, size: ch * .55 }); });
+        } },
+      { tag: '類題4', q: '(1) ア（30〜40回の「階級値×度数」）は？', a: '210', sub: '階級値 35、度数 6 だから 35 × 6 ＝ 210', dur: 2,
+        b: { t: '(1) ア … 35 × 6 ＝ <b>210</b>', col: C.yel },
+        draw: function (D) { var L = lay4(D), t = D.ph ? D.t : 0; tab4(D, L.Rt, 1, t > 0); if (t > 0) CH.text(D, L.Rb.cx, L.Rb.cy, '階級値 35 × 度数 6 ＝ 210', { col: C.yel, size: CH.fs(D, 1.4), a: CH.smooth(0, .4, t) }); } },
+      { tag: '類題4', q: '(2) 度数分布表から求めた平均値は？', a: '32.5回', sub: '（階級値×度数）の合計 45＋150＋210＋135＋110＝650、650÷20＝32.5', dur: 3,
+        b: { t: '(2) (45＋150＋210＋135＋110)÷20 ＝ 650÷20 ＝ <b>32.5回</b>', col: C.yel },
+        draw: function (D) { var L = lay4(D), t = D.ph ? D.t : 0; tab4(D, L.Rt, 2, t > 0); if (t > 0) { CH.text(D, L.Rb.cx, L.Rb.cy - CH.fs(D) * 1.2, '45＋150＋210＋135＋110 ＝ 650', { col: C.yel, size: CH.fs(D, 1.2), a: CH.smooth(0, .3, t) }); CH.text(D, L.Rb.cx, L.Rb.cy + CH.fs(D) * 1.2, '650 ÷ 20 ＝ 32.5（回）', { col: C.green, size: CH.fs(D, 1.4), a: CH.smooth(.3, .7, t) }); } } },
+      { tag: '類題4', q: '(3) もとのデータの、実際の平均値は？', a: '32.05回', sub: '20個の値の合計は 641。641÷20＝32.05', dur: 3,
+        b: { t: '(3) 合計 641 ÷ 20 ＝ <b>32.05回</b>', col: C.yel },
+        draw: function (D) {
+          var L = lay4(D), t = D.ph ? D.t : 0, G = dline4(D, L.Rb), s = G.s, r = s * .34; tab4(D, L.Rt, 2);
+          CH.dots(D, G.X, G.yl, D4, { r: r, col: function () { return C.blue; } });
+          if (t > 0) { var a = CH.smooth(0, .4, t); CH.line(D, G.X(32.05), G.yl, G.X(32.05), G.yl - L.Rb.h * .5, { col: C.yel, dash: true, w: 2.6, a: a }); CH.text(D, G.X(32.05) - 8, G.yl - L.Rb.h * .5 - s * .6, '実際の平均値 32.05', { col: C.yel, align: 'right', a: a, size: s }); }
+          if (t > .4) CH.text(D, G.X(60), G.yl - L.Rb.h * .5 - s * .6, '合計 641 ÷ 20', { col: C.yel, align: 'right', a: CH.smooth(.4, .7, t), size: s });
+        } },
+      { tag: '類題4', q: '(4) (2)と(3)の平均値が ちがうわけは？', a: '度数分布表では、階級の中のどの値も 階級値と みなして 計算するから', sub: '度数分布表では、20〜30 の階級にある 6人の値を、どれも 階級値 25 として計算している。実際の値は 21〜28 とちらばっているので、その分のずれが、平均値のちがい（32.5 と 32.05）になる', dur: 5,
+        b: { t: '(4) 階級の中の値を <b>すべて階級値とみなして</b> 計算するから、実際の平均値とずれる', col: C.yel },
+        draw: function (D) {
+          var L = lay4(D), t = D.ph ? D.t : 0, G = dline4(D, L.Rb), s = G.s, k = CH.ease(CH.smooth(.15, .7, t)); tab4(D, L.Rt, 2);
+          CH.dots(D, G.X, G.yl, D4.map(function (v) { return CH.lerp(v, cv4(v), k); }), { r: s * .34, col: function (i, v) { return k > .99 ? C.pink : C.blue; } });
+          if (t > .7) { var a = CH.smooth(.7, .9, t); CH.text(D, G.X(35), G.yl - L.Rb.h * .5, '階級の中の値が ぜんぶ 階級値（15・25・35・45・55）に そろう', { col: C.pink, a: a, size: s, outline: YB }); }
+        } },
+      /* ---------------- 類題5 ---------------- */
+      { tag: '類題5', bh: '類題5　漢字テスト（ドットプロットと代表値）', q: 'ある班 12人の、10点満点の漢字テストの結果を、ドットプロットに表した。　2・3・4・5・5・5・6・7・8・8・9・10（点）',
+        notes: ['(1) 平均値・中央値・最頻値を求めなさい。', '(2) 欠席していた Eさんが追試を受け、6点だった。13人のデータにすると、平均値と中央値は それぞれ どうなるか。', '(3) もとの 12人のうち、平均値より高い点の人は何人か。', '(4) ゆうきさんは「平均値は 全体のまん中の値だから、平均値より高い点の人と低い点の人は、同じ人数になる」と言った。正しいか。わけも書きなさい。'],
+        draw: function (D) { dot5(D); } },
+      { tag: '類題5', q: '(1) 平均値・中央値・最頻値は？', a: '平均値 6.0点、中央値 5.5点、最頻値 5点', sub: '合計 72÷12＝6.0　6番目(5)と7番目(6)の平均 5.5　5点が 3人で最も多い', dur: 4,
+        b: { t: '(1) 平均値 <b>6.0</b>・中央値 <b>5.5</b>・最頻値 <b>5</b>（点）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, G = dot5(D, { col: function (i, v) { return t > .65 && v === 5 ? C.green : C.blue; } }), top = G.R.y0 + G.R.h * .3;
+          if (t > .05) { var a1 = CH.smooth(.05, .25, t); CH.line(D, G.X(6), G.yl, G.X(6), top, { col: C.yel, dash: true, w: 2.4, a: a1 }); lg(D, G, 0, '平均値 6.0点', C.yel, a1); }
+          if (t > .35) { var a2 = CH.smooth(.35, .55, t); CH.line(D, G.X(5.5), G.yl, G.X(5.5), top + G.s * 1.6, { col: C.pink, dash: true, w: 2.4, a: a2 }); lg(D, G, 1, '中央値 5.5点', C.pink, a2); }
+          if (t > .65) lg(D, G, 2, '最頻値 5点（3人）', C.green, CH.smooth(.65, .8, t));
+        } },
+      { tag: '類題5', q: '(2) Eさん（6点）をふくめた 13人の平均値と中央値は？', a: '平均値は 6.0点のまま。中央値は 5.5点から 6点になる', sub: '平均値 (72＋6)÷13＝78÷13＝6.0。13人の中央値は 7番目の値で 6点（5.5 → 6）。平均値と同じ値の人が加わっても、平均値は変わらないが、中央値は変わることがある', dur: 5,
+        b: { t: '(2) 平均値 78÷13＝<b>6.0（変わらない）</b>　中央値 5.5 → <b>6点</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, e = CH.smooth(0, .3, t), G = dot5(D, { add: true, col: function (i) { return i === 12 ? C.orange : C.blue; }, alpha: function (i) { return i === 12 ? e : 1; } }), top = G.R.y0 + G.R.h * .3;
+          if (t > .3) { var a = CH.smooth(.3, .5, t); CH.line(D, G.X(6), G.yl, G.X(6), top, { col: C.yel, dash: true, w: 2.4, a: a }); lg(D, G, 0, '平均値 6.0 → 6.0（変わらない）', C.yel, a); }
+          if (t > .55) { var k = CH.ease(CH.smooth(.55, .85, t)), x = CH.lerp(5.5, 6, k); CH.line(D, G.X(x), G.yl, G.X(x), top + G.s * 1.6, { col: C.pink, dash: true, w: 2.4 }); lg(D, G, 1, '中央値 5.5 → ' + (k > .99 ? '6' : CH.f1(CH.lerp(5.5, 6, k))) + '点', C.pink, 1); }
+          if (t > .3) CH.text(D, G.X(8.6), G.yl - G.s * 6.2, 'Eさん 6点', { col: C.orange, a: e, size: G.s });
+        } },
+      { tag: '類題5', q: '(3) もとの 12人のうち、平均値（6.0点）より高い点の人は？', a: '5人', sub: '6点より高いのは 7・8・8・9・10 の 5人', dur: 2.5,
+        b: { t: '(3) 7・8・8・9・10 の <b>5人</b>', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, G = dot5(D, { col: function (i, v) { return t > 0 && v > 6 ? C.pink : C.blue; } }), top = G.R.y0 + G.R.h * .3;
+          CH.line(D, G.X(6), G.yl, G.X(6), top, { col: C.yel, dash: true, w: 2.4 }); lg(D, G, 0, '平均値 6.0点', C.yel, 1);
+          if (t > .3) CH.text(D, G.X(8.6), G.yl - G.s * 6.2, '6点より高い 5人', { col: C.pink, a: CH.smooth(.3, .6, t) });
+        } },
+      { tag: '類題5', q: '(4) 「平均値より高い人と低い人は、同じ人数になる」は正しい？', a: '正しくない', sub: '平均値 6点より低い点の人は 6人、高い点の人は 5人で、同じ人数ではない。平均値は、6点との差の合計（低い側 4＋3＋2＋1＋1＋1＝12、高い側 1＋2＋2＋3＋4＝12）がつり合う位置であり、人数が同じになる位置ではない（人数で まん中になるのは 中央値）', dur: 6,
+        b: { t: '(4) <b>正しくない</b>　6点より低い 6人、高い 5人。平均値は 差の合計がつり合う位置（12 と 12）', col: C.yel },
+        draw: function (D) {
+          var t = D.ph ? D.t : 0, G = dot5(D, { col: function (i, v) { return t > 0 && v < 6 ? C.blue : t > 0 && v > 6 ? C.pink : C.chalk; } }), top = G.R.y0 + G.R.h * .3;
+          var ty = G.yl + G.s * 1.75; CH.poly(D, [[G.X(6), ty], [G.X(6) - 10, ty + 15], [G.X(6) + 10, ty + 15]], { fill: C.yel });   /* つり合いの 印は、目もりの 数の 下に（数に 重ねない） */
+          CH.line(D, G.X(6), G.yl, G.X(6), top, { col: C.yel, dash: true, w: 2.4 });
+          if (t > .15) { var a = CH.smooth(.15, .4, t); CH.text(D, G.X(3.2), top - G.s * .4, '低い 6人', { col: C.blue, a: a }); CH.text(D, G.X(8.8), top - G.s * .4, '高い 5人', { col: C.pink, a: a }); }
+          if (t > .5) { var b = CH.smooth(.5, .8, t); CH.text(D, G.X(3), top + G.s * 1.2, '差の合計', { col: C.blue, a: b, size: G.s * .95, outline: YB }); CH.text(D, G.X(3), top + G.s * 2.8, '4＋3＋2＋1＋1＋1 ＝ 12', { col: C.blue, a: b, size: G.s * .95, outline: YB }); CH.text(D, G.X(8.4), top + G.s * 1.2, '差の合計', { col: C.pink, a: b, size: G.s * .95, outline: YB }); CH.text(D, G.X(8.4), top + G.s * 2.8, '1＋2＋2＋3＋4 ＝ 12', { col: C.pink, a: b, size: G.s * .95, outline: YB }); }
+        } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>類題 中3 式と平方根・二次方程式</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@400;600&display=swap">
+<link rel="stylesheet" href="../kukan/css/board.css">
+</head>
+<body>
+<script src="../kukan/js/k3.js"></script>
+<script src="../katsuyo/js/chart.js"></script>
+<script>
+/* 中3 数と式　学力推移調査型の類題（5題）。
+   5つの型：連続する奇数の積（展開・因数分解で説明）／紙の大きさ（√ のおよその値・数直線・A判の比の説明）／二次方程式の文章題（土地・解の吟味）／
+   式の計算のまちがいを見つけて説明／くふうした計算（乗法公式）と式の値。場面と数値はすべて自作。答えはページの中で計算し直して確かめている（CH.check）。 */
+(function () {
+  var C = CH.C;
+  var S2 = Math.sqrt(2), S3 = Math.sqrt(3), S5 = Math.sqrt(5), S7 = Math.sqrt(7);
+  function polyEq(f, g) { for (var v = -5; v <= 5; v += 1.5) if (Math.abs(f(v) - g(v)) > 1e-9) return false; return true; }
+  /* 類題1　連続する奇数 */
+  var ok1 = true; for (var n1 = -6; n1 <= 30; n1++) { ok1 = ok1 && (2 * n1 - 1) * (2 * n1 + 1) === 4 * n1 * n1 - 1 && (2 * n1 - 1) * (2 * n1 + 1) + 1 === (2 * n1) * (2 * n1); }
+  CH.check(ok1 && 7 * 9 + 1 === 64 && 3 * 5 + 1 === 16 && 5 * 7 + 1 === 36 && 9 * 11 + 1 === 100 && 79 * 81 + 1 === 6400 && 80 * 80 === 6400, '類題1');
+  /* 類題2　紙（短い辺 6、長い辺 6√2） */
+  CH.check(Math.sqrt(72) > 8 && Math.sqrt(72) < 9 && 64 < 72 && 72 < 81 && CH.f1(6 * 1.414) === '8.5' && CH.near(36 + 72, 108) && CH.root(108) === '6√3' && CH.root(72) === '6√2' && CH.root(18) === '3√2' &&
+    Math.abs(6 / (3 * S2) - S2) < 1e-12 && Math.abs(6 * S2 / 6 - S2) < 1e-12 && Math.abs(Math.sqrt(108) - 6 * S3) < 1e-12 && Math.sqrt(108) > 10 && Math.sqrt(108) < 11, '類題2');
+  /* 類題3　花だん */
+  CH.check((8 + 4) * (12 + 4) === 2 * 8 * 12 && polyEq(function (x) { return (8 + x) * (12 + x) - 192; }, function (x) { return x * x + 20 * x - 96; }) &&
+    polyEq(function (x) { return x * x + 20 * x - 96; }, function (x) { return (x - 4) * (x + 24); }) && 12 * 16 === 192 && 8 * 12 === 96, '類題3');
+  /* 類題4　まちがい */
+  CH.check(polyEq(function (x) { return (x - 6) * (x - 6); }, function (x) { return x * x - 12 * x + 36; }) && polyEq(function (x) { return 3 * x * x - 12; }, function (x) { return 3 * (x + 2) * (x - 2); }) &&
+    polyEq(function (x) { return (x + 3) * (x + 3); }, function (x) { return x * x + 6 * x + 9; }) && Math.abs((1 + 3) * (1 + 3) - (1 + 9)) === 6 &&
+    polyEq(function (x) { return (x - 3) * (x + 4); }, function (x) { return x * x + x - 12; }) && polyEq(function (x) { return (x + 3) * (x - 4); }, function (x) { return x * x - x - 12; }) &&
+    (1 - 3) * (1 + 4) === -10 && 1 * 1 - 1 - 12 === -12, '類題4');
+  /* 類題5　くふう */
+  CH.check(98 * 102 === 9996 && 100 * 100 - 4 === 9996 && 47 * 47 === 2209 && 2500 - 150 - 150 + 9 === 2209 && Math.abs((S5 + 2) * (S5 + 2) - (S5 - 2) * (S5 - 2) - 8 * S5) < 1e-12 && Math.abs((S5 + 2) * (S5 - 2) - 1) < 1e-12 &&
+    Math.abs((S7 + 2) * (S7 - 2) - 3) < 1e-12 && CH.root(80) === '4√5', '類題5');
+
+  function tt(D) { return D.ph ? D.t : 0; }
+  function sm(a, b, t) { return CH.smooth(a, b, t); }
+  /* 式を 1行ずつ 出す。rows：[字, 色]。t（0〜1）で だんだん */
+  function eq(D, R, t, rows, o) {
+    o = o || {}; var s = o.size || CH.fs(D, 1.12), L = s * 1.8, n = rows.length, y0 = o.y0 != null ? o.y0 : R.cy - (n - 1) * L / 2, x = o.x != null ? o.x : R.cx;
+    rows.forEach(function (r, i) {
+      var a = sm(i / n * .85, i / n * .85 + .15, t); if (a <= 0) return;
+      var sz = CH.fitSize(D, r[0], (o.w || R.w) * .96, r[2] || s);
+      CH.text(D, x, y0 + i * L, r[0], { col: r[1] || C.chalk, a: a, size: sz, align: o.align || 'center' });
+    });
+  }
+  function R0(D, o) { return CH.box(D, o || { l: .05, r: .05, t: .06, b: .08 }); }
+
+  /* ---------- 類題1 ---------- */
+  function table1(D, k, t) {
+    var R = R0(D), T = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .5);
+    CH.table(D, T, ['連続する2つの奇数', '3 と 5', '5 と 7', '7 と 9', '9 と 11'], [['積', '15', '35', '63', '99'], ['積に1をたした数', '16', '36', k >= 0 ? '64' : 'ア', '100'], ['間の偶数', '4', '6', '8', '10']],
+      { fw: .3, top: true, hl: function (r, c) { return k === 0 && c === 3 && r >= 1 && r <= 2 ? C.yel : (r === 2 && c === 3 && k < 0 ? C.pink : null); } });
+    return { R: R, T: T };
+  }
+  function strip1(D, R, t, y) {
+    var s = CH.fs(D, .95), w = Math.min(R.w * .26, s * 6), cards = [['2n−1', C.blue], ['2n', C.green], ['2n＋1', C.orange]];
+    cards.forEach(function (c, i) { CH.card(D, R.cx + (i - 1) * (w * 1.25), y, w, s * 2.1, c[0], { col: c[1], a: sm(0, .15, t) || (t > 0 ? 1 : 0), size: s * 1.1 }); });
+  }
+
+  /* ---------- 類題2 ---------- */
+  var P2 = 6 * S2;
+  function paper(D, x0, y0, w, h, o) {
+    o = o || {}; var s = CH.fs(D, .9);
+    CH.fillRect(D, x0, y0, x0 + w, y0 + h, { fill: 'rgba(143,200,255,.2)', stroke: C.blue, sw: 2.6 });
+    if (o.fold) CH.line(D, x0 + w / 2, y0 - 6, x0 + w / 2, y0 + h + 6, { col: C.yel, dash: true, w: 2.6, a: o.fold });
+    if (o.diag) CH.line(D, x0, y0 + h, x0 + w * o.diag, y0 + h - h * o.diag, { col: C.pink, w: 3 });
+    CH.text(D, x0 + w / 2, y0 + h + s * 1.1, o.top || '6√2 cm', { size: s, col: C.chalk, a: 1 });
+    CH.text(D, x0 - s * .5, y0 + h / 2, o.left || '6 cm', { size: s, col: C.chalk, align: 'right' });
+    if (o.fold) { CH.text(D, x0 + w * .25, y0 + h / 2, o.fl || '', { size: s, col: C.yel, a: o.fold }); }
+  }
+  function nl2(D, R, o) {
+    o = o || {}; var s = CH.fs(D, .78), yl = R.y1 - s * 1.2, X = CH.numline(D, CH.rect(R.x0, yl - 10, R.x1, yl), 0, 12, 1, { lab: 1, unit: '（cm）' }), v = o.v == null ? P2 : o.v;
+    if (o.band) { var a = o.band; CH.line(D, X(8), yl, X(9), yl, { col: C.pink, w: 7, a: a }); CH.text(D, (X(8) + X(9)) / 2, yl - s * 2.9, '8 と 9 の間', { col: C.pink, a: a, size: s * 1.05 }); }
+    if (!o.hide) {
+      CH.circle(D, X(v), yl, 7, { fill: C.yel, stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
+      CH.text(D, X(v), yl - s * 1.5, o.lab || 'P', { col: C.yel, size: s * 1.15 });
+    }
+    return { X: X, yl: yl, s: s };
+  }
+  function geo2(D, o) {
+    o = o || {}; var R = R0(D, { l: .06, r: .06, t: .06, b: .06 }), s = CH.fs(D, .78), sc = Math.min(R.w * .55 / P2, R.h * .42 / 6), pw = P2 * sc, ph = 6 * sc, x0 = o.left ? R.x0 + s * 3 : R.cx - pw / 2, y0 = R.y0 + s * 1.2;
+    paper(D, x0, y0, pw, ph, o.p);
+    var N = o.nonl ? null : nl2(D, R, o.n || {});
+    return { R: R, x0: x0, y0: y0, pw: pw, ph: ph, N: N };
+  }
+
+  /* ---------- 類題3 ---------- */
+  function land(D, R, ext, o) {
+    o = o || {}; var s = CH.fs(D, .85), u = Math.min(R.w * .7 / (12 + ext), R.h * .78 / (8 + ext)), W = 12 * u, H = 8 * u, E = ext * u, x0 = R.cx - (12 + ext) * u / 2 - (o.shift || 0), y0 = R.y0 + s * 1.6;
+    CH.fillRect(D, x0, y0, x0 + W + E, y0 + H + E, { fill: o.ok ? 'rgba(143,255,176,.14)' : 'rgba(255,226,122,.1)', stroke: o.ok ? C.green : C.yel, dash: true, sw: 2.4 });
+    CH.fillRect(D, x0, y0, x0 + W, y0 + H, { fill: 'rgba(143,200,255,.28)', stroke: C.blue, sw: 2.6 });
+    CH.text(D, x0 + W / 2, y0 + H / 2, 'もとの花だん', { size: s * .9, col: C.blue });
+    CH.text(D, x0 + W / 2, y0 - s * .8, o.t1 || '12m', { size: s, col: C.blue });
+    CH.text(D, x0 - s * .5, y0 + H / 2, o.l1 || '8m', { size: s, col: C.blue, align: 'right' });
+    CH.text(D, x0 + W + E / 2, y0 - s * .8, o.t2 || 'x m', { size: s, col: C.yel });
+    CH.text(D, x0 + W + E + s * .5, y0 + H + E / 2, o.l3 || 'x m', { size: s, col: C.yel, align: 'left' });
+    if (o.t3) CH.text(D, x0 + W / 2, y0 + H + E + s * 1.1, o.t3, { size: s, col: C.yel });
+    return { x0: x0, y0: y0, W: W, H: H, E: E, u: u, bot: y0 + H + E };
+  }
+
+  /* ---------- 類題4 ---------- */
+  function works(D, R, a) {
+    var s = CH.fs(D, 1), w = R.w * .9, h = Math.min(R.h * .27, s * 4.6), x = R.cx;
+    [['ゆうとさん', '(x＋3)² ＝ x² ＋ 9', C.blue, R.y0 + R.h * .12], ['さくらさん', 'x² − x − 12 ＝ (x − 3)(x ＋ 4)', C.orange, R.y0 + R.h * .6]].forEach(function (c) {
+      var y = c[3]; CH.fillRect(D, x - w / 2, y, x + w / 2, y + h, { fill: 'rgba(242,240,230,.07)', stroke: c[2], sw: 2.2, a: a });
+      CH.text(D, x - w / 2 + s * .6, y + h * .27, c[0] + 'の計算', { size: s * .85, col: c[2], align: 'left', a: a });
+      CH.text(D, x, y + h * .68, c[1], { size: CH.fitSize(D, c[1], w * .92, s * 1.25), num: false, a: a });
+    });
+  }
+  function sqr(D, R, t, o) {
+    var s = CH.fs(D, .9), u = Math.min(R.w * .5, R.h * .7) / 8, a = 5 * u, b = 3 * u, x0 = R.x0 + s * 2.2, y0 = R.y0 + s * 1.6, k = sm(0, .5, t);
+    var parts = [[0, 0, a, a, C.yel, 'x²'], [a, 0, b, a, C.blue, '3x'], [0, a, a, b, C.blue, '3x'], [a, a, b, b, C.orange, '9']];
+    parts.forEach(function (p, i) {
+      var al = sm(i * .1, i * .1 + .2, t) * k + (1 - k) * 0; if (t <= 0) al = 0;
+      CH.fillRect(D, x0 + p[0], y0 + p[1], x0 + p[0] + p[2], y0 + p[1] + p[3], { fill: 'rgba(255,255,255,.04)', stroke: p[4], sw: 2.2, a: al });
+      CH.fillRect(D, x0 + p[0], y0 + p[1], x0 + p[0] + p[2], y0 + p[1] + p[3], { fill: p[4] === C.yel ? 'rgba(255,226,122,.3)' : p[4] === C.blue ? 'rgba(143,200,255,.3)' : 'rgba(255,186,120,.3)', a: al });
+      CH.text(D, x0 + p[0] + p[2] / 2, y0 + p[1] + p[3] / 2, p[5], { size: s * 1.05, col: p[4], a: al });
+    });
+    CH.text(D, x0 + a / 2, y0 - s * .8, 'x', { size: s, a: sm(0, .3, t) }); CH.text(D, x0 + a + b / 2, y0 - s * .8, '3', { size: s, a: sm(0, .3, t) });
+    CH.text(D, x0 - s * .5, y0 + a / 2, 'x', { size: s, align: 'right', a: sm(0, .3, t) }); CH.text(D, x0 - s * .5, y0 + a + b / 2, '3', { size: s, align: 'right', a: sm(0, .3, t) });
+    return { x1: x0 + a + b, y1: y0 + a + b };
+  }
+
+  /* ---------- 類題5 ---------- */
+  function cards5(D, R, a) {
+    var s = CH.fs(D, 1), items = [['(1)', '98 × 102', C.blue], ['(2)', '47²', C.green], ['(3)', 'x＝√5＋2、y＝√5−2 のとき　x² − y²', C.orange], ['(4)', '(√7＋2)(√7−2)', C.pink]], h = R.h * .17, gap = R.h * .06;
+    items.forEach(function (c, i) {
+      var y = R.y0 + i * (h + gap); CH.fillRect(D, R.x0 + R.w * .06, y, R.x1 - R.w * .06, y + h, { fill: 'rgba(242,240,230,.06)', stroke: c[2], sw: 2.2, a: a });
+      CH.text(D, R.x0 + R.w * .06 + s * .6, y + h / 2, c[0], { size: s * .95, col: c[2], align: 'left', a: a });
+      CH.text(D, R.cx + s * 1.5, y + h / 2, c[1], { size: CH.fitSize(D, c[1], R.w * .7, s * 1.3), a: a });
+    });
+  }
+  function sq5(D, R, t) {
+    var s = CH.fs(D, .85), u = Math.min(R.w * .8, R.h * .78) / 50, a = 47 * u, b = 3 * u, x0 = R.x0 + s * 1.2, y0 = R.y0 + s * 1.8, k = sm(.1, .6, t);
+    CH.fillRect(D, x0, y0, x0 + a, y0 + a, { fill: 'rgba(143,255,176,.2)', stroke: C.green, sw: 2.6 });
+    CH.fillRect(D, x0 + a, y0, x0 + a + b, y0 + a + b, { fill: 'rgba(255,186,120,.3)', stroke: C.orange, sw: 2, a: k });
+    CH.fillRect(D, x0, y0 + a, x0 + a, y0 + a + b, { fill: 'rgba(255,186,120,.3)', stroke: C.orange, sw: 2, a: k });
+    CH.text(D, x0 + a / 2, y0 + a / 2, '47 × 47', { size: s * 1.05, col: C.green });
+    CH.text(D, x0 + (a + b) / 2, y0 - s * .9, '50', { size: s, col: C.chalk, a: k });
+    CH.text(D, x0 + a + b + s * .5, y0 + (a + b) / 2, '50', { size: s, col: C.chalk, align: 'left', a: k });
+    CH.text(D, x0 + a + b + s * .5, y0 + a + b / 2, '3', { size: s, col: C.orange, align: 'left', a: k });
+    CH.text(D, x0 + a / 2, y0 + a + b + s * 1.1, '3', { size: s, col: C.orange, a: k });
+    CH.text(D, x0 + (a + b) / 2, y0 + a + b + s * 2.4, '47 ＝ 50 − 3', { size: s * .95, col: C.green, a: k });
+  }
+
+  K3.run({
+    no: '類題', title: '学力推移調査型の類題　中3 式と平方根・二次方程式（5題）', flat: true, hint: '',
+    links: [{ href: '../kokuban/index.html', label: '目次' }],
+    steps: [
+      /* ---------------- 類題1 ---------------- */
+      { tag: '類題1', bh: '類題1　連続する2つの奇数の積（式の利用）', q: '連続する2つの奇数の積に 1 をたした数を、いろいろな場合について調べて、次の表にまとめた。',
+        notes: ['(1) 表の ア にあてはまる数を求めなさい。', '(2) 連続する2つの奇数のうち、小さいほうを 2n−1（n は整数）とする。大きいほうを n を使って表し、2つの奇数の積を展開しなさい。', '(3) 「連続する2つの奇数の積に 1 をたした数は、2つの奇数の間の偶数の2乗になる」ことを、式を使って説明しなさい。', '(4) (3)のことを使って、79 × 81 ＋ 1 を計算しなさい。'],
+        draw: function (D) { table1(D, -1, 0); } },
+      { tag: '類題1', q: '(1) ア にあてはまる数は？', a: '64', sub: '7 × 9 ＝ 63、63 ＋ 1 ＝ 64（間の偶数 8 の2乗になっている）', dur: 2,
+        b: { t: '(1) ア … 7 × 9 ＋ 1 ＝ <b>64</b>', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), Q = table1(D, t > 0 ? 0 : -1, t);
+          eq(D, CH.rect(Q.R.x0, Q.T.y1 + Q.R.h * .08, Q.R.x1, Q.R.y1), t, [['7 × 9 ＝ 63　→　63 ＋ 1 ＝ 64', C.yel], ['64 ＝ 8²　（間の偶数 8 の2乗）', C.green]]);
+        } },
+      { tag: '類題1', q: '(2) 大きいほうの奇数を n で表し、積を展開すると？', a: '大きいほうは 2n＋1、積は 4n²−1', sub: '連続する奇数は 2 ちがうので 2n−1＋2＝2n＋1。(2n−1)(2n＋1)＝(2n)²−1²＝4n²−1', dur: 3.5,
+        b: { t: '(2) 2n＋1　(2n−1)(2n＋1)＝<b>4n²−1</b>', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), R = R0(D); strip1(D, R, t, R.y0 + R.h * .1);
+          eq(D, R, t, [['', C.chalk], ['大きいほうの奇数は、2 大きいので　2n＋1', C.blue], ['(2n − 1)(2n ＋ 1)', C.chalk], ['＝ (2n)² − 1²', C.yel], ['＝ 4n² − 1', C.yel]], { y0: R.y0 + R.h * .26 });
+        } },
+      { tag: '類題1', q: '(3) 積に 1 をたした数が、間の偶数の2乗になるわけを、式で説明しよう。', a: '(2n−1)(2n＋1)＋1 ＝ 4n²−1＋1 ＝ 4n² ＝ (2n)²。2n は2つの奇数の間の偶数だから、積に 1 をたした数は、間の偶数の2乗になる。', sub: '説明のお手本：小さいほうの奇数を 2n−1 とすると、大きいほうは 2n＋1。積に 1 をたすと (2n−1)(2n＋1)＋1＝4n²−1＋1＝4n²＝(2n)²。2n は2つの奇数の間の偶数だから、いつでも成り立つ。', dur: 5,
+        b: { t: '(3) (2n−1)(2n＋1)＋1 ＝ 4n² ＝ <b>(2n)²</b>　2n は 間の偶数', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), R = R0(D); strip1(D, R, t, R.y0 + R.h * .1);
+          eq(D, R, t, [['', C.chalk], ['(2n − 1)(2n ＋ 1) ＋ 1', C.chalk], ['＝ 4n² − 1 ＋ 1', C.yel], ['＝ 4n²', C.yel], ['＝ (2n)²', C.green], ['2n は、2n−1 と 2n＋1 の間の偶数', C.green]], { y0: R.y0 + R.h * .26 });
+        } },
+      { tag: '類題1', q: '(4) 79 × 81 ＋ 1 を計算しよう。', a: '6400', sub: '79 と 81 の間の偶数は 80。(3)より 79 × 81 ＋ 1 ＝ 80² ＝ 6400', dur: 2.5,
+        b: { t: '(4) 79 × 81 ＋ 1 ＝ 80² ＝ <b>6400</b>', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), R = R0(D), s = CH.fs(D, .95), w = Math.min(R.w * .2, s * 5);
+          [['79', C.blue, -1], ['80', C.green, 0], ['81', C.orange, 1]].forEach(function (c) { if (c[2] === 0 && t <= 0) return; CH.card(D, R.cx + c[2] * w * 1.3, R.y0 + R.h * .14, w, s * 2.1, c[0], { col: c[1], size: s * 1.2, a: c[2] === 0 ? sm(0, .2, t) : 1 }); });
+          CH.text(D, R.cx, R.y0 + R.h * .14 + s * 2.1, '間の偶数', { size: s * .85, col: C.green, a: sm(0, .2, t) });
+          eq(D, R, t, [['79 × 81 ＋ 1', C.chalk], ['＝ 80²', C.green], ['＝ 6400', C.yel]], { y0: R.y0 + R.h * .45 });
+        } },
+      /* ---------------- 類題2 ---------------- */
+      { tag: '類題2', bh: '類題2　紙の大きさ（平方根・数直線）', q: 'A判の紙のように、長い辺が短い辺の √2 倍になる長方形の紙がある。この紙は、短い辺が 6cm、長い辺が 6√2 cm である。下の数直線の点 P は、長い辺の長さ 6√2 を表している。',
+        notes: ['(1) 点 P は、数直線上の整数 n と n＋1 の間にある。n の値を求めなさい。', '(2) √2 ＝ 1.414 として、長い辺の長さを、四捨五入して小数第1位まで求めなさい。', '(3) この紙の対角線の長さを求めなさい。', '(4) この紙を、長い辺の真ん中で半分に折った。折ってできた長方形も、長い辺が短い辺の √2 倍になっていることを説明しなさい。'],
+        draw: function (D) { geo2(D, { n: { lab: 'P' } }); } },
+      { tag: '類題2', q: '(1) 点 P は、どの2つの整数の間にある？', a: 'n ＝ 8', sub: '6√2 ＝ √72。8² ＝ 64、9² ＝ 81 で 64 ＜ 72 ＜ 81 だから、8 ＜ 6√2 ＜ 9', dur: 3.5,
+        b: { t: '(1) √72 → 64 ＜ 72 ＜ 81 より 8 ＜ 6√2 ＜ 9　n ＝ <b>8</b>', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), R = R0(D, { l: .06, r: .06, t: .06, b: .06 }); nl2(D, R, { band: sm(.55, .8, t) });
+          eq(D, CH.rect(R.x0, R.y0, R.x1, R.y1 - CH.fs(D) * 5), t * 1.0, [['6√2 ＝ √(6² × 2) ＝ √72', C.chalk], ['8² ＝ 64　　9² ＝ 81', C.blue], ['64 ＜ 72 ＜ 81', C.yel], ['8 ＜ 6√2 ＜ 9', C.green]]);
+        } },
+      { tag: '類題2', q: '(2) 6√2 を、小数第1位まで求めよう。（√2 ＝ 1.414）', a: '約 8.5 cm', sub: '6 × 1.414 ＝ 8.484 → 小数第2位を四捨五入して 8.5', dur: 2.5,
+        b: { t: '(2) 6 × 1.414 ＝ 8.484 → 約 <b>8.5 cm</b>', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), R = R0(D, { l: .06, r: .06, t: .06, b: .06 }); nl2(D, R, { v: 6 * 1.414, lab: '8.484…', hide: t <= 0 });
+          eq(D, CH.rect(R.x0, R.y0, R.x1, R.y1 - CH.fs(D) * 5), t, [['6√2 ＝ 6 × 1.414', C.chalk], ['＝ 8.484', C.yel], ['小数第2位を四捨五入して　約 8.5 cm', C.green]]);
+        } },
+      { tag: '類題2', q: '(3) 対角線の長さは？', a: '6√3 cm', sub: '三平方の定理より (対角線)² ＝ 6² ＋ (6√2)² ＝ 36 ＋ 72 ＝ 108。対角線 ＝ √108 ＝ 6√3', dur: 4,
+        b: { t: '(3) 6² ＋ (6√2)² ＝ 108　√108 ＝ <b>6√3 cm</b>', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), Q = geo2(D, { left: true, p: { diag: sm(0, .35, t) }, nonl: true }), R = Q.R;
+          var xr = Q.x0 + Q.pw + CH.fs(D) * 1.5;
+          eq(D, CH.rect(xr, R.y0, R.x1, R.y0 + R.h * .6), t, [['(対角線)²', C.chalk], ['＝ 6² ＋ (6√2)²', C.chalk], ['＝ 36 ＋ 72 ＝ 108', C.yel], ['対角線 ＝ √108', C.yel], ['＝ 6√3 cm', C.green]], { size: CH.fs(D, .95), x: xr, align: 'left', w: R.x1 - xr });
+        } },
+      { tag: '類題2', q: '(4) 半分に折った長方形も、長い辺が短い辺の √2 倍になる？', a: '折ってできた長方形は、短い辺が 3√2 cm、長い辺が 6 cm。長い辺 ÷ 短い辺 ＝ 6 ÷ 3√2 ＝ 6/(3√2) ＝ 2/√2 ＝ √2 だから、長い辺は短い辺の √2 倍になっている。', sub: '説明のお手本：長い辺 6√2 の半分は 3√2 cm。折ってできた長方形は、たて 6cm、よこ 3√2 cm で、長い辺は 6cm、短い辺は 3√2 cm。6 ÷ 3√2 ＝ 2/√2 ＝ √2。もとの紙と同じ比になる。', dur: 5,
+        b: { t: '(4) 長い辺 6 ÷ 短い辺 3√2 ＝ 2/√2 ＝ <b>√2</b>　同じ比', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), Q = geo2(D, { left: true, p: { fold: sm(0, .3, t), top: '6√2 cm' }, nonl: true }), R = Q.R, s = CH.fs(D, .85);
+          CH.text(D, Q.x0 + Q.pw * .25, Q.y0 - s * 1.2, '3√2 cm', { size: s, col: C.yel, a: sm(.1, .35, t) });
+          var xr = Q.x0 + Q.pw + CH.fs(D) * 1.5;
+          eq(D, CH.rect(xr, R.y0, R.x1, R.y0 + R.h * .6), t, [['折ってできた長方形', C.yel], ['短い辺 3√2　長い辺 6', C.chalk], ['6 ÷ 3√2', C.chalk], ['＝ 6/(3√2) ＝ 2/√2', C.yel], ['＝ √2', C.green]], { size: CH.fs(D, .92), x: xr, align: 'left', w: R.x1 - xr });
+        } },
+      /* ---------------- 類題3 ---------------- */
+      { tag: '類題3', bh: '類題3　花だんを広げる（二次方程式の利用）', q: 'たて 8m、よこ 12m の長方形の花だんがある。この花だんの、たてとよこを それぞれ x m ずつ のばして、面積がもとの花だんの 2倍の、新しい長方形の花だんをつくりたい。',
+        notes: ['(1) 新しい花だんの、たてとよこの長さを、x を使って表しなさい。', '(2) 面積についての方程式をつくり、x² ＋ ax ＋ b ＝ 0 の形に整理しなさい。', '(3) (2)の方程式を解きなさい。', '(4) x の値を答えなさい。(3)の解のうち、どちらが問題に合うかを選び、わけも書きなさい。'],
+        draw: function (D) { var R = R0(D); land(D, R, 3.2, {}); } },
+      { tag: '類題3', q: '(1) 新しい花だんの、たて・よこは？', a: 'たて (8＋x) m、よこ (12＋x) m', sub: 'もとのたて 8m、よこ 12m に、それぞれ x m たす', dur: 2,
+        b: { t: '(1) たて <b>8＋x</b>（m）　よこ <b>12＋x</b>（m）', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), R = R0(D), L = land(D, R, 3.2, {});
+          CH.text(D, L.x0 + (L.W + L.E) / 2, L.bot + CH.fs(D) * 1.3, 'よこ　12 ＋ x', { col: C.green, size: CH.fs(D, 1.05), a: sm(0, .5, t) });
+          CH.text(D, L.x0 + L.W + L.E + CH.fs(D) * .5, L.y0 + (L.H + L.E) / 2 - CH.fs(D) * 1.6, 'たて 8 ＋ x', { col: C.green, size: CH.fs(D, .92), a: sm(.3, .8, t), align: 'left' });
+        } },
+      { tag: '類題3', q: '(2) 面積の方程式をつくり、x² ＋ ax ＋ b ＝ 0 の形に整理しよう。', a: 'x² ＋ 20x − 96 ＝ 0', sub: '新しい面積 (8＋x)(12＋x) が、もとの面積の 2倍 ＝ 2 × 8 × 12 ＝ 192 になる。(8＋x)(12＋x) ＝ 192 → x² ＋ 20x ＋ 96 ＝ 192 → x² ＋ 20x − 96 ＝ 0', dur: 4,
+        b: { t: '(2) (8＋x)(12＋x) ＝ 2 × 96 → <b>x² ＋ 20x − 96 ＝ 0</b>', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), R = R0(D);
+          eq(D, R, t, [['もとの面積　8 × 12 ＝ 96（m²）', C.blue], ['新しい面積　(8 ＋ x)(12 ＋ x)', C.green], ['(8 ＋ x)(12 ＋ x) ＝ 2 × 96', C.chalk], ['x² ＋ 20x ＋ 96 ＝ 192', C.chalk], ['x² ＋ 20x − 96 ＝ 0', C.yel]]);
+        } },
+      { tag: '類題3', q: '(3) x² ＋ 20x − 96 ＝ 0 を解こう。', a: 'x ＝ 4、x ＝ −24', sub: '積が −96、和が 20 になる2数は 24 と −4。(x − 4)(x ＋ 24) ＝ 0 より x ＝ 4、−24', dur: 3.5,
+        b: { t: '(3) (x−4)(x＋24)＝0　x ＝ <b>4、−24</b>', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), R = R0(D);
+          eq(D, R, t, [['x² ＋ 20x − 96 ＝ 0', C.chalk], ['積が −96、和が 20 の 2数 → 24 と −4', C.blue], ['(x − 4)(x ＋ 24) ＝ 0', C.yel], ['x ＝ 4、x ＝ −24', C.green]]);
+        } },
+      { tag: '類題3', q: '(4) 問題に合う x は？　わけも説明しよう。', a: 'x ＝ 4。x は のばす長さなので、負の数の −24 は 問題に合わない。x ＝ 4 のとき、新しい花だんは 12m × 16m ＝ 192m² で、もとの 96m² の 2倍になる。', sub: '説明のお手本：x は のばす長さだから 0 より大きい。よって x ＝ −24 は 問題に合わない。x ＝ 4 のとき、たて 8＋4＝12m、よこ 12＋4＝16m で、面積 12 × 16 ＝ 192m² ＝ 2 × 96m² になるので、問題に合う。', dur: 5,
+        b: { t: '(4) x ＝ <b>4</b>　−24 は 長さにならない。12 × 16 ＝ 192 ＝ 2 × 96', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), R = R0(D), Rl = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .62), L = land(D, Rl, t > 0 ? 4 : 3.2, t > 0 ? { ok: t > .4, t2: '4m', l3: '4m', t1: '12m', l1: '8m' } : {}), s = CH.fs(D, .9);
+          CH.text(D, L.x0 + (L.W + L.E) / 2, L.bot + s * 1.1, '16m', { col: C.green, size: s, a: sm(.3, .6, t) });
+          CH.text(D, L.x0 + L.W + L.E + s * .5, L.y0 + (L.H + L.E) / 2, '12m', { col: C.green, size: s, a: sm(.3, .6, t), align: 'left' });
+          eq(D, CH.rect(R.x0, R.y0 + R.h * .68, R.x1, R.y1), t, [['x ＝ −24 は のばす長さにならない（x ＞ 0）', C.pink], ['x ＝ 4 → 12 × 16 ＝ 192 ＝ 2 × 96　問題に合う', C.green]], { size: CH.fs(D, .95) });
+        } },
+      /* ---------------- 類題4 ---------------- */
+      { tag: '類題4', bh: '類題4　式の計算のまちがいを見つける', q: '次の計算について考えよう。',
+        notes: ['(1) (x − 6)² を展開しなさい。', '(2) 3x² − 12 を因数分解しなさい。', '(3) ゆうとさんは、図のような計算をした。まちがいを説明し、正しい答えを書きなさい。', '(4) さくらさんは、図のような因数分解をした。まちがいを説明し、正しい答えを書きなさい。'],
+        draw: function (D) { works(D, R0(D), 1); } },
+      { tag: '類題4', q: '(1) (x − 6)² を展開しよう。', a: 'x² − 12x ＋ 36', sub: '(x − 6)² ＝ x² − 2 × 6 × x ＋ 6² ＝ x² − 12x ＋ 36', dur: 2.5,
+        b: { t: '(1) (x−6)² ＝ x² − 12x ＋ 36', col: C.yel },
+        draw: function (D) { var t = tt(D), R = R0(D); eq(D, R, t, [['(x − 6)²', C.chalk], ['＝ x² − 2 × 6 × x ＋ 6²', C.blue], ['＝ x² − 12x ＋ 36', C.yel]]); } },
+      { tag: '類題4', q: '(2) 3x² − 12 を因数分解しよう。', a: '3(x ＋ 2)(x − 2)', sub: 'まず共通因数 3 でくくる。3x² − 12 ＝ 3(x² − 4) ＝ 3(x ＋ 2)(x − 2)', dur: 2.5,
+        b: { t: '(2) 3x² − 12 ＝ 3(x² − 4) ＝ <b>3(x＋2)(x−2)</b>', col: C.yel },
+        draw: function (D) { var t = tt(D), R = R0(D); eq(D, R, t, [['3x² − 12', C.chalk], ['＝ 3(x² − 4)　← 共通因数 3 でくくる', C.blue], ['＝ 3(x ＋ 2)(x − 2)', C.yel]]); } },
+      { tag: '類題4', q: '(3) (x ＋ 3)² ＝ x² ＋ 9 は正しい？', a: '正しくない。正しくは x² ＋ 6x ＋ 9', sub: '説明のお手本：(x＋3)² は (x＋3)(x＋3) なので、x と 3 の積が 2つ出てきて 6x がぬけている。たとえば x ＝ 1 を代入すると、左辺は 4² ＝ 16、右辺は 1 ＋ 9 ＝ 10 で、等しくない。正しい答えは x² ＋ 6x ＋ 9。', dur: 5,
+        b: { t: '(3) <b>正しくない</b>　2 × 3 × x ＝ 6x がぬけている。正しくは x² ＋ 6x ＋ 9', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), R = R0(D), Rl = CH.rect(R.x0, R.y0, R.x0 + R.w * .4, R.y1), Rr = CH.rect(R.x0 + R.w * .44, R.y0, R.x1, R.y1), Q = sqr(D, Rl, t > 0 ? 1 : 0, {});
+          if (t <= 0) return;
+          eq(D, Rr, t, [['(x ＋ 3)² ＝ x² ＋ 6x ＋ 9', C.yel], ['面積の図：x²、3x が 2つ、9', C.blue], ['x ＝ 1 で たしかめる', C.chalk], ['左辺 (1＋3)² ＝ 16', C.green], ['右辺 1² ＋ 9 ＝ 10', C.pink], ['等しくない → 正しくない', C.pink]], { size: CH.fs(D, .9), x: Rr.x0, align: 'left', w: Rr.w });
+        } },
+      { tag: '類題4', q: '(4) x² − x − 12 ＝ (x − 3)(x ＋ 4) は正しい？', a: '正しくない。正しくは (x ＋ 3)(x − 4)', sub: '説明のお手本：(x − 3)(x ＋ 4) を展開すると x² ＋ x − 12 になり、もとの式 x² − x − 12 と、x の項が合わない。かけて −12、たして −1 になる2数は 3 と −4 だから、正しくは (x ＋ 3)(x − 4)。', dur: 5,
+        b: { t: '(4) 展開すると x² ＋ x − 12（x の項がちがう）。正しくは <b>(x＋3)(x−4)</b>', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), R = R0(D);
+          eq(D, R, t, [['(x − 3)(x ＋ 4) を展開すると', C.chalk], ['＝ x² ＋ 4x − 3x − 12 ＝ x² ＋ x − 12', C.pink], ['x² − x − 12 と x の項が ちがう → 正しくない', C.pink], ['かけて −12、たして −1 の2数は 3 と −4', C.blue], ['x² − x − 12 ＝ (x ＋ 3)(x − 4)', C.yel]]);
+        } },
+      /* ---------------- 類題5 ---------------- */
+      { tag: '類題5', bh: '類題5　くふうした計算（乗法公式）', q: '乗法公式を使うと、くふうして計算できる。次の問いに答えなさい。',
+        notes: ['(1) 98 × 102 を、くふうして計算しなさい。', '(2) 47² を、くふうして計算しなさい。', '(3) x ＝ √5 ＋ 2、y ＝ √5 − 2 のとき、x² − y² の値を求めなさい。', '(4) (√7 ＋ 2)(√7 − 2) の値は、√ をふくまない整数になる。そのわけを、乗法公式を使って説明しなさい。'],
+        draw: function (D) { cards5(D, R0(D), 1); } },
+      { tag: '類題5', q: '(1) 98 × 102 を、くふうして計算しよう。', a: '9996', sub: '98 ＝ 100 − 2、102 ＝ 100 ＋ 2。(100 − 2)(100 ＋ 2) ＝ 100² − 2² ＝ 10000 − 4 ＝ 9996', dur: 3,
+        b: { t: '(1) (100−2)(100＋2) ＝ 100² − 2² ＝ <b>9996</b>', col: C.yel },
+        draw: function (D) { var t = tt(D), R = R0(D); eq(D, R, t, [['98 × 102', C.chalk], ['＝ (100 − 2)(100 ＋ 2)', C.blue], ['＝ 100² − 2²　（和と差の積）', C.blue], ['＝ 10000 − 4 ＝ 9996', C.yel]]); } },
+      { tag: '類題5', q: '(2) 47² を、くふうして計算しよう。', a: '2209', sub: '47 ＝ 50 − 3。(50 − 3)² ＝ 50² − 2 × 3 × 50 ＋ 3² ＝ 2500 − 300 ＋ 9 ＝ 2209', dur: 4,
+        b: { t: '(2) (50−3)² ＝ 2500 − 300 ＋ 9 ＝ <b>2209</b>', col: C.yel },
+        draw: function (D) {
+          var t = tt(D), R = R0(D), Rl = CH.rect(R.x0, R.y0, R.x0 + R.w * .5, R.y1), Rr = CH.rect(R.x0 + R.w * .5, R.y0, R.x1, R.y1); sq5(D, Rl, t);
+          eq(D, Rr, t, [['47²', C.chalk], ['＝ (50 − 3)²', C.blue], ['＝ 50² − 2×3×50 ＋ 3²', C.blue], ['＝ 2500 − 300 ＋ 9', C.yel], ['＝ 2209', C.green]], { size: CH.fs(D, .95), x: Rr.x0, align: 'left', w: Rr.w });
+        } },
+      { tag: '類題5', q: '(3) x ＝ √5 ＋ 2、y ＝ √5 − 2 のとき、x² − y² の値は？', a: '8√5', sub: 'x² − y² ＝ (x ＋ y)(x − y)。x ＋ y ＝ 2√5、x − y ＝ 4 だから、2√5 × 4 ＝ 8√5', dur: 4,
+        b: { t: '(3) x² − y² ＝ (x＋y)(x−y) ＝ 2√5 × 4 ＝ <b>8√5</b>', col: C.yel },
+        draw: function (D) { var t = tt(D), R = R0(D); eq(D, R, t, [['x² − y² ＝ (x ＋ y)(x − y)　← 因数分解', C.blue], ['x ＋ y ＝ (√5＋2) ＋ (√5−2) ＝ 2√5', C.chalk], ['x − y ＝ (√5＋2) − (√5−2) ＝ 4', C.chalk], ['2√5 × 4 ＝ 8√5', C.yel]]); } },
+      { tag: '類題5', q: '(4) (√7 ＋ 2)(√7 − 2) が √ をふくまない整数になるわけは？', a: '和と差の積の公式 (a＋b)(a−b) ＝ a²−b² で a を √7、b を 2 とすると、(√7＋2)(√7−2) ＝ (√7)² − 2² ＝ 7 − 4 ＝ 3。√7 の項が たがいに消え、(√7)² が 7 になるから、√ をふくまない整数 3 になる。', sub: '説明のお手本：展開すると √7 × 2 と −2 × √7 がたがいに消え、(√7)² − 2² が残る。(√7)² は √ がはずれて 7 になるので、7 − 4 ＝ 3 という整数になる。', dur: 5,
+        b: { t: '(4) (a＋b)(a−b)＝a²−b²　(√7)² − 2² ＝ 7 − 4 ＝ <b>3</b>', col: C.yel },
+        draw: function (D) { var t = tt(D), R = R0(D); eq(D, R, t, [['(a ＋ b)(a − b) ＝ a² − b²', C.blue], ['a ＝ √7、b ＝ 2 とすると', C.chalk], ['(√7 ＋ 2)(√7 − 2) ＝ (√7)² − 2²', C.yel], ['＝ 7 − 4 ＝ 3', C.green], ['√7 の項は たがいに消え、(√7)² ＝ 7 になる', C.green]]); } }
+    ]
+  });
+})();
+</script>
+</body>
+</html>
