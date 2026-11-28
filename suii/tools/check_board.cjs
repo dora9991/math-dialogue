@@ -18,7 +18,8 @@ const srv = http.createServer((q, r) => {
   const b = await chromium.launch(); let bad = 0;
   for (const pg of pages) {
     const rel = path.relative(ROOT, path.resolve(pg)).split(path.sep).join('/');
-    const p = await b.newPage({ viewport: { width: 1280, height: 720 } }); const errs = [];
+    // 写真を とる ときは、動きを 止めて（reduced motion）、動きが 終わった 形を 写す。写真なしの ときは、動きつきで 通す
+    const p = await b.newPage({ viewport: { width: 1280, height: 720 }, reducedMotion: shots ? 'reduce' : 'no-preference' }); const errs = [];
     p.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
     p.on('console', (m) => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)|Failed to load resource/.test(m.text())) errs.push('console: ' + m.text()); });
     await p.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
