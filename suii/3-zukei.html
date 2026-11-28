@@ -76,8 +76,8 @@
       if (k === 2) { dim(F, 'W', 'Z', F.s * 1.3, '1.8m', { col: C.pink, a: a }); }
       if (k === 3) {
         var b = CH.smooth(.3, .6, t), p7 = F.X([WALL + WH, 0]), p8 = F.X('Z');
-        CH.line(D, p7[0], p7[1] - F.s, p7[0], p7[1] + F.s, { col: C.pink, w: 3, a: b }); say(D, p7[0], p7[1] + F.s * 2.2, '7.2m ×', { col: C.pink, a: b, size: F.s * .9, num: true });
-        CH.line(D, p8[0], p8[1] - F.s, p8[0], p8[1] + F.s, { col: C.yel, w: 3, a: b }); say(D, p8[0] + F.s * .3, p8[1] + F.s * 3.6, '7.8m', { col: C.yel, a: b, size: F.s * .9, num: true });
+        CH.line(D, p7[0], p7[1] - F.s, p7[0], p7[1] + F.s, { col: C.pink, w: 3, a: b }); say(D, p7[0] - F.s * .3, p7[1] + F.s * 2.2, '7.2m ×', { col: C.pink, a: b, size: F.s * .9, num: true, align: 'right' });
+        CH.line(D, p8[0], p8[1] - F.s, p8[0], p8[1] + F.s, { col: C.yel, w: 3, a: b }); say(D, p8[0] + F.s * .3, p8[1] + F.s * 2.2, '7.8m', { col: C.yel, a: b, size: F.s * .9, num: true, align: 'left' });
       }
     }
     return F;
@@ -117,12 +117,12 @@
     say(D, cxM, by + s * 1.4, '1200円', { size: s, col: C.yel, num: true }); say(D, cxL, by + s * 1.4, '2400円', { size: s, col: C.yel, num: true });
   }
   function cans(D, FR, t, mode) { /* mode 0 問題 1 体積比 2 容量 */
-    var u = Math.min(FR.h * .55 / HB, FR.w * .2 / 4.2), by = FR.cy + HB * u * .5, cxS = FR.x0 + FR.w * .3, cxB = FR.x0 + FR.w * .72, s = CH.fs(D, .85);
+    var u = Math.min(FR.h * .55 / HB, FR.w * .15 / 4.2), by = FR.cy + HB * u * .5, cxS = FR.x0 + FR.w * .28, cxB = FR.x0 + FR.w * .68, s = CH.fs(D, .85);
     can(D, cxS, by, u, 2.8, HS, C.blue, 1); can(D, cxB, by, u, 4.2, HB, C.blue, 1);
-    dim({ D: D, X: function (p) { return p; }, s: s }, [cxS + 2.8 * u + s * .6, by], [cxS + 2.8 * u + s * .6, by - HS * u], s * .6, '6cm', { col: C.chalk, size: s * .8 });
+    dim({ D: D, X: function (p) { return p; }, s: s }, [cxS - 2.8 * u - s * .6, by], [cxS - 2.8 * u - s * .6, by - HS * u], -s * .6, '6cm', { col: C.chalk, size: s * .8 });
     dim({ D: D, X: function (p) { return p; }, s: s }, [cxB + 4.2 * u + s * .6, by], [cxB + 4.2 * u + s * .6, by - HB * u], s * .6, '9cm', { col: C.chalk, size: s * .8 });
-    say(D, cxS, by + s * 2.4, '小缶　160mL', { size: s, maxW: FR.w * .42 }); var big = mode === 2 && t > .5;
-    say(D, cxB, by + s * 2.4, big ? '大缶　540mL' : '大缶　？mL', { size: s, maxW: FR.w * .42, col: big ? C.yel : C.chalk });
+    say(D, cxS, by + s * 2.4, '小缶　160mL', { size: s, maxW: FR.w * .36 }); var big = mode === 2 && t > .5;
+    say(D, cxB, by + s * 2.4, big ? '大缶　540mL' : '大缶　？mL', { size: s, maxW: FR.w * .36, col: big ? C.yel : C.chalk });
   }
   function scene2(D, mode, t) { /* 0 問題 1 面積比 2 得か説明 3 体積比 4 容量 */
     var R = CH.box(D, { l: .03, r: .03, t: .04, b: .04 }), s = CH.fs(D), a = function (x, y) { return CH.smooth(x, y, t); };
@@ -174,7 +174,7 @@
     if (mode === 1) { GE.arc(F, 'PAQ', { col: C.blue, fill: true, lab: '36°', r: F.s * 1.5 }); var b1 = a(.2, .5); GE.arc(F, 'PBQ', { col: C.green, fill: true, a: b1, lab: t > .6 ? '36°' : '？', r: F.s * 1.5 }); }
     if (mode === 2) { var b2 = a(.1, .5); GE.arc(F, 'POQ', { col: C.pink, fill: true, a: b2, lab: t > .55 ? '72°' : '？', r: F.s * 1.5 }); GE.arc(F, 'PAQ', { col: C.blue, lab: '36°', a: .6, r: F.s * 1.3 }); }
     if (mode === 3) { var b3 = a(.1, .5); GE.arc(F, 'OPQ', { col: C.yel, fill: true, a: b3, lab: t > .7 ? '54°' : '？', r: F.s * 1.7 }); GE.arc(F, 'OQP', { col: C.yel, fill: true, a: b3, r: F.s * 1.7 }); GE.arc(F, 'POQ', { col: C.pink, lab: '72°', a: .8, r: F.s * 1.5 }); }
-    if (mode === 4) { GE.arc(F, 'PEQ', { col: C.blue, fill: true, lab: '36°', r: F.s * 1.1 }); var b4 = a(.3, .6); GE.arc(F, 'CEQ', { col: C.blue, fill: true, a: 0, r: F.s * 1 }); GE.arc(F, 'CQE', { col: C.green, fill: true, a: b4, r: F.s * 1.5 }); GE.arc(F, 'PCQ', { col: C.pink, fill: true, a: a(.55, .8), lab: '∠PCQ', r: F.s * 1.1 }); }
+    if (mode === 4) { if (t > 0) GE.arc(F, 'PEQ', { col: C.blue, fill: true, a: a(0, .2), lab: '36°', r: F.s * 1.1 }); var b4 = a(.3, .6); GE.arc(F, 'CEQ', { col: C.blue, fill: true, a: 0, r: F.s * 1 }); GE.arc(F, 'CQE', { col: C.green, fill: true, a: b4, r: F.s * 1.5 }); GE.arc(F, 'PCQ', { col: C.pink, fill: true, a: a(.55, .8), lab: '∠PCQ', r: F.s * 1.1 }); }
     var dirs = { P: 'sw', Q: 'se', A: 'nw', B: 'ne', C: 'se', E: 'ne', O: 'e' };
     GE.dot(F, 'O', { r: F.s * .12 }); GE.dot(F, 'C', { r: F.s * .12, col: C.orange });
     GE.labels(F, ['P', 'Q', 'A', 'B', 'C', 'E', 'O'].filter(function (k) { return (k !== 'E' || mode === 0 || mode >= 3); }), { dir: dirs, col: { P: C.yel, Q: C.yel, C: C.orange, E: C.orange } });
@@ -206,7 +206,7 @@
     if (mode === 3) {
       GE.seg(F, ['F1', 'T1'], { col: C.orange, w: 4, a: .6 }); GE.seg(F, ['F2', 'T2'], { col: C.green, w: 5 });
       dim(F, 'O', 'F2', F.s * 1.2, '3m', { col: C.green });
-      var p1 = F.X('T1'), p2 = F.X('T2'); CH.line(D, p1[0], p1[1], p1[0] + F.s * 3, p1[1], { col: C.orange, dash: true, w: 1.6 }); CH.line(D, p2[0], p2[1], p2[0] + F.s * 3, p2[1], { col: C.green, dash: true, w: 1.6 });
+      var p1 = F.X('T1'), p2 = F.X('T2'); var hl = a(0, .2); CH.line(D, p1[0], p1[1], p1[0] + F.s * 3, p1[1], { col: C.orange, dash: true, w: 1.6, a: hl }); CH.line(D, p2[0], p2[1], p2[0] + F.s * 3, p2[1], { col: C.green, dash: true, w: 1.6, a: hl });   /* 高さを くらべる 点線は、答えを 出してから */
       var b = a(.2, .5); CH.arrow(D, p1[0] + F.s * 2.4, p1[1], p1[0] + F.s * 2.4, p2[1], { col: C.pink, w: 2.6, a: b, head: 8 }); say(D, p1[0] + F.s * 2.6, (p1[1] + p2[1]) / 2 - F.s * 1.6, '約0.4m', { col: C.pink, a: b, align: 'left', size: F.s * .9, num: true });
     }
     var ty = R.y0 + R.h * .8;
@@ -248,8 +248,9 @@
     if (mode === 2 || mode === 3) {
       var FR2 = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .6), F3 = tri5(D, FR2, P5, { rA: true, a: 1, hl: mode === 2 ? 'ABC' : 'ABC', ha: 0 });
       GE.poly(F3, mode === 2 ? 'HBA' : 'HBA', { col: C.pink, fa: .3, stroke: false });
+      dim(F3, 'B', 'A', -F3.s * 1.1, '6cm', {}); dim(F3, 'A', 'C', -F3.s * 1.1, '8cm', {}); dim(F3, 'B', 'C', F3.s * (mode === 2 ? 2.5 : 1.4), '10cm', {});   /* 問題文の 長さは、問いの 画面でも 図に 出す */
       var ty2 = R.y0 + R.h * .66;
-      if (mode === 2) { dim(F3, 'B', 'H', F3.s * 1.1, 'x', { col: t > .4 ? C.yel : C.chalk }); if (t > .1) say(D, R.cx, ty2 + s * .8, '△ABC ∽ △HBA　AB：HB ＝ BC：BA', { col: C.pink, a: a(.1, .3), maxW: R.w, num: true }); if (t > .35) say(D, R.cx, ty2 + s * 2.3, '6：x ＝ 10：6　x ＝ 36÷10 ＝ 3.6（cm）', { col: C.yel, a: a(.35, .55), maxW: R.w, num: true }); }
+      if (mode === 2) { dim(F3, 'B', 'H', F3.s * 1.35, 'x', { col: t > .4 ? C.yel : C.chalk }); if (t > .1) say(D, R.cx, ty2 + s * .8, '△ABC ∽ △HBA　AB：HB ＝ BC：BA', { col: C.pink, a: a(.1, .3), maxW: R.w, num: true }); if (t > .35) say(D, R.cx, ty2 + s * 2.3, '6：x ＝ 10：6　x ＝ 36÷10 ＝ 3.6（cm）', { col: C.yel, a: a(.35, .55), maxW: R.w, num: true }); }
       if (mode === 3) { dim(F3, 'A', 'H', -F3.s * 1.1, 'y', { col: t > .4 ? C.yel : C.chalk }); if (t > .1) say(D, R.cx, ty2 + s * .8, '△ABC ∽ △HBA　AC：HA ＝ BC：BA', { col: C.pink, a: a(.1, .3), maxW: R.w, num: true }); if (t > .35) say(D, R.cx, ty2 + s * 2.3, '8：y ＝ 10：6　y ＝ 48÷10 ＝ 4.8（cm）', { col: C.yel, a: a(.35, .55), maxW: R.w, num: true }); }
       return;
     }

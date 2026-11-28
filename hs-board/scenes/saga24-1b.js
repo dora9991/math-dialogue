@@ -133,7 +133,7 @@
           { t: 'p', size: 'sm', text: 'O(0, 0)、A(4, 2)、B(3, −1)\n$|\\vec a|^2=16+4=20,\\ \\ |\\vec b|^2=9+1=10$\n$\\vec a\\cdot\\vec b=12-2=10$' },
           { t: 'fig', id: 'g5', col: 1, view: VIEW, w: 394, h: 330, items: [{ k: 'axes', tx: [1, 2, 3, 4], ty: [[-1, '−1'], 1, 2] }].concat(tri, PQ, RR, HH) }] },
       { ask: { type: 'choice', q: 'H の座標は？（$\\overrightarrow{\\mathrm{OH}}=\\frac45\\vec a-\\frac15\\vec b$）',
-        opts: ['$\\left(\\dfrac{13}{5},\\,\\dfrac95\\right)$', '$\\left(\\dfrac{19}{5},\\,\\dfrac{11}{5}\\right)$', '$\\left(\\dfrac{14}{5},\\,\\dfrac25\\right)$', '$(2,\\,1)$'], ok: 0,
+        opts: ['$\\left(\\dfrac{13}{5},\\,\\dfrac95\\right)$', '$\\left(\\dfrac{19}{5},\\,\\dfrac75\\right)$', '$\\left(\\dfrac{14}{5},\\,\\dfrac25\\right)$', '$(2,\\,1)$'], ok: 0,
         why: { 1: '$\\frac45\\vec a+\\frac15\\vec b$ にしています。$\\vec b$ は引きます。', 2: 'それは R の座標です。H は P をこえた所です。', 3: 'それは OA の中点です。' },
         good: '$\\frac45(4,2)-\\frac15(3,-1)=\\left(\\frac{13}{5},\\frac95\\right)$。AH $=\\sqrt{\\left(\\frac75\\right)^2+\\left(\\frac15\\right)^2}=\\sqrt2$、R $\\left(\\frac{14}{5},\\frac25\\right)$ で OR $=2\\sqrt2$ も合います。',
         add: [{ t: 'm', size: 'sm', tex: '\\mathrm{R}\\left(\\frac{14}{5},\\,\\frac25\\right),\\quad \\mathrm{H}\\left(\\frac{13}{5},\\,\\frac95\\right)', note: '(2)(3) の答えに\n座標を入れた' },

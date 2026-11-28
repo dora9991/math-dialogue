@@ -22,7 +22,7 @@
     { k: 'axes', tx: [[1, '1'], [4, '4']], ty: [[1, '1']] },
     { k: 'line', x: -1, dash: true, c: 'd' },
     { k: 'fn', f: '4*x/(x+1)**2', a: -0.23, b: 8.3, label: 'D', lat: [3.2, 0.78], la: 'start' },
-    { k: 'pt', at: [1, 1], name: 'A(1, 1)', dir: 'n', c: 'y', size: 21 }] });
+    { k: 'pt', at: [1, 1], name: 'A(1, 1)', dir: 'ne', c: 'y', size: 21 }] });
   // D の拡大（(3)(4) 用）
   const zoom = (id, items) => ({ t: 'fig', id, col: 1, view: [-0.3, -0.25, 1.5, 1.35], w: 430, h: 382, items: [
     { k: 'axes', tx: [[1, '1']], ty: [[1, '1']] },

@@ -138,7 +138,7 @@
       { clear: true, cols: [0.56, 0.44], part: '別の見方', say: '$n=8$ の例です。はね返りが多いと、道すじは弧とほとんど重なり、止まる点 S は B のすぐそばになります。',
         add: [{ t: 'h', text: '別の見方：n が大きいと' },
           { t: 'box', c: 'y', size: 'sm', label: '採点のポイント', text: '・二等辺三角形が合同になる理由（はね返りの決まり）を書く\n・範囲の端（B にちょうど着く場合）の入れ方を説明する\n・はさみうちは「$\\theta$ によらない」上下の式で' },
-          qfig('q6', route(0.44 * PI, 'y', 2.5).concat([{ k: 'pt', at: path(0.44 * PI).slice(-1)[0], name: 'S', dir: 'sw', c: 'p', size: 22 }]), 470)] },
+          qfig('q6', route(0.44 * PI, 'y', 2.5).concat([{ k: 'pt', at: path(0.44 * PI).slice(-1)[0], name: 'S', dir: 'se', c: 'p', size: 22 }]), 470)] },
       { ask: { type: 'choice', q: '$n\\to\\infty$ のとき、止まる点 S はどこに近づく？',
         opts: ['O', '$\\theta$ によって変わり、決まらない', 'A', 'B'], ok: 3,
         why: { 0: 'S は最後の弦の上。O からの距離は、O と弦の距離 $\\cos\\frac{\\phi}{2}$ 以上です。', 1: '$\\cos\\frac{\\phi}{2}\\le$ OS $\\le1$ で、上下が $\\theta$ によらず 1 に近づきます。', 2: 'A は出発点。S は B 側（OS が 1 に近い所）に止まります。' },

@@ -33,7 +33,8 @@ function merge(ts) {
   const out = [];
   for (const t of ts) {
     const p = out[out.length - 1];
-    if (p && Math.abs(p.base - t.base) < 0.6 && Math.abs(t.l - p.r) < 3 && Math.abs(p.a - t.a) < 0.01) { p.s += t.s; p.r = t.r; p.t = Math.min(p.t, t.t); p.b = Math.max(p.b, t.b); }
+    // まとめるのは × ÷ の ところで 分けて かいた 字だけ（数どうしが 少し 重なって いるのを「1つの 字」と まちがえない）
+    if (p && (/^[×÷]$/.test(t.s) || /[×÷]$/.test(p.s)) && Math.abs(p.base - t.base) < 0.6 && Math.abs(t.l - p.r) < 3 && Math.abs(p.a - t.a) < 0.01) { p.s += t.s; p.r = t.r; p.t = Math.min(p.t, t.t); p.b = Math.max(p.b, t.b); }
     else out.push({ ...t });
   }
   return out;
@@ -73,6 +74,7 @@ function overlaps(ts) {
         ts.filter(t => t.a >= 0.35 && (t.l < -2 || t.t < -2 || t.r > s.cvw + 2 || t.b > s.cvh + 2)).forEach(t => issues.push(`図の外にはみ出し「${t.s}」`));
         const nb = s.kids.filter(k => k.id !== 'blist');   // blist（板書の まとめ）は、たまると スクロールする つくり
         nb.forEach(k => { if (k.b > s.panel.b + 2) issues.push(`右のらんが下に切れる（${k.id}：${Math.round(k.b - s.panel.b)}px）`); });
+        s.kids.filter(k => k.id === 'blist').forEach(k => { if (k.b > s.panel.b + 6) issues.push(`右のらんの「これまでの答え」が下にかくれる（${Math.round(k.b - s.panel.b)}px。らんを スクロールしないと 新しい行が 見えない）`); });
         for (let i = 0; i < s.kids.length; i++) for (let j = i + 1; j < s.kids.length; j++) { const A = s.kids[i], B = s.kids[j]; if (Math.min(A.b, B.b) - Math.max(A.t, B.t) > 3) issues.push(`右のらんの重なり（${A.id} と ${B.id}：${Math.round(Math.min(A.b, B.b) - Math.max(A.t, B.t))}px）`); }
         const ctext = ts.filter(t => t.a >= 0.35).map(t => t.s).join(' ');
         const strs = ts.filter(t => t.a >= 0.35).map(t => t.s);

@@ -63,7 +63,7 @@
         add: [{ t: 'm', tex: 't^2-2t-8=0\\qquad\\therefore\\ t=-2,\\ 4' }] } },
       { say: '(*) に $t=-2,\\ 4$ を入れて、$\\ell_1:y=4x+2$（接点 $(-2,\\,-6)$）、$\\ell_2:y=-2x+8$（接点 $(4,\\,0)$）。2本は P で交わります。',
         add: [{ t: 'm', tex: '\\ell_1:\\ y=4x+2,\\qquad \\ell_2:\\ y=-2x+8' }],
-        draw: [{ fig: 'g1', items: [L1, L2, { k: 'pt', at: [-2, -6], name: '(−2, −6)', dir: 'e', c: 'b', size: 22 }, { k: 'pt', at: [4, 0], name: '(4, 0)', dir: 'ne', c: 'g', size: 22 }] }] },
+        draw: [{ fig: 'g1', items: [L1, L2, { k: 'pt', at: [-2, -6], name: '(−2, −6)', dir: 'w', c: 'b', size: 22 }, { k: 'pt', at: [4, 0], name: '(4, 0)', dir: 'ne', c: 'g', size: 22 }] }] },
 
       // ---------- (1) 面積 ----------
       { clear: true, say: '面積です。P の $x$ 座標 1 を境に、上の線が $\\ell_1$ から $\\ell_2$ に変わるので、積分を2つに分けます。',

@@ -83,11 +83,11 @@
   function grid2(F) {
     for (var x = 0; x <= 12; x++) { GE.seg(F, [[x, 0], [x, 5]], { col: 'rgba(242,240,230,.16)', w: 1 }); lab(F, [x, 0], -90, .8, String(x), { col: 'rgba(242,240,230,.7)', size: .62, num: true }); }
     for (var y = 0; y <= 5; y++) { GE.seg(F, [[0, y], [12, y]], { col: 'rgba(242,240,230,.16)', w: 1 }); if (y) lab(F, [0, y], 180, .8, String(y), { col: 'rgba(242,240,230,.7)', size: .62, num: true }); }
-    GE.seg(F, [[5, -.3], [5, 5.3]], { col: C.orange, w: 2.6, dash: [7, 6] }); lab(F, [5, 5.35], 0, 0, 'm', { col: C.orange, size: 1.1 });
+    GE.seg(F, [[5, 0], [5, 5.3]], { col: C.orange, w: 2.6, dash: [7, 6] }); lab(F, [5, 5.35], 0, 0, 'm', { col: C.orange, size: 1.1 });
   }
   function tri2(F, T, col, names, o) {
     o = o || {}; GE.polyP(F, T, { col: col, fa: o.fa == null ? .25 : o.fa, a: o.a, sw: o.sw || 2.6 });
-    if (names) { var c = cen(T); T.forEach(function (p, i) { var d = [p[0] - c[0], p[1] - c[1]], L = Math.hypot(d[0], d[1]) || 1, q = GE.add(p, [d[0] / L * .42, d[1] / L * .42]); lab(F, q, 0, 0, names[i], { col: col, size: .9, a: o.a }); }); }
+    if (names) { var c = cen(T); T.forEach(function (p, i) { var d = [p[0] - c[0], p[1] - c[1]], L = Math.hypot(d[0], d[1]) || 1, q = GE.add(p, [d[0] / L * .42, d[1] / L * .42]); if (o.ang && o.ang[i] != null) lab(F, p, o.ang[i], 1.0, names[i], { col: col, size: .9, a: o.a }); else lab(F, q, 0, 0, names[i], { col: col, size: .9, a: o.a }); }); }
   }
   /* 回る向きの矢印（ccw: 反時計まわり） */
   function turn2(F, T, col, ccw, a) {
@@ -178,15 +178,15 @@
     return { rx: rx, ry: ry, ty: ty };
   }
   function dims(D, x, by, rx, ty, rl, hl, col, s, a) {
-    CH.line(D, x, by, x + rx, by, { col: col, w: 2.2, dash: true, a: a }); CH.text(D, x + rx / 2, by + s * .85, rl, { col: col, size: s * .95, a: a, num: true, outline: OUT });
+    CH.line(D, x, by, x + rx, by, { col: col, w: 2.2, dash: true, a: a }); CH.text(D, x + rx / 2, by - s * .8, rl, { col: col, size: s * .95, a: a, num: true, outline: OUT });
     CH.line(D, x, by, x, ty, { col: col, w: 2.2, dash: true, a: a }); CH.text(D, x - s * .2, (by + ty) / 2, hl, { col: col, size: s * .95, a: a, align: 'right', num: true, outline: OUT });
   }
   var BL = { s: C.blue, fill: 'rgba(120,170,255,.18)' }, OR = { s: C.orange, fill: 'rgba(255,170,100,.18)' };
   function solids(D, o) {
     o = o || {}; var R = CH.box(D, { l: .04, r: .04, t: .12, b: .1 }), s = CH.fs(D, .9), u = Math.min(R.h / 7.4, R.w / 21), by = R.y1 - u * .6, ax = R.x0 + R.w * .24, bx = R.x0 + R.w * .74;
     var A = cyl(D, ax, by, 3, 5, u, BL), B = cone(D, bx, by, 5, 6, u, OR);
-    CH.text(D, ax, by + u * 1.4, '円柱 A', { col: C.blue, size: s * 1.1 }); CH.text(D, bx, by + u * 1.4, '円すい B', { col: C.orange, size: s * 1.1 });
     dims(D, ax, by, A.rx, A.ty, '3cm', '5cm', C.blue, s, o.da == null ? 1 : o.da); dims(D, bx, by, B.rx, B.ty, '5cm', '6cm', C.orange, s, o.da == null ? 1 : o.da);
+    CH.text(D, ax, A.ty - A.ry - s * 1.1, '円柱 A', { col: C.blue, size: s * 1.1 }); CH.text(D, bx, B.ty - s * 1.3, '円すい B', { col: C.orange, size: s * 1.1 });
     return { R: R, s: s, u: u, by: by, ax: ax, bx: bx };
   }
 
@@ -206,7 +206,7 @@
         draw: function (D) {
           var t = D.ph ? D.t : 0, F = f1(D); base1(F, { mid: t > .1 });
           if (t > 0) { arcsR(F, 5, CH.smooth(0, .45, t), C.pink, 24); }
-          if (t > .5) { var a = CH.smooth(.5, .75, t); lab(F, M1, 0, 1.0, '半径 5cm → 1点M', { col: C.pink, size: .85, a: a }); arcsR(F, 6, CH.smooth(.55, .95, t), C.blue); }
+          if (t > .5) { var a = CH.smooth(.5, .75, t); lab(F, M1, -20, 8, '半径 5cm → 1点M', { col: C.pink, size: .85, a: a }); arcsR(F, 6, CH.smooth(.55, .95, t), C.blue); }
           if (t > .9) CH.text(D, CH.box(D, {}).cx, CH.box(D, { t: 0 }).y0 + CH.fs(D, 1) * .7, '半径 6cm なら 2点で交わる', { col: C.blue, a: CH.smooth(.9, 1, t), size: CH.fs(D, .95), outline: OUT });
         } },
       { tag: '類題1', q: '(2) 交点 C で AC＝BC となるわけは？', a: 'A と B から同じ半径の弧をかいたので、AC も BC もその半径に等しいから', sub: 'C は、A を中心とする半径 6cm の弧の上にあるので AC＝6cm。同じ C は、B を中心とする半径 6cm の弧の上にもあるので BC＝6cm。だから AC＝BC', dur: 4,
@@ -215,14 +215,14 @@
           var t = D.ph ? D.t : 0, F = f1(D); base1(F); arcsR(F, 6, 1, C.blue);
           GE.dot(F, C1, { col: C.yel, r: F.s * .2 }); GE.dot(F, D1, { col: C.yel, r: F.s * .2 }); lab(F, C1, 45, 1.0, 'C', { col: C.yel, size: 1.1 }); lab(F, D1, -135, 1.0, 'D', { col: C.yel, size: 1.1 });
           if (t > .1) { var a = CH.smooth(.1, .4, t); GE.seg(F, [A1, GE.lerpP(A1, C1, a)], { col: C.green, w: 3.4 }); GE.seg(F, [B1, GE.lerpP(B1, C1, a)], { col: C.green, w: 3.4 }); }
-          if (t > .45) { var a2 = CH.smooth(.45, .65, t); lab(F, GE.mid(A1, C1), 85, 1.2, 'AC＝半径', { col: C.green, a: a2, size: .9 }); lab(F, GE.mid(B1, C1), 20, 1.2, 'BC＝半径', { col: C.green, a: a2, size: .9 }); GE.tick(F, [A1, C1], 1, { col: C.green, a: a2 }); GE.tick(F, [B1, C1], 1, { col: C.green, a: a2 }); }
+          if (t > .45) { var a2 = CH.smooth(.45, .65, t); lab(F, GE.mid(A1, C1), 85, 1.2, 'AC＝半径', { col: C.green, a: a2, size: .9 }); lab(F, GE.mid(B1, C1), 0, 3.3, 'BC＝半径', { col: C.green, a: a2, size: .9 }); GE.tick(F, [A1, C1], 1, { col: C.green, a: a2 }); GE.tick(F, [B1, C1], 1, { col: C.green, a: a2 }); }
           if (t > .75) top(D, 'どちらも 同じ半径 だから AC ＝ BC', C.green, CH.smooth(.75, .95, t));
         } },
       { tag: '類題1', q: '(3) 点 P が A・B から等しいきょりにあるわけは？', a: '直線 CD は線分 AB の垂直二等分線で、垂直二等分線の上の点は、線分の両はしから等しいきょりにあるから、PA＝PB', sub: 'C も D も A・B から等しいきょりにある（AC＝BC、AD＝BD）。だから直線 CD は線分 AB の垂直二等分線。P はその直線の上の点なので PA＝PB', dur: 5,
         b: { t: '(3) 直線 CD ＝ 線分 AB の<b>垂直二等分線</b> → 上の点 P は PA＝PB', col: C.yel },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, F = f1(D); base1(F, { mid: true }); arcsR(F, 6, 1, 'rgba(120,170,255,.55)');
-          GE.dot(F, C1, { col: C.yel, r: F.s * .2 }); GE.dot(F, D1, { col: C.yel, r: F.s * .2 }); lab(F, C1, 45, 1.0, 'C', { col: C.yel, size: 1.1 }); lab(F, D1, -135, 1.0, 'D', { col: C.yel, size: 1.1 });
+          var t = D.ph ? D.t : 0, F = f1(D); base1(F, { mid: t > 0 }); arcsR(F, 6, 1, 'rgba(120,170,255,.55)');
+          GE.dot(F, C1, { col: C.yel, r: F.s * .2 }); GE.dot(F, D1, { col: C.yel, r: F.s * .2 }); lab(F, C1, 45, 1.0, 'C', { col: C.yel, size: 1.1 }); lab(F, D1, -60, 1.0, 'D', { col: C.yel, size: 1.1 });
           var k = CH.smooth(0, .3, t); GE.seg(F, [C1, GE.lerpP(C1, P1, k)], { col: C.yel, w: 3.2 }); lab(F, M1, 20, 1.0, 'M', { col: C.pink, size: .9, a: CH.smooth(.3, .4, t) });
           if (t > .3) { F.P.A = A1; F.P.M = M1; F.P.C = C1; GE.right(F, 'AMC', { col: C.pink, a: CH.smooth(.3, .45, t) }); }
           if (t > .4) { var a = CH.smooth(.4, .55, t); GE.dot(F, P1, { col: C.pink, r: F.s * .24, a: a }); lab(F, P1, -90, 1.1, 'P', { col: C.pink, size: 1.1, a: a }); }
@@ -237,14 +237,14 @@
       { tag: '類題2', q: '(1) 点 A′ の座標は？', a: 'A′(9, 1)', sub: 'A(1, 1) から m（x＝5）までは 4。m の反対側へ同じ 4 だけ進んだ x＝9。y は 1 のまま', dur: 3.5,
         b: { t: '(1) m から A までが 4 → 反対側へ 4 → <b>A′(9, 1)</b>', col: C.yel },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, F = f2(D), k = CH.smooth(0, .6, t); grid2(F); tri2(F, T1, C.blue, ['A', 'B', 'C'], { fa: .15 });
+          var t = D.ph ? D.t : 0, F = f2(D), k = CH.smooth(0, .6, t); grid2(F); tri2(F, T1, C.blue, ['A', 'B', 'C'], { fa: .15, ang: [null, 45, null] });
           if (t > 0) { var Q = foldP(T1, LM[0], LM[1], k); tri2(F, Q, C.pink, null, { fa: .2 }); }
-          if (t > .6) { var a = CH.smooth(.6, .8, t); tri2(F, T2, C.pink, ['A′', 'B′', 'C′'], { a: a }); GE.seg(F, [[1, 1], [9, 1]], { col: C.yel, w: 2, dash: [6, 5], a: a }); lab(F, [3, 1], 90, .9, '4', { col: C.yel, size: .9, a: a, num: true }); lab(F, [7, 1], 90, .9, '4', { col: C.yel, size: .9, a: a, num: true }); }
+          if (t > .6) { var a = CH.smooth(.6, .8, t); tri2(F, T2, C.pink, ['A′', 'B′', 'C′'], { a: a, ang: [null, 135, null] }); GE.seg(F, [[1, 1], [9, 1]], { col: C.yel, w: 2, dash: [6, 5], a: a }); lab(F, [3, 1], 90, .9, '4', { col: C.yel, size: .9, a: a, num: true }); lab(F, [7, 1], 90, .9, '4', { col: C.yel, size: .9, a: a, num: true }); }
         } },
       { tag: '類題2', q: '(2) 点 C″ の座標は？', a: 'C″(11, 1)', sub: 'A′(9, 1) から見て C′(9, 3) は真上に 2。時計まわりに 90°回すと、A′ から 右へ 2 の位置 → (11, 1)', dur: 4,
         b: { t: '(2) A′ の真上 2 の C′ → 時計まわりに 90°で 右へ 2 → <b>C″(11, 1)</b>', col: C.yel },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, F = f2(D), k = CH.ease(CH.smooth(0, .65, t)); grid2(F); tri2(F, T1, C.blue, null, { fa: .1, sw: 1.6 }); tri2(F, T2, C.pink, ['A′', 'B′', 'C′'], { fa: .15 });
+          var t = D.ph ? D.t : 0, F = f2(D), k = CH.ease(CH.smooth(0, .65, t)); grid2(F); tri2(F, T1, C.blue, null, { fa: .1, sw: 1.6 }); tri2(F, T2, C.pink, ['A′', 'B′', 'C′'], { fa: .15, ang: [null, null, 135] });
           var Q = rotP(T2, T2[0], -90 * k); tri2(F, Q, C.yel, null, { fa: .22 }); GE.arcDir(F, T2[0], 90 - 90 * k, 90, { col: C.yel, r: F.s * 1.9, w: 2.6 });
           if (t > .65) { var a = CH.smooth(.65, .85, t); GE.polyP(F, T3, { col: C.yel, fa: .25, a: a }); lab(F, T3[2], -70, 1.9, 'C″(11, 1)', { col: C.yel, size: .95, a: a }); lab(F, T3[1], 90, 1.0, 'B″', { col: C.yel, size: .95, a: a }); GE.dot(F, T3[2], { col: C.yel, r: F.s * .22, a: a }); }
         } },
@@ -324,7 +324,7 @@
         b: { t: '(4) 上の 2まいが <b>同じ面に重なり</b>、底の面が できない → 展開図にならない', col: C.yel },
         draw: function (D) {
           var t = D.ph ? D.t : 0, R = CH.box(D, { l: .04, r: .04, t: .12, b: .06 }), F = net2(D, R, { hl: t > .2 });
-          if (t > .2) { var a = CH.smooth(.2, .5, t); CH.arrow(D, F.X([2, 6.4])[0], F.X([2, 6.4])[1], F.X([6, 6.4])[0], F.X([6, 6.4])[1], { col: C.yel, w: 3, head: F.s * .6, a: a }); CH.text(D, F.X([8.5, 6])[0], F.X([8.5, 6])[1], '2まいが 同じ「上の面」に 重なる', { col: C.pink, align: 'left', size: F.s * 1.0, a: a, outline: OUT }); CH.text(D, F.X([8.5, 4.6])[0], F.X([8.5, 4.6])[1], '→ 底の面が 1まい 足りない', { col: C.pink, align: 'left', size: F.s * 1.0, a: CH.smooth(.5, .8, t), outline: OUT }); }
+          if (t > .2) { var a = CH.smooth(.2, .5, t); CH.arrow(D, F.X([2, 7.2])[0], F.X([2, 7.2])[1], F.X([6, 7.2])[0], F.X([6, 7.2])[1], { col: C.yel, w: 3, head: F.s * .6, a: a }); CH.text(D, F.X([8.5, 6])[0], F.X([8.5, 6])[1], '2まいが 同じ「上の面」に 重なる', { col: C.pink, align: 'left', size: F.s * 1.0, a: a, outline: OUT }); CH.text(D, F.X([8.5, 4.6])[0], F.X([8.5, 4.6])[1], '→ 底の面が 1まい 足りない', { col: C.pink, align: 'left', size: F.s * 1.0, a: CH.smooth(.5, .8, t), outline: OUT }); }
         } },
       /* ---------------- 類題5 ---------------- */
       { tag: '類題5', bh: '類題5　円柱の容器と円すいの容器（体積）',
@@ -338,7 +338,7 @@
         b: { t: '(2) 底面 9π×2＋側面 (2π×3)×5 ＝18π＋30π＝<b>48π</b>（cm²）', col: C.yel },
         draw: function (D) {
           var t = D.ph ? D.t : 0, S = solids(D, { da: .3 }), R = S.R, h = S.u * 5, w = 6 * Math.PI * S.u * .5;
-          if (t > 0) { var a = CH.smooth(0, .3, t); CH.fillRect(D, R.x0 + R.w * .06, R.y0 + R.h * .05, R.x0 + R.w * .06 + w, R.y0 + R.h * .05 + h * .55, { fill: 'rgba(255,226,122,.2)', stroke: C.yel, sw: 2.6, a: a }); CH.text(D, R.x0 + R.w * .06 + w / 2, R.y0 + R.h * .05 + h * .275, '側面 6π × 5 ＝ 30π', { col: C.yel, size: S.s, a: a, outline: OUT }); CH.text(D, R.x0 + R.w * .06 + w / 2, R.y0 + R.h * .05 - S.s * .2, '横 ＝ 底面の円周 2π×3 ＝ 6π', { col: C.green, size: S.s * .85, a: a, outline: OUT }); }
+          if (t > 0) { var a = CH.smooth(0, .3, t); CH.fillRect(D, R.x0 + R.w * .06, R.y0 + R.h * .05, R.x0 + R.w * .06 + w, R.y0 + R.h * .05 + h * .55, { fill: 'rgba(255,226,122,.2)', stroke: C.yel, sw: 2.6, a: a }); CH.text(D, R.x0 + R.w * .06 + w / 2, R.y0 + R.h * .05 + h * .275, '側面 6π × 5 ＝ 30π', { col: C.yel, size: S.s, a: a, outline: OUT }); CH.text(D, R.x0 + R.w * .06 + w / 2, R.y0 + R.h * .05 - S.s * .75, '横 ＝ 底面の円周 2π×3 ＝ 6π', { col: C.green, size: S.s * .85, a: a, outline: OUT }); }
           if (t > .4) { var a2 = CH.smooth(.4, .6, t); CH.text(D, R.x0 + R.w * .06 + w / 2, R.y0 + R.h * .05 + h * .55 + S.s * 1.6, '底面 9π × 2 ＝ 18π', { col: C.blue, size: S.s, a: a2, outline: OUT }); }
           if (t > .7) CH.text(D, R.x0 + R.w * .72, R.y0 + R.h * .18, '30π ＋ 18π ＝ 48π cm²', { col: C.yel, size: S.s * 1.2, a: CH.smooth(.7, .9, t), outline: OUT });
         } },

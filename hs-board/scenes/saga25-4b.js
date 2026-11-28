@@ -71,7 +71,7 @@
         good: '$360^\\circ$ を4等分して $90^\\circ$。O のとなりの頂点は、O を $c$ のまわりに $\\pm90^\\circ$ 回転した点です。',
         add: [{ t: 'p', size: 'sm', text: '$\\alpha,\\ \\beta$ は、O を点 $c$ のまわりに $\\pm90^\\circ$ 回転した点' }],
         draw: [{ fig: 'c2', items: [{ k: 'label', at: [2, -0.75], text: '90°', c: 'g', size: 20 }] }] } },
-      { say: '$90^\\circ$ 回転は $i$ をかけること。O を $c$ のまわりに $-90^\\circ$ 回転した点は $c+(0-c)\\cdot i=c(1-i)$、$+90^\\circ$ なら $c(1+i)$ です。',
+      { say: '$90^\\circ$ 回転は $i$ をかけること。O を $c$ のまわりに $+90^\\circ$ 回転した点は $c+(0-c)\\cdot i=c(1-i)$、$-90^\\circ$ なら $c+(0-c)\\cdot(-i)=c(1+i)$ です。',
         add: [{ t: 'm', size: 'sm', tex: 'c(1-i)=(2-2i)(1-i)' },
           { t: 'm', size: 'sm', tex: 'c(1+i)=(2-2i)(1+i)' }] },
       { ask: { type: 'choice', q: '$c(1-i)=(2-2i)(1-i)$ は？',

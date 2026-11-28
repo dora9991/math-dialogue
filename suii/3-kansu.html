@@ -56,7 +56,10 @@
   }
 
   /* ---------- 類題2 ---------- */
-  function pl2(D) { return CH.plane(D, stage(D), { x: [0, 100], y: [0, 350], fit: false, stepX: 10, stepY: 50, labX: 20, labY: 100, xn: 'km/時', yn: 'm' }); }
+  function pl2(D) {   // 横軸の 名前（km/時）は 長いので、軸の 矢じるしに 重ならないよう 目もりの 数の 下に かく
+    var Pl = CH.plane(D, stage(D), { x: [0, 100], y: [0, 350], fit: false, stepX: 10, stepY: 50, labX: 20, labY: 100, xn: ' ', yn: 'm' });
+    CH.text(D, Pl.R.x1 + Pl.s * .9, Pl.Y(0) + Pl.s * 2.3, '（km/時）', { size: Pl.s, align: 'right', col: 'rgba(242,240,230,.85)' }); return Pl;
+  }
   function tab2(D, ok) {
     var R = stage(D, { l: .06, r: .06, t: .1, b: .15 });
     CH.table(D, CH.rect(R.x0, R.y0 + R.h * .1, R.x1, R.y0 + R.h * .5), ['時速 x（km）', '30', '50', '70', '90'], [['停止距離 y（m）', '36', '100', '196', ok ? '324' : 'ア']], { fw: .3, top: true, hl: function (r, c) { return r === 1 && c === 4 ? (ok ? C.yel : C.pink) : null; } });
@@ -68,7 +71,7 @@
   function par3(D, Pl, a) { CH.fn(D, Pl, F3, { col: C.orange, w: 3, a: a }); }
 
   /* ---------- 類題4 ---------- */
-  function pl4(D) { return CH.plane(D, stage(D), { x: [-3, 4], y: [-2, 20], fit: false, stepX: 1, stepY: 2, labX: 1, labY: 4 }); }
+  function pl4(D, o) { var c = { x: [-3, 4], y: [-2, 20], fit: false, stepX: 1, stepY: 2, labX: 1, labY: 4 }, k; if (o) for (k in o) c[k] = o[k]; return CH.plane(D, stage(D), c); }
 
   /* ---------- 類題5 ---------- */
   var SEG5 = [[0, 60, 200], [60, 90, 300], [90, 120, 400], [120, 150, 500], [150, 180, 600], [180, 210, 700], [210, 270, 800]];
@@ -103,7 +106,7 @@
         draw: function (D) {
           var t = D.ph ? D.t : 0, Pl = pl1(D);
           CH.fn(D, Pl, F1, { col: C.orange, w: 3, x0: 0, x1: 5 });
-          CH.pt(D, Pl, 1, 3, { col: C.yel, lab: 'P(1, 3)', dir: 'se' }); CH.pt(D, Pl, 4, 48, { col: C.yel, lab: 'Q(4, 48)', dir: 'nw' });
+          CH.pt(D, Pl, 1, 3, { col: C.yel, lab: 'P(1, 3)', dir: 'nw' }); CH.pt(D, Pl, 4, 48, { col: C.yel, lab: 'Q(4, 48)', dir: 'nw' });
           var a1 = CH.smooth(0, .3, t), a2 = CH.smooth(.3, .6, t), a3 = CH.smooth(.6, .85, t);
           CH.pseg(D, Pl, [1, 3], [4, 48], { col: C.blue, w: 3, a: a1 });
           CH.pseg(D, Pl, [1, 3], [4, 3], { col: C.pink, w: 2.4, dash: true, a: a2 }); CH.pseg(D, Pl, [4, 3], [4, 48], { col: C.pink, w: 2.4, dash: true, a: a2 });
@@ -116,7 +119,7 @@
           var t = D.ph ? D.t : 0, Pl = pl1(D); CH.fn(D, Pl, F1, { col: C.orange, w: 3, x0: 0, x1: 5 });
           var a1 = CH.smooth(0, .3, t), a2 = CH.smooth(.45, .75, t), a3 = CH.smooth(.8, 1, t);
           [[1, 3], [2, 12]].forEach(function (p) { CH.pt(D, Pl, p[0], p[1], { col: C.blue, a: a1 }); }); [[3, 27], [4, 48]].forEach(function (p) { CH.pt(D, Pl, p[0], p[1], { col: C.pink, a: a2 }); });
-          CH.slopeTri(D, Pl, 9, -6, 1, 1, { col: C.blue, lx: '1', ly: '9', a: a1 }); CH.slopeTri(D, Pl, 21, -36, 3, 1, { col: C.pink, lx: '1', ly: '21', a: a2 });
+          CH.slopeTri(D, Pl, 9, -6, 1, 1, { col: C.blue, lx: '', ly: '9', a: a1 }); CH.text(D, Pl.X(1.72), Pl.Y(3) - CH.fs(D, .8) * .85, '1', { col: C.blue, size: CH.fs(D, .8), a: a1, outline: 'rgba(20,40,30,.9)' });   /* 底辺の 1 は、x軸に 重ならないよう 三角形の 中に */ CH.slopeTri(D, Pl, 21, -36, 3, 1, { col: C.pink, lx: '1', ly: '21', a: a2 });
           lab(D, Pl.X(.15), Pl.Y(70), '1秒〜2秒：9 ÷ 1 ＝ 9', C.blue, { a: a1, align: 'left' }); lab(D, Pl.X(.15), Pl.Y(62), '3秒〜4秒：21 ÷ 1 ＝ 21', C.pink, { a: a2, align: 'left' });
           lab(D, Pl.X(.15), Pl.Y(53), '同じではない', C.yel, { a: a3, align: 'left', size: CH.fs(D, 1.05) });
         } },
@@ -176,7 +179,7 @@
           var t = D.ph ? D.t : 0, Pl = pl3(D); par3(D, Pl); var a = CH.smooth(0, .5, t), b = CH.smooth(.4, .9, t);
           CH.pseg(D, Pl, [-2, 0], [-2, 4], { col: C.blue, dash: true, w: 2.2, a: a }); CH.pseg(D, Pl, [-2, 4], [0, 4], { col: C.blue, dash: true, w: 2.2, a: a });
           CH.pseg(D, Pl, [3, 0], [3, 9], { col: C.blue, dash: true, w: 2.2, a: b }); CH.pseg(D, Pl, [3, 9], [0, 9], { col: C.blue, dash: true, w: 2.2, a: b });
-          CH.pt(D, Pl, -2, 4, { col: C.yel, lab: 'A(−2, 4)', dir: 'nw' }); CH.pt(D, Pl, 3, 9, { col: C.yel, lab: 'B(3, 9)', dir: 'se' });
+          CH.pt(D, Pl, -2, 4, { col: C.yel, lab: t > 0 ? 'A(−2, 4)' : 'A', dir: 'nw' }); CH.pt(D, Pl, 3, 9, { col: C.yel, lab: t > 0 ? 'B(3, 9)' : 'B', dir: 'se' });
         } },
       { tag: '類題3', q: '(2) 直線 AB の式は？', a: 'y＝x＋6', sub: '傾き＝(9−4)÷(3−(−2))＝5÷5＝1。y＝x＋b に A(−2, 4) を代入して 4＝−2＋b、b＝6', dur: 3.5,
         b: { t: '(2) 傾き 5÷5＝1　4＝−2＋b　<b>y＝x＋6</b>', col: C.yel },
@@ -231,22 +234,22 @@
       { tag: '類題4', q: '(3) ゆうきさんの「2≦y≦18」のまちがいを説明する', a: 'x＝0 をふくむので、y は 0 まで下がる。最小値は 2 ではなく 0 である', sub: '変域に x＝0 がふくまれるとき、y＝2x² は原点（x＝0、y＝0）を通る。グラフは x＝0 でいちばん低くなるので、y の最小値は x の変域のはしの値（y＝2）ではなく 0。正しくは 0≦y≦18', dur: 5,
         b: { t: '(3) −1≦x≦3 には <b>x＝0</b> がある → 最小値は <b>0</b>（2ではない）', col: C.yel },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, Pl = pl4(D); CH.fn(D, Pl, F4, { col: 'rgba(255,186,120,.35)', w: 2.4, x0: -3, x1: 4 }); CH.fn(D, Pl, F4, { col: C.orange, w: 4.4, x0: -1, x1: 3 });
+          var t = D.ph ? D.t : 0, Pl = pl4(D, t > 0 ? { origin: false } : null);   /* 原点に 輪を かく ときは、O の 字を 出さない（輪に かくれて 欠けて 見える） */ CH.fn(D, Pl, F4, { col: 'rgba(255,186,120,.35)', w: 2.4, x0: -3, x1: 4 }); CH.fn(D, Pl, F4, { col: C.orange, w: 4.4, x0: -1, x1: 3 });
           var a = CH.smooth(0, .3, t), b = CH.smooth(.35, .65, t), c = CH.smooth(.65, .95, t);
-          CH.pseg(D, Pl, [-3, 2], [4, 2], { col: C.pink, w: 2.4, dash: true, a: a }); CH.pt(D, Pl, -1, 2, { col: C.pink, a: a, lab: 'ゆうきさんの 最小値 2', dir: 'w', size: CH.fs(D, .8) });
+          CH.pseg(D, Pl, [-1, 2], [4, 2], { col: C.pink, w: 2.4, dash: true, a: a }); CH.pt(D, Pl, -1, 2, { col: C.pink, a: a }); lab(D, Pl.X(1.9), Pl.Y(3.3), 'ゆうきさんの 最小値 2', C.pink, { a: a, align: 'left', size: CH.fs(D, .8) });
           CH.circle(D, Pl.X(0), Pl.Y(0), CH.fs(D, .75), { stroke: C.green, sw: 3, a: b }); CH.pt(D, Pl, 0, 0, { col: C.green, a: b });
-          lab(D, Pl.X(.25), Pl.Y(-1.3), '↑ x＝0 のとき y＝0', C.green, { a: b, align: 'left' });
+          lab(D, Pl.X(-.05), Pl.Y(-2.9), '↑ x＝0 のとき y＝0', C.green, { a: b, align: 'left' });
           lab(D, Pl.X(-2.9), Pl.Y(16), 'x の変域に 0 がある', C.yel, { a: c, align: 'left' }); lab(D, Pl.X(-2.9), Pl.Y(14.3), '→ y は 0 まで下がる', C.yel, { a: c, align: 'left' });
         } },
       { tag: '類題4', q: '(4) y＝ax²（a＜0）で、−2≦x≦4 のとき −8≦y≦0。a は？', a: 'a＝−[1/2]', sub: 'a＜0 のグラフは下に開き、x＝0 で最大値 0。x の変域のはしで、原点から遠い x＝4 のとき y が最小になるので、x＝4、y＝−8 を代入して −8＝16a、a＝−[1/2]。（x＝−2 のとき y＝−2 で、−8≦y≦0 に入る）', dur: 5,
         b: { t: '(4) x＝4 で最小 −8 → −8＝a×4²　<b>a＝−[1/2]</b>', col: C.yel },
         draw: function (D) {
           var t = D.ph ? D.t : 0, Pl = CH.plane(D, stage(D), { x: [-3, 5], y: [-10, 2], fit: false, stepX: 1, stepY: 1, labX: 1, labY: 2 }), F = function (x) { return A4 * x * x; };
-          CH.fn(D, Pl, F, { col: 'rgba(255,186,120,.35)', w: 2.4, x0: -3, x1: 5 }); CH.fn(D, Pl, F, { col: C.orange, w: 4.4, x0: -2, x1: 4 });
-          CH.pseg(D, Pl, [-2, 0], [-2, -2], { col: C.blue, dash: true, w: 2, a: 1 }); CH.pseg(D, Pl, [4, 0], [4, -8], { col: C.blue, dash: true, w: 2 });
-          var a = CH.smooth(0, .4, t), b = CH.smooth(.4, .8, t);
+          var a = CH.smooth(0, .4, t), b = CH.smooth(.4, .8, t), c = CH.smooth(0, .3, t);
+          CH.fn(D, Pl, F, { col: 'rgba(255,186,120,.35)', w: 2.4, x0: -3, x1: 5, a: c }); CH.fn(D, Pl, F, { col: C.orange, w: 4.4, x0: -2, x1: 4, a: c });
+          CH.pseg(D, Pl, [-2, 2], [-2, -10], { col: C.blue, dash: true, w: 2 }); CH.pseg(D, Pl, [4, 2], [4, -10], { col: C.blue, dash: true, w: 2 });
           CH.pseg(D, Pl, [0, -8], [4, -8], { col: C.pink, dash: true, w: 2.4, a: a }); CH.pt(D, Pl, 4, -8, { col: C.pink, a: a, lab: '(4, −8)', dir: 'ne' }); CH.pt(D, Pl, -2, -2, { col: C.blue, a: a, lab: '(−2, −2)', dir: 'sw' });
-          lab(D, Pl.X(-2.9), Pl.Y(-5.2), '−8 ＝ a × 4²', C.pink, { a: b, align: 'left' }); lab(D, Pl.X(-2.9), Pl.Y(-6.4), '16a ＝ −8　a ＝ −1/2', C.yel, { a: b, align: 'left', size: CH.fs(D, 1.05) });
+          lab(D, Pl.X(-2.9), Pl.Y(-5.0), '−8 ＝ a × 4²', C.pink, { a: b, align: 'left' }); lab(D, Pl.X(-2.9), Pl.Y(-6.2), '16a ＝ −8', C.yel, { a: b, align: 'left', size: CH.fs(D, 1.05) }); lab(D, Pl.X(-2.9), Pl.Y(-7.5), 'a ＝ −1/2', C.yel, { a: b, align: 'left', size: CH.fs(D, 1.05) });
         } },
       /* ---------------- 類題5 ---------------- */
       { tag: '類題5', bh: '類題5　駐車場の料金（階段状のグラフ）', q: 'ある駐車場では、車を入れてから x 分たったときの料金を y 円とする。60分までは 200円。60分をこえると、30分ごとに 100円ずつ高くなる。ただし、料金は 800円より高くならない。下のグラフは、その関係を表したものである。●はその点をふくみ、○はふくまない。',
@@ -255,14 +258,14 @@
       { tag: '類題5', q: '(1) 100分 停めたときの料金は？', a: '400円', sub: 'x＝100 は 90＜x≦120 の部分で、y＝400', dur: 2,
         b: { t: '(1) 90＜x≦120 の部分 → <b>400円</b>', col: C.yel },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, Pl = pl5(D); steps5(D, Pl, { col: function (i) { return i === 2 && t > .4 ? C.pink : C.yel; }, a: function (i) { return i === 2 ? 1 : .45; } });
+          var t = D.ph ? D.t : 0, Pl = pl5(D); steps5(D, Pl, { col: function (i) { return i === 2 && t > .4 ? C.pink : C.yel; }, a: function (i) { return i === 2 ? 1 : 1 - .55 * CH.smooth(0, .3, t); } });
           var a = CH.smooth(0, .4, t); CH.pseg(D, Pl, [100, 0], [100, 400], { col: C.blue, dash: true, w: 2.4, a: a }); CH.pseg(D, Pl, [0, 400], [100, 400], { col: C.blue, dash: true, w: 2.4, a: CH.smooth(.3, .6, t) });
           lab(D, Pl.X(100), Pl.Y(0) - Pl.s * 1.1, '100分', C.blue, { a: a }); lab(D, Pl.X(8), Pl.Y(450), '400円', C.pink, { a: CH.smooth(.5, .8, t), align: 'left' });
         } },
       { tag: '類題5', q: '(2) 料金が 600円になる x の範囲は？', a: '150＜x≦180', sub: '600円の横線は x が 150〜180 の部分。左のはしの x＝150 は ○（ふくまない）、右のはしの x＝180 は ●（ふくむ）', dur: 3,
         b: { t: '(2) <b>150＜x≦180</b>（150 は ○、180 は ●）', col: C.yel },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, Pl = pl5(D); steps5(D, Pl, { col: function (i) { return i === 4 && t > .3 ? C.pink : C.yel; }, a: function (i) { return i === 4 ? 1 : .45; } });
+          var t = D.ph ? D.t : 0, Pl = pl5(D); steps5(D, Pl, { col: function (i) { return i === 4 && t > .3 ? C.pink : C.yel; }, a: function (i) { return i === 4 ? 1 : 1 - .55 * CH.smooth(0, .3, t); } });
           var a = CH.smooth(0, .4, t); CH.pseg(D, Pl, [0, 600], [150, 600], { col: C.blue, dash: true, w: 2.4, a: a }); CH.pseg(D, Pl, [150, 0], [150, 600], { col: C.blue, dash: true, w: 2.4, a: a }); CH.pseg(D, Pl, [180, 0], [180, 600], { col: C.blue, dash: true, w: 2.4, a: CH.smooth(.3, .7, t) });
           lab(D, Pl.X(150) - 4, Pl.Y(0) - Pl.s * 1.1, '150', C.blue, { a: a, align: 'right' }); lab(D, Pl.X(180) + 4, Pl.Y(0) - Pl.s * 1.1, '180', C.blue, { a: CH.smooth(.3, .7, t), align: 'left' });
           lab(D, Pl.X(8), Pl.Y(650), '600円', C.pink, { a: CH.smooth(.5, .8, t), align: 'left' });
@@ -270,7 +273,7 @@
       { tag: '類題5', q: '(3) 62分と 88分で、料金が同じになるわけは？', a: '62分も 88分も、グラフの 60＜x≦90 の部分（y＝300）にあるから', sub: '料金は 30分ごとにしか ふえない。62分も 88分も 60＜x≦90 の区間に入るので、どちらも 300円になる。グラフが階段のように、同じ高さの横線になっている', dur: 4,
         b: { t: '(3) 62、88 は どちらも <b>60＜x≦90</b> の 同じ横線の上 → 300円', col: C.yel },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, Pl = pl5(D); steps5(D, Pl, { col: function (i) { return i === 1 && t > .5 ? C.pink : C.yel; }, a: function (i) { return i === 1 ? 1 : .45; } });
+          var t = D.ph ? D.t : 0, Pl = pl5(D); steps5(D, Pl, { col: function (i) { return i === 1 && t > .5 ? C.pink : C.yel; }, a: function (i) { return i === 1 ? 1 : 1 - .55 * CH.smooth(0, .3, t); } });
           var a = CH.smooth(0, .3, t), b = CH.smooth(.25, .55, t);
           CH.pseg(D, Pl, [62, 0], [62, 300], { col: C.blue, dash: true, w: 2.4, a: a }); CH.pseg(D, Pl, [88, 0], [88, 300], { col: C.green, dash: true, w: 2.4, a: b });
           CH.pt(D, Pl, 62, 300, { col: C.blue, a: a }); CH.pt(D, Pl, 88, 300, { col: C.green, a: b });
@@ -280,7 +283,7 @@
       { tag: '類題5', q: '(4) y は x の関数といえる？', a: 'いえる', sub: 'x の値を決めると、y の値がただ1つに決まるから。つなぎ目の x＝60 でも、y は 200 だけ（●の点だけが ふくまれ、○ではない）。グラフは階段のようにとびとびだが、x に対して y は1つずつ', dur: 4.5,
         b: { t: '(4) <b>いえる</b>　x を決めると y が ただ1つに決まる（x＝60 でも y＝200）', col: C.yel },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, Pl = pl5(D); steps5(D, Pl, { col: function (i) { return i <= 1 && t > .3 ? C.pink : C.yel; }, a: function (i) { return i <= 1 ? 1 : .45; } });
+          var t = D.ph ? D.t : 0, Pl = pl5(D); steps5(D, Pl, { col: function (i) { return i <= 1 && t > .3 ? C.pink : C.yel; }, a: function (i) { return i <= 1 ? 1 : 1 - .55 * CH.smooth(0, .3, t); } });
           var a = CH.smooth(0, .4, t); CH.pseg(D, Pl, [60, 0], [60, 300], { col: C.blue, dash: true, w: 2.4, a: a });
           CH.circle(D, Pl.X(60), Pl.Y(200), CH.fs(D, .75), { stroke: C.green, sw: 3, a: CH.smooth(.3, .6, t) });
           lab(D, Pl.X(66), Pl.Y(150), 'x＝60 のとき y＝200 だけ', C.green, { a: CH.smooth(.4, .7, t), align: 'left' });

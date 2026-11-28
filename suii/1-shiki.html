@@ -70,11 +70,11 @@
   function hex(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
 
   /* 類題3：テープ図。k：うえ・下の帯の のび（0〜1）、m：人数（図の大きさ用）、num：数を書くか */
-  function tape3(D, m, num, k) {
+  function tape3(D, m, num, k, hide) {   // hide＝(1) の 答えを 出す 前（青い 帯に 5x と 書かない）
     var R = CH.box(D, { l: .08, r: .08, t: .2, b: .26 }), s = CH.fs(D, .9), tot = 5 * m + 16, w = R.w * (k == null ? 1 : k), h = Math.min(R.h * .22, 54), y1 = R.y0 + R.h * .12, y2 = R.y0 + R.h * .62, a = 5 * m + 12, b = 5 * m + 12;
     var full = R.w; w = full;
     CH.text(D, R.x0, y1 - s * 1.5, '1人に 5枚ずつ配る', { col: C.blue, align: 'left', size: s });
-    CH.tape(D, R.x0, y1, full * (a / (tot)) , h, [{ v: 5 * m, col: C.blue, txt: num ? '5×8＝40' : '5x' }, { v: 12, col: C.yel, txt: num ? '12' : '12' }], a);
+    CH.tape(D, R.x0, y1, full * (a / (tot)) , h, [{ v: 5 * m, col: C.blue, txt: num ? '5×8＝40' : hide ? 'x人に くばった分' : '5x' }, { v: 12, col: C.yel, txt: num ? '12' : '12' }], a);
     CH.text(D, R.x0 + full * (5 * m + 6) / tot, y1 + h + s * 1.1, '12枚あまる', { col: C.yel, size: s * .9 });
     CH.text(D, R.x0, y2 - s * 1.5, '1人に 7枚ずつ配る', { col: C.orange, align: 'left', size: s });
     CH.tape(D, R.x0, y2, full * (a / tot), h, [{ v: a, col: C.orange, txt: num ? '色紙は 全部で 52枚' : '色紙の枚数' }], a);
@@ -109,8 +109,8 @@
     CH.table(D, T, [''].concat(N5.map(function (x) { return x + 'さん'; })), rows, { fw: .2, top: true, hl: function (r, c) { return o.hl && o.hl.indexOf(c - 1) >= 0 && r >= 1 ? o.col || C.yel : null; } });
     var NR = CH.rect(R.x0 + R.w * .03, R.y0 + R.h * .5, R.x1 - R.w * .03, R.y0 + R.h * .84), X = CH.numline(D, NR, -10, 14, 1, { lab: 2, fmt: function (v) { return v > 0 ? '+' + v : CH.mnum(v); }, unit: '（cm）' });
     var pts = CH.dots(D, X, NR.y1, V5, { r: s * .5, col: function (i, v) { return o.hl && o.hl.indexOf(i) >= 0 ? (o.col || C.yel) : v > 0 ? C.blue : v < 0 ? C.pink : C.green; } });
-    pts.forEach(function (p, i) { CH.text(D, p[0], p[1] - s * 1.2, N5[i], { size: s * .85, col: 'rgba(242,240,230,.85)' }); });
     CH.line(D, X(0), NR.y1 - s * 3.6, X(0), NR.y1, { col: 'rgba(242,240,230,.5)', dash: true, w: 1.6 });
+    pts.forEach(function (p, i) { CH.text(D, p[0], p[1] - s * 1.2, N5[i], { size: s * .85, col: 'rgba(242,240,230,.85)', outline: 'rgba(20,30,24,.9)' }); });
     CH.text(D, X(0) - s * .4, NR.y1 - s * 3.9, '基準 150cm', { size: s * .85, col: 'rgba(242,240,230,.8)', align: 'right' });
     return { X: X, NR: NR, R: R, pts: pts, s: s };
   }
@@ -191,7 +191,7 @@
       { tag: '類題2', q: '(4) 5つの数の和が 120 のとき、まん中の数は？', a: '24', sub: '5つの和は n＋4n＝5n。5n＝120 より n＝24（17・23・24・25・31 の和は 120）', dur: 3.5,
         b: { t: '(4) 5n＝120　n＝<b>24</b>', col: C.yel },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, cs = {}, lb = {}; cross(24).forEach(function (d) { cs[d] = d === 24 ? C.yel : C.blue; });
+          var t = D.ph ? D.t : 0, cs = {}, lb = {}; if (t > 0) cross(24).forEach(function (d) { cs[d] = d === 24 ? C.yel : C.blue; });
           if (t > .4) lb[24] = '24';
           var G = cal(D, CH.box(D, { l: .06, r: .5, t: .1, b: .08 }), { cols: cs, lab: lb }), s = CH.fs(D, 1.1), x = G.x1 + (D.W - G.x1) * .5, y = G.y0 + (G.y1 - G.y0) * .36;
           CH.text(D, x, y, '5つの和 ＝ n＋4n ＝ 5n', { size: s, num: true, col: C.blue, a: CH.smooth(0, .2, t) });
@@ -201,10 +201,10 @@
       /* ---------------- 類題3 ---------------- */
       { tag: '類題3', bh: '類題3　色紙をくばる（方程式の文章題）', q: '何人かの生徒に 色紙を くばる。1人に 5枚ずつ くばると 12枚あまり、1人に 7枚ずつ くばると 4枚たりなくなる。生徒の人数を x人とする。',
         notes: ['(1) 1人に 5枚ずつ くばるときの、色紙の枚数を、x を使った式で表しなさい。', '(2) 方程式をつくり、生徒の人数を求めなさい。', '(3) 色紙は全部で何枚か。', '(4) ゆうとさんは、色紙の枚数を y枚として、方程式 (y−12)÷5＝(y＋4)÷7 をつくった。この方程式で 生徒の人数が表せるわけを、説明しなさい。'],
-        draw: function (D) { tape3(D, 6, false); } },
+        draw: function (D) { tape3(D, 6, false, null, true); } },
       { tag: '類題3', q: '(1) 5枚ずつ くばるときの 色紙の枚数は、x を使って？', a: '5x＋12（枚）', sub: '5枚ずつ x人に くばって 12枚あまる　5×x＋12', dur: 2.5,
         b: { t: '(1) 5x＋12（枚）', col: C.yel },
-        draw: function (D) { var t = D.ph ? D.t : 0; tape3(D, 6, false); CH.text(D, D.W * .5, (D.info.top || 0) + D.H * .12, '5x＋12', { col: C.yel, size: CH.fs(D, 1.4), num: true, a: CH.smooth(0, .4, t) }); } },
+        draw: function (D) { var t = D.ph ? D.t : 0; tape3(D, 6, false, null, !(t > 0)); CH.text(D, D.W * .5, (D.info.top || 0) + D.H * .12, '5x＋12', { col: C.yel, size: CH.fs(D, 1.4), num: true, a: CH.smooth(0, .4, t) }); } },
       { tag: '類題3', q: '(2) 方程式をつくり、人数を求めなさい', a: '8人', sub: '7枚ずつだと 4枚たりないので、色紙は 7x−4（枚）。5x＋12＝7x−4　−2x＝−16　x＝8', dur: 4,
         b: { t: '(2) 5x＋12＝7x−4　−2x＝−16　x＝<b>8（人）</b>', col: C.yel },
         draw: function (D) {
@@ -214,7 +214,7 @@
         } },
       { tag: '類題3', q: '(3) 色紙は全部で 何枚？', a: '52枚', sub: '5×8＋12＝52（7×8−4＝52 でも同じ。問題に あっている）', dur: 3,
         b: { t: '(3) 5×8＋12＝<b>52（枚）</b>　7×8−4＝52 で一致', col: C.yel },
-        draw: function (D) { var t = D.ph ? D.t : 0; tape3(D, 8, true); } },
+        draw: function (D) { var t = D.ph ? D.t : 0; tape3(D, 8, t > 0); } },
       { tag: '類題3', q: '(4) (y−12)÷5＝(y＋4)÷7 で 人数が表せるわけは？', a: '色紙を y枚とすると、5枚ずつで 12枚あまるときの人数は (y−12)÷5、7枚ずつで 4枚たりないときの人数は (y＋4)÷7 で、どちらも 同じ人数を表しているから、等号で結べる。', sub: 'y−12 は くばった枚数、y＋4 は 全員に くばるのに必要な枚数。それぞれを 5・7 でわると 人数。y＝52 で 40÷5＝8、56÷7＝8', dur: 6,
         b: { t: '(4) (y−12)÷5 と (y＋4)÷7 は どちらも <b>人数</b>を表す → 等しい。y＝52 で どちらも 8', col: C.yel },
         draw: function (D) {
@@ -266,7 +266,7 @@
       { tag: '類題5', q: '(2) いちばん長い記録と短い記録の差は？', a: '21cm', sub: 'いちばん長いのは Cさん(＋12)、短いのは Fさん(−9)。12−(−9)＝21', dur: 3,
         b: { t: '(2) 12−(−9)＝<b>21（cm）</b>（Cさんと Fさん）', col: C.yel },
         draw: function (D) {
-          var t = D.ph ? D.t : 0, G = rec5(D, { hl: [2, 5], col: C.orange }), y = G.NR.y1 - G.s * 8.4, a = CH.smooth(.1, .5, t);
+          var t = D.ph ? D.t : 0, G = rec5(D, { hl: t > 0 ? [2, 5] : [], col: C.orange }), y = G.NR.y1 - G.s * 8.4, a = CH.smooth(.1, .5, t);
           CH.arrow(D, G.X(-9), y, G.X(12), y, { col: C.orange, a: a, w: 2.4 }); CH.arrow(D, G.X(12), y, G.X(-9), y, { col: C.orange, a: a, w: 2.4 });
           CH.text(D, G.X(1.5), y - G.s * 1.2, '12−(−9) ＝ 21cm', { col: C.orange, a: CH.smooth(.4, .7, t), size: G.s * 1.1, num: true });
         } },

@@ -22,7 +22,7 @@
       { k: 'pt', at: T, c: 'p', name: 'T', dir: 'ne' },
       { k: 'pt', at: [a, 0], c: 'w', name: 'R', dir: 'sw' },
       { k: 'pt', at: [8, 0], c: 'g', name: 'A', dir: 'ne' },
-      { k: 'pt', at: [0, 4], c: 'b', name: 'B', dir: 'ne' }
+      { k: 'pt', at: [0, 4], c: 'b', name: 'B', dir: 'ne', dx: 18 }
     ].concat(extra || []) };
   };
   const ARC = []; for (let i = 0; i <= 40; i++) { const th = Math.PI / 4 * (1 - i / 40); ARC.push([A0 * Math.cos(th), B0 * Math.sin(th)]); }
@@ -34,9 +34,9 @@
     { k: 'param', x: A0 + '*cos(t)', y: B0 + '*sin(t)', c: 'y', a: 0, b: 1.2 },
     { k: 'line', m: -0.5, n: 4, c: 'b', a: 3.3, b: 8.7, label: 'ℓ', lat: [7.3, 0.55] },
     { k: 'pt', at: [4, 2], c: 'p', name: 'T', dir: 'ne' },
-    { k: 'pt', at: [A0, 0], c: 'w', name: 'R', dir: 'sw' },
+    { k: 'pt', at: [A0, 0], c: 'w', name: 'R', dir: 'sw', dx: -16 },   // 目もりの 4√2 に 重ならないよう 左へ
     { k: 'pt', at: [8, 0], c: 'g', name: 'A', dir: 'ne' },
-    { k: 'label', at: [6.2, 1.0], text: 'S', c: 'p', size: 28, anchor: 'middle' },
+    { k: 'label', at: [6.0, 0.45], text: 'S', c: 'p', size: 28, anchor: 'middle' },
     { k: 'label', at: [8.6, 2.65], text: '拡大図（たてを縮めてある）', size: 17, c: 'd', anchor: 'end', plain: true }] });
   const POINTS = [
     '直線と楕円が接する ⇔ 連立した2次方程式が **重解**（$D=0$）。$y=mx+n$ と $\\frac{x^2}{a^2}+\\frac{y^2}{b^2}=1$ なら　$n^2=a^2m^2+b^2$',
@@ -112,7 +112,7 @@
           { t: 'm', size: 'sm', tex: '\\mathrm{M}\\left(4,\\ 2\\right)', note: 'AB の中点' },
           situ('f3', 5, [{ k: 'pt', at: [4, 2], c: 'o', name: 'M', dir: 'sw' }])] },
       { ask: { type: 'choice', q: 'T・A・B はすべて $\\ell$ 上にあります。「T＝M」を確かめるには？',
-        opts: ['$x$ 座標と $y$ 座標の両方を、別々に解く', 'TA と TB の傾きが等しいことを示す', '$x$ 座標が等しいことだけでよい', 'T が線分 AB 上にあることを示す'], ok: 2,
+        opts: ['$x$ 座標と $y$ 座標の両方を調べないと、確かめられない', 'TA と TB の傾きが等しいことを示す', '$x$ 座標が等しいことだけでよい', 'T が線分 AB 上にあることを示す'], ok: 2,
         why: { 0: '$\\ell$ は $y$ 軸に平行でないので、$\\ell$ 上の点は $x$ 座標だけで1つに決まります。', 1: 'それは3点が一直線上にあることで、はじめから分かっています。', 3: '線分 AB 上にあるだけでは、中点とは限りません。' },
         good: '同じ直線 $\\ell$ 上の2点は、$x$ 座標が等しければ一致します。',
         add: [{ t: 'm', tex: '\\frac{a^2}{8}=4', note: 'T と M の $x$ 座標' }] } },

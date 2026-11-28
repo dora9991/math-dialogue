@@ -79,7 +79,7 @@ body{margin:0;background:var(--wall);color:var(--chalk);font-family:var(--f-ui);
 
 /* たまっていく板書 */
 .blist{margin-top:auto;display:flex;flex-direction:column;border-top:2px dashed var(--chalk-3);padding-top:.35rem}
-.panel.long .blist{max-height:46%;overflow:auto;flex:none;margin-top:auto;mask-image:linear-gradient(to bottom,transparent 0,#000 1.2rem);-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 1.2rem)}
+.panel.long .blist{max-height:46%;overflow:auto;flex:0 1 auto;min-height:3.4rem;margin-top:auto;mask-image:linear-gradient(to bottom,transparent 0,#000 1.2rem);-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 1.2rem)}
 .blist h3{margin:.35rem 0 .1rem;font-family:var(--f-chalk);font-weight:600;font-size:.95rem;color:var(--chalk-2)}
 .bi{display:grid;grid-template-columns:1.3rem minmax(0,1fr);gap:.5rem;align-items:baseline;padding:.32rem 0;border-bottom:1.5px dashed var(--chalk-4)}
 .bi i{display:block;height:.32rem;border-radius:3px;background:var(--c,var(--chalk));transform:translateY(-.25rem)}

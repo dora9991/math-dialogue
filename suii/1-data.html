@@ -90,8 +90,9 @@
     return [A1, A2];
   }
   /* 類題4 */
-  function tab4(D, Rt, k) {
-    var rows = [['度数（人）'].concat(F4, 20), ['階級値（回）'].concat(V4, ''), ['階級値×度数'].concat(S4.map(function (v, i) { return i === 2 && k < 1 ? 'ア' : v; }), k >= 2 ? 650 : '')];
+  function tab4(D, Rt, k, sh) {
+    sh = sh !== false;
+    var rows = [['度数（人）'].concat(F4, 20), ['階級値（回）'].concat(V4, ''), ['階級値×度数'].concat(S4.map(function (v, i) { return i === 2 && (k < 1 || (k === 1 && !sh)) ? 'ア' : v; }), k >= 2 && sh ? 650 : '')];
     CH.table(D, Rt, ['階級（回）', '10〜20', '20〜30', '30〜40', '40〜50', '50〜60', '合計'], rows, { fw: .2, top: true, hl: function (r, c) { return (k === 1 && r === 3 && c === 3) || (k === 2 && r === 3 && c === 6) ? C.yel : null; } });
   }
   function lay4(D) { var R = CH.box(D, { l: .04, r: .04, t: .06, b: .08 }); return { Rt: CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .36), Rb: CH.rect(R.x0, R.y0 + R.h * .44, R.x1, R.y1) }; }
@@ -219,10 +220,10 @@
         } },
       { tag: '類題4', q: '(1) ア（30〜40回の「階級値×度数」）は？', a: '210', sub: '階級値 35、度数 6 だから 35 × 6 ＝ 210', dur: 2,
         b: { t: '(1) ア … 35 × 6 ＝ <b>210</b>', col: C.yel },
-        draw: function (D) { var L = lay4(D); tab4(D, L.Rt, 1); CH.text(D, L.Rb.cx, L.Rb.cy, '階級値 35 × 度数 6 ＝ 210', { col: C.yel, size: CH.fs(D, 1.4), a: CH.smooth(0, .4, D.ph ? D.t : 0) }); } },
+        draw: function (D) { var L = lay4(D), t = D.ph ? D.t : 0; tab4(D, L.Rt, 1, t > 0); if (t > 0) CH.text(D, L.Rb.cx, L.Rb.cy, '階級値 35 × 度数 6 ＝ 210', { col: C.yel, size: CH.fs(D, 1.4), a: CH.smooth(0, .4, t) }); } },
       { tag: '類題4', q: '(2) 度数分布表から求めた平均値は？', a: '32.5回', sub: '（階級値×度数）の合計 45＋150＋210＋135＋110＝650、650÷20＝32.5', dur: 3,
         b: { t: '(2) (45＋150＋210＋135＋110)÷20 ＝ 650÷20 ＝ <b>32.5回</b>', col: C.yel },
-        draw: function (D) { var L = lay4(D), t = D.ph ? D.t : 0; tab4(D, L.Rt, 2); CH.text(D, L.Rb.cx, L.Rb.cy - CH.fs(D) * 1.2, '45＋150＋210＋135＋110 ＝ 650', { col: C.yel, size: CH.fs(D, 1.2), a: CH.smooth(0, .3, t) }); CH.text(D, L.Rb.cx, L.Rb.cy + CH.fs(D) * 1.2, '650 ÷ 20 ＝ 32.5（回）', { col: C.green, size: CH.fs(D, 1.4), a: CH.smooth(.3, .7, t) }); } },
+        draw: function (D) { var L = lay4(D), t = D.ph ? D.t : 0; tab4(D, L.Rt, 2, t > 0); if (t > 0) { CH.text(D, L.Rb.cx, L.Rb.cy - CH.fs(D) * 1.2, '45＋150＋210＋135＋110 ＝ 650', { col: C.yel, size: CH.fs(D, 1.2), a: CH.smooth(0, .3, t) }); CH.text(D, L.Rb.cx, L.Rb.cy + CH.fs(D) * 1.2, '650 ÷ 20 ＝ 32.5（回）', { col: C.green, size: CH.fs(D, 1.4), a: CH.smooth(.3, .7, t) }); } } },
       { tag: '類題4', q: '(3) もとのデータの、実際の平均値は？', a: '32.05回', sub: '20個の値の合計は 641。641÷20＝32.05', dur: 3,
         b: { t: '(3) 合計 641 ÷ 20 ＝ <b>32.05回</b>', col: C.yel },
         draw: function (D) {
@@ -269,7 +270,7 @@
         b: { t: '(4) <b>正しくない</b>　6点より低い 6人、高い 5人。平均値は 差の合計がつり合う位置（12 と 12）', col: C.yel },
         draw: function (D) {
           var t = D.ph ? D.t : 0, G = dot5(D, { col: function (i, v) { return t > 0 && v < 6 ? C.blue : t > 0 && v > 6 ? C.pink : C.chalk; } }), top = G.R.y0 + G.R.h * .3;
-          CH.poly(D, [[G.X(6), G.yl + 3], [G.X(6) - 10, G.yl + 18], [G.X(6) + 10, G.yl + 18]], { fill: C.yel });
+          var ty = G.yl + G.s * 1.75; CH.poly(D, [[G.X(6), ty], [G.X(6) - 10, ty + 15], [G.X(6) + 10, ty + 15]], { fill: C.yel });   /* つり合いの 印は、目もりの 数の 下に（数に 重ねない） */
           CH.line(D, G.X(6), G.yl, G.X(6), top, { col: C.yel, dash: true, w: 2.4 });
           if (t > .15) { var a = CH.smooth(.15, .4, t); CH.text(D, G.X(3.2), top - G.s * .4, '低い 6人', { col: C.blue, a: a }); CH.text(D, G.X(8.8), top - G.s * .4, '高い 5人', { col: C.pink, a: a }); }
           if (t > .5) { var b = CH.smooth(.5, .8, t); CH.text(D, G.X(3), top + G.s * 1.2, '差の合計', { col: C.blue, a: b, size: G.s * .95, outline: YB }); CH.text(D, G.X(3), top + G.s * 2.8, '4＋3＋2＋1＋1＋1 ＝ 12', { col: C.blue, a: b, size: G.s * .95, outline: YB }); CH.text(D, G.X(8.4), top + G.s * 1.2, '差の合計', { col: C.pink, a: b, size: G.s * .95, outline: YB }); CH.text(D, G.X(8.4), top + G.s * 2.8, '1＋2＋2＋3＋4 ＝ 12', { col: C.pink, a: b, size: G.s * .95, outline: YB }); }

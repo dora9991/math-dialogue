@@ -117,7 +117,7 @@
         why: { 1: '$\\Big[-x^{n+1}e^{-x}\\Big]_0^1=-e^{-1}-0$。符号はマイナスです。', 2: '微分すると $x^{n+1}$ の係数は $n+1$ です。$n$ ではありません。', 3: '$u\'=(n+1)x^n$ なので、$I_n$ には $(n+1)$ を「かけ」ます。' },
         good: '$\\Big[-x^{n+1}e^{-x}\\Big]_0^1=-\\dfrac1e$、積分の部分は $(n+1)I_n$。',
         add: [{ t: 'ans', col: 1, label: '(5) 答（前半）', tex: 'I_{n+1}=(n+1)I_n-\\frac1e' }] } },
-      { say: '$I_3$ を求めるには、はじめの $I_0$ から順に。$I_0=\\displaystyle\\int_0^1e^{-x}dx=1-\\dfrac1e$。あとは漸化式に $n=0,\\ 1,\\ 2$ を入れます。',
+      { say: '$I_3$ を求めるには、$n=0$ のときの $I_0=\\displaystyle\\int_0^1e^{-x}dx=1-\\dfrac1e$ から順に。部分積分の式は $n=0$ でもそのまま成り立つので、$n=0,\\ 1,\\ 2$ を入れます。',
         add: [{ t: 'm', size: 'sm', tex: 'I_0=\\Big[-e^{-x}\\Big]_0^1=1-\\frac1e' },
           { t: 'm', size: 'sm', tex: 'I_1=1\\cdot I_0-\\frac1e=1-\\frac2e' },
           { t: 'm', size: 'sm', tex: 'I_2=2I_1-\\frac1e=2-\\frac5e' },

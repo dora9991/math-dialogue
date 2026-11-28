@@ -34,8 +34,7 @@
   const plane = (id, extra) => ({ t: 'fig', id, col: 1, view: VIEW2, w: 430, h: 370, items: [
     { k: 'axes', tx: [], ty: [] },
     { k: 'line', m: -1 / 3, n: 1 / 3, c: 'y', wd: 3 }, { k: 'label', at: [2.6, -0.2], text: 'a = 0', c: 'y', size: 20 },
-    { k: 'seg', a: [0, 0], b: [0.1, 0.3], c: 'y', dash: true, wd: 2 }, { k: 'right', o: [0.1, 0.3], a: [0, 0], b: [1, 0], s: 10, c: 'y' },
-    { k: 'label', at: [0, 0], text: 'O', dx: -14, dy: 18, size: 22 }].concat(extra || []) });
+    { k: 'seg', a: [0, 0], b: [0.1, 0.3], c: 'y', dash: true, wd: 2 }, { k: 'right', o: [0.1, 0.3], a: [0, 0], b: [1, 0], s: 10, c: 'y' }].concat(extra || []) });   // O の字は axes が かく
 
   HB.lesson({
     id: 'kyushu25-1b', field: '九大型　数学（理系）', title: '2025 九大 理系 第1問の類題② ― 空間の直線の「影」と距離の最小値', level: '2025年度 九州大学 理系 第1問の類題②（自作）', time: '目安 20〜25分',

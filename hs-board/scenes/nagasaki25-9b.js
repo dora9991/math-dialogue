@@ -129,7 +129,7 @@
         draw: [{ fig: 'r1', items: [{ k: 'seg', a: [0.5, 0], b: [0.5, 1], c: 'w', wd: 1.5, dash: true }, { k: 'seg', a: [1, 0], b: [1, 0.5], c: 'w', wd: 1.5, dash: true }, { k: 'seg', a: [2 / 3, 0], b: [2 / 3, 2 / 3], c: 'w', wd: 1.5, dash: true }] }] },
       { ask: { type: 'choice', q: '$D$ の面積 $S$ は？',
         opts: ['$1+\\dfrac{\\log2}{2}$', '$\\dfrac13+\\log2$', '$\\dfrac23+\\dfrac{\\log2}{2}$', '$\\dfrac13+\\dfrac{\\log2}{2}$'], ok: 3,
-        why: { 0: '外側の面積 $1+\\frac{\\log2}{2}$ だけです。内側の $\\frac23$ を引き忘れています。', 1: '$\\displaystyle\\int_{\\frac12}^1\\frac{dx}{2x}=\\frac12\\log2$。$\\frac12$ を落としています。', 2: '内側の面積は $\\frac59+\\frac19=\\frac23$。引くのであって、足すのではありません。' },
+        why: { 0: '外側の面積 $1+\\frac{\\log2}{2}$ だけです。内側の $\\frac23$ を引き忘れています。', 1: '$\\displaystyle\\int_{\\frac12}^1\\frac{dx}{2x}=\\frac12\\log2$。$\\frac12$ を落としています。', 2: '引くのは、内側の面積 $\\frac59+\\frac19=\\frac23$ です。$1-\\frac23=\\frac13$ で、$\\frac23$ は残りません。' },
         good: '外側 $\\frac34+\\frac{\\log2}{2}+\\frac14=1+\\frac{\\log2}{2}$、内側 $\\frac59+\\frac19=\\frac23$。差は $\\frac13+\\frac{\\log2}{2}$。',
         add: [{ t: 'ans', label: '(4) 答', tex: 'S=\\frac13+\\frac{\\log2}{2}\\ (\\approx0.68)' }] } },
 

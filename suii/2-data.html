@@ -72,7 +72,10 @@
   }
   function nums(D, X, cy, bh, f, o) {
     o = o || {}; var sz = o.size || CH.fs(D, .7);
-    f.forEach(function (v, i) { CH.text(D, X(v), cy + bh / 2 + sz * 1.05, String(v), { size: sz, num: true, col: o.cols ? o.cols[i] : (o.col || 'rgba(242,240,230,.85)'), a: o.a, outline: OL }); });
+    var xs = f.map(function (v) { return X(v); }), gap = sz * 2.3, i, m = Math.floor(f.length / 2);   // となりの 数が 近すぎて 重なる ときは、まん中の 数を そのままに、左右へ ひろげる
+    for (i = m - 1; i >= 0; i--) if (xs[i + 1] - xs[i] < gap) xs[i] = xs[i + 1] - gap;
+    for (i = m + 1; i < f.length; i++) if (xs[i] - xs[i - 1] < gap) xs[i] = xs[i - 1] + gap;
+    f.forEach(function (v, i) { CH.text(D, xs[i], cy + bh / 2 + sz * 1.05, String(v), { size: sz, num: true, col: o.cols ? o.cols[i] : (o.col || 'rgba(242,240,230,.85)'), a: o.a, outline: OL }); });
   }
   function brace(D, x0, x1, y, txt, col, a, o) {
     o = o || {}; var s = CH.fs(D), d = o.down ? -1 : 1, lo = { col: col, w: 2.2, a: a };
@@ -150,8 +153,15 @@
   var CN = ['小さい順'].concat([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   function m3(D, o) {
     var k = o.k || 0, t = o.t || 0, s = CH.fs(D), ts = Math.max(12, s * .7), R = CH.box(D, { l: .03, r: .03, t: .05, b: .04 });
-    if (k === 0) {
-      CH.table(D, CH.rect(R.x0, R.y0, R.x1, R.y1), ['記録（cm）', '1回目', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11回目'], [['Aさん'].concat(A3), ['Bさん'].concat(B3)], { fw: .16, size: s * .9, rh: s * 2.8 }); return;
+    var RAW = ['記録（cm）', '1回目', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11回目'];
+    if (k === 0 || (k === 1 && !o.ph)) {   // (1) の 問いの 画面は、問題の 表（ならべかえる 前）の まま
+      CH.table(D, CH.rect(R.x0, R.y0, R.x1, R.y1), RAW, [['Aさん'].concat(A3), ['Bさん'].concat(B3)], { fw: .16, size: s * .9, rh: s * 2.8 }); return;
+    }
+    if (k === 2 && !o.ph) {   // (2) の 問いの 画面：問題の 表 ＋ (1) の 答え（Aさんの 箱ひげ図）。Bさんを 小さい順に ならべるのは、答えを 出してから
+      var T0 = CH.table(D, CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .36), RAW, [['Aさん'].concat(A3), ['Bさん'].concat(B3)], { fw: .16, size: s * .85, rh: s * 2.4 });
+      var z0 = CH.rect(R.x0 + s * 3.4, T0.y1 + s * 2.4, R.x1 - s * .6, R.y1 - s * 1.6), X0 = CH.numline(D, z0, 180, 270, 5, { lab: 10, unit: '（cm）', size: ts }), bh0 = Math.min(s * 1.4, z0.h * .16), c0 = z0.y0 + z0.h * .2;
+      CH.text(D, z0.x0 - s * .4, c0, 'Aさん', { align: 'right', col: C.blue }); boxplot(D, X0, c0, bh0, FA3, { col: C.blue, a: 1 }); nums(D, X0, c0, bh0, FA3, { size: ts, a: 1 });
+      return;
     }
     if (k <= 2) {
       var two = k === 2, rowsT = two ? [['Aさん'].concat(SA3), ['Bさん'].concat(SB3)] : [['Aさん'].concat(SA3)];
@@ -250,18 +260,18 @@
     }
     var top = R.y0 + s * 1.6;
     if (k === 2) {
-      G(R.cx - R.w * .18, top, function (r, c) { return r < 3 && c < 3 ? C.yel : null; }, '(A, B) のひき方　全部で 8 × 7 ＝ 56 通り', C.chalk, 1);
+      G(R.cx - R.w * .18, top, function (r, c) { return r < 3 && c < 3 ? C.yel : null; }, on ? '(A, B) のひき方　全部で 8 × 7 ＝ 56 通り' : '(A, B) のひき方', C.chalk, 1);
       var ta = CH.smooth(.2, .6, t), tx = R.cx - R.w * .18 + cs * 5.2; CH.text(D, tx, top + cs * 2.4, '2人とも当たり', { col: C.yel, align: 'left', a: ta }); CH.text(D, tx, top + cs * 3.6, '3 × 2 ＝ 6通り', { col: C.yel, align: 'left', a: ta }); CH.text(D, tx, top + cs * 5, '6/56 ＝ 3/28', { col: C.yel, align: 'left', a: CH.smooth(.5, .9, t), size: s * 1.1 });
       return;
     }
     if (k === 3) {
-      G(R.cx - R.w * .18, top, function (r, c) { return c < 3 ? C.orange : null; }, 'B が当たり（左の 3列）', C.orange, 1);
+      G(R.cx - R.w * .18, top, function (r, c) { return c < 3 ? C.orange : null; }, on ? 'B が当たり（左の 3列）' : '(A, B) のひき方　全部で 8 × 7 ＝ 56 通り', on ? C.orange : C.chalk, 1);
       var tb = CH.smooth(.2, .6, t), tx2 = R.cx - R.w * .18 + cs * 5.2; CH.text(D, tx2, top + cs * 2.4, 'B が当たり', { col: C.orange, align: 'left', a: tb }); CH.text(D, tx2, top + cs * 3.6, '7 × 3 ＝ 21通り', { col: C.orange, align: 'left', a: tb }); CH.text(D, tx2, top + cs * 5, '21/56 ＝ 3/8', { col: C.yel, align: 'left', a: CH.smooth(.5, .9, t), size: s * 1.1 });
       return;
     }
     /* k === 4 */
     var cs2 = Math.min(R.h * .6 / 9.2, R.w * .4 / 9.2); cs = cs2;
-    G(R.x0 + R.w * .27, top, function (r, c) { return r < 3 ? C.blue : null; }, 'A が当たり　21通り', C.blue, 1); G(R.x0 + R.w * .74, top, function (r, c) { return c < 3 ? C.orange : null; }, 'B が当たり　21通り', C.orange, 1);
+    G(R.x0 + R.w * .27, top, function (r, c) { return r < 3 ? C.blue : null; }, on ? 'A が当たり　21通り' : 'A が当たる場合', C.blue, 1); G(R.x0 + R.w * .74, top, function (r, c) { return c < 3 ? C.orange : null; }, on ? 'B が当たり　21通り' : 'B が当たる場合', C.orange, 1);
     var y = top + cs * 9.3 + s * .6, a1 = CH.smooth(0, .4, t), a2 = CH.smooth(.4, .9, t);
     CH.text(D, R.cx, y, 'A も B も 21/56 ＝ 3/8 で 同じ', { col: C.yel, a: a1, size: s * 1.05 }); CH.text(D, R.cx, y + s * 1.7, '先にひいても あとでひいても、当たりやすさは かわらない', { col: C.green, a: a2, size: s * .95 });
   }
@@ -309,10 +319,10 @@
         draw: function (D) { m3(D, { k: 0 }); } },
       { tag: '類題3', q: '(1) Aさんの 第1四分位数・中央値・第3四分位数は？', a: '第1四分位数 211cm、中央値 224cm、第3四分位数 238cm', sub: '小さい順 198・207・211・214・220・224・229・233・238・244・251。中央値は 6番目の 224。11個（奇数）なので、中央値をふくめずに、前半の5個 → 3番目 211、後半の5個 → 9番目 238', dur: 5,
         b: { t: '(1) 第1四分位数 <b>211</b>・中央値 <b>224</b>・第3四分位数 <b>238</b>（cm）', col: C.yel },
-        draw: function (D) { m3(D, { k: 1, t: D.ph ? D.t : 0 }); } },
+        draw: function (D) { m3(D, { k: 1, t: D.ph ? D.t : 0, ph: D.ph }); } },
       { tag: '類題3', q: '(2) A・B の範囲と四分位範囲は？', a: 'Aさん 範囲 53cm・四分位範囲 27cm、Bさん 範囲 72cm・四分位範囲 10cm', sub: 'A 251 − 198 ＝ 53、238 − 211 ＝ 27　B（小さい順 190・218・220・222・223・224・226・228・230・232・262）262 − 190 ＝ 72、230 − 220 ＝ 10', dur: 5,
         b: { t: '(2) A 範囲 <b>53</b>・四分位範囲 <b>27</b>　B 範囲 <b>72</b>・四分位範囲 <b>10</b>', col: C.yel },
-        draw: function (D) { m3(D, { k: 2, t: D.ph ? D.t : 0 }); } },
+        draw: function (D) { m3(D, { k: 2, t: D.ph ? D.t : 0, ph: D.ph }); } },
       { tag: '類題3', q: '(3) 「範囲が小さい Aさんのほうが安定している」は正しい？', a: '正しくない。範囲は 190cm や 262cm のような かけはなれた記録に 影響される。四分位範囲は Aさん 27cm、Bさん 10cm で、Bさんのほうが小さいので、Bさんのほうが安定している。', sub: '外れ値のような極端な値に 左右されにくいのは 四分位範囲。中央値は どちらも 224cm で同じ', dur: 6,
         b: { t: '(3) <b>正しくない</b>　四分位範囲 A 27 ＞ B 10 → <b>Bさん</b>のほうが安定（範囲は かけはなれた値に影響される）', col: C.yel },
         draw: function (D) { m3(D, { k: 3, t: D.ph ? D.t : 0 }); } },

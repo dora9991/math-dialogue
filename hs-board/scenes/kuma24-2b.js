@@ -66,7 +66,7 @@
         add: [{ t: 'h', text: '読みかえ：接線を内積で書く' },
           { t: 'box', c: 'b', size: 'sm', label: '接線の条件', text: 'X が $\\ell_{\\mathrm A}$ 上 $\\iff$ $\\overrightarrow{\\mathrm{AX}}\\perp\\vec a$ または X＝A\n$\\iff(\\overrightarrow{\\mathrm{OX}}-\\vec a)\\cdot\\vec a=0$' },
           fig1('k1')] },
-      { ask: { type: 'choice', q: 'P は $\\ell_{\\mathrm A}$ 上の点。$\\vec p=\\overrightarrow{\\mathrm{OP}}$ として、これを内積で書くと？（$|\\vec a|=2$）',
+      { ask: { type: 'choice', q: 'P は $\\ell_{\\mathrm A}$ 上の点。$\\vec p=\\overrightarrow{\\mathrm{OP}}$ として、「$\\ell_{\\mathrm A}$ 上にある」ことを内積で書くと？（$|\\vec a|=2$）',
         opts: ['$\\vec p\\cdot\\vec a=0$', '$\\vec p\\cdot\\vec a=2$', '$\\vec p\\cdot\\vec b=4$', '$\\vec p\\cdot\\vec a=4$'], ok: 3,
         why: { 0: '垂直なのは $\\vec p-\\vec a$ と $\\vec a$。展開すると $\\vec p\\cdot\\vec a=|\\vec a|^2$ です。', 1: '$|\\vec a|^2=2^2=4$。半径の 2 ではなく、その2乗です。', 2: 'それは P が $\\ell_{\\mathrm B}$ 上にある条件です（これも使います）。' },
         good: '$(\\vec p-\\vec a)\\cdot\\vec a=0$ より $\\vec p\\cdot\\vec a=|\\vec a|^2=4$。同じく $\\ell_{\\mathrm B}$ 上なので $\\vec p\\cdot\\vec b=4$。',

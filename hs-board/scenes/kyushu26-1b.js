@@ -36,7 +36,7 @@
     if (o.tri) it.push({ k: 'poly', pts: [[-1, -2, 2], [1, -2, 2], [1, -3, 1]].map(pjv), close: true, c: 'g', wd: 2 });
     it.push({ k: 'pt', at: pj(-1, -2, 2), name: 'A', dir: 'nw', size: 22 }, { k: 'pt', at: pj(1, -2, 2), name: 'B', dir: 'e', size: 22 }, { k: 'pt', at: pj(1, -3, 1), name: 'C', dir: 'se', size: 22 },
       { k: 'pt', at: pjv(P), name: 'P', dir: 'w', c: 'p', size: 22 }, { k: 'pt', at: pjv(V), name: 'V', dir: 'n', c: 'y', size: 24 });
-    if (o.Q) { const q = [1.5, -0.1, 0]; it.push({ k: 'seg', a: pjv(V), b: pjv(q), c: 'p', wd: 3 }, { k: 'pt', at: pjv(q), name: 'Q', dir: 'se', c: 'y', size: 22 }); }
+    if (o.Q) { const q = Eq(-0.52);   /* S 上の点（答えの楕円の上に とる） */ it.push({ k: 'seg', a: pjv(V), b: pjv(q), c: 'p', wd: 3 }, { k: 'pt', at: pjv(q), name: 'Q', dir: 'se', c: 'y', size: 22 }); }
     it.push(lab3(Kpt(-1.9), 'K', { c: 'b', size: 24, dx: -18 }));
     const all = [].concat(...it.map(p => p.pts || [p.at, p.a, p.b].filter(Boolean)));
     const xs = all.map(q => q[0]), ys = all.map(q => q[1]), m = 0.3;
@@ -65,7 +65,7 @@
     { k: 'param', x: '3*cos(t)', y: '2+' + (3 * S3) + '*sin(t)', a: 0, b: 2 * Math.PI, c: 'y', wd: 3.5 },
     { k: 'seg', a: [-3, 2], b: [3, 2], c: 'd', dash: true, wd: 2 }, { k: 'seg', a: [0, 2 - 3 * S3], b: [0, 2 + 3 * S3], c: 'd', dash: true, wd: 2 },
     { k: 'pt', at: [0, 2], c: 'w', r: 5 }, { k: 'pt', at: [-3, 2], c: 'y' }, { k: 'pt', at: [3, 2], c: 'y' },
-    { k: 'pt', at: [0, 2 + 3 * S3], name: '2+3√3', dir: 'ne', c: 'y', size: 20 }, { k: 'pt', at: [0, 2 - 3 * S3], name: '2−3√3', dir: 'se', c: 'y', size: 20 }].concat(items || []) });
+    { k: 'pt', at: [0, 2 + 3 * S3], name: '2+3√3', dir: 'nw', c: 'y', size: 20 }, { k: 'pt', at: [0, 2 - 3 * S3], name: '2−3√3', dir: 'se', c: 'y', size: 20 }].concat(items || []) });
   const POINTS = [
     '3点を通る円の中心は「その平面の上」かつ「3点から等距離」。$\\overrightarrow{\\mathrm{AP}}\\cdot\\overrightarrow{\\mathrm{AB}}=\\frac12|\\overrightarrow{\\mathrm{AB}}|^2$ の形にすると1次式になる。$s=0$ なら P は辺の中点（直角三角形）',
     '円すい面は **軸とのなす角が一定の点の集まり**。頂点 V から Q へのベクトル $\\overrightarrow{\\mathrm{VQ}}$ と軸の向き $\\vec n$ の内積で、$\\cos$ の条件を式にする（両辺を2乗すれば符号も気にならない）',
@@ -143,7 +143,7 @@
           fig3('g3', { ax: true, gen: true, Q: true })] },
       { ask: { type: 'choice', q: '内積 $\\overrightarrow{\\mathrm{VQ}}\\cdot\\vec n$ は？',
         opts: ['$y+1$', '$y+7$', '$y-1$', '$x+y+7$'], ok: 1,
-        why: { 0: '$z$ 成分は $(-3)\\times(-1)=+3$。$y+4$ に足すのは $+3$ です。', 2: '$-3\\times(-1)$ の符号を逆にしています。', 3: '$\\vec n$ の $x$ 成分は 0。$x$ は入りません。' },
+        why: { 0: '$z$ 成分は $(-3)\\times(-1)=+3$。$y+4$ に足すのは $+3$ です。', 2: '$\\overrightarrow{\\mathrm{VQ}}$ の $y$ 成分は $y-(-4)=y+4$。$y-4$ にしています。', 3: '$\\vec n$ の $x$ 成分は 0。$x$ は入りません。' },
         good: '$x\\cdot0+(y+4)\\cdot1+(-3)(-1)=y+7$。',
         add: [{ t: 'm', size: 'sm', tex: '\\overrightarrow{\\mathrm{VQ}}\\cdot\\vec n=y+7' }] } },
       { say: '条件に入れて整理します。両辺を 2 倍して、$y$ の 2 次式をそろえると、$x^2$ と $(y-2)^2$ の式になります。',

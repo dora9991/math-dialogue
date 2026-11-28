@@ -191,14 +191,14 @@
         b: { t: '(2) 32 − 30 ＝ <b>2m</b>', col: C.yel },
         draw: function (D) {
           var t = D.ph ? D.t : 0, o = box4(D, { a1: .3 }), s = o.s, a = CH.smooth(0, .4, t), y = o.y2 + o.hh * .9;
-          CH.arrow(D, o.X(30), y, o.X(32), y, { col: C.yel, a: a, w: 2.2 }); CH.arrow(D, o.X(32), y, o.X(30), y, { col: C.yel, a: a, w: 2.2 }); CH.text(D, o.X(31), y + s * 1.1, '四分位範囲 2', { col: C.yel, a: a, size: s * .9 });
+          CH.arrow(D, o.X(30), y, o.X(32), y, { col: C.yel, a: a, w: 2.2 }); CH.arrow(D, o.X(32), y, o.X(30), y, { col: C.yel, a: a, w: 2.2 }); CH.text(D, o.X(31), y + s * 1.1, '四分位範囲 2', { col: C.yel, a: a, size: s * .9, outline: 'rgba(20,30,24,.9)' });
         } },
       { tag: '類題4', q: '(3) 母集団の平均に近い値が得やすいのは？', a: '標本の大きさ 40。箱の長さが 短く、標本平均のちらばりが 小さいから。', sub: '箱の長さ（四分位範囲）は 10では 6、40では 2。標本平均の ちらばりが小さい 40のほうが、31m の近くの値が 得られやすい', dur: 4,
         b: { t: '(3) <b>標本の大きさ 40</b>　箱が 短い（2 ＜ 6）→ ちらばりが小さい', col: C.yel },
         draw: function (D) {
           var t = D.ph ? D.t : 0, o = box4(D), s = o.s, a = CH.smooth(0, .4, t);
           CH.line(D, o.X(28), o.y1 + o.hh * .8, o.X(28), o.y2 - o.hh * .8, { col: C.chalk, dash: true, a: a * .6 }); CH.line(D, o.X(34), o.y1 + o.hh * .8, o.X(34), o.y2 - o.hh * .8, { col: C.chalk, dash: true, a: a * .6 });
-          CH.text(D, o.X(31), (o.y1 + o.y2) / 2, '箱が 短い ほど ばらつきが 小さい', { col: C.yel, a: CH.smooth(.3, .7, t), size: s });
+          CH.text(D, o.X(31), (o.y1 + o.y2) / 2, '箱が 短い ほど ばらつきが 小さい', { col: C.yel, a: CH.smooth(.3, .7, t), size: s, outline: 'rgba(20,30,24,.9)' });
         } },
       { tag: '類題4', q: '(4) 「大きさ 40なら かならず 31m」は正しい？', a: '正しくない。標本の大きさを 40にしても、標本平均は 31mから 少しはずれることがある。', sub: '40の箱ひげ図でも 最小値 28、最大値 34 で、31m でない値が出ている。大きくするとばらつきは小さくなるが、かならず一致するとは かぎらない', dur: 4,
         b: { t: '(4) <b>正しくない</b>　40でも 28m〜34m と ばらつく（31 とは かぎらない）', col: C.yel },
@@ -206,7 +206,7 @@
           var t = D.ph ? D.t : 0, o = box4(D, { a1: .3 }), s = o.s, a = CH.smooth(0, .4, t), y = o.y2 + o.hh * .9;
           CH.line(D, o.X(28), o.y2 - o.hh, o.X(28), o.y2 + o.hh, { col: C.pink, w: 3, a: a }); CH.line(D, o.X(34), o.y2 - o.hh, o.X(34), o.y2 + o.hh, { col: C.pink, w: 3, a: a });
           CH.text(D, o.X(28), y + s * 1.1, '最小 28', { col: C.pink, a: a, size: s * .9 }); CH.text(D, o.X(34), y + s * 1.1, '最大 34', { col: C.pink, a: a, size: s * .9 });
-          CH.text(D, o.X(31), y + s * 2.5, '31m ちょうどの 回ばかりでは ない', { col: C.yel, a: CH.smooth(.4, .8, t), size: s });
+          CH.text(D, o.X(31), y + s * 2.5, '31m ちょうどの 回ばかりでは ない', { col: C.yel, a: CH.smooth(.4, .8, t), size: s, outline: 'rgba(20,30,24,.9)' });
         } },
 
       /* ---------------- 類題5 ---------------- */

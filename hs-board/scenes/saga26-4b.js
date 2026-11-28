@@ -89,7 +89,7 @@
           { t: 'fig', id: 'z2', col: 1, view: [-3.2, -1.7, 3.2, 1.7], w: 420, h: 223, items: [
             ax(), { k: 'line', m: 0.5, n: 0, c: 'g', wd: 3, label: 'm', lat: [2.75, 1.55] },
             { k: 'pt', at: [2, 1], c: 'g', r: 5, name: 'sβ', dir: 'nw', size: 21 }, { k: 'pt', at: [-2, -1], c: 'g', r: 5, name: '−sβ', dir: 'se', size: 21 }] },
-          { t: 'p', col: 1, size: 'sm', text: '$s\\beta$ と $-s\\beta$ は、$\\gamma$ をはさんで反対側の点にうつる' }] },
+          { t: 'p', col: 1, size: 'sm', text: '$s\\beta$ と $-s\\beta$ は、O をはさんで反対側の点にうつる' }] },
       { ask: { type: 'choice', q: '$s$ が 0 以外の実数全体を動くとき、$w=\\gamma\\cdot\\dfrac1s$ が描く図形は？',
         opts: ['O を端点とする半直線', 'O を除く直線全体', 'O をふくむ直線全体', '円'], ok: 1,
         why: { 0: '$s<0$ のときは $\\frac1s$ が負になり、$\\gamma$ と反対側にも届きます。', 2: '$\\frac1s=0$ となる $s$ はありません。だから O は通りません。', 3: '$\\gamma$ の実数倍だけが動くので、直線です。' },

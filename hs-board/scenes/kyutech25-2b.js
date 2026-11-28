@@ -23,7 +23,7 @@
     { k: 'fn', f: 'x*x/8', a: -11.3, b: 10, label: 'C', lat: [8.6, 10.6] },
     { k: 'pt', at: F, name: 'F', dir: 'e', c: 'y', r: 6 }];
   const fig = (id, extra, h) => ({ t: 'fig', id, col: 1, view: VIEW, w: Math.round((h || 440) * 24 / 20), h: h || 440, items: base.concat(extra || []) });
-  const PQ = [{ k: 'pt', at: P6, name: 'P', dir: 'e', c: 'w' }, { k: 'pt', at: Q6, name: 'Q', dir: 'w', c: 'w' }, { k: 'pt', at: O, name: 'O', dir: 'sw', c: 'w' }];
+  const PQ = [{ k: 'pt', at: P6, name: 'P', dir: 'e', c: 'w' }, { k: 'pt', at: Q6, name: 'Q', dir: 'w', c: 'w' }, { k: 'pt', at: O, c: 'w' }];
   const tri = [{ k: 'poly', pts: [O, P6, Q6], close: true, c: 'y', fill: 'y', alpha: 0.2, wd: 3 }, { k: 'right', o: O, a: P6, b: Q6, c: 'y', s: 12 }];
   const chord = (p, c) => ({ k: 'line', p1: [p, p * p / 8], p2: [-64 / p, 512 / (p * p)], c: c || 'p', wd: 2.5 });
 
@@ -65,7 +65,7 @@
             { k: 'label', at: [2, 2], text: '4', dy: -16, c: 'y', size: 22 }, { k: 'label', at: [4, 0], text: '4', dx: 14, c: 'y', size: 22 }])] },
       { ask: { type: 'choice', q: 'C の方程式は？',
         opts: ['$x^2=4y$', '$x^2=8y$', '$y^2=8x$', '$x^2=2y$'], ok: 1,
-        why: { 0: '焦点の $y$ 座標 2 をそのまま使って $4a$ の $a$ に 1 を入れています。$a=2$ なので $4a=8$。', 2: '準線 $y=-2$ は横の線。軸は $y$ 軸で、C は上に開きます。', 3: '$(y+2)^2-(y-2)^2=8y$ です。係数が小さすぎます。' },
+        why: { 0: '$x^2=4y$ は、焦点が $(0,\\ 1)$ の放物線です。焦点が $(0,\\ 2)$ なら $a=2$ なので $4a=8$。', 2: '準線 $y=-2$ は横の線。軸は $y$ 軸で、C は上に開きます。', 3: '$(y+2)^2-(y-2)^2=8y$ です。係数が小さすぎます。' },
         good: '$x^2+y^2-4y+4=y^2+4y+4$ より $x^2=8y$。右の図の点 $(4,\\ 2)$ は、F までも ℓ までも 4 です。',
         add: [{ t: 'ans', label: '(1) 答', tex: 'C:\\ x^2=8y' }] } },
 
@@ -132,7 +132,7 @@
           { t: 'box', c: 'y', size: 'sm', label: '性質', text: '$a>0,\\ b>0$ のとき　$a+b\\ge2\\sqrt{ab}$\n等号は $a=b$ のとき' },
           { t: 'm', tex: '4p+\\frac{256}{p}\\ge2\\sqrt{4p\\cdot\\frac{256}{p}}=2\\sqrt{1024}=64' },
           fig('f5', [{ k: 'line', p1: [8, 8], p2: [-8, 8], c: 'p', wd: 2.5 }, { k: 'poly', pts: [O, [8, 8], [-8, 8]], close: true, c: 'y', fill: 'y', alpha: 0.2, wd: 3 }, { k: 'right', o: O, a: [8, 8], b: [-8, 8], c: 'y', s: 12 },
-            { k: 'pt', at: [8, 8], name: 'P', dir: 'e', c: 'w' }, { k: 'pt', at: [-8, 8], name: 'Q', dir: 'w', c: 'w' }, { k: 'pt', at: O, name: 'O', dir: 'sw', c: 'w' }], 380)] },
+            { k: 'pt', at: [8, 8], name: 'P', dir: 'e', c: 'w' }, { k: 'pt', at: [-8, 8], name: 'Q', dir: 'w', c: 'w' }, { k: 'pt', at: O, c: 'w' }], 380)] },
       { ask: { type: 'think', q: '等号が成り立つのは $4p=\\dfrac{256}{p}$ のとき。$p$ の値を求め、微分の答えと比べよう。',
         hint: '両辺に $p$ をかけて $4p^2=256$。$p>0$ に注意。',
         ans: '$p^2=64$、$p>0$ より $p=8$。微分の結果と一致。そのとき P$(8,\\ 8)$、Q$(-8,\\ 8)$ で、三角形 OPQ は直角二等辺三角形。',

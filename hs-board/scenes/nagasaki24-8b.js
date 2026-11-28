@@ -67,9 +67,9 @@
           { t: 'm', size: 'sm', tex: '\\mathrm{BP_1}=x_1,\\quad \\angle\\mathrm{B}=60^\\circ,\\ \\angle\\mathrm{P_1}=\\theta,\\ \\angle\\mathrm{Q_1}=120^\\circ-\\theta' },
           { t: 'box', col: 1, c: 'b', size: 'sm', label: '正弦定理', text: '$\\dfrac{\\mathrm{BQ_1}}{\\sin\\angle\\mathrm{P_1}}=\\dfrac{\\mathrm{BP_1}}{\\sin\\angle\\mathrm{Q_1}}$' },
           fig('f2', [{ k: 'poly', pts: [L1.P, L1.Q, L1.R], c: 'y', wd: 4 }].concat(NAMES(L1, '₁'), [
-            { k: 'angle', o: B, a: C, b: L1.P, rp: 40, label: '60°', c: 'g' },
+            { k: 'angle', o: B, a: C, b: L1.P, rp: 34, c: 'g' }, { k: 'label', at: B, text: '60°', dx: 50, dy: -13, c: 'g', size: 19 },
             { k: 'angle', o: L1.P, a: B, b: L1.Q, rp: 48, label: 'θ', c: 'g' },
-            { k: 'angle', o: L1.Q, a: L1.P, b: B, rp: 40, label: '120°−θ', c: 'g' }]), 440)] },
+            { k: 'angle', o: L1.Q, a: L1.P, b: B, rp: 34, c: 'g' }, { k: 'label', at: L1.Q, text: '120°−θ', dx: -52, dy: -41, c: 'g', size: 16 }]), 440)] },   // 角の字は、重ならないよう 位置を 決めて かく
       { ask: { type: 'choice', q: '$\\mathrm{BQ_1}$ は？（$k=\\dfrac{\\sin\\theta}{\\sin(120^\\circ-\\theta)}$）',
         opts: ['$x_1\\tan\\theta$', '$\\dfrac{x_1}{k}$', '$kx_1$', '$x_1\\sin\\theta$'], ok: 2,
         why: { 0: '直角三角形ではないので tan は使えません。正弦定理で比べます。', 1: '$\\mathrm{BQ_1}$ は θ の向かい、$\\mathrm{BP_1}$ は $120^\\circ-\\theta$ の向かい。比は $\\sin\\theta:\\sin(120^\\circ-\\theta)=k:1$ です。', 3: '正弦定理は「辺 ÷ 向かいの角の sin」の比べ合い。$x_1\\sin\\theta$ だけでは足りません。' },

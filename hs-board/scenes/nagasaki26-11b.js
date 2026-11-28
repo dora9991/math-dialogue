@@ -41,7 +41,7 @@
       { k: 'pt', at: O, name: 'O', dir: 's', c: 'w', size: 20 }
     ].concat(extra || []) };
   };
-  const big = (id, items, h) => ({ t: 'fig', id, view: [-2.3, -0.7, 9.3, 3.35], w: Math.round((h || 450) * 11.6 / 4.05), h: h || 450, items: [{ k: 'axes', tx: [[PI, 'π'], [FX, 'π+2+2√3']], ty: [[3, '3']], o: false }].concat(items) });
+  const big = (id, items, h) => ({ t: 'fig', id, view: [-2.3, -0.7, 9.3, 3.35], w: Math.round((h || 450) * 11.6 / 4.05), h: h || 450, items: [{ k: 'axes', tx: [[PI, 'π'], [FX, 'π+2+2√3']], ty: [[3, '3']], o: false, xl: '' }, { k: 'label', at: [9.3, 0], text: 'x', dx: -8, dy: -18, c: 'd', size: 24 }].concat(items) });   // x の字は、長い目もりの字に重ならないよう 軸の上に
   const POINTS = [
     '転がる図形は「どの点を支点に、何度回るか」を先に表にする。支点で回る角は外角（$180^\\circ-$内角）、地面にのる部分の長さの合計が周の長さ',
     '弧で転がる間は接点 T が回転の中心。各点の速度（接線）は T と結ぶ線分に垂直。一番高い点は、その点が T の真上にくるとき',
@@ -73,7 +73,7 @@
           big('d0', [shape(0, { alpha: 0.18 }), { k: 'seg', a: [0, 0], b: [0, 2], c: 'w', wd: 2, dash: true },
             { k: 'pt', at: [0, 0], name: 'A', dir: 'se', c: 'y' }, { k: 'pt', at: [0, 2], name: 'B', dir: 'ne', c: 'b' }, { k: 'pt', at: [0, 1], name: 'O', dir: 'e', c: 'w', size: 22 },
             { k: 'pt', at: [-r3, 2], name: 'C', dir: 'nw', c: 'g' }, { k: 'pt', at: [-r3, 0], name: 'D', dir: 'sw', c: 'g' },
-            shape(PI, { alpha: 0.06, c: 'd' }), { k: 'pt', at: [PI, 0], name: 'B', dir: 's', c: 'b', size: 20 }, { k: 'pt', at: [PI + r3, 0], name: 'C', dir: 's', c: 'g', size: 20 },
+            shape(PI, { alpha: 0.06, c: 'd' }), { k: 'pt', at: [PI, 0], name: 'B', dir: 'sw', c: 'b', size: 20 }, { k: 'pt', at: [PI + r3, 0], name: 'C', dir: 's', c: 'g', size: 20 },
             { k: 'label', at: [PI + 1.7, 2.7], text: 'θ=π（辺 BC が x 軸に）', c: 'd', size: 19, plain: true }], 320)] },
       { ask: { type: 'choice', q: '辺 BC が $x$ 軸にのったあと、$D$ はどの頂点を支点に何度回ると、次の辺 CD が $x$ 軸にのる？',
         opts: ['C を支点に $90^\\circ$', 'B を支点に $90^\\circ$', 'C を支点に $60^\\circ$', 'C を支点に $180^\\circ$'], ok: 0,
@@ -137,8 +137,8 @@
         add: [{ t: 'h', text: '(4)　面積を分ける' },
           { t: 'tbl', size: 'sm', rows: [['', '動き', '終わりの A'], ['①', '弧で転がる（サイクロイド）', '$(\\pi,\\,2)$'], ['②', 'C$(\\pi+\\sqrt3,0)$ が支点・$90^\\circ$', '$(\\pi+\\sqrt3+2,\\,\\sqrt3)$'], ['③', 'D$(\\pi+\\sqrt3+2,0)$ が支点・$90^\\circ$', '$(\\pi+2+2\\sqrt3,\\,0)$']] },
           { t: 'p', size: 'sm', text: '② の半径は C から $(\\pi,2)$ までの距離 $\\sqrt{(\\sqrt3)^2+2^2}=\\sqrt7$。' },
-          { t: 'fig', id: 'ar', col: 1, view: [-0.3, -0.45, 9.0, 3.35], w: 700, h: 262, items: [
-            { k: 'axes', tx: [[PI, 'π'], [PI + r3, ''], [FX, 'π+2+2√3']], ty: [[2, '2']], o: false },
+          { t: 'fig', id: 'ar', col: 1, view: [-0.3, -0.45, 9.45, 3.35], w: 700, h: 262, items: [
+            { k: 'axes', tx: [[PI, 'π'], [PI + r3, ''], [FX, 'π+2+2√3']], ty: [[2, '2']], o: false, xl: '' }, { k: 'label', at: [9.45, 0], text: 'x', dx: -8, dy: -18, c: 'd', size: 24 },
             { k: 'poly', pts: path1.concat([[PI, 0]]), close: true, fill: 'y', alpha: 0.25, noStroke: true },
             { k: 'poly', pts: [CP].concat(path2), close: true, fill: 'b', alpha: 0.3, noStroke: true },
             { k: 'poly', pts: [[PI, 0], CP, A1], close: true, fill: 'w', alpha: 0.22, c: 'w', wd: 1.5 },

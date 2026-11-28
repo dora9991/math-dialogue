@@ -142,7 +142,7 @@
           { t: 'fig', id: 'g1', col: 1, view: [-0.35, -0.7, 4.4, 5.0], w: 640, h: 483, items: [
             { k: 'axes', tx: [1, 2, 3, 4], ty: [[1, '1'], [1.5, '3/2'], [2 * Math.SQRT2, '2√2']], xl: 'k', yl: '' },
             { k: 'seg', a: [1, 0], b: [Math.sqrt(34) / 4, 0], c: 'g', wd: 7 },
-            { k: 'label', at: [1.25, 0], text: 'O が内側', dy: 26, c: 'g', size: 19, plain: true },
+            { k: 'label', at: [1.25, 0], text: 'O が内側', dy: 48, c: 'g', size: 19, plain: true },
             { k: 'line', m: 0, n: 1, c: 'b', dash: true, a: -0.3, b: 4.4 },
             { k: 'fn', f: 'abs(8*x*x-17)/(sqrt(8*(x*x-1)**2+9)+3*x)', a: 0, b: 4.35, c: 'y' },
             { k: 'pt', at: [8 / 7, 1], name: 'k = 8/7', dir: 'sw', c: 'p', size: 22 }, { k: 'pt', at: [2, 1], name: 'k = 2', dir: 'se', c: 'p', size: 22 },

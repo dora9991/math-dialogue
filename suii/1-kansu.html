@@ -144,7 +144,7 @@
 
   /* ---------- 類題1：反比例のグラフ・表・式 ---------- */
   function p1(D, k, t) {
-    var r = L2(D, .56, .6), Pl = PL(D, r[0], { x: [-7, 7], y: [-7, 7] }), s = CH.fs(D, .85), R = r[1];
+    var r = L2(D, .56, .6), Pl = PL(D, r[0], { x: [-7, 7], y: [-7, 7], labX: 2, labY: 2 }), s = CH.fs(D, .85), R = r[1];   // 目もりの 数は 2ごと（−1 と O が くっついて 読みにくく ならない ように）
     hyp(D, Pl, A1, { col: C.yel, w: 3 });
     CH.pt(D, Pl, 2, 3, { col: C.pink, lab: 'A(2, 3)', dir: 'ne', size: s });
     var tb = CH.rect(R.x0, R.y0 + R.h * .04, R.x1, R.y0 + R.h * .3), zn = CH.rect(R.x0, R.y0 + R.h * .4, R.x1, R.y1);
@@ -153,7 +153,6 @@
       hl: function (rr, c) { return rr === 1 && (c === 1 || c === 4) ? (k >= 1 ? C.yel : C.pink) : null; },
       show: function (rr, c) { return k === 1 && rr === 1 && (c === 1 || c === 4) ? fade(t, 0, .25) : 1; } });
     if (k === 0) {
-      CH.pt(D, Pl, 3, 2, { col: C.green, r: CH.fs(D, .22), a: fade(t, .7, .85) });
       lines(D, zn, [{ t: 'y＝[a/x] に x＝2、y＝3 を代入', a: fade(t, 0, .2) }, { t: '3＝[a/2]　a＝3×2＝6', a: fade(t, .25, .45) }, { t: 'xy＝6 だから', a: fade(t, .5, .65) }, { t: 'y＝[6/x]', col: C.yel, a: fade(t, .7, .9) }]);
     }
     if (k === 1) {
@@ -181,7 +180,8 @@
     S2.forEach(function (S, i) {
       var q = cells[i], dim = (k === 1 && i !== 1) || (k === 2 && i !== 3) ? .3 : 1, hl = (k === 1 && i === 1) || (k === 2 && i === 3);
       var rows = [['x'].concat(X2.map(String)), ['y'].concat(S.ys.map(String))];
-      if (k >= 0) {
+      var pre = k === 0 && !(t > 0);   // (1)(2) の 問いの 画面では、計算の 行も 色も 出さない（行の 数・色で 比例か 反比例かが わかって しまう）
+      if (k >= 0 && !pre) {
         if (i === 1) rows.push(['x×y'].concat(S.ys.map(function (y, j) { return String(X2[j] * y); })));
         else if (i === 3) { rows.push(['y÷x'].concat(S.ys.map(function (y, j) { return qf(y, X2[j]); }))); rows.push(['x×y'].concat(S.ys.map(function (y, j) { return String(X2[j] * y); }))); }
         else rows.push(['y÷x'].concat(S.ys.map(function (y, j) { return String(y / X2[j]); })));
@@ -189,7 +189,7 @@
       CH.text(D, q.x0 + 2, q.y0 + s * .6, S.n + '　' + S.ttl, { align: 'left', size: fitT(D, S.n + '　' + S.ttl, q.w, s), col: hl ? S.col : C.chalk, a: dim });
       var tr = CH.rect(q.x0, q.y0 + s * 1.4, q.x1, q.y1);
       TB(D, tr, rows, { top: true, fw: .2, size: s * .95, rh: s * 2.3, a: dim,
-        hl: function (rr, c) { if (k < 0 || c === 0) return null; if (i === 0 || i === 2) return rr === 2 ? C.yel : null; if (i === 1) return rr === 2 ? C.blue : null; return null; },
+        hl: function (rr, c) { if (k < 0 || pre || c === 0) return null; if (i === 0 || i === 2) return rr === 2 ? C.yel : null; if (i === 1) return rr === 2 ? C.blue : null; return null; },
         show: function (rr, c) { return rr === 2 || rr === 3 ? fade(t, rr * .08, rr * .08 + .3) : 1; } });
     });
     var R = r[1];
@@ -254,18 +254,23 @@
     var del = (D.now || 0) * .55, sa = 2 * Math.PI / NA, sb = 2 * Math.PI / nb, x1 = cx + d - 0 * k;
     var ax = R.cx - d / 2 - (nb - NA) * k / 2 * 0, bx;
     ax = R.cx - d / 2; bx = ax + d;
-    gearPoly(D, ax, cy, NA, k, -.26 * sa + del, C.blue, o.a); gearPoly(D, bx, cy, nb, k, Math.PI + .24 * sb - del * NA / nb, C.orange, o.a);
+    gearPoly(D, ax, cy, NA, k, -.26 * sa + del, C.blue, o.a);
+    if (o.ghostB) {   // 歯数が まだ わからない B は、歯の ない 点線の 円で かく（大きさで 答えが 見えない・ちがう 歯数の 絵に ならない ように）
+      var g = D.ctx; g.save(); g.setLineDash([7, 7]); g.strokeStyle = C.orange; g.lineWidth = 2.4; g.beginPath(); g.arc(bx, cy, nb * k, 0, Math.PI * 2); g.stroke(); g.restore();
+      CH.text(D, bx, cy, '？', { col: C.orange, size: s * 1.8 });
+    } else gearPoly(D, bx, cy, nb, k, Math.PI + .24 * sb - del * NA / nb, C.orange, o.a);
     CH.text(D, ax, cy - NA * k - s * 2.8, 'A　歯数 ' + NA, { col: C.blue, size: s, a: o.a }); CH.text(D, ax, cy - NA * k - s * 1.5, '毎分 ' + ra + ' 回転', { col: C.blue, size: s, a: o.a });
     CH.text(D, bx, cy + nb * k + s * 1.6, 'B　歯数 ' + qb, { col: C.orange, size: s, a: o.a }); CH.text(D, bx, cy + nb * k + s * 2.9, '毎分 ' + rb + ' 回転', { col: C.orange, size: s, a: o.a });
   }
   function p4(D, k, t) {
     var R = full(D), s = CH.fs(D, .8), top = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * (k === 1 || k === 3 ? .46 : .66)), bot = CH.rect(R.x0 + R.w * .04, R.y0 + R.h * (k === 1 || k === 3 ? .6 : .7), R.x1 - R.w * .04, R.y1);
-    var nb = k === 2 ? 16 : k === 3 ? 48 : 36;
-    gears(D, top, nb, 30, k === 0 ? '？' : k === 2 ? 45 : k === 3 ? 15 : 'y', 24, nb);
+    var ans = t > 0;   /* 答えを出したあとだけ（問いの画面では、答えの歯数・回転数・歯車の大きさを出さない） */
+    var nb = k === 2 && ans ? 16 : k === 3 && ans ? 48 : 36;
+    gears(D, top, nb, 30, k === 0 ? (ans ? 20 : '？') : k === 2 ? 45 : k === 3 ? (ans ? 15 : 'y') : 'y', 24, k === 2 && !ans ? '？' : nb, { ghostB: k === 2 && !ans });
     if (k === 0) lines(D, bot, [{ t: '歯数×回転数が等しい　24×30＝36×y', a: fade(t, 0, .25) }, { t: '720＝36y　y＝720÷36＝20', a: fade(t, .3, .6) }, { t: '毎分 20回転', col: C.yel, a: fade(t, .65, .9) }]);
     if (k === 1) {
       var xs = [12, 18, 24, 36, 48];
-      TB(D, bot, [['x（歯数）'].concat(xs.map(String)), ['y（回転数）'].concat(xs.map(function (x) { return String(K4 / x); })), ['x×y'].concat(xs.map(function (x) { return String(K4); }))], { top: true, fw: .22, size: s, rh: s * 2.3, hl: function (rr, c) { return rr === 2 && c > 0 ? C.yel : null; }, show: function (rr, c) { return rr === 2 ? fade(t, .2 + c * .08, .4 + c * .08) : 1; } });
+      TB(D, bot, [['x（歯数）'].concat(xs.map(String)), ['y（回転数）'].concat(xs.map(function (x) { return String(K4 / x); })), ['x×y'].concat(xs.map(function (x) { return String(K4); }))], { top: true, fw: .22, size: s, rh: s * 2.3, hl: function (rr, c) { return rr === 2 && c > 0 ? C.yel : null; }, show: function (rr, c) { return rr === 2 ? fade(t, .2 + c * .08, .4 + c * .08) : rr === 1 && (c === 1 || c === 2 || c === 5) ? fade(t, 0, .2) : 1; } });
       TX(D, bot.cx, bot.y1 - s * 1.2, 'xy＝720　→　y＝[720/x]', { size: s * 1.1, col: C.yel, a: fade(t, .75, .95) });
     }
     if (k === 2) lines(D, bot, [{ t: '720＝x×45', a: fade(t, 0, .3) }, { t: 'x＝720÷45＝16', col: C.yel, a: fade(t, .4, .7) }, { t: '歯数 16', col: C.yel, a: fade(t, .75, .95) }]);
@@ -300,7 +305,7 @@
       var a1 = fade(t, .1, .4), a2 = fade(t, .45, .75);
       CH.pseg(D, Pl, [10, 0], [10, 50], { col: C.chalk, dash: true, a: a1 });
       CH.pt(D, Pl, 10, 50, { col: C.pink, lab: '50', dir: 'w', a: a1, size: s * .85 }); CH.pt(D, Pl, 10, 30, { col: C.blue, lab: '30', dir: 'e', a: a1, size: s * .85 });
-      CH.pseg(D, Pl, [10, 30], [10, 50], { col: C.yel, w: 4, a: a2 }); CH.text(D, Pl.X(10) + s * .8, Pl.Y(40), '差 20L', { col: C.yel, a: a2, size: s * .9, align: 'left', outline: OUT });
+      CH.pseg(D, Pl, [10, 30], [10, 50], { col: C.yel, w: 4, a: a2 }); CH.text(D, Pl.X(10) + s * .8, Pl.Y(25), '差 20L', { col: C.yel, a: a2, size: s * .9, align: 'left', outline: OUT });
       lines(D, r[1], [{ t: 'x＝10 のところを縦に見る', a: fade(t, 0, .2) }, { t: 'A は 50L、B は 30L', a: fade(t, .25, .45) }, { t: '50−30＝20（L）', a: fade(t, .5, .7) }, { t: '正しい', col: C.yel, a: fade(t, .75, .95) }]);
     }
   }

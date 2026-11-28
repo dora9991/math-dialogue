@@ -78,8 +78,10 @@
   function nl2(D, R, o) {
     o = o || {}; var s = CH.fs(D, .78), yl = R.y1 - s * 1.2, X = CH.numline(D, CH.rect(R.x0, yl - 10, R.x1, yl), 0, 12, 1, { lab: 1, unit: '（cm）' }), v = o.v == null ? P2 : o.v;
     if (o.band) { var a = o.band; CH.line(D, X(8), yl, X(9), yl, { col: C.pink, w: 7, a: a }); CH.text(D, (X(8) + X(9)) / 2, yl - s * 2.9, '8 と 9 の間', { col: C.pink, a: a, size: s * 1.05 }); }
-    CH.circle(D, X(v), yl, 7, { fill: C.yel, stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
-    CH.text(D, X(v), yl - s * 1.5, o.lab || 'P', { col: C.yel, size: s * 1.15 });
+    if (!o.hide) {
+      CH.circle(D, X(v), yl, 7, { fill: C.yel, stroke: 'rgba(20,30,24,.8)', sw: 1.2 });
+      CH.text(D, X(v), yl - s * 1.5, o.lab || 'P', { col: C.yel, size: s * 1.15 });
+    }
     return { X: X, yl: yl, s: s };
   }
   function geo2(D, o) {
@@ -178,7 +180,7 @@
         b: { t: '(4) 79 × 81 ＋ 1 ＝ 80² ＝ <b>6400</b>', col: C.yel },
         draw: function (D) {
           var t = tt(D), R = R0(D), s = CH.fs(D, .95), w = Math.min(R.w * .2, s * 5);
-          [['79', C.blue, -1], ['80', C.green, 0], ['81', C.orange, 1]].forEach(function (c) { CH.card(D, R.cx + c[2] * w * 1.3, R.y0 + R.h * .14, w, s * 2.1, c[0], { col: c[1], size: s * 1.2 }); });
+          [['79', C.blue, -1], ['80', C.green, 0], ['81', C.orange, 1]].forEach(function (c) { if (c[2] === 0 && t <= 0) return; CH.card(D, R.cx + c[2] * w * 1.3, R.y0 + R.h * .14, w, s * 2.1, c[0], { col: c[1], size: s * 1.2, a: c[2] === 0 ? sm(0, .2, t) : 1 }); });
           CH.text(D, R.cx, R.y0 + R.h * .14 + s * 2.1, '間の偶数', { size: s * .85, col: C.green, a: sm(0, .2, t) });
           eq(D, R, t, [['79 × 81 ＋ 1', C.chalk], ['＝ 80²', C.green], ['＝ 6400', C.yel]], { y0: R.y0 + R.h * .45 });
         } },
@@ -195,7 +197,7 @@
       { tag: '類題2', q: '(2) 6√2 を、小数第1位まで求めよう。（√2 ＝ 1.414）', a: '約 8.5 cm', sub: '6 × 1.414 ＝ 8.484 → 小数第2位を四捨五入して 8.5', dur: 2.5,
         b: { t: '(2) 6 × 1.414 ＝ 8.484 → 約 <b>8.5 cm</b>', col: C.yel },
         draw: function (D) {
-          var t = tt(D), R = R0(D, { l: .06, r: .06, t: .06, b: .06 }); nl2(D, R, { v: 6 * 1.414, lab: '8.484…' });
+          var t = tt(D), R = R0(D, { l: .06, r: .06, t: .06, b: .06 }); nl2(D, R, { v: 6 * 1.414, lab: '8.484…', hide: t <= 0 });
           eq(D, CH.rect(R.x0, R.y0, R.x1, R.y1 - CH.fs(D) * 5), t, [['6√2 ＝ 6 × 1.414', C.chalk], ['＝ 8.484', C.yel], ['小数第2位を四捨五入して　約 8.5 cm', C.green]]);
         } },
       { tag: '類題2', q: '(3) 対角線の長さは？', a: '6√3 cm', sub: '三平方の定理より (対角線)² ＝ 6² ＋ (6√2)² ＝ 36 ＋ 72 ＝ 108。対角線 ＝ √108 ＝ 6√3', dur: 4,
@@ -239,7 +241,7 @@
       { tag: '類題3', q: '(4) 問題に合う x は？　わけも説明しよう。', a: 'x ＝ 4。x は のばす長さなので、負の数の −24 は 問題に合わない。x ＝ 4 のとき、新しい花だんは 12m × 16m ＝ 192m² で、もとの 96m² の 2倍になる。', sub: '説明のお手本：x は のばす長さだから 0 より大きい。よって x ＝ −24 は 問題に合わない。x ＝ 4 のとき、たて 8＋4＝12m、よこ 12＋4＝16m で、面積 12 × 16 ＝ 192m² ＝ 2 × 96m² になるので、問題に合う。', dur: 5,
         b: { t: '(4) x ＝ <b>4</b>　−24 は 長さにならない。12 × 16 ＝ 192 ＝ 2 × 96', col: C.yel },
         draw: function (D) {
-          var t = tt(D), R = R0(D), Rl = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .62), L = land(D, Rl, 4, { ok: t > .4, t2: '4m', l3: '4m', t1: '12m', l1: '8m' }), s = CH.fs(D, .9);
+          var t = tt(D), R = R0(D), Rl = CH.rect(R.x0, R.y0, R.x1, R.y0 + R.h * .62), L = land(D, Rl, t > 0 ? 4 : 3.2, t > 0 ? { ok: t > .4, t2: '4m', l3: '4m', t1: '12m', l1: '8m' } : {}), s = CH.fs(D, .9);
           CH.text(D, L.x0 + (L.W + L.E) / 2, L.bot + s * 1.1, '16m', { col: C.green, size: s, a: sm(.3, .6, t) });
           CH.text(D, L.x0 + L.W + L.E + s * .5, L.y0 + (L.H + L.E) / 2, '12m', { col: C.green, size: s, a: sm(.3, .6, t), align: 'left' });
           eq(D, CH.rect(R.x0, R.y0 + R.h * .68, R.x1, R.y1), t, [['x ＝ −24 は のばす長さにならない（x ＞ 0）', C.pink], ['x ＝ 4 → 12 × 16 ＝ 192 ＝ 2 × 96　問題に合う', C.green]], { size: CH.fs(D, .95) });

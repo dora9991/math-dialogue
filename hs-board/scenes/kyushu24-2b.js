@@ -9,7 +9,7 @@
 (function () {
   const C = d => [Math.cos(d * Math.PI / 180), Math.sin(d * Math.PI / 180)];
   const T = [3, 15, 27, 39], U = [2, 14, 26, 38, 10, 22, 34, 46];
-  const labAng = u => { const d = 7.5 * u; return T.includes(u) ? d + 4.5 : [2, 14, 26, 38].includes(u) ? d - 5 : d; };
+  const labAng = u => { const d = 7.5 * u; return T.includes(u) ? d + 4.5 : u === 2 ? d : [14, 26, 38].includes(u) ? d - 5 : d; };   // 2 は「実軸」の字に重ならない向きに
   const lab = u => ({ k: 'label', at: C(labAng(u)).map(v => v * 1.24), text: String(u), size: 20, c: T.includes(u) ? 'y' : 'b' });
   const circ = (id, extra, w) => ({ t: 'fig', id, col: 1, view: [-1.55, -1.5, 1.55, 1.5], w: w || 470, h: Math.round((w || 470) * 3 / 3.1), items: [
     { k: 'axes', tx: [[1, '1']], ty: [], xl: '実軸', yl: '虚軸' },
@@ -80,9 +80,9 @@
       { clear: true, part: '(2)', say: '条件は「$z\\in S$ ならば $wz\\in S$」。いきなり $w$ を求めず、まず $w$ が必ずみたす性質（必要条件）から調べます。',
         add: [{ t: 'h', text: '(2)　まず必要条件を集める' },
           { t: 'box', c: 'b', size: 'sm', label: '条件', text: '$z\\in S$ ならば $wz\\in S$' }] },
-      { ask: { type: 'choice', q: 'この条件から、まず分かる $w$ の性質は？',
+      { ask: { type: 'choice', q: 'この条件から、**すぐに** 言える $w$ の性質は？',
         opts: ['$w$ は実数', '$w^4=1$', '$w=1$ に限る', '$|w|=1$'], ok: 3,
-        why: { 0: '$w$ が実数になる理由はありません。回転の向きの $w$ もありえます。', 1: 'それは最後に分かる答え。まだ根拠がありません。', 2: '$w=1$ は条件をみたしますが、ほかにないかはまだ分かりません。' },
+        why: { 0: '$w$ が実数になる理由はありません。回転の向きの $w$ もありえます。', 1: '$w^4=1$ は、最後に分かる答えです。この条件からすぐには言えません（これから示します）。', 2: '$w=1$ は条件をみたしますが、ほかにないかはまだ分かりません。' },
         good: '$z\\in S$ なら $|z|=1$、$wz\\in S$ なら $|wz|=1$。よって $|w|=\\dfrac{|wz|}{|z|}=1$。',
         add: [{ t: 'm', size: 'sm', tex: '|w|=\\frac{|wz|}{|z|}=\\frac11=1' },
           { t: 'p', size: 'sm', text: '$w=\\cos\\varphi+i\\sin\\varphi\\ (0\\le\\varphi<2\\pi)$ とおくと、\n$w$ を掛ける ＝ 原点のまわりに $\\varphi$ だけ回転' }] } },

@@ -110,7 +110,7 @@
           { t: 'box', col: 1, c: 'b', size: 'sm', label: 'わかっていること', text: '$\\cos\\alpha=\\dfrac18$\n$\\cos0=1$\n$\\log\\dfrac18=-3\\log2$' }] },
       { ask: { type: 'choice', q: '$\\displaystyle\\Big[-8\\cos x+\\log(\\cos x)\\Big]_0^{\\alpha}$ の値は？',
         opts: ['$9+3\\log2$', '$7-3\\log2$', '$-9-3\\log2$', '$7+3\\log2$'], ok: 1,
-        why: { 0: '上端 $\\alpha$ の値は $-1-3\\log2$。下端 $-8$ を引くと $+8$ です。$-1+8=7$。', 2: '上端 − 下端の順です。逆に引いています。', 3: '$\\log\\frac18=-3\\log2$。符号を見落としています。' },
+        why: { 0: '上端 $\\alpha$ の値は $-1-3\\log2$。下端 $-8$ を引くと $+8$ です。$-1+8=7$。', 2: '下端の値 $-8$ を、引かずに足しています。$(-1-3\\log2)-(-8)$ です。', 3: '$\\log\\frac18=-3\\log2$。符号を見落としています。' },
         good: '$(-8\\cdot\\frac18+\\log\\frac18)-(-8\\cdot1+\\log1)=(-1-3\\log2)+8=7-3\\log2$。',
         add: [{ t: 'm', size: 'sm', tex: '\\begin{aligned}&=\\Big(-1+\\log\\frac18\\Big)-(-8+0)\\\\ &=7-3\\log2\\end{aligned}' }] } },
       { say: '2 倍して答えです。',
