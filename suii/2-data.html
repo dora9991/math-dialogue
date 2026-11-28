@@ -72,7 +72,7 @@
   }
   function nums(D, X, cy, bh, f, o) {
     o = o || {}; var sz = o.size || CH.fs(D, .7);
-    var xs = f.map(function (v) { return X(v); }), gap = sz * 2.3, i, m = Math.floor(f.length / 2);   // となりの 数が 近すぎて 重なる ときは、まん中の 数を そのままに、左右へ ひろげる
+    var xs = f.map(function (v) { return X(v); }), gap = sz * 3.1, i, m = Math.floor(f.length / 2);   // となりの 数が 近すぎて 重なる ときは、まん中の 数を そのままに、左右へ ひろげる
     for (i = m - 1; i >= 0; i--) if (xs[i + 1] - xs[i] < gap) xs[i] = xs[i + 1] - gap;
     for (i = m + 1; i < f.length; i++) if (xs[i] - xs[i - 1] < gap) xs[i] = xs[i - 1] + gap;
     f.forEach(function (v, i) { CH.text(D, xs[i], cy + bh / 2 + sz * 1.05, String(v), { size: sz, num: true, col: o.cols ? o.cols[i] : (o.col || 'rgba(242,240,230,.85)'), a: o.a, outline: OL }); });
